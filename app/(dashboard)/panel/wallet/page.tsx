@@ -6,6 +6,7 @@ import { WalletSidebar } from './components/wallet-sidebar';
 import { Plus } from 'lucide-react';
 import { DepositIcon } from '@/components/svg';
 import PaymentHistory from './components/payment-history';
+import FundWallet from './components/fund-wallet';
 
 export default function WalletPage() {
 
@@ -58,10 +59,7 @@ export default function WalletPage() {
                                 </div>
 
                                 {/* Fund Wallet Button */}
-                                <button className="w-[90%] bg-khaki-200 hover:bg-khaki-300 text-gray-900 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                                    <DepositIcon />
-                                    Fund Wallet
-                                </button>
+                                <FundWallet />
                             </div>
 
                             {/* Credit Card Display */}
