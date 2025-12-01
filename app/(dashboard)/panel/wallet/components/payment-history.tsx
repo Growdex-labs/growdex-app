@@ -51,10 +51,10 @@ export default function PaymentHistory() {
                     {/* Pagination */}
                     <div className="flex items-center justify-center gap-2 py-4 border-t border-gray-200">
                         <small>Page</small>
-                    <button className="px-3 py-1 rounded bg-khaki-200 text-gray-900 font-medium text-sm">1</button>
-                    <button className="px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm">2</button>
-                    <span className="px-2 text-khaki-200">...</span>
-                    <button className="px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm">76</button>
+                        <button className="px-3 py-1 rounded bg-khaki-200 text-gray-900 font-medium text-sm">1</button>
+                        <button className="px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm">2</button>
+                        <span className="px-2 text-khaki-200">...</span>
+                        <button className="px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm">76</button>
                     </div>
                 </div>
                 {/* Transaction Details */}
