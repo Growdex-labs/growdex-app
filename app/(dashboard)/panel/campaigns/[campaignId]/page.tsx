@@ -6,7 +6,14 @@ import { use, useState } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { CampaignsSidebar } from "../../components/campaigns-sidebar";
 import { CampaignHeader } from "./components/campaign-header";
-import { PenBoxIcon, PlusIcon } from "lucide-react";
+import { OptimizationSidebar } from "./components/optimization-sidebar";
+import {
+  AlertCircle,
+  BellIcon,
+  PenBoxIcon,
+  PlusIcon,
+  SparklesIcon,
+} from "lucide-react";
 import CreateAdLayout from "../../components/create-ad/create-ad-layout";
 
 export default function CampaignDetailPage({
@@ -15,6 +22,7 @@ export default function CampaignDetailPage({
   params: Promise<{ campaignId: string }>;
 }) {
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
   const { campaignId } = use(params);
   const router = useRouter();
 
@@ -52,9 +60,38 @@ export default function CampaignDetailPage({
       <div className="flex h-full">
         <CampaignsSidebar />
 
-        <div className="flex-1 overflow-y-auto">
+        <div
+          className={`flex-1 overflow-y-auto transition-all duration-300 ${
+            isOptimizationOpen ? "mr-80" : "mr-0"
+          }`}
+        >
           <div className="p-8">
-            <CampaignHeader campaign={campaign} />
+            <CampaignHeader
+              campaign={campaign}
+              isOptimizationOpen={isOptimizationOpen}
+              onOptimizationClick={() => setIsOptimizationOpen(true)}
+            />
+
+            {/* Optimization Banner - Shows when sidebar is open */}
+            {isOptimizationOpen && (
+              <div className="mb-4 bg-dimYellow border border-khaki-200 rounded-lg p-4 flex items-center gap-3">
+                <div className="bg-red-600 p-2 rounded-lg">
+                  <BellIcon className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">
+                    5 optimization opportunities located
+                  </p>
+                  <p className="text-xs text-khaki-300 flex items-center gap-1">
+                    <SparklesIcon className="w-3 h-3" />
+                    Optimize for campaign goal
+                  </p>
+                </div>
+                <button className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg font-semibold text-sm hover:bg-khaki-300 transition-colors">
+                  See changes
+                </button>
+              </div>
+            )}
 
             {/* Ad tabs */}
             <div className="mb-6 bg-white rounded-lg p-4">
@@ -64,7 +101,7 @@ export default function CampaignDetailPage({
                   onClick={() => setActiveTab("overview")}
                   className={`flex-1 px-8 py-4 rounded-xl font-semibold transition-colors whitespace-nowrap ${
                     activeTab === "overview"
-                      ? "bg-gray-200 text-gray-900"
+                      ? "bg-khaki-200 text-gray-900"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-150"
                   }`}
                 >
@@ -120,6 +157,12 @@ export default function CampaignDetailPage({
             )}
           </div>
         </div>
+
+        {/* Optimization Sidebar */}
+        <OptimizationSidebar
+          isOpen={isOptimizationOpen}
+          onClose={() => setIsOptimizationOpen(false)}
+        />
       </div>
     </PanelLayout>
   );

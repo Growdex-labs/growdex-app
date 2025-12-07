@@ -172,26 +172,26 @@ export default function CreativeAndCaption({
 
         {platform === "meta" && (
           <div className="bg-khaki-200/10 p-3 flex items-center mt-4 rounded-lg">
-            <ListIcon className="w-5 h-5 text-khaki-900 inline-block mr-4" />
+            <ListIcon className="w-4 h-4 text-khaki-900 inline-block mr-4" />
             <div className="flex gap-2">
-              <button className="p-1.5 hover:bg-gray-100 rounded">
-                <Type className="w-5 h-5" />
+              <button className="p-1 hover:bg-gray-100 rounded">
+                <Type className="w-4 h-4" />
               </button>
-              <button className="p-1.5 hover:bg-gray-100 rounded">
-                <Bold className="w-5 h-5" />
+              <button className="p-1 hover:bg-gray-100 rounded">
+                <Bold className="w-4 h-4" />
               </button>
-              <button className="p-1.5 hover:bg-gray-100 rounded">
-                <Italic className="w-5 h-5" />
+              <button className="p-1 hover:bg-gray-100 rounded">
+                <Italic className="w-4 h-4" />
               </button>
-              <button className="p-1.5 hover:bg-gray-100 rounded">
-                <Underline className="w-5 h-5" />
+              <button className="p-1 hover:bg-gray-100 rounded">
+                <Underline className="w-4 h-4" />
               </button>
-              <button className="p-1.5 hover:bg-gray-100 rounded">
-                <Strikethrough className="w-5 h-5" />
+              <button className="p-1 hover:bg-gray-100 rounded">
+                <Strikethrough className="w-4 h-4" />
               </button>
             </div>
 
-            <span className="inline-flex ml-auto text-sm text-khaki-300">
+            <span className="inline-flex ml-auto text-xs text-khaki-300">
               <SparklesIcon className="w-4 h-4 mr-2" />
               Generate variable caption
             </span>

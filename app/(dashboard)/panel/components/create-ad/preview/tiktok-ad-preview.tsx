@@ -16,10 +16,10 @@ export function TikTokAdPreview({
   profilePic = "/logo.png",
 }: TikTokAdPreviewProps) {
   return (
-    <div className="bg-gray-100 p-4 rounded-xl">
+    <div className="bg-gray-100 p-4 rounded-xl ">
       <h3 className="text-lg font-semibold mb-4 text-gray-900">Preview</h3>
 
-      <div className="bg-black rounded-xl overflow-hidden aspect-9/16 max-h-[600px] relative shadow-xl">
+      <div className="bg-black rounded-xl overflow-hidden aspect-9/16 max-h-[600px] ml-4 relative shadow-xl">
         {/* Background Content */}
         {creative ? (
           <div className="absolute inset-0">
