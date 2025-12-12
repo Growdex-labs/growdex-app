@@ -24,7 +24,7 @@ export const apiFetch = async (
   url: string,
   options: RequestInit = {},
 ): Promise<Response> => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || '';
 
   // Always include cookies
   let res = await fetch(`${baseUrl}${url}`, {
