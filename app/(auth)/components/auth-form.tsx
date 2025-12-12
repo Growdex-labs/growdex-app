@@ -37,7 +37,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
         try {
           // TODO: Replace with your actual backend API endpoint
           const response = await apiFetch('/auth/google', {
-            method: 'POST',
+            method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
