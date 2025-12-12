@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
-import { isOnboardingComplete, fetchOnboardingStatus } from '@/lib/onboarding';
+import { isOnboardingComplete } from '@/lib/onboarding';
+import { apiFetch } from '@/lib/auth';
 
 export default function PanelRootLayout({
   children,
@@ -13,41 +13,37 @@ export default function PanelRootLayout({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
-//   useEffect(() => {
-//     const checkAccess = async () => {
-//       // First check authentication
-//       if (!isAuthenticated()) {
-//         router.push('/login');
-//         return;
-//       }
+  useEffect(() => {
+    const checkAccess = async () => {
+      // First check authentication
+      const isAuthenticated = await apiFetch('/users/me');
+      if (!isAuthenticated.ok) {
+        router.push('/login');
+        return;
+      }
 
-//       // Check onboarding status from local storage first for quick check
-//       if (!isOnboardingComplete()) {
-//         // Verify with backend
-//         const result = await fetchOnboardingStatus();
+      // Check onboarding status from local storage first for quick check
+      if (!isOnboardingComplete()) {
+        router.push('/onboarding');
+        return;
+      }
 
-//         if (!result.completed) {
-//           router.push('/onboarding');
-//           return;
-//         }
-//       }
+      setIsLoading(false);
+    };
 
-//       setIsLoading(false);
-//     };
+    checkAccess();
+  }, [router]);
 
-//     checkAccess();
-//   }, [router]);
-
-//   if (isLoading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-//           <div className="text-gray-600">Loading...</div>
-//         </div>
-//       </div>
-//     );
-//   }
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <div className="text-gray-600">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

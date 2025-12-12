@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { setAuthToken } from '@/lib/auth';
+import { apiFetch, login, register } from '@/lib/auth';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,8 +12,6 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
       const [isLoading, setIsLoading] = useState(false);
       const [error, setError] = useState('');
 
-
-
       const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -21,23 +19,9 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
 
         try {
           // TODO: Replace with your actual backend API endpoint
-          const endpoint = isAuthType === 'login' ? '/api/auth/login' : '/api/auth/register';
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
-
-          if (!response.ok) {
-            throw new Error(isAuthType === 'login' ? 'Login failed' : 'Register failed');
-          }
-
-          const data = await response.json();
-
-          // Securely store the authentication token
-          setAuthToken(data.accessToken, data.expiresIn, data.refreshToken);
+          const response = isAuthType === 'login'
+          ? await login(email, password)
+          : await register(email, password);
 
           // Redirect to panel (dashboard)
           router.push('/panel');
@@ -52,7 +36,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
       const handleGoogleAuth = async () => {
         try {
           // TODO: Replace with your actual backend API endpoint
-          const response = await fetch('/api/auth/google', {
+          const response = await apiFetch('/auth/google', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -62,14 +46,6 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
           if (!response.ok) {
             throw new Error('Google authentication failed');
           }
-
-          const data = await response.json();
-
-          // Securely store the authentication token
-          setAuthToken(data.accessToken, data.expiresIn, data.refreshToken);
-
-          // Redirect to panel (dashboard)
-          router.push('/panel');
         } catch (err) {
           console.error('Google authentication error:', err);
           setError('Google authentication failed. Please try again.');

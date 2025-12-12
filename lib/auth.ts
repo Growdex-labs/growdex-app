@@ -1,171 +1,110 @@
-// Token management utilities for secure client-side authentication
+// lib/auth.ts
+/**
+ * Secure cookie-based auth utilities for Next.js
+ *
+ * Backend sets:
+ * - access_token (httpOnly, short-lived)
+ * - refresh_token (httpOnly, long-lived)
+ *
+ * Frontend never touches tokens directly.
+ * Use `apiFetch` for all authenticated requests.
+ */
 
-interface TokenData {
-  accessToken: string;
-  refreshToken?: string;
-  expiresAt: number;
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
-const TOKEN_STORAGE_KEY = 'auth_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
-
 /**
- * Securely store authentication tokens
- * Note: For production, consider using httpOnly cookies via your backend
+ * Wrapper around fetch that automatically includes cookies
+ * and attempts refresh if 401 is returned
  */
-export const setAuthToken = (accessToken: string, expiresIn: number, refreshToken?: string): void => {
-  const expiresAt = Date.now() + expiresIn * 1000;
+export const apiFetch = async (
+  url: string,
+  options: RequestInit = {},
+): Promise<Response> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-  const tokenData: TokenData = {
-    accessToken,
-    refreshToken,
-    expiresAt,
-  };
+  // Always include cookies
+  let res = await fetch(`${baseUrl}${url}`, {
+    ...options,
+    credentials: 'include',
+  });
 
-  // Store in sessionStorage for better security (cleared on tab close)
-  // Or use localStorage if you want persistent sessions
-  sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenData));
-
-  if (refreshToken) {
-    sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  }
-};
-
-/**
- * Retrieve the access token if valid
- */
-export const getAuthToken = (): string | null => {
-  try {
-    const tokenDataStr = sessionStorage.getItem(TOKEN_STORAGE_KEY);
-    if (!tokenDataStr) return null;
-
-    const tokenData: TokenData = JSON.parse(tokenDataStr);
-
-    // Check if token is expired
-    if (Date.now() >= tokenData.expiresAt) {
-      clearAuthTokens();
-      return null;
-    }
-
-    return tokenData.accessToken;
-  } catch (error) {
-    console.error('Error retrieving auth token:', error);
-    return null;
-  }
-};
-
-/**
- * Get refresh token
- */
-export const getRefreshToken = (): string | null => {
-  return sessionStorage.getItem(REFRESH_TOKEN_KEY);
-};
-
-/**
- * Check if user is authenticated
- */
-export const isAuthenticated = (): boolean => {
-  return getAuthToken() !== null;
-};
-
-/**
- * Clear all authentication tokens
- */
-export const clearAuthTokens = (): void => {
-  sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-  // Also clear any legacy localStorage items
-  localStorage.removeItem('isAuthenticated');
-};
-
-/**
- * Get token expiration time in milliseconds
- */
-export const getTokenExpiration = (): number | null => {
-  try {
-    const tokenDataStr = sessionStorage.getItem(TOKEN_STORAGE_KEY);
-    if (!tokenDataStr) return null;
-
-    const tokenData: TokenData = JSON.parse(tokenDataStr);
-    return tokenData.expiresAt;
-  } catch (error) {
-    return null;
-  }
-};
-
-/**
- * Check if token will expire soon (within 5 minutes)
- */
-export const shouldRefreshToken = (): boolean => {
-  const expiresAt = getTokenExpiration();
-  if (!expiresAt) return false;
-
-  const fiveMinutes = 5 * 60 * 1000;
-  return Date.now() >= expiresAt - fiveMinutes;
-};
-
-/**
- * Create authorization header for API requests
- */
-export const getAuthHeader = (): HeadersInit => {
-  const token = getAuthToken();
-  if (!token) return {};
-
-  return {
-    'Authorization': `Bearer ${token}`,
-  };
-};
-
-/**
- * Refresh the access token using refresh token
- * This should call your backend API endpoint
- */
-export const refreshAccessToken = async (): Promise<boolean> => {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return false;
-
-  try {
-    // TODO: Replace with your actual API endpoint
-    const response = await fetch('/api/auth/refresh', {
+  if (res.status === 401) {
+    // Attempt refresh
+    const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
     });
 
-    if (!response.ok) {
-      clearAuthTokens();
-      return false;
+    if (refreshRes.ok) {
+      // Retry original request
+      res = await fetch(`${baseUrl}${url}`, {
+        ...options,
+        credentials: 'include',
+      });
     }
-
-    const data = await response.json();
-    setAuthToken(data.accessToken, data.expiresIn, data.refreshToken);
-    return true;
-  } catch (error) {
-    console.error('Error refreshing token:', error);
-    clearAuthTokens();
-    return false;
   }
+
+  return res;
 };
 
 /**
- * Auto-refresh token when it's about to expire
- * Call this on app initialization or in a useEffect
+ * Login user
+ * Returns onboardingCompleted and other metadata from backend
  */
-export const setupTokenRefresh = (): (() => void) => {
-  const checkAndRefresh = async () => {
-    if (shouldRefreshToken()) {
-      await refreshAccessToken();
-    }
-  };
+export const login = async (email: string, password: string) => {
+  const res = await apiFetch('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
 
-  // Check every minute
-  const interval = setInterval(checkAndRefresh, 60 * 1000);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error || 'Login failed');
+  }
 
-  // Initial check
-  checkAndRefresh();
+  return res.json();
+};
 
-  // Return cleanup function
-  return () => clearInterval(interval);
+/**
+ * Register user
+ * Returns onboardingCompleted and other metadata from backend
+ */
+export const register = async (email: string, password: string) => {
+  const res = await apiFetch('/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error || 'Registration failed');
+  }
+
+  return res.json();
+};
+
+/**
+ * Logout user
+ * Backend should clear httpOnly cookies
+ */
+export const logout = async () => {
+  await apiFetch('/auth/logout', { method: 'POST' });
+};
+
+/**
+ * Get current session / user info
+ * Backend returns user info if access_token valid
+ */
+export const getCurrentUser = async () => {
+  const res = await apiFetch('/users/me', { method: 'GET' });
+
+  if (!res.ok) return null;
+
+  return res.json();
 };

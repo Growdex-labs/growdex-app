@@ -1,7 +1,6 @@
 // Onboarding utilities for tracking and persisting onboarding data
 
-import { getAuthHeader } from './auth';
-import { NEXT_PUBLIC_BACKEND_API_URL } from './constants';
+import { apiFetch } from './auth';
 
 export interface OnboardingData {
   personalInfo: {
@@ -57,9 +56,7 @@ export const fetchOnboardingStatus = async (): Promise<{
   error?: string;
 }> => {
   try {
-    const response = await fetch('/api/onboarding/status', {
-      headers: getAuthHeader(),
-    });
+    const response = await apiFetch('/onboarding/status');
 
     if (!response.ok) {
       throw new Error('Failed to fetch onboarding status');
@@ -97,10 +94,9 @@ export const savePersonalInfo = async (data: {
   organizationSize: string;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await fetch(`${NEXT_PUBLIC_BACKEND_API_URL}/api/onboarding/personal-info`, {
+    const response = await apiFetch('/onboarding/personal-info', {
       method: 'POST',
       headers: {
-        ...getAuthHeader(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
@@ -126,12 +122,8 @@ export const completeOnboarding = async (data?: {
   skipSocialAccounts?: boolean;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await fetch(`${NEXT_PUBLIC_BACKEND_API_URL}/api/onboarding/complete`, {
+    const response = await apiFetch('/onboarding/complete', {
       method: 'POST',
-      headers: {
-        ...getAuthHeader(),
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data || {}),
     });
 
@@ -156,9 +148,8 @@ export const completeOnboarding = async (data?: {
  */
 export const skipOnboarding = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await fetch(`${NEXT_PUBLIC_BACKEND_API_URL}/api/onboarding/skip`, {
+    const response = await apiFetch('/onboarding/skip', {
       method: 'POST',
-      headers: getAuthHeader(),
     });
 
     if (!response.ok) {
@@ -191,9 +182,7 @@ export const getOnboardingProgress = async (): Promise<{
   error?: string;
 }> => {
   try {
-    const response = await fetch('/api/onboarding/progress', {
-      headers: getAuthHeader(),
-    });
+    const response = await apiFetch('/onboarding/progress');
 
     if (!response.ok) {
       throw new Error('Failed to fetch progress');

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { setAuthToken } from '@/lib/auth';
+import { apiFetch } from '@/lib/auth';
 
 export default function ForgotForm() {
     const router = useRouter();
@@ -46,23 +46,10 @@ export default function ForgotForm() {
       const handleGoogleAuth = async () => {
         try {
           // TODO: Replace with your actual backend API endpoint
-          const response = await fetch('/api/auth/google', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
+          const response = await apiFetch('/auth/google');
           if (!response.ok) {
             throw new Error('Google authentication failed');
           }
-
-          const data = await response.json();
-
-          // Securely store the authentication token
-          setAuthToken(data.accessToken, data.expiresIn, data.refreshToken);
-
-          // Redirect to panel (dashboard)
           router.push('/panel');
         } catch (err) {
           console.error('Google authentication error:', err);

@@ -1,6 +1,6 @@
 // OAuth utilities for social media platform integration
 
-import { getAuthHeader } from './auth';
+import { apiFetch } from "./auth";
 
 export type SocialPlatform = 'facebook' | 'instagram' | 'tiktok';
 
@@ -152,12 +152,8 @@ export const connectSocialAccount = async (
       async (oauthData) => {
         try {
           // Send OAuth data to backend to complete the connection
-          const response = await fetch('/api/social/connect', {
+          const response = await apiFetch('/social/connect', {
             method: 'POST',
-            headers: {
-              ...getAuthHeader(),
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
               platform,
               code: oauthData.code,
@@ -192,12 +188,8 @@ export const disconnectSocialAccount = async (
   platform: SocialPlatform
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await fetch(`/api/social/disconnect`, {
+    const response = await apiFetch(`/social/disconnect`, {
       method: 'POST',
-      headers: {
-        ...getAuthHeader(),
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ platform }),
     });
 
@@ -223,9 +215,7 @@ export const getConnectedAccounts = async (): Promise<{
   error?: string;
 }> => {
   try {
-    const response = await fetch('/api/social/accounts', {
-      headers: getAuthHeader(),
-    });
+    const response = await apiFetch('/social/accounts');
 
     if (!response.ok) {
       throw new Error('Failed to fetch accounts');
