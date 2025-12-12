@@ -12,13 +12,11 @@ import { useRouter } from "next/navigation";
 
 interface CampaignHeaderProps {
   campaign: Campaign;
-  isOptimizationOpen?: boolean;
   onOptimizationClick?: () => void;
 }
 
 export function CampaignHeader({
   campaign,
-  isOptimizationOpen = false,
   onOptimizationClick,
 }: CampaignHeaderProps) {
   const router = useRouter();
@@ -43,48 +41,26 @@ export function CampaignHeader({
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             {campaign.name}
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full">
             {/* Budget Burn Badge */}
-            <button className="px-4 py-2 flex-1 bg-bisque-50 text-firebrick-500 rounded-lg font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-xs font-gilroy-bold">
+            <button className="px-4 py-2   bg-bisque-50 text-firebrick-500 rounded-lg font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-xs font-gilroy-bold">
               <img src="/mdi_fire.png" alt="fire-alt" className="size-4" />
               Budget Burn
             </button>
 
             {/* Platform Icons Container */}
-            <div
-              className={`bg-gray-100 rounded-xl py-2 flex justify-center items-center gap-3 transition-all ${
-                isOptimizationOpen ? "px-2 flex-shrink-0" : "flex-1 sm:px-3"
-              }`}
-            >
+            <div className="bg-gray-100 rounded-xl py-2 flex justify-center items-center gap-3 transition-all px-4">
               {campaign.platforms.map((platform) => (
                 <div key={platform}>
                   {platform === "facebook" && (
-                    <div
-                      className={`bg-blue-600 rounded-full flex items-center justify-center transition-all ${
-                        isOptimizationOpen ? "w-6 h-6" : "w-5 h-5"
-                      }`}
-                    >
-                      <Facebook
-                        className={
-                          isOptimizationOpen
-                            ? "w-3.5 h-3.5 text-white"
-                            : "w-3 h-3 text-white"
-                        }
-                      />
+                    <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center transition-all">
+                      <Facebook className="w-3 h-3 text-white" />
                     </div>
                   )}
                   {platform === "tiktok" && (
-                    <div
-                      className={`bg-black rounded-full flex items-center justify-center transition-all ${
-                        isOptimizationOpen ? "w-6 h-6" : "w-5 h-5"
-                      }`}
-                    >
+                    <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center transition-all">
                       <svg
-                        className={
-                          isOptimizationOpen
-                            ? "w-3.5 h-3.5 text-white"
-                            : "w-3 h-3 text-white"
-                        }
+                        className="w-3 h-3 text-white"
                         viewBox="0 0 24 24"
                         fill="currentColor"
                       >
@@ -93,18 +69,8 @@ export function CampaignHeader({
                     </div>
                   )}
                   {platform === "instagram" && (
-                    <div
-                      className={`bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center transition-all ${
-                        isOptimizationOpen ? "w-6 h-6" : "w-5 h-5"
-                      }`}
-                    >
-                      <Instagram
-                        className={
-                          isOptimizationOpen
-                            ? "w-3.5 h-3.5 text-white"
-                            : "w-3 h-3 text-white"
-                        }
-                      />
+                    <div className="w-5 h-5 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center transition-all">
+                      <Instagram className="w-3 h-3 text-white" />
                     </div>
                   )}
                 </div>
@@ -148,15 +114,13 @@ export function CampaignHeader({
             </div>
           </div>
 
-          {!isOptimizationOpen && (
-            <button
-              onClick={onOptimizationClick}
-              className="text-xs text-khaki-300 flex items-center gap-2 hover:text-khaki-400 font-semibold transition-colors cursor-pointer"
-            >
-              <SparklesIcon className="w-3 h-3" />
-              Optimize for campaign goal
-            </button>
-          )}
+          <button
+            onClick={onOptimizationClick}
+            className="text-xs text-khaki-300 flex items-center gap-2 hover:text-khaki-400 font-semibold transition-colors cursor-pointer"
+          >
+            <SparklesIcon className="w-3 h-3" />
+            Optimize for campaign goal
+          </button>
         </div>
       </div>
     </div>

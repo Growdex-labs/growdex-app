@@ -7,6 +7,13 @@ import { PanelLayout } from "../../components/panel-layout";
 import { CampaignsSidebar } from "../../components/campaigns-sidebar";
 import { CampaignHeader } from "./components/campaign-header";
 import { OptimizationSidebar } from "./components/optimization-sidebar";
+import { Overview } from "./components/overview";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertCircle,
   BellIcon,
@@ -22,6 +29,7 @@ export default function CampaignDetailPage({
   params: Promise<{ campaignId: string }>;
 }) {
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [activeSubTab, setActiveSubTab] = useState<string>("modular");
   const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
   const { campaignId } = use(params);
   const router = useRouter();
@@ -60,15 +68,10 @@ export default function CampaignDetailPage({
       <div className="flex h-full">
         <CampaignsSidebar />
 
-        <div
-          className={`flex-1 overflow-y-auto transition-all duration-300 ${
-            isOptimizationOpen ? "mr-80" : "mr-0"
-          }`}
-        >
+        <div className="flex-1 overflow-y-auto">
           <div className="p-8">
             <CampaignHeader
               campaign={campaign}
-              isOptimizationOpen={isOptimizationOpen}
               onOptimizationClick={() => setIsOptimizationOpen(true)}
             />
 
@@ -139,6 +142,69 @@ export default function CampaignDetailPage({
             </div>
 
             {/* Tab Content */}
+
+            {activeTab === "overview" && (
+              <div className="bg-white p-6 rounded-lg mb-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-semibold">Performance</h2>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Filter by:</span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors flex items-center gap-2">
+                            Date
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem>Date</DropdownMenuItem>
+                          <DropdownMenuItem>Platform</DropdownMenuItem>
+                          <DropdownMenuItem>Status</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="flex items-center p-1">
+                      <button
+                        onClick={() => setActiveSubTab("modular")}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          activeSubTab === "modular"
+                            ? "bg-[#4E5673] text-gray-200 shadow-sm"
+                            : "bg-transparent text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        Modular
+                      </button>
+                      <button
+                        onClick={() => setActiveSubTab("table")}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          activeSubTab === "table"
+                            ? "bg-[#4E5673] text-gray-200 shadow-sm"
+                            : "bg-transparent text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        Table
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <Overview subTab={activeSubTab} campaign={campaign} />
+              </div>
+            )}
+
             {activeTab === "create" && (
               <>
                 <div className="bg-white p-6 rounded-lg flex items-center gap-4 mb-4">
