@@ -1,56 +1,39 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch, login, register } from '@/lib/auth';
+import { login, register } from '@/lib/auth';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
+import { GoogleBtn } from './google-btn';
 
 export default function AuthForm({ title, isAuthType }: { title: string; isAuthType: 'login' | 'register' }) {
     const router = useRouter();
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [isLoading, setIsLoading] = useState(false);
-      const [error, setError] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-      const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setError('');
 
-        try {
-          // TODO: Replace with your actual backend API endpoint
-          const response = isAuthType === 'login'
-          ? await login(email, password)
-          : await register(email, password);
+      try {
+        // TODO: Replace with your actual backend API endpoint
+        const response = isAuthType === 'login'
+        ? await login(email, password)
+        : await register(email, password);
 
-          // Redirect to panel (dashboard)
-          router.push('/panel');
-        } catch (err) {
-          console.error(isAuthType === 'login' ? 'Login error:' : 'Register error:', err);
-          setError(isAuthType === 'login' ? 'Login failed. Please check your credentials.' : 'Register failed. Please check your credentials.');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+        // Redirect to panel (dashboard)
+        router.push('/panel');
+      } catch (err) {
+        console.error(isAuthType === 'login' ? 'Login error:' : 'Register error:', err);
+        setError(isAuthType === 'login' ? 'Login failed. Please check your credentials.' : 'Register failed. Please check your credentials.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      const handleGoogleAuth = async () => {
-        try {
-          // TODO: Replace with your actual backend API endpoint
-          const response = await apiFetch('/auth/google', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Google authentication failed');
-          }
-        } catch (err) {
-          console.error('Google authentication error:', err);
-          setError('Google authentication failed. Please try again.');
-        }
-      };
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8">
@@ -126,9 +109,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
 
           <div className="text-center text-sm text-gray-600">
             Or
-            <a href="#" className="mt-2 flex items-center justify-center gap-2 font-medium p-2 border border-black rounded-lg hover:bg-gray-100 transition-colors" onClick={handleGoogleAuth}>
-              <img src="/devicon_google.png" alt="google" /> Sign {isAuthType === 'login' ? 'in' : 'up'} with Google
-            </a>
+            <GoogleBtn isAuthType={isAuthType} setError={setError} />
             <div className="mt-2 flex items-center justify-center gap-2 font-medium">
                 {isAuthType === 'login'
                 ?
