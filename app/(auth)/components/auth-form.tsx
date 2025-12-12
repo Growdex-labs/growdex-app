@@ -37,7 +37,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
         try {
           // TODO: Replace with your actual backend API endpoint
           const response = await apiFetch('/auth/google', {
-            method: 'POST',
+            method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
@@ -120,7 +120,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
               disabled={isLoading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-gray-900 bg-khaki-200 hover:bg-khaki-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Signing in...' : isAuthType === 'login' ? 'Sign in' : 'Sign up'}
             </button>
           </div>
 
