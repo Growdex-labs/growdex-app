@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { setAuthToken } from '@/lib/auth';
 import { Lock } from 'lucide-react';
+import { apiFetch } from '@/lib/auth';
 
 export default function ResetForm() {
     const router = useRouter();
@@ -48,21 +48,7 @@ export default function ResetForm() {
       const handleGoogleAuth = async () => {
         try {
           // TODO: Replace with your actual backend API endpoint
-          const response = await fetch('/api/auth/google', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Google authentication failed');
-          }
-
-          const data = await response.json();
-
-          // Securely store the authentication token
-          setAuthToken(data.accessToken, data.expiresIn, data.refreshToken);
+          const response = await apiFetch('/auth/google');
 
           // Redirect to panel (dashboard)
           router.push('/panel');

@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated, setupTokenRefresh } from '@/lib/auth';
-import { fetchOnboardingStatus } from '@/lib/onboarding';
+import { apiFetch } from '@/lib/auth';
 
 export default function Home() {
   const router = useRouter();
@@ -10,33 +9,24 @@ export default function Home() {
 
   useEffect(() => {
     const checkAndRedirect = async () => {
-      // Set up automatic token refresh
-      const cleanup = setupTokenRefresh();
-
       // Check authentication first
-      if (!isAuthenticated()) {
+      const res = await apiFetch('/users/me');
+      if (!res.ok) {
         router.push('/login');
-        return cleanup;
+        return;
       }
 
       // Check onboarding status
-      const result = await fetchOnboardingStatus();
+      const result = await res.json();
       setIsChecking(false);
 
-      if (result.success) {
-        if (result.completed) {
-          // User has completed onboarding, go to dashboard
-          router.push('/panel');
-        } else {
-          // User needs to complete onboarding
-          router.push('/onboarding');
-        }
+      if (result.onboardingCompleted) {
+        // User has completed onboarding, go to dashboard
+        router.push('/panel');
       } else {
-        // If we can't fetch onboarding status, assume incomplete
+        // User needs to complete onboarding
         router.push('/onboarding');
       }
-
-      return cleanup;
     };
 
     checkAndRedirect();
