@@ -1,7 +1,6 @@
 // Onboarding utilities for tracking and persisting onboarding data
 
 import { apiFetch } from './auth';
-import { NEXT_PUBLIC_BACKEND_API_URL } from './constants';
 
 export interface OnboardingData {
   personalInfo: {

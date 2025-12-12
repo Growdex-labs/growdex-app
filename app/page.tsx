@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/auth';
+import { markOnboardingComplete } from '@/lib/onboarding';
 
 export default function Home() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function Home() {
 
       if (result.onboardingCompleted) {
         // User has completed onboarding, go to dashboard
+        markOnboardingComplete();
         router.push('/panel');
       } else {
         // User needs to complete onboarding
