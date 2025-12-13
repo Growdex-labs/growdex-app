@@ -88,13 +88,13 @@ export const fetchOnboardingStatus = async (): Promise<{
  * Save personal information (Step 1)
  */
 export const savePersonalInfo = async (data: {
-  name: string;
-  email: string;
+  firstName: string;
+  lastName: string;
   organizationName: string;
   organizationSize: string;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await apiFetch('/onboarding/personal-info', {
+    const response = await apiFetch('/users/onboarding', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -148,14 +148,6 @@ export const completeOnboarding = async (data?: {
  */
 export const skipOnboarding = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await apiFetch('/onboarding/skip', {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to skip onboarding');
-    }
-
     // Mark as complete locally to allow dashboard access
     markOnboardingComplete();
 

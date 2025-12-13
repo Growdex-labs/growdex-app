@@ -10,8 +10,8 @@ import { StepThreeOnboarding } from './components/step-three';
 import { StepSideOnboarding } from './components/step-side';
 
 export interface FormDataProps {
-  name: string,
-  email: string,
+  firstName: string,
+  lastName: string,
   organizationName: string,
   organizationSize: string,
 }
@@ -30,8 +30,8 @@ export default function OnboardingPage() {
 
   // Form data state
   const [formData, setFormData] = useState<FormDataProps>({
-    name: '',
-    email: '',
+    firstName: '',
+    lastName: '',
     organizationName: '',
     organizationSize: '',
   });
@@ -55,8 +55,8 @@ export default function OnboardingPage() {
 
     // Save Step 1 data before proceeding
     if (currentStep === 1) {
-      if (!formData.name || !formData.email) {
-        setError('Please fill in your name and email');
+      if (!formData.firstName || !formData.lastName) {
+        setError('Please fill in your first and last name');
         return;
       }
 
