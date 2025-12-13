@@ -24,30 +24,30 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
             <div className="grid grid-cols-2 gap-6 mb-8">
             <div>
                 <label className="block text-sm text-gray-500 mb-2">
-                Your name <span className="text-red-500">*</span>
+                Your first name <span className="text-red-500">*</span>
                 </label>
                 <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="firstName"
+                value={formData.firstName}
                 onChange={inputChange}
                 required
-                placeholder="John Doechukwu"
+                placeholder="John"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>
 
             <div>
                 <label className="block text-sm text-gray-500 mb-2">
-                Email <span className="text-red-500">*</span>
+                Your last name <span className="text-red-500">*</span>
                 </label>
                 <input
-                type="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                name="lastName"
+                value={formData.lastName}
                 onChange={inputChange}
                 required
-                placeholder="johndoe@email.com"
+                placeholder="Doe"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>
