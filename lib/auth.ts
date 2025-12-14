@@ -45,6 +45,8 @@ export const apiFetch = async (
         ...options,
         credentials: 'include',
       });
+    } else {
+      window.location.href = '/login';
     }
   }
 
