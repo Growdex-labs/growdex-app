@@ -95,6 +95,7 @@ export const register = async (email: string, password: string) => {
  */
 export const logout = async () => {
   await apiFetch('/auth/logout', { method: 'POST' });
+  window.location.href = '/login';
 };
 
 /**
