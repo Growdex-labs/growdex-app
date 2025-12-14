@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Plus
 } from 'lucide-react';
+import { logout } from '@/lib/auth';
 
 interface SidebarProps {
   userName?: string;
@@ -102,6 +103,11 @@ export function CollapsibleSidebar({ userName = 'Tunmi Lawal', userEmail = 'tunm
               <div className="text-xs text-gray-400 truncate">{userEmail}</div>
             </div>
           )}
+        </div>
+        <div
+          onClick={logout}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-red-500 hover:bg-red-500 hover:text-white cursor-pointer">
+          Log out
         </div>
       </div>
 

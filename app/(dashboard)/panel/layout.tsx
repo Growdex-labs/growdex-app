@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isOnboardingComplete } from '@/lib/onboarding';
-import { apiFetch } from '@/lib/auth';
+import { isOnboardingComplete, markOnboardingComplete } from '@/lib/onboarding';
+import { getCurrentUser } from '@/lib/auth';
 
 export default function PanelRootLayout({
   children,
@@ -16,16 +16,20 @@ export default function PanelRootLayout({
   useEffect(() => {
     const checkAccess = async () => {
       // First check authentication
-      const isAuthenticated = await apiFetch('/users/me');
-      if (!isAuthenticated.ok) {
+      const user = await getCurrentUser();
+      if (!user) {
         router.push('/login');
         return;
       }
 
       // Check onboarding status from local storage first for quick check
       if (!isOnboardingComplete()) {
-        router.push('/onboarding');
-        return;
+        if (!user.onboardingCompleted) {
+          router.push('/onboarding');
+          return;
+        } else {
+          markOnboardingComplete();
+        }
       }
 
       setIsLoading(false);
