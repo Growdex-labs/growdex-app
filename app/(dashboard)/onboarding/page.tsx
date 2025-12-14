@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { connectSocialAccount, disconnectSocialAccount, type SocialPlatform } from '@/lib/oauth';
-import { savePersonalInfo, completeOnboarding, skipOnboarding } from '@/lib/onboarding';
+import { savePersonalInfo, skipOnboarding } from '@/lib/onboarding';
 import { StepOneOnboarding } from './components/step-one';
 import { StepTwoOnboarding } from './components/step-two';
 import { StepThreeOnboarding } from './components/step-three';
@@ -146,14 +146,8 @@ export default function OnboardingPage() {
 
   const handleGoToDashboard = async () => {
     setIsLoading(true);
-    const result = await completeOnboarding();
-    setIsLoading(false);
 
-    if (result.success) {
-      router.push('/panel');
-    } else {
-      setError(result.error || 'Failed to complete onboarding');
-    }
+    router.push('/panel');
   };
 
   return (

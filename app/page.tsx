@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { markOnboardingComplete } from '@/lib/onboarding';
 
 export default function Home() {
@@ -11,17 +11,16 @@ export default function Home() {
   useEffect(() => {
     const checkAndRedirect = async () => {
       // Check authentication first
-      const res = await apiFetch('/users/me');
-      if (!res.ok) {
+      const user = await getCurrentUser();
+      if (!user) {
         router.push('/login');
         return;
       }
 
       // Check onboarding status
-      const result = await res.json();
       setIsChecking(false);
 
-      if (result.onboardingCompleted) {
+      if (user.onboardingCompleted) {
         // User has completed onboarding, go to dashboard
         markOnboardingComplete();
         router.push('/panel');

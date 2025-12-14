@@ -120,30 +120,30 @@ export const savePersonalInfo = async (data: {
 /**
  * Complete onboarding and save to backend
  */
-export const completeOnboarding = async (data?: {
-  skipSocialAccounts?: boolean;
-}): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const response = await apiFetch('/onboarding/complete', {
-      method: 'POST',
-      body: JSON.stringify(data || {}),
-    });
+// export const completeOnboarding = async (data?: {
+//   skipSocialAccounts?: boolean;
+// }): Promise<{ success: boolean; error?: string }> => {
+//   try {
+//     const response = await apiFetch('/onboarding/complete', {
+//       method: 'POST',
+//       body: JSON.stringify(data || {}),
+//     });
 
-    if (!response.ok) {
-      throw new Error('Failed to complete onboarding');
-    }
+//     if (!response.ok) {
+//       throw new Error('Failed to complete onboarding');
+//     }
 
-    // Mark as complete locally
-    markOnboardingComplete();
+//     // Mark as complete locally
+//     markOnboardingComplete();
 
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to complete onboarding',
-    };
-  }
-};
+//     return { success: true };
+//   } catch (error) {
+//     return {
+//       success: false,
+//       error: error instanceof Error ? error.message : 'Failed to complete onboarding',
+//     };
+//   }
+// };
 
 /**
  * Skip onboarding (mark as incomplete but allow dashboard access)
@@ -165,29 +165,29 @@ export const skipOnboarding = async (): Promise<{ success: boolean; error?: stri
 /**
  * Get onboarding progress
  */
-export const getOnboardingProgress = async (): Promise<{
-  success: boolean;
-  progress?: {
-    currentStep: number;
-    stepsCompleted: string[];
-    personalInfoSaved: boolean;
-    socialAccountsConnected: number;
-  };
-  error?: string;
-}> => {
-  try {
-    const response = await apiFetch('/onboarding/progress');
+// export const getOnboardingProgress = async (): Promise<{
+//   success: boolean;
+//   progress?: {
+//     currentStep: number;
+//     stepsCompleted: string[];
+//     personalInfoSaved: boolean;
+//     socialAccountsConnected: number;
+//   };
+//   error?: string;
+// }> => {
+//   try {
+//     const response = await apiFetch('/onboarding/progress');
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch progress');
-    }
+//     if (!response.ok) {
+//       throw new Error('Failed to fetch progress');
+//     }
 
-    const data = await response.json();
-    return { success: true, progress: data };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch progress',
-    };
-  }
-};
+//     const data = await response.json();
+//     return { success: true, progress: data };
+//   } catch (error) {
+//     return {
+//       success: false,
+//       error: error instanceof Error ? error.message : 'Failed to fetch progress',
+//     };
+//   }
+// };
