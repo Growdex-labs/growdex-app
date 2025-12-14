@@ -106,7 +106,7 @@ export function CollapsibleSidebar({ userName = 'Tunmi Lawal', userEmail = 'tunm
         </div>
         <div
           onClick={logout}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-red-500 hover:bg-red-500 hover:text-white cursor-pointer">
+          className="mt-2 flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-red-500 hover:bg-red-500 hover:text-white cursor-pointer">
           Log out
         </div>
       </div>
