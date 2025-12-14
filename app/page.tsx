@@ -11,6 +11,7 @@ export default function Home() {
   useEffect(() => {
     const checkAndRedirect = async () => {
       // Check authentication first
+      console.log('Checking authentication...');
       const user = await getCurrentUser();
       if (!user) {
         router.push('/login');
@@ -20,11 +21,15 @@ export default function Home() {
       // Check onboarding status
       setIsChecking(false);
 
+      console.log('Checking onboarding status...');
+      console.log('User:', user);
       if (user.onboardingCompleted) {
+        console.log('User has completed onboarding, going to dashboard...');
         // User has completed onboarding, go to dashboard
         markOnboardingComplete();
         router.push('/panel');
       } else {
+        console.log('User needs to complete onboarding, going to onboarding...');
         // User needs to complete onboarding
         router.push('/onboarding');
       }
