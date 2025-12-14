@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Growdex AI App",
@@ -16,7 +17,8 @@ export default function RootLayout({
       <body
         className="antialiased"
       >
-        {children}
+        <main>{children}</main>
+        <Toaster />
       </body>
     </html>
   );
