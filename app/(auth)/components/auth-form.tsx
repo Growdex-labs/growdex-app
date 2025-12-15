@@ -5,6 +5,7 @@ import { login, register } from '@/lib/auth';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
 import { GoogleBtn } from './google-btn';
+import { toast } from 'sonner';
 
 export default function AuthForm({ title, isAuthType }: { title: string; isAuthType: 'login' | 'register' }) {
     const router = useRouter();
@@ -12,6 +13,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -24,11 +26,28 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
         ? await login(email, password)
         : await register(email, password);
 
-        // Redirect to panel (dashboard)
-        router.push('/panel');
-      } catch (err) {
+        // display check your email for verification
+        toast.success("Registration success", {
+          description: "Check your email for verification",
+          action: {
+            label: "Okay",
+            onClick: () => console.log("Okay"),
+          },
+          duration: 5000,
+        })
+      } catch (err: any) {
         console.error(isAuthType === 'login' ? 'Login error:' : 'Register error:', err);
-        setError(isAuthType === 'login' ? 'Login failed. Please check your credentials.' : 'Register failed. Please check your credentials.');
+        if (err.formErrors && err.formErrors.length > 0) {
+          setError(err.formErrors[0]);
+        }
+        if (err.fieldErrors) {
+          setFieldErrors(err.fieldErrors);
+          // If no form error but we have field errors, clear generic error
+          if (!err.formErrors || err.formErrors.length === 0) setError('');
+        } else if (!err.formErrors) {
+          // Fallback for non-structured errors
+          setError(err.message || (isAuthType === 'login' ? 'Login failed. Please check your credentials.' : 'Register failed. Please check your credentials.'));
+        }
       } finally {
         setIsLoading(false);
       }
@@ -77,6 +96,10 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
                 </span>
               </label>
             </div>
+            {fieldErrors.email && (
+              <p className="text-red-500 text-xs mt-1">{fieldErrors.email[0]}</p>
+            )}
+
 
             <div>
               <label htmlFor="Password" className="relative">
@@ -95,6 +118,10 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
                 </span>
               </label>
             </div>
+            {fieldErrors.password && (
+              <p className="text-red-500 text-xs mt-1">{fieldErrors.password[0]}</p>
+            )}
+
           </div>
 
           <div>
@@ -103,7 +130,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
               disabled={isLoading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-gray-900 bg-khaki-200 hover:bg-khaki-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : isAuthType === 'login' ? 'Sign in' : 'Sign up'}
+              {isLoading ? 'Please wait...' : isAuthType === 'login' ? 'Sign in' : 'Sign up'}
             </button>
           </div>
 

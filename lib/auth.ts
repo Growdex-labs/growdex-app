@@ -66,7 +66,7 @@ export const login = async (email: string, password: string) => {
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err?.error || 'Login failed');
+    throw err;
   }
 
   return res.json();
@@ -85,7 +85,7 @@ export const register = async (email: string, password: string) => {
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err?.error || 'Registration failed');
+    throw err;
   }
 
   return res.json();
