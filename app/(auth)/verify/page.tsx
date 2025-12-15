@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/auth';
 
-export default function VerifyEmail() {
+import { Suspense } from 'react';
+
+function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -48,33 +50,32 @@ export default function VerifyEmail() {
   }, [router, token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center p-8 bg-white shadow-lg rounded-lg max-w-md w-full">
-        {status === 'verifying' && (
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-        )}
+    <div className="text-center p-8 bg-white shadow-lg rounded-lg max-w-md w-full">
+      {status === 'verifying' && (
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+      )}
 
-        {status === 'success' && (
+      {status === 'success' && (
            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
              </svg>
            </div>
-        )}
+      )}
 
-        {status === 'error' && (
+      {status === 'error' && (
            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
              </svg>
            </div>
-        )}
+      )}
 
-        <h3 className={`text-lg font-medium ${status === 'error' ? 'text-red-900' : 'text-gray-900'}`}>
-          {message}
-        </h3>
+      <h3 className={`text-lg font-medium ${status === 'error' ? 'text-red-900' : 'text-gray-900'}`}>
+        {message}
+      </h3>
 
-        {status === 'error' && (
+      {status === 'error' && (
            <div className="mt-6">
              <button
                onClick={() => router.push('/login')}
@@ -83,8 +84,17 @@ export default function VerifyEmail() {
                Back to Login
              </button>
            </div>
-        )}
-      </div>
+      )}
+    </div>
+  );
+}
+
+export default function VerifyEmail() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Suspense fallback={<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>}>
+        <VerifyEmailContent />
+      </Suspense>
     </div>
   );
 }
