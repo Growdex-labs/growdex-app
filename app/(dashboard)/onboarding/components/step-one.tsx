@@ -14,16 +14,16 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
             <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
                 <span className="text-4xl">🎯</span>
-                <h1 className="text-4xl font-bold text-gray-900">
+                <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
                 Welcome to Growdex!
                 </h1>
             </div>
-            <p className="text-xl text-gray-700">Great to have you here</p>
+            <p className="text-lg md:text-xl text-gray-700">Great to have you here</p>
             </div>
 
             <div className="grid grid-cols-2 gap-6 mb-8">
             <div>
-                <label className="block text-sm text-gray-500 mb-2">
+                <label className="block text-xs md:text-sm text-gray-500 mb-2">
                 Your first name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -33,12 +33,12 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
                 onChange={inputChange}
                 required
                 placeholder="John"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>
 
             <div>
-                <label className="block text-sm text-gray-500 mb-2">
+                <label className="block text-xs md:text-sm text-gray-500 mb-2">
                 Your last name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -48,12 +48,12 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
                 onChange={inputChange}
                 required
                 placeholder="Doe"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>
 
             <div>
-                <label className="block text-sm text-gray-500 mb-2">
+                <label className="block text-xs md:text-sm text-gray-500 mb-2">
                 Organization name
                 </label>
                 <input
@@ -62,21 +62,21 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
                 value={formData.organizationName}
                 onChange={inputChange}
                 placeholder="Doe Junior"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>
 
             <div>
-                <label className="block text-sm text-gray-500 mb-2">
+                <label className="block text-xs md:text-sm text-gray-500 mb-2">
                 Organization size
                 </label>
                 <input
-                type="text"
+                type="number"
                 name="organizationSize"
                 value={formData.organizationSize}
                 onChange={inputChange}
-                placeholder="25-50 people"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="25"
+                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>
             </div>
@@ -91,7 +91,7 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
             </button>
             <button
                 onClick={onNext}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 text-sm md:text-base hover:text-gray-600 transition-colors"
             >
                 Setup social accounts
             </button>
