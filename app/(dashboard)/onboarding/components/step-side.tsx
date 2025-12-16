@@ -1,6 +1,6 @@
 export function StepSideOnboarding({ currentStep }: { currentStep: number }) {
     return (
-        <aside className="w-64 bg-[#2a2a2a] text-white p-8">
+        <aside className="hidden md:block w-64 bg-[#2a2a2a] text-white p-8">
         <div className="flex items-center gap-2 mb-16">
           <div className="w-8 h-8">
             <img src="/logo.png" alt="logo" />

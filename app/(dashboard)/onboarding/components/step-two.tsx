@@ -19,8 +19,8 @@ export function StepTwoOnboarding({
         <div>
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-4xl"><Wifi className='text-blue-400'/></span>
-                  <h1 className="text-4xl font-bold text-gray-900">
+                  <span className="text-2xl md:text-4xl"><Wifi className='text-blue-400'/></span>
+                  <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
                     Connect your social accounts
                   </h1>
                 </div>

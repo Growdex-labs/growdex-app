@@ -13,7 +13,7 @@ export interface FormDataProps {
   firstName: string,
   lastName: string,
   organizationName: string,
-  organizationSize: string,
+  organizationSize: number,
 }
 
 export interface SocialAccountSetupProps {
@@ -33,7 +33,7 @@ export default function OnboardingPage() {
     firstName: '',
     lastName: '',
     organizationName: '',
-    organizationSize: '',
+    organizationSize: 0,
   });
 
   // Social accounts state
@@ -54,21 +54,21 @@ export default function OnboardingPage() {
     setError('');
 
     // Save Step 1 data before proceeding
-    if (currentStep === 1) {
-      if (!formData.firstName || !formData.lastName) {
-        setError('Please fill in your first and last name');
-        return;
-      }
+    // if (currentStep === 1) {
+    //   if (!formData.firstName || !formData.lastName) {
+    //     setError('Please fill in your first and last name');
+    //     return;
+    //   }
 
-      setIsLoading(true);
-      const result = await savePersonalInfo(formData);
-      setIsLoading(false);
+    //   setIsLoading(true);
+    //   const result = await savePersonalInfo(formData);
+    //   setIsLoading(false);
 
-      if (!result.success) {
-        setError(result.error || 'Failed to save information');
-        return;
-      }
-    }
+    //   if (!result.success) {
+    //     setError(result.error || 'Failed to save information');
+    //     return;
+    //   }
+    // }
 
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
       <StepSideOnboarding currentStep={currentStep} />
 
       {/* Main Content */}
-      <main className="flex-1 p-12">
+      <main className="flex-1 p-4 lg:p-12">
         <div className="max-w-4xl">
           {/* Header */}
           <div className="flex justify-end mb-12">
@@ -167,7 +167,7 @@ export default function OnboardingPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-xs md:text-sm px-2 py-1 rounded-lg">
               {error}
             </div>
           )}

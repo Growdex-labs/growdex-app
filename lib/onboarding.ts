@@ -91,7 +91,7 @@ export const savePersonalInfo = async (data: {
   firstName: string;
   lastName: string;
   organizationName: string;
-  organizationSize: string;
+  organizationSize: number;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
     // get country code from the browser
