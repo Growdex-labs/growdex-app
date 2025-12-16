@@ -5,94 +5,99 @@
 
 @theme {
   --color-dimGray: #666666;
-  --color-dimYellow: #FFF8CE;
-  --color-bisque-50: #FCD9CF;
+  --color-dimYellow: #fff8ce;
+  --color-bisque-50: #fcd9cf;
   --color-bisque-100: #edccc3;
   --color-firebrick-400: #d2613b;
-  --color-firebrick-500: #BE340A;
-  --color-khaki-200: #FFE95C;
+  --color-firebrick-500: #be340a;
+  --color-khaki-200: #ffe95c;
   --color-khaki-300: #dbc951;
-  --color-peru-200: #AD9D37;
+  --color-peru-200: #ad9d37;
   --color-lavender-50: #e7e9ee;
-  --color-darkkhaki-200: #D6C34A;
-  --color-mintcream-50: #F2FFF7;
+  --color-darkkhaki-200: #d6c34a;
+  --color-mintcream-50: #f2fff7;
   --color-black-800: #332c00;
 }
 
 @font-face {
-    font-family: 'gilroy-light'; /* Choose a unique name for your font */
-    src: url('/fonts/gilroy/Gilroy-Light.woff2') format('woff2'),
-          url('/fonts/gilroy/Gilroy-Light.woff') format('woff');
-    font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
-    font-style: normal;
+  font-family: "gilroy-light"; /* Choose a unique name for your font */
+  src: url("/fonts/gilroy/Gilroy-Light.woff2") format("woff2"),
+    url("/fonts/gilroy/Gilroy-Light.woff") format("woff");
+  font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'gilroy-regular'; /* Choose a unique name for your font */
-    src: url('/fonts/gilroy/Gilroy-Regular.woff2') format('woff2'),
-          url('/fonts/gilroy/Gilroy-Regular.woff') format('woff');
-    font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
-    font-style: normal;
+  font-family: "gilroy-regular"; /* Choose a unique name for your font */
+  src: url("/fonts/gilroy/Gilroy-Regular.woff2") format("woff2"),
+    url("/fonts/gilroy/Gilroy-Regular.woff") format("woff");
+  font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'gilroy-medium'; /* Choose a unique name for your font */
-    src: url('/fonts/gilroy/Gilroy-Medium.woff2') format('woff2'),
-          url('/fonts/gilroy/Gilroy-Medium.woff') format('woff');
-    font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
-    font-style: normal;
+  font-family: "gilroy-medium"; /* Choose a unique name for your font */
+  src: url("/fonts/gilroy/Gilroy-Medium.woff2") format("woff2"),
+    url("/fonts/gilroy/Gilroy-Medium.woff") format("woff");
+  font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'gilroy-semibold'; /* Choose a unique name for your font */
-    src: url('/fonts/gilroy/Gilroy-SemiBold.woff2') format('woff2'),
-          url('/fonts/gilroy/Gilroy-SemiBold.woff') format('woff');
-    font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
-    font-style: normal;
+  font-family: "gilroy-semibold"; /* Choose a unique name for your font */
+  src: url("/fonts/gilroy/Gilroy-SemiBold.woff2") format("woff2"),
+    url("/fonts/gilroy/Gilroy-SemiBold.woff") format("woff");
+  font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'gilroy-bold'; /* Choose a unique name for your font */
-    src: url('/fonts/gilroy/Gilroy-Bold.woff2') format('woff2'),
-          url('/fonts/gilroy/Gilroy-Bold.woff') format('woff');
-    font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
-    font-style: normal;
+  font-family: "gilroy-bold"; /* Choose a unique name for your font */
+  src: url("/fonts/gilroy/Gilroy-Bold.woff2") format("woff2"),
+    url("/fonts/gilroy/Gilroy-Bold.woff") format("woff");
+  font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'gilroy-extrabold'; /* Choose a unique name for your font */
-    src: url('/fonts/gilroy/Gilroy-ExtraBold.woff2') format('woff2'),
-          url('/fonts/gilroy/Gilroy-ExtraBold.woff') format('woff');
-    font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
-    font-style: normal;
+  font-family: "gilroy-extrabold"; /* Choose a unique name for your font */
+  src: url("/fonts/gilroy/Gilroy-ExtraBold.woff2") format("woff2"),
+    url("/fonts/gilroy/Gilroy-ExtraBold.woff") format("woff");
+  font-weight: normal; /* Specify the font's weight (e.g., normal, bold, 400, 700) */
+  font-style: normal;
 }
 
 .font-gilroy-light {
-    font-family: 'gilroy-light', sans-serif;
+  font-family: "gilroy-light", sans-serif;
 }
 
 .font-gilroy-regular {
-    font-family: 'gilroy-regular', sans-serif;
+  font-family: "gilroy-regular", sans-serif;
 }
 
 .font-gilroy-medium {
-    font-family: 'gilroy-medium', sans-serif;
+  font-family: "gilroy-medium", sans-serif;
 }
 
 .font-gilroy-semibold {
-    font-family: 'gilroy-semibold', sans-serif;
+  font-family: "gilroy-semibold", sans-serif;
 }
 
 .font-gilroy-bold {
-    font-family: 'gilroy-bold', sans-serif;
+  font-family: "gilroy-bold", sans-serif;
 }
 
 .font-gilroy-extrabold {
-    font-family: 'gilroy-extrabold', sans-serif;
+  font-family: "gilroy-extrabold", sans-serif;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
 }
 
 body {
-  font-family: 'gilroy-medium', sans-serif;
+  font-family: "gilroy-medium", sans-serif;
 }
 
 @theme inline {
@@ -212,26 +217,40 @@ body {
 }
 
 .spinner {
-    animation: rotateSpinner 2s linear infinite, pulseSpinner 1.5s ease-in-out infinite;
+  animation: rotateSpinner 2s linear infinite,
+    pulseSpinner 1.5s ease-in-out infinite;
 }
 
 @keyframes rotateSpinner {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulseSpinner {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-    }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
 }
