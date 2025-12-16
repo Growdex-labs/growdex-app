@@ -1,61 +1,47 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/auth';
+import { forgotPassword } from '@/lib/auth';
+import { toast } from 'sonner';
+import { GoogleBtn } from './google-btn';
 
 export default function ForgotForm() {
     const router = useRouter();
-      const [email, setEmail] = useState('');
-      const [isLoading, setIsLoading] = useState(false);
-      const [error, setError] = useState('');
+    const [email, setEmail] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
 
+      try {
+        const response = await forgotPassword(email);
 
-      const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
+        toast.success(response.message, {
+        description: "Try not to forget it!",
+        action: {
+          label: "Okay",
+          onClick: () => console.log("Okay"),
+        },
+        duration: 5000,
+      })
+      router.push('/login');
+      } catch (err: any) {
+        console.error('Forgot password error:', err);
+        toast.error(err.message, {
+          description: "Try not to forget it!",
+          action: {
+            label: "Okay",
+            onClick: () => console.log("Okay"),
+          },
+        });
+      } finally {
+        setEmail('');
+        setIsLoading(false);
+      }
+    };
 
-        try {
-          // TODO: Replace with your actual backend API endpoint
-          const endpoint = '/api/auth/forgot';
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email }),
-          });
-
-          if (!response.ok) {
-            throw new Error('Forgot password failed');
-          }
-
-          const data = await response.json();
-
-          // Redirect to panel (dashboard)
-          router.push('/panel');
-        } catch (err) {
-          console.error('Forgot password error:', err);
-          setError('Forgot password failed. Please try again.');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      const handleGoogleAuth = async () => {
-        try {
-          // TODO: Replace with your actual backend API endpoint
-          const response = await apiFetch('/auth/google');
-          if (!response.ok) {
-            throw new Error('Google authentication failed');
-          }
-          router.push('/panel');
-        } catch (err) {
-          console.error('Google authentication error:', err);
-          setError('Google authentication failed. Please try again.');
-        }
-      };
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8">
@@ -113,9 +99,7 @@ export default function ForgotForm() {
 
           <div className="text-center text-sm text-gray-600">
             Or
-            <a href="#" className="mt-2 flex items-center justify-center gap-2 font-medium p-2 border border-black rounded-lg hover:bg-gray-100 transition-colors" onClick={handleGoogleAuth}>
-              <img src="/devicon_google.png" alt="google" /> Sign in with Google
-            </a>
+            <GoogleBtn isAuthType={'login'} setError={setError} />
           </div>
         </form>
       </div>

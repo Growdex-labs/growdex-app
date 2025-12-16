@@ -27,14 +27,13 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
         : await register(email, password);
 
         // display check your email for verification
-        toast.success("Registration success", {
-          description: "Check your email for verification",
-          action: {
-            label: "Okay",
-            onClick: () => console.log("Okay"),
-          },
-          duration: 5000,
+        toast.success(isAuthType === 'login' ? 'Login successful' : 'Registration successful', {
+          description: isAuthType === 'login' ? 'Redirecting...' : 'Check your email for verification',
+          duration: 3000,
         })
+        setTimeout(() => {
+          router.push('/');
+        }, 3000);
       } catch (err: any) {
         console.error(isAuthType === 'login' ? 'Login error:' : 'Register error:', err);
         if (err.formErrors && err.formErrors.length > 0) {

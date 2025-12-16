@@ -1,62 +1,66 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock } from 'lucide-react';
-import { apiFetch } from '@/lib/auth';
+import { apiFetch, resetPassword } from '@/lib/auth';
+import { GoogleBtn } from './google-btn';
+import { toast } from 'sonner';
 
 export default function ResetForm() {
     const router = useRouter();
-      const [password, setPassword] = useState('');
-      const [confirmPassword, setConfirmPassword] = useState('');
-      const [isLoading, setIsLoading] = useState(false);
-      const [error, setError] = useState('');
+    const searchParams = useSearchParams();
+    const token = searchParams.get('token');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
+    if (!token) {
+      toast.error('Invalid link');
+      router.push('/login');
+    }
 
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setError('');
 
-      const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
+      try {
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
 
-        try {
-          // TODO: Replace with your actual backend API endpoint
-          const endpoint = '/api/auth/reset';
-          const response = await fetch(endpoint, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ password, confirmPassword }),
-          });
+        if (password.length < 8) {
+          setError('Password must be at least 8 characters long');
+          return;
+        }
 
-          if (!response.ok) {
-            throw new Error('Reset password failed');
-          }
+        if (!password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/)) {
+          setError('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character');
+          return;
+        }
 
-          const data = await response.json();
-
-          // Redirect to panel (dashboard)
+        const response = await resetPassword(token!, password, confirmPassword);
+        toast.success(response.message, {
+          description: "Use new password to login",
+          action: {
+            label: "Login",
+            onClick: () => router.push('/login'),
+          },
+          duration: 10000,
+        });
+        setTimeout(() => {
           router.push('/login');
-        } catch (err) {
-          console.error('Reset password error:', err);
-          setError('Reset password failed. Please try again.');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+        }, 11000);
+      } catch (err: any) {
+        console.error('Reset password error:', err);
+        toast.error(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      const handleGoogleAuth = async () => {
-        try {
-          // TODO: Replace with your actual backend API endpoint
-          const response = await apiFetch('/auth/google');
-
-          // Redirect to panel (dashboard)
-          router.push('/panel');
-        } catch (err) {
-          console.error('Google authentication error:', err);
-          setError('Google authentication failed. Please try again.');
-        }
-      };
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8">
@@ -73,12 +77,6 @@ export default function ResetForm() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-4">
             <div>
               <label htmlFor="password" className="relative">
@@ -113,6 +111,11 @@ export default function ResetForm() {
                   <Lock className="w-5 h-5 flex-shrink-0 text-gray-500" /> Confirm your Password
                 </span>
               </label>
+              {error && (
+                <div className="mt-1 bg-red-50 border border-red-200 text-red-600 p-1 rounded-lg text-xs">
+                  {error}
+                </div>
+              )}
             </div>
           </div>
 
@@ -128,9 +131,7 @@ export default function ResetForm() {
 
           <div className="text-center text-sm text-gray-600">
             Or
-            <a href="#" className="mt-2 flex items-center justify-center gap-2 font-medium p-2 border border-black rounded-lg hover:bg-gray-100 transition-colors" onClick={handleGoogleAuth}>
-              <img src="/devicon_google.png" alt="google" /> Sign in with Google
-            </a>
+            <GoogleBtn isAuthType={'login'} setError={setError} />
           </div>
         </form>
       </div>
