@@ -54,21 +54,21 @@ export default function OnboardingPage() {
     setError('');
 
     // Save Step 1 data before proceeding
-    // if (currentStep === 1) {
-    //   if (!formData.firstName || !formData.lastName) {
-    //     setError('Please fill in your first and last name');
-    //     return;
-    //   }
+    if (currentStep === 1) {
+      if (!formData.firstName || !formData.lastName) {
+        setError('Please fill in your first and last name');
+        return;
+      }
 
-    //   setIsLoading(true);
-    //   const result = await savePersonalInfo(formData);
-    //   setIsLoading(false);
+      setIsLoading(true);
+      const result = await savePersonalInfo(formData);
+      setIsLoading(false);
 
-    //   if (!result.success) {
-    //     setError(result.error || 'Failed to save information');
-    //     return;
-    //   }
-    // }
+      if (!result.success) {
+        setError(result.error || 'Failed to save information');
+        return;
+      }
+    }
 
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
