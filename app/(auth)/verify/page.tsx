@@ -1,9 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/auth';
-
-import { Suspense } from 'react';
 
 function VerifyEmailContent() {
   const router = useRouter();

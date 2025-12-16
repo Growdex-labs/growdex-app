@@ -92,6 +92,44 @@ export const register = async (email: string, password: string) => {
 };
 
 /**
+ * Forgot password
+ * Returns success and other metadata from backend
+ */
+export const forgotPassword = async (email: string) => {
+  const res = await apiFetch('/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
+
+  return res.json();
+};
+
+/**
+ * Reset password
+ * Returns success and other metadata from backend
+ */
+export const resetPassword = async (token: string, password: string, confirmPassword: string) => {
+  const res = await apiFetch('/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password, confirmPassword }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
+
+  return res.json();
+};
+
+/**
  * Logout user
  * Backend should clear httpOnly cookies
  */

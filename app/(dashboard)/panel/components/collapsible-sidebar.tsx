@@ -24,7 +24,7 @@ export function CollapsibleSidebar({ userName = 'Tunmi Lawal', userEmail = 'tunm
   const pathname = usePathname();
 
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/panel' },
+    { icon: LayoutDashboard, label: 'Overview', href: '/panel' },
     { icon: Megaphone, label: 'Campaigns', href: '/panel/campaigns' },
     { icon: Wallet, label: 'Wallet', href: '/panel/wallet' },
     { icon: Settings, label: 'Settings', href: '/panel/settings' },
