@@ -94,14 +94,12 @@ export const savePersonalInfo = async (data: {
   organizationSize: number;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
-    // get country code from the browser
-    const countryCode = navigator.language.split('-')[1];
     const response = await apiFetch('/users/onboarding', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...data, countryCode }),
+      body: JSON.stringify({ ...data }),
     });
 
     if (!response.ok) {
