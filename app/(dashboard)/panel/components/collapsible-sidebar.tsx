@@ -38,7 +38,7 @@ export function CollapsibleSidebar({ userName = 'Tunmi Lawal', userEmail = 'tunm
 
   return (
     <aside
-      className={`h-screen bg-[#2a2a2a] text-white flex flex-col transition-all duration-300 relative ${
+      className={`h-screen bg-[#2a2a2a] text-white hidden md:flex flex-col transition-all duration-300 relative ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >

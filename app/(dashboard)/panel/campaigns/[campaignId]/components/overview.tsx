@@ -36,18 +36,18 @@ export function Overview({ campaign, subTab }: OverviewProps) {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {/* Impressions Card */}
-        <div className="bg-gray-100 p-6 rounded-xl">
+        <div className="bg-gray-100 p-4 md:p-6 rounded-xl">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-gray-400 text-xs font-medium">Impressions</h3>
             <button className="text-gray-400 hover:text-gray-600">
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
 
-          <div className="flex items-baseline gap-3 mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-4 md:mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
               53,567 Impressions
             </h2>
             <span className="text-red-600 text-sm font-medium flex items-center gap-1">
@@ -57,7 +57,7 @@ export function Overview({ campaign, subTab }: OverviewProps) {
           </div>
 
           {/* Platform Stats */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6 overflow-x-auto hide-scrollbar">
             <div className="flex items-center gap-2">
               <div className="w-4 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                 <Facebook className="w-3.5 h-3.5 text-white" />
@@ -94,16 +94,18 @@ export function Overview({ campaign, subTab }: OverviewProps) {
         </div>
 
         {/* Total Reach Card */}
-        <div className="bg-gray-100 p-6 rounded-xl">
+        <div className="bg-gray-100 p-4 md:p-6 rounded-xl">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-gray-400 text-xs font-medium">Total reach</h3>
             <button className="text-gray-400 hover:text-gray-600">
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
 
-          <div className="flex items-baseline gap-3 mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">73,000 reached</h2>
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-4 md:mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              73,000 reached
+            </h2>
             <span className="text-red-600 text-sm font-medium flex items-center gap-1">
               35.7%
               <TrendingDownIcon className="w-3 h-3" />
@@ -111,7 +113,7 @@ export function Overview({ campaign, subTab }: OverviewProps) {
           </div>
 
           {/* Platform Stats */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6 overflow-x-auto hide-scrollbar">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                 <Facebook className="w-3.5 h-3.5 text-white" />
@@ -149,81 +151,87 @@ export function Overview({ campaign, subTab }: OverviewProps) {
       </div>
 
       {/* Bottom Metric Cards */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Cost per Conversion/CPA */}
-        <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">
+        <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h3 className="text-xs md:text-sm font-medium text-gray-600">
               Cost per Conversion/CPA
             </h3>
             <button className="text-gray-400 hover:text-gray-600">
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
 
-          <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-4xl font-bold text-gray-900">N1,300.80</span>
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-3 md:mb-4">
+            <span className="text-2xl md:text-4xl font-bold text-gray-900">
+              N1,300.80
+            </span>
             <span className="text-red-600 text-sm font-medium flex items-center gap-1">
               35.7%
               <TrendingDownIcon className="w-3 h-3" />
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-[#B8A247]">
-            <span className="text-lg">✨</span>
+          <div className="flex items-center gap-2 text-xs md:text-sm text-[#B8A247]">
+            <span className="text-base md:text-lg">✨</span>
             <span>Optimize for campaign goal</span>
           </div>
         </div>
 
         {/* Cost Per Click (CPC) */}
-        <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">
+        <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h3 className="text-xs md:text-sm font-medium text-gray-600">
               Cost Per Click (CPC)
             </h3>
             <button className="text-gray-400 hover:text-gray-600">
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
 
-          <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-3xl font-bold text-gray-900">N350.89</span>
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-3 md:mb-4">
+            <span className="text-2xl md:text-3xl font-bold text-gray-900">
+              N350.89
+            </span>
             <span className="text-red-600 text-sm font-medium flex items-center gap-1">
               35.7%
               <TrendingDownIcon className="w-3 h-3" />
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-[#B8A247]">
-            <span className="text-lg">✨</span>
+          <div className="flex items-center gap-2 text-xs md:text-sm text-[#B8A247]">
+            <span className="text-base md:text-lg">✨</span>
             <span>Optimize for campaign goal</span>
           </div>
         </div>
 
         {/* Audience Reception */}
-        <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">
+        <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h3 className="text-xs md:text-sm font-medium text-gray-600">
               Audience Reception
             </h3>
             <button className="text-gray-400 hover:text-gray-600">
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
 
-          <div className="flex items-baseline gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-3 md:mb-4">
             <div className="flex items-center gap-2">
-              <Users className="w-9 h-9 text-red-600" />
-              <span className="text-3xl font-bold text-red-600">Negative</span>
+              <Users className="w-7 h-7 md:w-9 md:h-9 text-red-600" />
+              <span className="text-2xl md:text-3xl font-bold text-red-600">
+                Negative
+              </span>
             </div>
             <span className="text-red-600 text-sm font-medium flex items-center gap-1">
               35.7%
-            <TrendingDownIcon className="w-3 h-3" />
+              <TrendingDownIcon className="w-3 h-3" />
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-[#B8A247]">
-            <span className="text-lg">✨</span>
+          <div className="flex items-center gap-2 text-xs md:text-sm text-[#B8A247]">
+            <span className="text-base md:text-lg">✨</span>
             <span>Optimize for campaign goal</span>
           </div>
         </div>
