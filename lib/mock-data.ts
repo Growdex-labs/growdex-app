@@ -197,6 +197,52 @@ export const mockCampaigns: Campaign[] = [
     adsCount: 10,
     optimizationPercentage: 80,
   },
+  {
+    id: "6",
+    name: "Growdex ONE uP",
+    platforms: ["tiktok", "facebook"],
+    started: "28-06-2025",
+    impressions: 50000,
+    reach: { min: 16900, max: 23000 },
+    ctr: 35.7,
+    ctrTrend: -35.7,
+    status: "suspended",
+    description: "Campaign suspended due to policy violation.",
+    goal: "Sales",
+    adsCount: 5,
+    optimizationPercentage: 75,
+  },
+  {
+    id: "4",
+    name: "Scheduled Campaign",
+    platforms: ["facebook", "instagram"],
+    started: "12-09-2025",
+    impressions: 0,
+    reach: { min: 0, max: 0 },
+    ctr: 0,
+    ctrTrend: 0,
+    status: "scheduled",
+    description: "Upcoming campaign scheduled for launch in December 2025.",
+    goal: "Brand Awareness",
+    adsCount: 6,
+    optimizationPercentage: 0,
+  },
+  {
+    id: "5",
+    name: "Holiday Season Promo",
+    platforms: ["tiktok", "instagram"],
+    started: "20-12-2025",
+    impressions: 0,
+    reach: { min: 0, max: 0 },
+    ctr: 0,
+    ctrTrend: 0,
+    status: "scheduled",
+    description:
+      "Holiday promotional campaign targeting year-end shopping season.",
+    goal: "Sales",
+    adsCount: 4,
+    optimizationPercentage: 0,
+  },
 ];
 
 // Mock chart data
@@ -281,6 +327,104 @@ export const formatNumber = (num: number): string => {
 // Helper function to get ads for a specific campaign
 export const getAdsByCampaignId = (campaignId: string): Ad[] => {
   return mockAds.filter((ad) => ad.campaignId === campaignId);
+};
+
+// Budget interface and mock data
+export interface Budget {
+  id: string;
+  name: string;
+  campaignId: string;
+  icon: string;
+  status: "running" | "paused" | "suspended" | "completed";
+  usedPercent: number;
+  amount: number;
+  isActive: boolean;
+  createdAt: string;
+  facebookBudget: {
+    amount: number;
+    frequency: "daily" | "weekly" | "monthly";
+    reach: { min: number; max: number };
+  };
+  tiktokBudget: {
+    amount: number;
+    frequency: "daily" | "weekly" | "monthly";
+    reach: { min: number; max: number };
+  };
+  pauseOnBudgetReached: boolean;
+}
+
+export const mockBudgets: Budget[] = [
+  {
+    id: "1",
+    name: "Election Budget",
+    campaignId: "1",
+    icon: "/ic_baseline-plus.png",
+    status: "running",
+    usedPercent: 20,
+    amount: 135000,
+    isActive: true,
+    createdAt: "2025-11-28",
+    facebookBudget: {
+      amount: 5000,
+      frequency: "daily",
+      reach: { min: 25000, max: 70000 },
+    },
+    tiktokBudget: {
+      amount: 7000,
+      frequency: "daily",
+      reach: { min: 25000, max: 70000 },
+    },
+    pauseOnBudgetReached: false,
+  },
+  {
+    id: "2",
+    name: "Marketing Campaign",
+    campaignId: "2",
+    icon: "/ic_baseline-plus.png",
+    status: "running",
+    usedPercent: 65,
+    amount: 250000.0,
+    isActive: true,
+    createdAt: "2025-11-20",
+    facebookBudget: {
+      amount: 8000,
+      frequency: "daily",
+      reach: { min: 30000, max: 80000 },
+    },
+    tiktokBudget: {
+      amount: 10000,
+      frequency: "daily",
+      reach: { min: 35000, max: 90000 },
+    },
+    pauseOnBudgetReached: true,
+  },
+  {
+    id: "3",
+    name: "Product Launch",
+    campaignId: "3",
+    icon: "/ic_baseline-plus.png",
+    status: "paused",
+    usedPercent: 45,
+    amount: 180000.0,
+    isActive: false,
+    createdAt: "2025-11-15",
+    facebookBudget: {
+      amount: 6000,
+      frequency: "daily",
+      reach: { min: 20000, max: 60000 },
+    },
+    tiktokBudget: {
+      amount: 6500,
+      frequency: "daily",
+      reach: { min: 22000, max: 65000 },
+    },
+    pauseOnBudgetReached: false,
+  },
+];
+
+// Helper function to get budget by ID
+export const getBudgetById = (budgetId: string): Budget | undefined => {
+  return mockBudgets.find((budget) => budget.id === budgetId);
 };
 
 // Mock wallet transaction data

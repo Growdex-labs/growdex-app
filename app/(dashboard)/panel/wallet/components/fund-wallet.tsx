@@ -15,7 +15,7 @@ export default function FundWallet() {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <button className="w-[90%] bg-khaki-200 hover:bg-khaki-300 text-gray-900 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                <button className="w-full sm:w-[90%] bg-khaki-200 hover:bg-khaki-300 text-gray-900 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
                     <DepositIcon />
                     Fund Wallet
                 </button>
