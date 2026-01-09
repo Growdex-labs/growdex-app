@@ -1,14 +1,12 @@
+"use client";
 import { CheckCircle } from "lucide-react";
+import { useParams } from "next/navigation";
 
-interface PageProps {
-  params: {
-    platform: string;
-  };
-}
-
-export default function IntegrationSuccessPage({ params }: PageProps) {
-  const platformName =
-    params.platform.charAt(0).toUpperCase() + params.platform.slice(1);
+export default function IntegrationSuccessPage() {
+  const params = useParams();
+  const platform =
+    Array.isArray(params?.platform) ? params.platform[0] : params?.platform ?? '';
+  const platformName = platform.charAt(0).toUpperCase() + platform.slice(1);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
