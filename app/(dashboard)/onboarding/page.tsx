@@ -26,7 +26,7 @@ function OnboardingPageContent() {
   const modeParam = searchParams.get('mode');
   const step2Mode = modeParam === 'confirm' ? 'confirm' : 'connect';
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   // Form data state
@@ -74,9 +74,9 @@ function OnboardingPageContent() {
         return;
       }
 
-      setIsLoading(true);
+      setLoadingAction('step1-submit');
       const result = await savePersonalInfo(formData);
-      setIsLoading(false);
+      setLoadingAction(null);
 
       if (!result.success) {
         setError(result.error || 'Failed to save information');
@@ -92,11 +92,11 @@ function OnboardingPageContent() {
   };
 
   const handleConnectSocial = async (platform: SocialPlatform) => {
-    setIsLoading(true);
+    setLoadingAction(platform);
     setError('');
 
     const result = await connectSocialAccount(platform);
-    setIsLoading(false);
+    setLoadingAction(null);
 
     if (!result.success) {
       setError(result.error || `Failed to connect ${platform}`);
@@ -110,9 +110,9 @@ function OnboardingPageContent() {
   };
 
   const handleDisconnectSocial = async (platform: SocialPlatform) => {
-    setIsLoading(true);
+    setLoadingAction(`disconnect-${platform}`);
     const result = await disconnectSocialAccount(platform);
-    setIsLoading(false);
+    setLoadingAction(null);
 
     if (!result.success) {
       setError(result.error || `Failed to disconnect ${platform}`);
@@ -126,9 +126,9 @@ function OnboardingPageContent() {
   };
 
   const handleSetupLater = async () => {
-    setIsLoading(true);
+    setLoadingAction('setup-later');
     const result = await skipOnboarding();
-    setIsLoading(false);
+    setLoadingAction(null);
 
     if (result.success) {
       router.push('/panel');
@@ -138,7 +138,7 @@ function OnboardingPageContent() {
   };
 
   const handleGoToDashboard = async () => {
-    setIsLoading(true);
+    setLoadingAction('dashboard');
 
     router.push('/panel');
   };
@@ -183,7 +183,7 @@ function OnboardingPageContent() {
               formData={formData}
               onNext={handleNextStep}
               inputChange={handleInputChange}
-              isLoading={isLoading}
+              isLoading={loadingAction === 'step1-submit'}
             />
           )}
 
@@ -192,7 +192,7 @@ function OnboardingPageContent() {
             <StepTwoOnboarding
               mode={step2Mode}
               socialAccounts={socialAccounts}
-              isLoading={isLoading}
+              loadingAction={loadingAction}
               handleConnectSocial={handleConnectSocial}
               handleDisconnectSocial={handleDisconnectSocial}
               onNext={() => goToStep(2, { mode: 'confirm' })}
@@ -204,7 +204,7 @@ function OnboardingPageContent() {
           {/* Step 3: Launch Growdex */}
           {currentStep === 3 && (
             <StepThreeOnboarding
-              isLoading={isLoading}
+              isLoading={loadingAction === 'dashboard'}
               handleGoToDashboard={handleGoToDashboard}
             />
           )}

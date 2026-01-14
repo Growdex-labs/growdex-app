@@ -12,7 +12,7 @@ import { ReconnectBanner } from "@/components/platforms/reconnect-banner";
 interface StepTwoProps {
     mode: 'connect' | 'confirm';
     socialAccounts: SocialAccountSetupProps;
-    isLoading: boolean;
+    loadingAction: string | null;
     handleConnectSocial: (platform: SocialPlatform) => Promise<void>;
     handleDisconnectSocial: (platform: SocialPlatform) => Promise<void>;
     onNext: () => void;
@@ -39,7 +39,7 @@ function Header() {
 
 function ConnectPlatformsView({
   socialAccounts,
-  isLoading,
+  loadingAction,
   handleConnectSocial,
   handleDisconnectSocial,
   onNext,
@@ -76,7 +76,7 @@ function ConnectPlatformsView({
               </span>
               <button
                 onClick={() => handleDisconnectSocial('meta')}
-                disabled={isLoading}
+                disabled={loadingAction !== null}
                 className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
               >
                 Disconnect
@@ -85,13 +85,13 @@ function ConnectPlatformsView({
           ) : (
             <button
               onClick={() => handleConnectSocial('meta')}
-              disabled={isLoading}
+              disabled={loadingAction !== null}
               className="flex items-center gap-2 text-red-600 font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              {isLoading ? 'Connecting...' : 'Connect'}
+              {loadingAction === 'meta' ? 'Connecting...' : 'Connect'}
             </button>
           )}
         </div>
@@ -121,7 +121,7 @@ function ConnectPlatformsView({
               </span>
               <button
                 onClick={() => handleDisconnectSocial('tiktok')}
-                disabled={isLoading}
+                disabled={loadingAction !== null}
                 className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
               >
                 Disconnect
@@ -130,13 +130,13 @@ function ConnectPlatformsView({
           ) : (
             <button
               onClick={() => handleConnectSocial('tiktok')}
-              disabled={isLoading}
+              disabled={loadingAction !== null}
               className="flex items-center gap-2 text-red-600 font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              {isLoading ? 'Connecting...' : 'Connect'}
+              {loadingAction === 'tiktok' ? 'Connecting...' : 'Connect'}
             </button>
           )}
         </div>
@@ -145,7 +145,7 @@ function ConnectPlatformsView({
       <div className="flex justify-between items-center">
         <button
           onClick={onNext}
-          disabled={isLoading}
+          disabled={loadingAction !== null}
           className="px-8 py-3 bg-yellow-400 text-gray-900 font-semibold rounded-lg"
         >
           Continue
@@ -153,7 +153,7 @@ function ConnectPlatformsView({
 
         <button
           onClick={handleSetupLater}
-          disabled={isLoading}
+          disabled={loadingAction !== null}
           className="text-gray-400 hover:text-gray-600"
         >
           Setup later
@@ -166,7 +166,7 @@ function ConnectPlatformsView({
 function ConfirmAssetsView({
   socialAccounts,
   onConfirm,
-  isLoading
+  loadingAction
 }: StepTwoProps) {
   const [showMetaSwitcher, setShowMetaSwitcher] = useState(false);
   const [socialSetup, setSocialSetup] = useState<SocialAccountSetupProps | null>(null);
@@ -261,7 +261,7 @@ function ConfirmAssetsView({
 
       <button
         onClick={onConfirm}
-        disabled={isLoading}
+        disabled={loadingAction !== null}
         className="px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700"
       >
         Confirm & Continue
