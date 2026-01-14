@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import { WalletSidebar } from "../components/wallet-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Link from "next/link";
+// import Link from "next/link";
 import AllBudgetList from "./components/all-budget-list";
 import { WalletHeader } from "../components/wallet-header";
 import CreateBudget from "./components/create-budget";

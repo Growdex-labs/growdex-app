@@ -1,8 +1,8 @@
 import { Pencil } from "lucide-react";
-import { Budget } from "./all-budget-list";
+// TODO: Add Budget type
 import Link from "next/link";
 
-const suspendedBudgets: Budget[] = [
+const suspendedBudgets = [
   {
     id: "1",
     name: "Product Launch",
@@ -185,7 +185,7 @@ export default function SuspendedBudget() {
 
                 {/* Amount - Mobile */}
                 <div className="text-sm text-gray-700 whitespace-nowrap">
-                    ₦ 
+                    ₦
                     {budget.amount.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,

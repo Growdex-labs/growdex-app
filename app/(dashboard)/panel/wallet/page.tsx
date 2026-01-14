@@ -4,7 +4,7 @@ import { DashboardHeader } from "../components/dashboard-header";
 import { PanelLayout } from "../components/panel-layout";
 import { WalletSidebar } from "./components/wallet-sidebar";
 import { Plus, Eye, EyeOff, CreditCard } from "lucide-react";
-import { DepositIcon } from "@/components/svg";
+// import { DepositIcon } from "@/components/svg";
 import PaymentHistory from "./components/payment-history";
 import FundWallet from "./components/fund-wallet";
 import { WalletHeader } from "./components/wallet-header";
