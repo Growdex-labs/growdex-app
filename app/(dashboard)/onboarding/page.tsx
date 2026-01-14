@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { connectSocialAccount, disconnectSocialAccount, type SocialPlatform } from '@/lib/oauth';
 import { fetchOnboardingStatus, savePersonalInfo, skipOnboarding } from '@/lib/onboarding';
@@ -17,7 +17,7 @@ export interface FormDataProps {
   organizationSize: number,
 }
 
-export default function OnboardingPage() {
+function OnboardingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const stepParam = searchParams.get('step');
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
   }, [currentStep]);
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <>
       {/* Sidebar */}
       <StepSideOnboarding currentStep={currentStep} />
 
@@ -210,6 +210,16 @@ export default function OnboardingPage() {
           )}
         </div>
       </main>
+    </>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <div className="min-h-screen flex bg-gray-50">
+      <Suspense fallback={<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>}>
+        <OnboardingPageContent />
+      </Suspense>
     </div>
   );
 }
