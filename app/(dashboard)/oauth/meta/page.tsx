@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function MetaOAuthPopup() {
+function MetaOAuthPopupContent() {
   const params = useSearchParams();
 
   useEffect(() => {
@@ -29,4 +29,14 @@ export default function MetaOAuthPopup() {
   }, [params]);
 
   return <p className="p-4 text-sm">Connecting Meta…</p>;
+}
+
+export default function MetaOAuthPopup() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Suspense fallback={<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>}>
+        <MetaOAuthPopupContent />
+      </Suspense>
+    </div>
+  );
 }
