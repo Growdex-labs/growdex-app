@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Growdex AI App",
-  description: "Increase efficiency & automate your multi platform campaigns",
+  description: "Increase efficiency & automate your multi Ad platform campaigns",
 };
 
 export default function RootLayout({
