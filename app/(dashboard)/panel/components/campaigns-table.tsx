@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+import { CampaignsEmptyState } from "./campaigns-empty-state";
 
 interface CampaignsTableProps {
   campaigns: Campaign[];
@@ -24,6 +25,15 @@ interface CampaignsTableProps {
 
 export function CampaignsTable({ campaigns }: CampaignsTableProps) {
   const router = useRouter();
+
+  // Show empty state if no campaigns
+  if (campaigns.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <CampaignsEmptyState />
+      </div>
+    );
+  }
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {

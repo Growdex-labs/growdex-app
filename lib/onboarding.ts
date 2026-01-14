@@ -1,5 +1,6 @@
 // Onboarding utilities for tracking and persisting onboarding data
 
+import { SocialAccountSetupProps } from '@/types/social';
 import { apiFetch } from './auth';
 
 export interface OnboardingData {
@@ -9,11 +10,7 @@ export interface OnboardingData {
     organizationName: string;
     organizationSize: string;
   };
-  socialAccounts?: {
-    facebook?: boolean;
-    instagram?: boolean;
-    tiktok?: boolean;
-  };
+  socialAccounts?: SocialAccountSetupProps;
   completed: boolean;
   completedAt?: string;
 }
@@ -56,7 +53,7 @@ export const fetchOnboardingStatus = async (): Promise<{
   error?: string;
 }> => {
   try {
-    const response = await apiFetch('/onboarding/status');
+    const response = await apiFetch('users/onboarding/status');
 
     if (!response.ok) {
       throw new Error('Failed to fetch onboarding status');

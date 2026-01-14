@@ -72,7 +72,7 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-1 py-1 rounded-lg text-xs text-center">
               {error}
             </div>
           )}

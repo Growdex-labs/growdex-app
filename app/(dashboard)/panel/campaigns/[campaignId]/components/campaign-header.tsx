@@ -23,7 +23,7 @@ export function CampaignHeader({
 
   return (
     <div className="mb-8 bg-white p-4 rounded-xl">
-      <div className="flex items-stretch gap-6">
+      <div className="flex flex-col md:flex-row items-stretch gap-4 sm:gap-6">
         <div className="space-y-2 flex-1 mt-6">
           {/* Breadcrumb */}
           <div className="text-xs text-gray-500">
@@ -43,24 +43,24 @@ export function CampaignHeader({
           </h1>
           <div className="flex items-center gap-2 w-full">
             {/* Budget Burn Badge */}
-            <button className="px-4 py-2   bg-bisque-50 text-firebrick-500 rounded-lg font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-xs font-gilroy-bold">
-              <img src="/mdi_fire.png" alt="fire-alt" className="size-4" />
+            <button className="px-4 py-2 flex-1 md:flex-none bg-bisque-50 text-firebrick-500 rounded-lg font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm md:text-xs font-gilroy-bold">
+              <img src="/mdi_fire.png" alt="fire-alt" className="size-7" />
               Budget Burn
             </button>
 
             {/* Platform Icons Container */}
-            <div className="bg-gray-100 rounded-xl py-2 flex justify-center items-center gap-3 transition-all px-4">
+            <div className="bg-gray-100 rounded-xl py-2 flex flex-1 md:flex-none justify-center items-center gap-3 transition-all px-4">
               {campaign.platforms.map((platform) => (
                 <div key={platform}>
                   {platform === "facebook" && (
-                    <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center transition-all">
-                      <Facebook className="w-3 h-3 text-white" />
+                    <div className="w-7 h-7 md:w-5 md:h-5 bg-blue-600 rounded-full flex items-center justify-center transition-all">
+                      <Facebook className="w-4 h-4 md:w-3 md:h-3 text-white" />
                     </div>
                   )}
                   {platform === "tiktok" && (
-                    <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center transition-all">
+                    <div className="w-7 h-7 md:w-5 md:h-5 bg-black rounded-full flex items-center justify-center transition-all">
                       <svg
-                        className="w-3 h-3 text-white"
+                        className="w-4 h-4 md:w-3 md:h-3 text-white"
                         viewBox="0 0 24 24"
                         fill="currentColor"
                       >
@@ -69,8 +69,8 @@ export function CampaignHeader({
                     </div>
                   )}
                   {platform === "instagram" && (
-                    <div className="w-5 h-5 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center transition-all">
-                      <Instagram className="w-3 h-3 text-white" />
+                    <div className="w-7 h-7 md:w-5 md:h-5 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center transition-all">
+                      <Instagram className="w-4 h-4 md:w-3 md:h-3 text-white" />
                     </div>
                   )}
                 </div>

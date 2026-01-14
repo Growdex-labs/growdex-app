@@ -29,40 +29,42 @@ export default function CreateAdLayout() {
   return (
     <div className="relative">
       {/* Platform Selection Tabs */}
-      <div className="flex gap-2 border-b border-gray-300 mb-6">
+      <div className="flex gap-2 border-b border-gray-300 mb-4 md:mb-6">
         <button
           onClick={() => setActivePlatform("meta")}
-          className={`px-6 py-3 text-lg font-bold transition-all flex-1 relative ${
+          className={`px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg font-bold transition-all flex-1 relative ${
             activePlatform === "meta"
               ? "text-khaki-300"
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          Meta Creative
+          <span className="hidden sm:inline">Meta Creative</span>
+          <span className="sm:hidden">Meta</span>
           {activePlatform === "meta" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-khaki-300 rounded-t-md"></div>
           )}
         </button>
         <button
           onClick={() => setActivePlatform("tiktok")}
-          className={`px-6 py-3 text-lg font-bold transition-all flex-1 relative ${
+          className={`px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg font-bold transition-all flex-1 relative ${
             activePlatform === "tiktok"
               ? "text-khaki-300"
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          TikTok Creative
+          <span className="hidden sm:inline">TikTok Creative</span>
+          <span className="sm:hidden">TikTok</span>
           {activePlatform === "tiktok" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-khaki-300 rounded-t-md"></div>
           )}
         </button>
       </div>
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
         {activePlatform === "meta" ? (
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
             <svg
-              className="w-5 h-5 text-white"
+              className="w-4 h-4 md:w-5 md:h-5 text-white"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -70,9 +72,9 @@ export default function CreateAdLayout() {
             </svg>
           </div>
         ) : (
-          <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-black rounded-full flex items-center justify-center flex-shrink-0">
             <svg
-              className="w-5 h-5 text-white"
+              className="w-4 h-4 md:w-5 md:h-5 text-white"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -80,15 +82,15 @@ export default function CreateAdLayout() {
             </svg>
           </div>
         )}
-        <h1 className="text-2xl font-bold text-gray-900 ">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">
           Setup {activePlatform === "meta" ? "Meta" : "TikTok"} Ad Creative
         </h1>
       </div>
 
       {/* Ad form and preview */}
-      <div className="grid grid-cols-2 gap-6 h-[calc(100vh-280px)]">
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6 lg:h-[calc(100vh-280px)]">
         {/* Ad Form Section */}
-        <div className="overflow-y-auto relative flex flex-col hide-scrollbar">
+        <div className="lg:overflow-y-auto relative flex flex-col lg:hide-scrollbar order-2 lg:order-1">
           <div className="flex-1">
             <AdFormSection
               platform={activePlatform}
@@ -105,15 +107,15 @@ export default function CreateAdLayout() {
           </div>
 
           {/* Save Button */}
-          <div className="sticky bottom-0 bg-white p-4 mt-auto">
-            <button className="px-6 py-3 bg-khaki-200 text-gray-900 font-semibold rounded-lg hover:bg-khaki-300 transition">
+          <div className="lg:sticky bottom-0 bg-white p-3 md:p-4 mt-4 lg:mt-auto">
+            <button className="w-full lg:w-auto px-6 py-2.5 md:py-3 bg-khaki-200 text-gray-900 font-semibold rounded-lg hover:bg-khaki-300 transition">
               Save Changes
             </button>
           </div>
         </div>
 
         {/* Ad Preview Section */}
-        <div className="sticky top-0 h-fit">
+        <div className="lg:sticky top-0 h-fit order-1 lg:order-2">
           <AdPreviewSection
             activePlatform={activePlatform}
             headline={headline}

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { connectSocialAccount, disconnectSocialAccount, type SocialPlatform } from '@/lib/oauth';
-import { savePersonalInfo, skipOnboarding } from '@/lib/onboarding';
+import { fetchOnboardingStatus, savePersonalInfo, skipOnboarding } from '@/lib/onboarding';
 import { StepOneOnboarding } from './components/step-one';
 import { StepTwoOnboarding } from './components/step-two';
 import { StepThreeOnboarding } from './components/step-three';
 import { StepSideOnboarding } from './components/step-side';
+import { SocialAccountSetupProps } from '@/types/social';
 
 export interface FormDataProps {
   firstName: string,
@@ -16,15 +17,15 @@ export interface FormDataProps {
   organizationSize: number,
 }
 
-export interface SocialAccountSetupProps {
-  facebook: { connected: boolean; username: string; id?: string };
-  instagram: { connected: boolean; username: string; error: boolean; id?: string };
-  tiktok: { connected: boolean; username: string; id?: string };
-}
-
-export default function OnboardingPage() {
+function OnboardingPageContent() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
+  const searchParams = useSearchParams();
+  const stepParam = searchParams.get('step');
+  const currentStep = stepParam ? Number(stepParam) : 1;
+
+  const modeParam = searchParams.get('mode');
+  const step2Mode = modeParam === 'confirm' ? 'confirm' : 'connect';
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,9 +39,8 @@ export default function OnboardingPage() {
 
   // Social accounts state
   const [socialAccounts, setSocialAccounts] = useState<SocialAccountSetupProps>({
-    facebook: { connected: false, username: '' },
-    instagram: { connected: false, username: '', error: false },
-    tiktok: { connected: false, username: '' },
+    meta: { connected: false, needsReauth: false },
+    tiktok: { connected: false, needsReauth: false },
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +48,15 @@ export default function OnboardingPage() {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const goToStep = (step: number, extra?: Record<string, string>) => {
+    const params = new URLSearchParams({
+      step: step.toString(),
+      ...extra,
+    });
+
+    router.push(`/onboarding?${params.toString()}`);
   };
 
   const handleNextStep = async () => {
@@ -60,6 +69,11 @@ export default function OnboardingPage() {
         return;
       }
 
+      if (!formData.organizationName || formData.organizationSize === 0) {
+        setError('Please fill in your organization name and size');
+        return;
+      }
+
       setIsLoading(true);
       const result = await savePersonalInfo(formData);
       setIsLoading(false);
@@ -68,10 +82,12 @@ export default function OnboardingPage() {
         setError(result.error || 'Failed to save information');
         return;
       }
+      goToStep(2);
+      return;
     }
 
     if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
+      goToStep(currentStep + 1);
     }
   };
 
@@ -79,38 +95,18 @@ export default function OnboardingPage() {
     setIsLoading(true);
     setError('');
 
-    // Clear any previous error for Instagram
-    if (platform === 'instagram') {
-      setSocialAccounts(prev => ({
-        ...prev,
-        instagram: { ...prev.instagram, error: false }
-      }));
-    }
-
     const result = await connectSocialAccount(platform);
-
     setIsLoading(false);
 
-    if (result.success && result.data) {
-      setSocialAccounts(prev => ({
-        ...prev,
-        [platform]: {
-          connected: true,
-          username: result.data.username || result.data.name || 'Connected',
-          id: result.data.id,
-          error: false,
-        },
-      }));
-    } else {
-      // Show error for Instagram specifically
-      if (platform === 'instagram') {
-        setSocialAccounts(prev => ({
-          ...prev,
-          instagram: { ...prev.instagram, error: true }
-        }));
-      }
+    if (!result.success) {
       setError(result.error || `Failed to connect ${platform}`);
+      return;
     }
+
+    goToStep(2, {
+      platform,
+      status: 'connected',
+    });
   };
 
   const handleDisconnectSocial = async (platform: SocialPlatform) => {
@@ -118,18 +114,15 @@ export default function OnboardingPage() {
     const result = await disconnectSocialAccount(platform);
     setIsLoading(false);
 
-    if (result.success) {
-      setSocialAccounts(prev => ({
-        ...prev,
-        [platform]: {
-          connected: false,
-          username: '',
-          error: false,
-        },
-      }));
-    } else {
+    if (!result.success) {
       setError(result.error || `Failed to disconnect ${platform}`);
+      return;
     }
+
+    goToStep(2, {
+      platform,
+      status: 'disconnected',
+    });
   };
 
   const handleSetupLater = async () => {
@@ -150,8 +143,20 @@ export default function OnboardingPage() {
     router.push('/panel');
   };
 
+  useEffect(() => {
+    if (currentStep !== 2) return;
+
+    const hydrate = async () => {
+      const res = await fetchOnboardingStatus();
+
+      setSocialAccounts(res.data?.socialAccounts || { meta: { connected: false, needsReauth: false, assets: [] }, tiktok: { connected: false, needsReauth: false, assets: [] } });
+    };
+
+    hydrate();
+  }, [currentStep]);
+
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <>
       {/* Sidebar */}
       <StepSideOnboarding currentStep={currentStep} />
 
@@ -185,11 +190,13 @@ export default function OnboardingPage() {
           {/* Step 2: Setup Social Accounts */}
           {currentStep === 2 && (
             <StepTwoOnboarding
+              mode={step2Mode}
               socialAccounts={socialAccounts}
               isLoading={isLoading}
               handleConnectSocial={handleConnectSocial}
               handleDisconnectSocial={handleDisconnectSocial}
-              onNext={handleNextStep}
+              onNext={() => goToStep(2, { mode: 'confirm' })}
+              onConfirm={() => goToStep(3)}
               handleSetupLater={handleSetupLater}
             />
           )}
@@ -203,6 +210,16 @@ export default function OnboardingPage() {
           )}
         </div>
       </main>
+    </>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <div className="min-h-screen flex bg-gray-50">
+      <Suspense fallback={<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>}>
+        <OnboardingPageContent />
+      </Suspense>
     </div>
   );
 }
