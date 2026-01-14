@@ -16,6 +16,8 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
+export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
 /**
  * Wrapper around fetch that automatically includes cookies
  * and attempts refresh if 401 is returned
@@ -24,29 +26,33 @@ export const apiFetch = async (
   url: string,
   options: RequestInit = {},
 ): Promise<Response> => {
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || '';
+  if (!API_BASE_URL) {
+    throw new Error('API_BASE_URL is not defined');
+  }
 
   // Always include cookies
-  let res = await fetch(`${baseUrl}${url}`, {
+  let res = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     credentials: 'include',
   });
 
-  if (res.status === 401) {
-    // Attempt refresh
-    const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    if (refreshRes.ok) {
-      // Retry original request
-      res = await fetch(`${baseUrl}${url}`, {
-        ...options,
+  if (url !== '/auth/refresh' && url !== '/auth/login' && url !== '/auth/register') {
+    if (res.status === 401) {
+      // Attempt refresh
+      const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
         credentials: 'include',
       });
-    } else {
-      window.location.href = '/login';
+
+      if (refreshRes.ok) {
+        // Retry original request
+        res = await fetch(`${API_BASE_URL}${url}`, {
+          ...options,
+          credentials: 'include',
+        });
+      } else {
+        window.location.href = '/login';
+      }
     }
   }
 
