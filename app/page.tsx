@@ -34,7 +34,7 @@ export default function Home() {
         console.log('User needs to complete onboarding, going to onboarding...');
         // User needs to complete onboarding
         console.log('Checking what step to navigate to...');
-        if (user.profile.firstName && user.profile.lastName && user.brand.name) {
+        if (user.profile?.firstName && user.profile?.lastName && user.brand?.name) {
           console.log('User has completed step 1, going to step 2...');
           router.push('/onboarding?step=2');
           return;

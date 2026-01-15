@@ -85,7 +85,7 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
             <button
                 onClick={onNext}
                 disabled={isLoading}
-                className="px-8 py-3 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
                 {isLoading ? 'Saving...' : 'Next'}
             </button>
