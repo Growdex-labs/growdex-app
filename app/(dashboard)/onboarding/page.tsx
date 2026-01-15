@@ -164,7 +164,7 @@ function OnboardingPageContent() {
       <main className="flex-1 p-4 lg:p-12">
         <div className="max-w-4xl">
           {/* Header */}
-          <div className="flex justify-end mb-12">
+          <div className="md:hidden flex justify-end mb-12">
             <button className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
               Menu ☰
             </button>

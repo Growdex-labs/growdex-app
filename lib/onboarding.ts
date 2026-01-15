@@ -53,26 +53,45 @@ export const fetchOnboardingStatus = async (): Promise<{
   error?: string;
 }> => {
   try {
-    const response = await apiFetch('users/onboarding/status');
+    const response = await apiFetch('/users/onboarding/status');
 
     if (!response.ok) {
       throw new Error('Failed to fetch onboarding status');
     }
 
-    const data = await response.json();
+    const result: SocialAccountSetupProps = await response.json();
 
     // Update local storage
-    if (data.completed) {
+    if (result.meta?.connected && result.tiktok?.connected) {
       markOnboardingComplete();
     } else {
       clearOnboardingStatus();
     }
 
+    const session_user = sessionStorage.getItem('growdex_user');
+    if (!session_user) {
+      return {
+        success: false,
+        error: 'User not found',
+      };
+    }
+    const user = JSON.parse(session_user);
+    user.onboardingCompleted = result.meta?.connected && result.tiktok?.connected === true;
+    const onboardingData: OnboardingData = {
+      personalInfo: {
+        name: user.profile.firstName + ' ' + user.profile.lastName,
+        email: user.email,
+        organizationName: user.brand.name,
+        organizationSize: user.brand.size,
+      },
+      socialAccounts: result,
+      completed: user.onboardingCompleted,
+    }
     return {
       success: true,
-      completed: data.completed,
-      data: data.onboarding,
-    };
+      completed: user.onboardingCompleted,
+      data: onboardingData
+    }
   } catch (error) {
     return {
       success: false,
@@ -91,14 +110,12 @@ export const savePersonalInfo = async (data: {
   organizationSize: number;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
-    // get country code from the browser
-    const countryCode = navigator.language.split('-')[1];
     const response = await apiFetch('/users/onboarding', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...data, countryCode }),
+      body: JSON.stringify({ ...data }),
     });
 
     if (!response.ok) {
