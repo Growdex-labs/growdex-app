@@ -108,6 +108,7 @@ function OnboardingPageContent() {
     goToStep(2, {
       platform,
       status: 'connected',
+      mode: 'confirm',
     });
   };
 
