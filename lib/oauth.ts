@@ -1,3 +1,4 @@
+import { SocialAccountSetupProps } from '@/types/social';
 import { API_BASE_URL, apiFetch } from './auth';
 
 export type SocialPlatform = 'meta' | 'tiktok';
@@ -27,16 +28,21 @@ export const openOAuthPopup = (
     return null;
   }
 
+  // Track completion to avoid race condition between manual close and message receipt
+  let isCompleted = false;
+
   const messageHandler = (event: MessageEvent) => {
     if (event.origin !== window.location.origin) return;
 
     if (event.data?.type === 'oauth_success' && event.data.platform === platform) {
+      isCompleted = true;
       window.removeEventListener('message', messageHandler);
       popup.close();
       onSuccess({ code: event.data.code });
     }
 
     if (event.data?.type === 'oauth_error' && event.data.platform === platform) {
+      isCompleted = true;
       window.removeEventListener('message', messageHandler);
       popup.close();
       onError(event.data.error);
@@ -49,6 +55,9 @@ export const openOAuthPopup = (
     if (popup.closed) {
       clearInterval(popupCheck);
       window.removeEventListener('message', messageHandler);
+      if (!isCompleted) {
+        onError('Authentication cancelled');
+      }
     }
   }, 500);
 
@@ -77,7 +86,7 @@ export const testConnectSocialAccount = async (platform: SocialPlatform) => {
  */
 export const connectSocialAccount = async (
   platform: SocialPlatform
-): Promise<{ success: boolean; data?: any; error?: string }> => {
+): Promise<{ success: boolean; data?: SocialAccountSetupProps; error?: string }> => {
   return new Promise((resolve) => {
     openOAuthPopup(
       platform,
@@ -87,6 +96,9 @@ export const connectSocialAccount = async (
             `/users/onboarding/connect/${platform}`,
             {
               method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
               body: JSON.stringify({ code }),
             }
           );
