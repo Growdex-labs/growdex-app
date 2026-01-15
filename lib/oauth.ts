@@ -55,6 +55,23 @@ export const openOAuthPopup = (
   return popup;
 };
 
+export const testConnectSocialAccount = async (platform: SocialPlatform) => {
+  const res = await apiFetch('/users/onboarding/connect/' + platform, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ code: 'test' }),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to connect account');
+  }
+
+  const data = await res.json();
+  return data;
+};
+
 /**
  * Connect a social account via OAuth
  */

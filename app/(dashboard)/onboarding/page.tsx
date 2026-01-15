@@ -82,7 +82,9 @@ function OnboardingPageContent() {
         setError(result.error || 'Failed to save information');
         return;
       }
-      goToStep(2);
+      setTimeout(() => {
+        goToStep(2);
+      }, 1500);
       return;
     }
 
