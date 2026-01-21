@@ -146,6 +146,16 @@ function OnboardingPageContent() {
   };
 
   useEffect(() => {
+    if (!error) return;
+
+    const timeout = setTimeout(() => {
+      setError('');
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [error]);
+
+  useEffect(() => {
     if (currentStep !== 2) return;
 
     const hydrate = async () => {
@@ -174,7 +184,7 @@ function OnboardingPageContent() {
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-xs md:text-sm px-2 py-1 rounded-lg">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-xs md:text-sm px-2 py-1 rounded-lg fade-in">
               {error}
             </div>
           )}
@@ -222,6 +232,7 @@ export default function OnboardingPage() {
       <Suspense fallback={<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>}>
         <OnboardingPageContent />
       </Suspense>
+
     </div>
   );
 }

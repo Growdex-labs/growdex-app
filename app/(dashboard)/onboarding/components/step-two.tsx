@@ -11,6 +11,7 @@ import { ReconnectBanner } from "@/components/platforms/reconnect-banner";
 
 interface StepTwoProps {
     mode: 'connect' | 'confirm';
+    platform?: SocialPlatform;
     socialAccounts: SocialAccountSetupProps;
     loadingAction: string | null;
     handleConnectSocial: (platform: SocialPlatform) => Promise<void>;
@@ -38,22 +39,29 @@ function Header() {
 }
 
 function ConnectPlatformsView({
+  mode,
   socialAccounts,
   loadingAction,
   handleConnectSocial,
   handleDisconnectSocial,
   onNext,
+  onConfirm,
   handleSetupLater
 }: StepTwoProps) {
-  const [platformBoxSelected, setPlatformBoxSelected] = useState<SocialPlatform | null>(null);
+  const [platformBoxSelected, setPlatformBoxSelected] = useState<SocialPlatform>('meta');
   return (
     <div>
       {/* Header */}
       <Header />
 
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className={`grid grid-cols-2 ${mode === 'confirm' ? 'md:grid-cols-4' : ''} gap-4 mb-8`}>
         {/* Meta */}
-        <div className={`h-[200px] md:h-[419px] flex flex-col justify-between p-4 border drop-shadow-lg ${platformBoxSelected === 'meta' ? 'border-khaki-200 drop-shadow-amber-200' : ''} rounded-lg bg-white`} onClick={() => setPlatformBoxSelected('meta')}>
+        <div className={`h-[200px] md:h-[419px]
+          ${mode === 'confirm' && platformBoxSelected === 'meta' ? 'col-span-3' : ''}
+          flex flex-col justify-between p-4 border drop-shadow-lg
+          ${platformBoxSelected === 'meta' ? 'border-khaki-200 drop-shadow-amber-200' : ''}
+          rounded-lg bg-white transition-all`}
+          onClick={() => setPlatformBoxSelected('meta')}>
           <div>
             <h4 className="text-sm text-gray-500 mb-1">
               {socialAccounts.meta?.connected
@@ -61,10 +69,23 @@ function ConnectPlatformsView({
                 : 'Connect your Meta account'
               }
             </h4>
-            <div className="flex items-center justify-center h-[100px] md:h-[300px]">
+            {mode !== 'confirm' && <div className="flex items-center justify-center h-[100px] md:h-[300px]">
               <img src="/logos_meta-icon-h100px.png" alt="meta" />
-            </div>
+            </div>}
           </div>
+          {mode === 'confirm' && platformBoxSelected === 'meta' &&
+            <ConfirmAssetsView
+              platform="meta"
+              socialAccounts={socialAccounts}
+              onConfirm={onConfirm}
+              loadingAction={loadingAction}
+              onNext={onNext}
+              handleConnectSocial={handleConnectSocial}
+              handleDisconnectSocial={handleDisconnectSocial}
+              handleSetupLater={handleSetupLater}
+              mode={mode}
+            />
+          }
           {socialAccounts.meta?.connected ? (
             <div className="flex justify-end gap-3">
               <span className="flex items-center gap-2 text-green-600 font-medium">
@@ -73,20 +94,20 @@ function ConnectPlatformsView({
                 </svg>
                 Connected
               </span>
-              <button
+              {/* <button
                 onClick={() => handleDisconnectSocial('meta')}
                 disabled={loadingAction !== null}
                 className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
               >
                 Disconnect
-              </button>
+              </button> */}
             </div>
           ) : (
             <div className="flex justify-end gap-3">
               <button
                   onClick={() => handleConnectSocial('meta')}
                   disabled={loadingAction !== null}
-                  className="flex items-center gap-2 text-red-600 font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className={`flex items-center gap-2 ${loadingAction === 'meta' ? 'text-darkkhaki-200': 'text-red-600'} font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
                 >
                   {loadingAction === 'meta'
                     ? <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -104,7 +125,12 @@ function ConnectPlatformsView({
         </div>
 
         {/* TikTok */}
-        <div className={`h-[200px] md:h-[419px] flex flex-col justify-between p-4 border drop-shadow-lg ${platformBoxSelected === 'tiktok' ? 'border-khaki-200 drop-shadow-amber-200' : ''} rounded-lg bg-white`} onClick={() => setPlatformBoxSelected('tiktok')}>
+        <div className={`h-[200px] md:h-[419px]
+          ${mode === 'confirm' && platformBoxSelected === 'tiktok' ? 'col-span-3' : ''}
+          flex flex-col justify-between p-4 border drop-shadow-lg
+          ${platformBoxSelected === 'tiktok' ? 'border-khaki-200 drop-shadow-amber-200' : ''}
+          rounded-lg bg-white transition-all delay-100`}
+          onClick={() => setPlatformBoxSelected('tiktok')}>
           <div>
             <h4 className="text-sm text-gray-500 mb-1">
               {socialAccounts.tiktok?.connected
@@ -112,10 +138,23 @@ function ConnectPlatformsView({
                 : 'Connect your Tiktok account'
               }
             </h4>
-            <div className="flex items-center justify-center h-[100px] md:h-[300px]">
+            {mode !== 'confirm' && <div className="flex items-center justify-center h-[100px] md:h-[300px]">
               <img src="/logos_tiktok-icon-w100px.png" alt="tiktok" />
-            </div>
+            </div>}
           </div>
+          {mode === 'confirm' && platformBoxSelected === 'tiktok' &&
+            <ConfirmAssetsView
+              platform="tiktok"
+              socialAccounts={socialAccounts}
+              onConfirm={onConfirm}
+              loadingAction={loadingAction}
+              onNext={onNext}
+              handleConnectSocial={handleConnectSocial}
+              handleDisconnectSocial={handleDisconnectSocial}
+              handleSetupLater={handleSetupLater}
+              mode={mode}
+            />
+          }
           {socialAccounts.tiktok?.connected ? (
             <div className="flex items-end gap-3">
               <span className="flex items-center gap-2 text-green-600 font-medium">
@@ -124,22 +163,22 @@ function ConnectPlatformsView({
                 </svg>
                 Connected
               </span>
-              <button
+              {/* <button
                 onClick={() => handleDisconnectSocial('tiktok')}
                 disabled={loadingAction !== null}
                 className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
               >
                 Disconnect
-              </button>
+              </button> */}
             </div>
           ) : (
             <div className="flex justify-end gap-3">
-                  <button
-                  onClick={() => handleConnectSocial('tiktok')}
-                  disabled={loadingAction !== null}
-                  className="flex w-fit items-center gap-2 text-red-600 font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {loadingAction === 'tiktok'
+              <button
+                onClick={() => handleConnectSocial('tiktok')}
+                disabled={loadingAction !== null}
+                className={`flex w-fit items-center gap-2 ${loadingAction === 'tiktok' ? 'text-darkkhaki-200': 'text-red-600'} font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
+              >
+                {loadingAction === 'tiktok'
                     ? <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" clipRule="evenodd" d="M18.4749 2.85005C18.6405 2.67233 18.7307 2.43728 18.7264 2.1944C18.7221 1.95152 18.6237 1.71979 18.452 1.54802C18.2802 1.37626 18.0485 1.27787 17.8056 1.27358C17.5627 1.2693 17.3277 1.35945 17.1499 1.52505L15.1287 3.54505C14.1666 2.80117 12.9663 2.43347 11.7526 2.51077C10.5389 2.58808 9.39493 3.10511 8.53495 3.96505L6.91245 5.58755L6.59995 5.27505C6.42223 5.10945 6.18717 5.0193 5.94429 5.02358C5.70142 5.02787 5.46969 5.12626 5.29792 5.29802C5.12615 5.46979 5.02776 5.70152 5.02348 5.9444C5.01919 6.18728 5.10935 6.42233 5.27495 6.60005L5.58745 6.91255L3.95995 8.54005C3.1 9.40003 2.58298 10.544 2.50567 11.7577C2.42836 12.9714 2.79607 14.1717 3.53995 15.1338L1.52495 17.1501C1.43284 17.2359 1.35896 17.3394 1.30772 17.4544C1.25648 17.5694 1.22893 17.6935 1.22671 17.8194C1.22449 17.9453 1.24764 18.0703 1.29479 18.187C1.34195 18.3038 1.41213 18.4098 1.50115 18.4988C1.59017 18.5879 1.69622 18.6581 1.81295 18.7052C1.92969 18.7524 2.05472 18.7755 2.1806 18.7733C2.30648 18.7711 2.43062 18.7435 2.54562 18.6923C2.66062 18.641 2.76412 18.5672 2.84995 18.4751L4.8662 16.4601C5.82834 17.2039 7.02862 17.5716 8.24233 17.4943C9.45604 17.417 10.6 16.9 11.4599 16.0401L13.0874 14.4126L13.3999 14.7251C13.4858 14.8172 13.5893 14.891 13.7043 14.9423C13.8193 14.9935 13.9434 15.0211 14.0693 15.0233C14.1952 15.0255 14.3202 15.0024 14.4369 14.9552C14.5537 14.9081 14.6597 14.8379 14.7487 14.7488C14.8378 14.6598 14.908 14.5538 14.9551 14.437C15.0023 14.3203 15.0254 14.1953 15.0232 14.0694C15.021 13.9435 14.9934 13.8194 14.9422 13.7044C14.8909 13.5894 14.8171 13.4859 14.7249 13.4001L14.4124 13.0876L16.0349 11.4651C16.8949 10.6051 17.4119 9.46115 17.4892 8.24743C17.5665 7.03372 17.1988 5.83344 16.4549 4.8713L18.4749 2.85005ZM13.0874 11.7626L14.7087 10.1413C14.999 9.85111 15.2292 9.50657 15.3863 9.12738C15.5434 8.74818 15.6243 8.34175 15.6243 7.9313C15.6243 7.52085 15.5434 7.11442 15.3863 6.73523C15.2292 6.35603 14.999 6.0115 14.7087 5.7213L14.2799 5.29255C13.9898 5.00228 13.6452 4.77202 13.266 4.61492C12.8868 4.45783 12.4804 4.37697 12.0699 4.37697C11.6595 4.37697 11.2531 4.45783 10.8739 4.61492C10.4947 4.77202 10.1501 5.00228 9.85995 5.29255L8.2387 6.91255L13.0874 11.7626ZM6.91245 8.2388L5.28745 9.86505C4.99718 10.1552 4.76692 10.4998 4.60982 10.879C4.45272 11.2582 4.37187 11.6646 4.37187 12.0751C4.37187 12.4855 4.45272 12.8919 4.60982 13.2711C4.76692 13.6503 4.99718 13.9949 5.28745 14.2851L5.7162 14.7138C6.00639 15.0041 6.35093 15.2343 6.73012 15.3914C7.10932 15.5485 7.51575 15.6294 7.9262 15.6294C8.33665 15.6294 8.74308 15.5485 9.12227 15.3914C9.50147 15.2343 9.846 15.0041 10.1362 14.7138L11.7624 13.0876L6.91245 8.2388Z" fill="#D6C34A"/>
                       </svg>
@@ -157,9 +196,9 @@ function ConnectPlatformsView({
 
       <div className="flex justify-between items-center">
         <button
-          onClick={onNext}
-          disabled={loadingAction !== null}
-          className="px-8 py-3 bg-yellow-400 text-gray-900 font-semibold rounded-lg"
+          onClick={mode === 'confirm' && (socialAccounts.meta?.connected || socialAccounts.tiktok?.connected) ? onConfirm : onNext}
+          disabled={loadingAction !== null || mode === 'confirm' && !(socialAccounts.meta?.connected || socialAccounts.tiktok?.connected)}
+          className="px-8 py-3 bg-khaki-200 text-gray-900 font-semibold rounded-lg cursor-pointer"
         >
           Continue
         </button>
@@ -177,6 +216,7 @@ function ConnectPlatformsView({
 }
 
 function ConfirmAssetsView({
+  platform,
   socialAccounts,
   onConfirm,
   loadingAction
@@ -196,22 +236,25 @@ function ConfirmAssetsView({
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl md:text-4xl font-bold">
-          Here's what we'll manage for you
-        </h1>
+        <div className="flex items-center gap-3">
+          <img src={platform === 'meta' ? "/logos_meta-icon.png" : "/logos_tiktok-icon.png"} alt="platform-logo" />
+          <h1 className="text-2xl text-gray-700 font-semibold">
+            Here's what we'll manage for you
+          </h1>
+        </div>
         <p className="text-gray-600 mt-2">
           You can change this later at any time.
         </p>
       </div>
 
       <div className="space-y-4 mb-8">
-        {socialAccounts.meta?.connected && (
+        {platform === 'meta' && socialAccounts.meta?.connected && (
           <div className="p-4 border rounded-lg bg-white">
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold">Meta</h3>
+              <h3 className="font-semibold text-gray-700">Meta</h3>
               <button
                 onClick={() => setShowMetaSwitcher(true)}
-                className="text-sm text-blue-600"
+                className="text-sm text-darkkhaki-200 cursor-pointer hover:underline"
               >
                 Change
               </button>
@@ -248,21 +291,21 @@ function ConfirmAssetsView({
             onClose={() => setShowMetaSwitcher(false)}
           />
         )}
-        {socialAccounts.meta?.needsReauth && (
+        {platform === 'meta' && socialAccounts.meta?.needsReauth && (
           <ReconnectBanner
             platform="Meta"
             reconnectUrl="/auth/meta"
           />
         )}
 
-        {socialAccounts.tiktok?.needsReauth && (
+        {platform === 'tiktok' && socialAccounts.tiktok?.needsReauth && (
           <ReconnectBanner
             platform="TikTok"
             reconnectUrl="/auth/tiktok"
           />
         )}
 
-        {socialAccounts.tiktok?.connected && (
+        {platform === 'tiktok' && socialAccounts.tiktok?.connected && (
           <div className="p-4 border rounded-lg bg-white">
             <h3 className="font-semibold">TikTok</h3>
             <p className="text-sm text-gray-600">
@@ -275,7 +318,7 @@ function ConfirmAssetsView({
       <button
         onClick={onConfirm}
         disabled={loadingAction !== null}
-        className="px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700"
+        className="px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 cursor-pointer"
       >
         Confirm & Continue
       </button>
@@ -285,7 +328,5 @@ function ConfirmAssetsView({
 
 
 export function StepTwoOnboarding(props: StepTwoProps) {
-  return props.mode === 'confirm'
-    ? <ConfirmAssetsView {...props} />
-    : <ConnectPlatformsView {...props} />;
+  return <ConnectPlatformsView {...props} />;
 }
