@@ -13,8 +13,14 @@ import {
   formatNumber
 } from '@/lib/mock-data';
 import { Megaphone, TrendingUp, Flame, Users, TrendingDown } from 'lucide-react';
+import { fetchPanelMetrics } from '@/lib/panel';
 
 export default function PanelPage() {
+  async function runAPICall() {
+    return await fetchPanelMetrics();
+  }
+  const resultAPI = runAPICall();
+  console.log('Ran dashboard API call:', resultAPI);
   const metrics = mockDashboardMetrics;
   const totalCampaigns = metrics.campaigns.active + metrics.campaigns.paused + metrics.campaigns.suspended + metrics.campaigns.drafts;
 
