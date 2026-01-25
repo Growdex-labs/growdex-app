@@ -2,7 +2,6 @@
 
 import { PanelLayout } from './components/panel-layout';
 import { DashboardHeader } from './components/dashboard-header';
-import { MetricCard, ProgressBar } from './components/metric-card';
 import { PerformanceChart } from './components/performance-chart';
 import { CTRLineChart } from './components/ctr-line-chart';
 import { DonutChart } from './components/donut-chart';
@@ -12,7 +11,7 @@ import {
   formatCurrency,
   formatNumber
 } from '@/lib/mock-data';
-import { Megaphone, TrendingUp, Flame, Users, TrendingDown } from 'lucide-react';
+import { Users, TrendingDown } from 'lucide-react';
 import { fetchPanelMetrics } from '@/lib/panel';
 
 export default function PanelPage() {
@@ -22,66 +21,11 @@ export default function PanelPage() {
   const resultAPI = runAPICall();
   console.log('Ran dashboard API call:', resultAPI);
   const metrics = mockDashboardMetrics;
-  const totalCampaigns = metrics.campaigns.active + metrics.campaigns.paused + metrics.campaigns.suspended + metrics.campaigns.drafts;
 
   return (
     <PanelLayout>
       <div className="p-8 font-gilroy-bold">
         <DashboardHeader />
-
-        {/* Top Metric Cards */}
-        <div className="grid grid-cols-3 gap-6 mb-6">
-          {/* Campaigns Summary Card */}
-          <MetricCard
-            title="Campaigns"
-            icon={<Megaphone className="w-5 h-5" />}
-            value={totalCampaigns}
-            variant="yellow"
-          >
-            <div className="space-y-1 mt-2">
-              <ProgressBar label="Active" value={metrics.campaigns.active} total={totalCampaigns} color="green" />
-              <ProgressBar label="Paused" value={metrics.campaigns.paused} total={totalCampaigns} color="yellow" />
-              <ProgressBar label="Suspended" value={metrics.campaigns.suspended} total={totalCampaigns} color="red" />
-              <ProgressBar label="Drafts" value={metrics.campaigns.drafts} total={totalCampaigns} color="gray" />
-            </div>
-          </MetricCard>
-
-          {/* Top Performing Campaign */}
-          <MetricCard
-            title="Top Performing Campaign"
-            icon={<img src="/hugeicons_star-award-01.png" alt="star-award" />}
-            variant="yellow"
-          >
-            <div className="text-xl font-bold text-gray-900 mb-1">
-              {metrics.topPerformer.name}
-            </div>
-            <div className="h-full flex flex-col justify-between">
-                <div className="text-sm text-gray-300 mb-2">
-                    All campaigns &gt;&gt;
-                    {" "} <span className="text-gray-400">Campaign Test</span>
-                </div>
-                <div className="mt-3 flex justify-between items-end">
-                <div className="text-sm text-gray-600 mb-1">Cost per Conversion: CPA</div>
-                <div className="text-sm text-green-600 flex items-center gap-1">
-                  {metrics.topPerformer.cpaTrend}% <TrendingUp className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-          </MetricCard>
-
-          {/* Campaign Performance */}
-          <MetricCard
-            title="Campaign Performance"
-            variant="yellow"
-          >
-            <div className="flex items-center justify-baseline py-8">
-              <button className="px-6 py-2.5 bg-red-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-red-500 transition-colors">
-                <Flame className="w-5 h-5" />
-                Budget Burn
-              </button>
-            </div>
-          </MetricCard>
-        </div>
 
         {/* Chart and Side Metrics Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
