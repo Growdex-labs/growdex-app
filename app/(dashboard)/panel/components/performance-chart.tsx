@@ -27,7 +27,7 @@ export function PerformanceChart({
   );
   const scale = maxValue > 0 ? 100 / maxValue : 0;
 
-  const yAxisLabels = ["14,500.00", "12,500.00", "10,000.00", "7,500.00", "2,5000"];
+  const yAxisLabels = ["14,500.00", "12,500.00", "10,000.00", "7,500.00", "2,500.00"];
 
   return (
     <div className="bg-white p-4 md:p-6 rounded-xl">
