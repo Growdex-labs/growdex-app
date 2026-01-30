@@ -33,7 +33,10 @@ export function PerformanceChart({
     <div className="bg-white p-4 md:p-6 rounded-xl">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-gray-400 text-xs font-medium">Amount spent</h3>
-        <button className="text-gray-400 hover:text-gray-600">
+        <button
+          className="text-gray-400 hover:text-gray-600"
+          aria-label="Chart options"
+        >
           <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
         </button>
       </div>
