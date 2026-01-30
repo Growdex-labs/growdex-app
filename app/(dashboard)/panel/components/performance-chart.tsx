@@ -22,9 +22,10 @@ export function PerformanceChart({
   changePercentage,
 }: PerformanceChartProps) {
   const maxValue = Math.max(
+    0,
     ...data.flatMap((d) => [d.facebook, d.instagram, d.tiktok])
   );
-  const scale = 100 / maxValue;
+  const scale = maxValue > 0 ? 100 / maxValue : 0;
 
   const yAxisLabels = ["14,500.00", "12,500.00", "10,000.00", "7,500.00", "2,5000"];
 
