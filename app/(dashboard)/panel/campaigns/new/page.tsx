@@ -1083,6 +1083,7 @@ export default function NewCampaignPage() {
                           <img src="/media-creative.png" alt="media" />
                           <div className="flex justify-end">
                             <Button
+                              type="button"
                               className="bg-khaki-200 hover:bg-khaki-300 text-black"
                               onClick={() => openCreativeModal("meta")}
                             >
@@ -1109,6 +1110,7 @@ export default function NewCampaignPage() {
                           <img src="/media-creative.png" alt="media" />
                           <div className="flex justify-end">
                             <Button
+                              type="button"
                               className="bg-khaki-200 hover:bg-khaki-300 text-black"
                               onClick={() => openCreativeModal("tiktok")}
                             >
