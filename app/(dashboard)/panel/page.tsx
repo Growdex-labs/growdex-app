@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PanelLayout } from "./components/panel-layout";
 import { DashboardHeader } from "./components/dashboard-header";
 import { MetricCard, ProgressBar } from "./components/metric-card";
-import { SpendingChart } from "./components/spending-chart";
+import { PerformanceChart } from './components/performance-chart';
 import { CTRLineChart } from "./components/ctr-line-chart";
 import { DonutChart } from "./components/donut-chart";
 import {
@@ -102,6 +102,7 @@ export default function PanelPage() {
       <div className="p-8 font-gilroy-bold">
         <DashboardHeader />
 
+<<<<<<< HEAD
         {/* Top Metric Cards */}
         <div className="grid grid-cols-3 gap-6 mb-6">
           {/* Campaigns Summary Card */}
@@ -176,11 +177,17 @@ export default function PanelPage() {
           </MetricCard>
         </div>
 
+=======
+>>>>>>> origin/main
         {/* Chart and Side Metrics Row */}
-        <div className="grid grid-cols-3 gap-6 mb-6">
-          {/* Spending Chart - Takes 2 columns */}
-          <div className="col-span-2">
-            <SpendingChart data={mockChartData} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
+          {/* Spending Chart - Takes 2 columns on desktop */}
+          <div className="lg:col-span-2">
+            <PerformanceChart
+              data={mockChartData}
+              totalSpent={formatCurrency(metrics.totalSpent)}
+              changePercentage={metrics.costPerConversion.trend}
+            />
           </div>
 
           {/* Side Metrics Panel */}
