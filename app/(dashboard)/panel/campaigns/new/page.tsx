@@ -161,7 +161,8 @@ export default function NewCampaignPage() {
       if (signature) formData.append("signature", signature);
       formData.append("folder", "campaign_creatives");
 
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`;
+      const resourceType = creativeImage?.type.startsWith("video/") ? "video" : "image";
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/${resourceType}/upload`;
 
       // Upload with progress using XHR
       const uploadResult: any = await new Promise((resolve, reject) => {
