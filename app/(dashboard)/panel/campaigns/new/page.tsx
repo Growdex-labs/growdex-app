@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { CampaignsSidebar } from "../../components/campaigns-sidebar";
 import {
@@ -12,6 +12,7 @@ import {
   Search,
   SparklesIcon,
   Users,
+  UploadCloud,
 } from "lucide-react";
 import { PluggedIcon, PluggedOutIcon } from "@/components/svg";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { apiFetch } from "@/lib/auth";
 import {
   Select,
   SelectContent,
@@ -34,6 +36,191 @@ import {
 
 export default function NewCampaignPage() {
   const [progressTab, setProgressTab] = useState<number>(0);
+  // Creative modal state
+  const [isCreativeModalOpen, setIsCreativeModalOpen] = useState(false);
+  const [creativeType, setCreativeType] = useState<"meta" | "tiktok" | null>(
+    null,
+  );
+  const [creativeHeading, setCreativeHeading] = useState("");
+  const [creativeSubheading, setCreativeSubheading] = useState("");
+  const [creativeImage, setCreativeImage] = useState<File | null>(null);
+  const [creativePreview, setCreativePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const openCreativeModal = (type: "meta" | "tiktok") => {
+    setCreativeType(type);
+    setCreativeHeading("");
+    setCreativeSubheading("");
+    setCreativeImage(null);
+    setCreativePreview(null);
+    setIsCreativeModalOpen(true);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) return;
+
+    const validation = validateFile(file);
+    if (!validation.ok) {
+      setUploadError(validation.error ?? "Unsupported file");
+      setCreativeImage(null);
+      setCreativePreview(null);
+      return;
+    }
+
+    setUploadError(null);
+    setCreativeImage(file);
+    setCreativePreview(URL.createObjectURL(file));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0] ?? null;
+    if (!file) return;
+
+    const validation = validateFile(file);
+    if (!validation.ok) {
+      setUploadError(validation.error ?? "Unsupported file");
+      setCreativeImage(null);
+      setCreativePreview(null);
+      return;
+    }
+
+    setUploadError(null);
+    setCreativeImage(file);
+    setCreativePreview(URL.createObjectURL(file));
+  };
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const validateFile = (file: File): { ok: boolean; error?: string } => {
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
+      return {
+        ok: false,
+        error: "Unsupported file type. Upload an image or a video.",
+      };
+    }
+
+    const maxImage = 10 * 1024 * 1024; // 10MB
+    const maxVideo = 50 * 1024 * 1024; // 50MB
+
+    if (isImage && file.size > maxImage) {
+      return { ok: false, error: "Image is too large. Max 10 MB." };
+    }
+
+    if (isVideo && file.size > maxVideo) {
+      return { ok: false, error: "Video is too large. Max 50 MB." };
+    }
+
+    return { ok: true };
+  };
+
+  const handleCreativeSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!creativeType) return;
+
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      if (!creativeImage) {
+        console.warn("No image selected");
+        // Continue to allow heading/subheading-only creatives if desired
+      }
+
+      // Get signature from server
+      const signRes = await fetch("/api/cloudinary/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: "campaign_creatives" }),
+      });
+
+      if (!signRes.ok) throw new Error("Failed to get signature from server");
+      const signJson = await signRes.json();
+      const { signature, timestamp, api_key, cloud_name } = signJson;
+
+      // Build FormData for Cloudinary
+      const formData = new FormData();
+      if (creativeImage) formData.append("file", creativeImage);
+      if (api_key) formData.append("api_key", api_key);
+      if (timestamp) formData.append("timestamp", String(timestamp));
+      if (signature) formData.append("signature", signature);
+      formData.append("folder", "campaign_creatives");
+
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`;
+
+      // Upload with progress using XHR
+      const uploadResult: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", uploadUrl);
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percent);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const resp = JSON.parse(xhr.responseText);
+              resolve(resp);
+            } catch (err) {
+              reject(err);
+            }
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Upload error"));
+        xhr.send(formData);
+      });
+
+      const secureUrl = uploadResult.secure_url;
+      console.log("Cloudinary upload result", uploadResult);
+
+      // Persist creative to backend
+      const saveRes = await apiFetch("/campaigns/creatives", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          heading: creativeHeading,
+          subheading: creativeSubheading,
+          imageUrl: secureUrl,
+          platform: creativeType,
+        }),
+      });
+
+      if (!saveRes.ok) {
+        const err = await saveRes.text();
+        throw new Error("Failed to save creative: " + err);
+      }
+
+      setIsCreativeModalOpen(false);
+    } catch (err) {
+      console.error("Creative upload error:", err);
+      // TODO: surface error to user
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
 
   const progressTitles = [
     "Set campaign goal",
@@ -444,43 +631,43 @@ export default function NewCampaignPage() {
                               </p>
                               <div className="mt-2 flex flex-col gap-2">
                                 <label
-                                  htmlFor="age1"
+                                  htmlFor="meta-age1"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age1"
+                                    id="meta-age1"
                                     defaultChecked
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">18-25</span>
                                 </label>
                                 <label
-                                  htmlFor="age2"
+                                  htmlFor="meta-age2"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age2"
+                                    id="meta-age2"
                                     defaultChecked
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">25-30</span>
                                 </label>
                                 <label
-                                  htmlFor="age3"
+                                  htmlFor="meta-age3"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age3"
+                                    id="meta-age3"
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">30-65</span>
                                 </label>
                                 <label
-                                  htmlFor="age4"
+                                  htmlFor="meta-age4"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age4"
+                                    id="meta-age4"
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">65-80</span>
@@ -623,43 +810,43 @@ export default function NewCampaignPage() {
                               </p>
                               <div className="mt-2 flex flex-col gap-2">
                                 <label
-                                  htmlFor="age1"
+                                  htmlFor="tiktok-age1"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age1"
+                                    id="tiktok-age1"
                                     defaultChecked
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">18-25</span>
                                 </label>
                                 <label
-                                  htmlFor="age2"
+                                  htmlFor="tiktok-age2"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age2"
+                                    id="tiktok-age2"
                                     defaultChecked
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">25-30</span>
                                 </label>
                                 <label
-                                  htmlFor="age3"
+                                  htmlFor="tiktok-age3"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age3"
+                                    id="tiktok-age3"
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">30-65</span>
                                 </label>
                                 <label
-                                  htmlFor="age4"
+                                  htmlFor="tiktok-age4"
                                   className="inline-flex items-center"
                                 >
                                   <Checkbox
-                                    id="age4"
+                                    id="tiktok-age4"
                                     className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                                   />
                                   <span className="ml-2">65-80</span>
@@ -894,7 +1081,10 @@ export default function NewCampaignPage() {
                           </div>
                           <img src="/media-creative.png" alt="media" />
                           <div className="flex justify-end">
-                            <Button className="bg-khaki-200 hover:bg-khaki-300 text-black">
+                            <Button
+                              className="bg-khaki-200 hover:bg-khaki-300 text-black"
+                              onClick={() => openCreativeModal("meta")}
+                            >
                               Add creative
                             </Button>
                           </div>
@@ -917,7 +1107,10 @@ export default function NewCampaignPage() {
                           </div>
                           <img src="/media-creative.png" alt="media" />
                           <div className="flex justify-end">
-                            <Button className="bg-khaki-200 hover:bg-khaki-300 text-black">
+                            <Button
+                              className="bg-khaki-200 hover:bg-khaki-300 text-black"
+                              onClick={() => openCreativeModal("tiktok")}
+                            >
                               Add creative
                             </Button>
                           </div>
@@ -934,6 +1127,124 @@ export default function NewCampaignPage() {
                 Create campaign
               </Button>
             </form>
+
+            {/* Creative Modal */}
+            {isCreativeModalOpen && (
+              <div className="fixed inset-0 bg-slate-800/40 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[600px] overflow-y-auto hide-scrollbar">
+                  <form onSubmit={handleCreativeSubmit}>
+                    <div className="p-4 border-b">
+                      <h2 className="text-lg font-bold text-center">
+                        {creativeType === "meta"
+                          ? "Meta Creative"
+                          : "TikTok Creative"}
+                      </h2>
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Heading
+                        </label>
+                        <Input
+                          value={creativeHeading}
+                          onChange={(e) =>
+                            setCreativeHeading(
+                              (e.target as HTMLInputElement).value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Sub heading
+                        </label>
+                        <Input
+                          value={creativeSubheading}
+                          onChange={(e) =>
+                            setCreativeSubheading(
+                              (e.target as HTMLInputElement).value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Image
+                        </label>
+                        <div
+                          onDragOver={handleDragOver}
+                          onDrop={handleDrop}
+                          onClick={handleBrowseClick}
+                          className="mt-2 border-2 border-dashed border-[#B8A247] rounded-md p-6 flex flex-col items-center justify-center cursor-pointer"
+                        >
+                          <UploadCloud className="w-10 h-10 text-[#B8A247]" />
+                          <p className="text-sm text-gray-600 mt-2">
+                            Browse or drag and drop an image or video here
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Supported: JPG, PNG (max 10MB); MP4 (max 50MB)
+                          </p>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*,video/*"
+                            onChange={handleImageChange}
+                            className="hidden"
+                          />
+
+                          {uploadError && (
+                            <div className="mt-2 text-xs text-red-600">
+                              {uploadError}
+                            </div>
+                          )}
+                        </div>
+
+                        {creativePreview && (
+                          <div className="mt-2">
+                            {creativeImage?.type.startsWith("video/") ? (
+                              <video
+                                src={creativePreview}
+                                controls
+                                className="max-h-40 rounded-md"
+                              />
+                            ) : (
+                              <img
+                                src={creativePreview}
+                                alt="preview"
+                                className="max-h-40 rounded-md"
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-4 border-t flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCreativeModalOpen(false)}
+                        disabled={isUploading}
+                        className="px-4 py-2 border rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isUploading}
+                        className="px-4 py-2 bg-khaki-200 rounded-lg"
+                      >
+                        {isUploading
+                          ? `Uploading ${uploadProgress}%`
+                          : "Save creative"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
