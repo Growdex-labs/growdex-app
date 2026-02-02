@@ -102,7 +102,6 @@ export default function PanelPage() {
       <div className="p-8 font-gilroy-bold">
         <DashboardHeader />
 
-<<<<<<< HEAD
         {/* Top Metric Cards */}
         <div className="grid grid-cols-3 gap-6 mb-6">
           {/* Campaigns Summary Card */}
@@ -176,9 +175,6 @@ export default function PanelPage() {
             </div>
           </MetricCard>
         </div>
-
-=======
->>>>>>> origin/main
         {/* Chart and Side Metrics Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
           {/* Spending Chart - Takes 2 columns on desktop */}
