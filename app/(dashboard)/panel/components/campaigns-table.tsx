@@ -37,16 +37,10 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
-      case "facebook":
+      case "meta":
         return (
-          <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-            <Facebook className="w-3 h-3 text-white" />
-          </div>
-        );
-      case "instagram":
-        return (
-          <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-            <Instagram className="w-3 h-3 text-white" />
+          <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center">
+            <img src="/logos_meta-icon.png" alt="meta" className="w-3 h-3 text-white" />
           </div>
         );
       case "tiktok":

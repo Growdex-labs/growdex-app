@@ -1,12 +1,10 @@
 "use client";
 
-import React from "react";
-import { Facebook, Instagram, MoreVertical } from "lucide-react";
+import { Facebook, MoreVertical } from "lucide-react";
 
 interface ChartDataPoint {
   date: string;
-  facebook: number;
-  instagram: number;
+  meta: number;
   tiktok: number;
 }
 
@@ -23,7 +21,7 @@ export function PerformanceChart({
 }: PerformanceChartProps) {
   const maxValue = Math.max(
     0,
-    ...data.flatMap((d) => [d.facebook, d.instagram, d.tiktok])
+    ...data.flatMap((d) => [d.meta, d.tiktok])
   );
   const scale = maxValue > 0 ? 100 / maxValue : 0;
 
@@ -92,11 +90,7 @@ export function PerformanceChart({
                 <div className="w-full flex items-end justify-center gap-1 md:gap-1.5 h-full">
                   <div
                     className="w-6 md:w-8 bg-khaki-200 rounded-t-lg md:rounded-t-xl rounded-b-lg md:rounded-b-xl transition-all hover:opacity-80"
-                    style={{ height: `${item.facebook * scale}%` }}
-                  />
-                  <div
-                    className="w-6 md:w-8 bg-[#B8A247] rounded-t-lg md:rounded-t-xl rounded-b-lg md:rounded-b-xl transition-all hover:opacity-80"
-                    style={{ height: `${item.instagram * scale}%` }}
+                    style={{ height: `${item.meta * scale}%` }}
                   />
                   <div
                     className="w-6 md:w-8 bg-[#3a3a2a] rounded-t-lg md:rounded-t-xl rounded-b-lg md:rounded-b-xl transition-all hover:opacity-80"
@@ -114,11 +108,8 @@ export function PerformanceChart({
             {data.map((item, index) => (
               <div key={index} className="flex-1 flex flex-col items-center">
                 <div className="flex gap-1 md:gap-1.5 mb-2">
-                  <div className="w-4 h-4 md:w-5 md:h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                    <Facebook className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                  </div>
-                  <div className="w-4 h-4 md:w-5 md:h-5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                    <Instagram className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+                  <div className="w-4 h-4 md:w-6 md:h-5 bg-blue-50 rounded-full flex items-center justify-center">
+                    <img src="/logos_meta-icon.png" alt="meta" className="w-2.5 h-2.5 md:w-3 md:h-3" />
                   </div>
                   <div className="w-4 h-4 md:w-5 md:h-5 bg-black rounded-full flex items-center justify-center">
                     <svg

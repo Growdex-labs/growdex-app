@@ -19,6 +19,7 @@ interface StepTwoProps {
     onNext: () => void;
     onConfirm: () => void;
     handleSetupLater: () => void;
+    refreshSocialAccounts: () => Promise<void>;
 }
 
 function Header() {
@@ -46,7 +47,8 @@ function ConnectPlatformsView({
   handleDisconnectSocial,
   onNext,
   onConfirm,
-  handleSetupLater
+  handleSetupLater,
+  refreshSocialAccounts
 }: StepTwoProps) {
   const [platformBoxSelected, setPlatformBoxSelected] = useState<SocialPlatform>('meta');
   return (
@@ -83,6 +85,7 @@ function ConnectPlatformsView({
               handleConnectSocial={handleConnectSocial}
               handleDisconnectSocial={handleDisconnectSocial}
               handleSetupLater={handleSetupLater}
+              refreshSocialAccounts={refreshSocialAccounts}
               mode={mode}
             />
           }
@@ -152,6 +155,7 @@ function ConnectPlatformsView({
               handleConnectSocial={handleConnectSocial}
               handleDisconnectSocial={handleDisconnectSocial}
               handleSetupLater={handleSetupLater}
+              refreshSocialAccounts={refreshSocialAccounts}
               mode={mode}
             />
           }
@@ -219,20 +223,10 @@ function ConfirmAssetsView({
   platform,
   socialAccounts,
   onConfirm,
-  loadingAction
+  loadingAction,
+  refreshSocialAccounts
 }: StepTwoProps) {
   const [showMetaSwitcher, setShowMetaSwitcher] = useState(false);
-  const [socialSetup, setSocialSetup] = useState<SocialAccountSetupProps | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    hydrateSocialAccounts().then((res) => {
-      if (res.success && res.data) {
-        setSocialSetup(res.data);
-      }
-      setLoading(false);
-    });
-  }, []);
   return (
     <div>
       <div className="mb-8">
@@ -282,11 +276,7 @@ function ConfirmAssetsView({
               });
 
               setShowMetaSwitcher(false);
-              await hydrateSocialAccounts().then(res => {
-                if (res.success && res.data) {
-                  setSocialSetup(res.data);
-                }
-              });
+              await refreshSocialAccounts();
             }}
             onClose={() => setShowMetaSwitcher(false)}
           />

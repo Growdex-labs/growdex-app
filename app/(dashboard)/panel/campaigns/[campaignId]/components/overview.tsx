@@ -1,16 +1,13 @@
 "use client";
 
-import React from "react";
 import { Campaign } from "@/lib/mock-data";
 import { PerformanceChart } from "./performance-chart";
 import {
   Facebook,
-  Instagram,
   MoreVertical,
   TrendingDownIcon,
   Users,
 } from "lucide-react";
-import { MetricCard } from "../../../components/metric-card";
 
 interface OverviewProps {
   campaign: Campaign;
@@ -19,11 +16,11 @@ interface OverviewProps {
 
 // Mock chart data
 const chartData = [
-  { date: "21/09/2025", facebook: 6000, instagram: 8000, tiktok: 10000 },
-  { date: "21/09/2025", facebook: 6500, instagram: 9500, tiktok: 6500 },
-  { date: "21/09/2025", facebook: 7500, instagram: 10000, tiktok: 7500 },
-  { date: "21/09/2025", facebook: 8000, instagram: 10500, tiktok: 11000 },
-  { date: "21/09/2025", facebook: 12500, instagram: 14500, tiktok: 7500 },
+  { date: "21/09/2025", meta: 6000, tiktok: 8000 },
+  { date: "21/09/2025", meta: 6500, tiktok: 9500 },
+  { date: "21/09/2025", meta: 7500, tiktok: 10000 },
+  { date: "21/09/2025", meta: 8000, tiktok: 10500 },
+  { date: "21/09/2025", meta: 12500, tiktok: 14500 },
 ];
 
 export function Overview({ campaign, subTab }: OverviewProps) {
@@ -61,15 +58,6 @@ export function Overview({ campaign, subTab }: OverviewProps) {
             <div className="flex items-center gap-2">
               <div className="w-4 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                 <Facebook className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="text-lg font-semibold text-gray-900">
-                23,900
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Instagram className="w-3.5 h-3.5 text-white" />
               </div>
               <span className="text-lg font-semibold text-gray-900">
                 23,900
@@ -116,16 +104,7 @@ export function Overview({ campaign, subTab }: OverviewProps) {
           <div className="flex items-center gap-4 md:gap-6 overflow-x-auto hide-scrollbar">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                <Facebook className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="text-lg font-semibold text-gray-900">
-                23,900
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Instagram className="w-3.5 h-3.5 text-white" />
+                <img src="/logos_meta-icon.png" alt="meta" className="w-3.5 h-3.5 text-white" />
               </div>
               <span className="text-lg font-semibold text-gray-900">
                 23,900

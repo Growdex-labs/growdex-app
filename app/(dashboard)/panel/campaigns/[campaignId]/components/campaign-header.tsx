@@ -2,10 +2,7 @@
 
 import { Campaign } from "@/lib/mock-data";
 import {
-  AlertCircle,
   BarChartIcon,
-  Facebook,
-  Instagram,
   SparklesIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -52,9 +49,9 @@ export function CampaignHeader({
             <div className="bg-gray-100 rounded-xl py-2 flex flex-1 md:flex-none justify-center items-center gap-3 transition-all px-4">
               {campaign.platforms.map((platform) => (
                 <div key={platform}>
-                  {platform === "facebook" && (
-                    <div className="w-7 h-7 md:w-5 md:h-5 bg-blue-600 rounded-full flex items-center justify-center transition-all">
-                      <Facebook className="w-4 h-4 md:w-3 md:h-3 text-white" />
+                  {platform === "meta" && (
+                    <div className="w-7 h-7 md:w-5 md:h-5 bg-blue-50 rounded-full flex items-center justify-center transition-all">
+                      <img src="/logos_meta-icon.png" alt="meta" className="w-4 h-4 md:w-3 md:h-3 text-white" />
                     </div>
                   )}
                   {platform === "tiktok" && (
@@ -66,11 +63,6 @@ export function CampaignHeader({
                       >
                         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
                       </svg>
-                    </div>
-                  )}
-                  {platform === "instagram" && (
-                    <div className="w-7 h-7 md:w-5 md:h-5 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center transition-all">
-                      <Instagram className="w-4 h-4 md:w-3 md:h-3 text-white" />
                     </div>
                   )}
                 </div>
