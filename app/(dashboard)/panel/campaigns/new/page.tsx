@@ -1276,6 +1276,9 @@ export default function NewCampaignPage() {
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               <Input
                                 name="metaBudgetAmount"
+                                type="number"
+                                min={0}
+                                step={0.01}
                                 value={metaBudgetAmount}
                                 onChange={(e) => setMetaBudgetAmount(e.target.value)}
                                 placeholder="Amount"
@@ -1322,6 +1325,9 @@ export default function NewCampaignPage() {
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               <Input
                                 name="tiktokBudgetAmount"
+                                type="number"
+                                min={0}
+                                step={0.01}
                                 value={tiktokBudgetAmount}
                                 onChange={(e) => setTiktokBudgetAmount(e.target.value)}
                                 placeholder="Amount"
