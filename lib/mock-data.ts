@@ -18,7 +18,7 @@ export interface CampaignMetrics {
 export interface Campaign {
   id: string;
   name: string;
-  platforms: ("facebook" | "instagram" | "tiktok")[];
+  platforms: ("meta" | "tiktok")[];
   started: string;
   impressions: number;
   reach: { min: number; max: number };
@@ -33,24 +33,17 @@ export interface Campaign {
 
 export interface ChartDataPoint {
   date: string;
-  facebook: number;
-  instagram: number;
+  meta: number;
   tiktok: number;
 }
 
 export interface DashboardMetrics {
-  campaigns: CampaignMetrics;
-  topPerformer: {
-    name: string;
-    cpa: number;
-    cpaTrend: number;
-  };
   budgetBurn: "normal" | "warning" | "critical";
   totalSpent: number;
   costPerConversion: { value: number; trend: number };
   costPerClick: { value: number; trend: number };
   audienceReception: { value: string; trend: number };
-  clickThroughRate: { facebook: number; tiktok: number; trend: number };
+  clickThroughRate: { meta: number; tiktok: number; trend: number };
   totalImpressions: number;
 }
 
@@ -59,7 +52,7 @@ export interface Ad {
   id: string;
   name: string;
   campaignId: string;
-  platform: "facebook" | "instagram" | "tiktok";
+  platform: "meta" | "tiktok";
   status: "active" | "paused" | "draft";
   headline?: string;
   caption: string;
@@ -80,7 +73,7 @@ export const mockAds: Ad[] = [
     id: "ad-1",
     name: "Ad 1",
     campaignId: "1",
-    platform: "facebook",
+    platform: "meta",
     status: "draft",
     headline: "5,000 things you need to be successful",
     caption:
@@ -99,7 +92,7 @@ export const mockAds: Ad[] = [
     id: "ad-2",
     name: "Ad 2",
     campaignId: "1",
-    platform: "facebook",
+    platform: "meta",
     status: "active",
     headline: "Unlock Your Potential Today",
     caption:
@@ -154,7 +147,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: "1",
     name: "Growdex ONE uP",
-    platforms: ["tiktok", "facebook"],
+    platforms: ["tiktok", "meta"],
     started: "28-06-2025",
     impressions: 50000,
     reach: { min: 16000, max: 23000 },
@@ -170,7 +163,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: "2",
     name: "Summer Sale Campaign",
-    platforms: ["instagram", "facebook"],
+    platforms: ["meta"],
     started: "15-06-2025",
     impressions: 75000,
     reach: { min: 25000, max: 35000 },
@@ -200,7 +193,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: "6",
     name: "Growdex ONE uP",
-    platforms: ["tiktok", "facebook"],
+    platforms: ["tiktok", "meta"],
     started: "28-06-2025",
     impressions: 50000,
     reach: { min: 16900, max: 23000 },
@@ -215,7 +208,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: "4",
     name: "Scheduled Campaign",
-    platforms: ["facebook", "instagram"],
+    platforms: ["meta"],
     started: "12-09-2025",
     impressions: 0,
     reach: { min: 0, max: 0 },
@@ -230,7 +223,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: "5",
     name: "Holiday Season Promo",
-    platforms: ["tiktok", "instagram"],
+    platforms: ["tiktok", "meta"],
     started: "20-12-2025",
     impressions: 0,
     reach: { min: 0, max: 0 },
@@ -249,50 +242,39 @@ export const mockCampaigns: Campaign[] = [
 export const mockChartData: ChartDataPoint[] = [
   {
     date: "21-09-2025",
-    facebook: 5000000,
-    instagram: 8000000,
+    meta: 5000000,
     tiktok: 10000000,
   },
   {
     date: "21-09-2025",
-    facebook: 7000000,
-    instagram: 12000000,
+    meta: 7000000,
     tiktok: 14000000,
   },
   {
     date: "21-09-2025",
-    facebook: 9000000,
-    instagram: 10000000,
+    meta: 9000000,
     tiktok: 11000000,
   },
   {
     date: "21-09-2025",
-    facebook: 11000000,
-    instagram: 14000000,
+    meta: 11000000,
     tiktok: 15000000,
   },
   {
     date: "21-09-2025",
-    facebook: 13000000,
-    instagram: 16000000,
+    meta: 13000000,
     tiktok: 18000000,
   },
 ];
 
 // Mock dashboard metrics
 export const mockDashboardMetrics: DashboardMetrics = {
-  campaigns: mockCampaignMetrics,
-  topPerformer: {
-    name: "Campaign Test",
-    cpa: 35.7,
-    cpaTrend: 35.7,
-  },
   budgetBurn: "critical",
   totalSpent: 11567980.98,
   costPerConversion: { value: 1300.8, trend: -35.7 },
   costPerClick: { value: 350.89, trend: -35.7 },
   audienceReception: { value: "Negative", trend: -35.7 },
-  clickThroughRate: { facebook: 7, tiktok: 7, trend: -35.7 },
+  clickThroughRate: { meta: 7, tiktok: 7, trend: -35.7 },
   totalImpressions: 12900345,
 };
 
