@@ -36,6 +36,50 @@ import {
 
 export default function NewCampaignPage() {
   const [progressTab, setProgressTab] = useState<number>(0);
+
+  const COUNTRY_OPTIONS = ["Nigeria"];
+  const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
+
+  const [selectedPlatforms, setSelectedPlatforms] = useState({
+    meta: true,
+    tiktok: true,
+  });
+
+  const [metaCountry, setMetaCountry] = useState("Nigeria");
+  const [tiktokCountry, setTiktokCountry] = useState("Nigeria");
+  const [isMetaCountryEditing, setIsMetaCountryEditing] = useState(false);
+  const [isTiktokCountryEditing, setIsTiktokCountryEditing] = useState(false);
+
+  const [metaLocationQuery, setMetaLocationQuery] = useState("");
+  const [tiktokLocationQuery, setTiktokLocationQuery] = useState("");
+  const [metaLocations, setMetaLocations] = useState<string[]>([
+    "Makurdi",
+    "Abuja",
+    "Lagos",
+    "Kano",
+  ]);
+  const [tiktokLocations, setTiktokLocations] = useState<string[]>([
+    "Makurdi",
+    "Abuja",
+    "Lagos",
+    "Kano",
+  ]);
+
+  const [currency, setCurrency] = useState("NGN");
+  const [metaBudgetAmount, setMetaBudgetAmount] = useState("");
+  const [tiktokBudgetAmount, setTiktokBudgetAmount] = useState("");
+  const [metaBudgetFrequency, setMetaBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
+  const [tiktokBudgetFrequency, setTiktokBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
+
+  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
+  const [creativesByPlatform, setCreativesByPlatform] = useState<
+    Partial<Record<"meta" | "tiktok", any>>
+  >({});
+
   // Creative modal state
   const [isCreativeModalOpen, setIsCreativeModalOpen] = useState(false);
   const [creativeType, setCreativeType] = useState<"meta" | "tiktok" | null>(
@@ -129,6 +173,100 @@ export default function NewCampaignPage() {
     return { ok: true };
   };
 
+  const normalizeTag = (value: string) => value.trim().replace(/\s+/g, " ");
+
+  const addLocationTag = (
+    platform: "meta" | "tiktok",
+    value: string,
+  ) => {
+    const next = normalizeTag(value);
+    if (!next) return;
+
+    if (platform === "meta") {
+      setMetaLocations((prev) =>
+        prev.some((x) => x.toLowerCase() === next.toLowerCase())
+          ? prev
+          : [...prev, next],
+      );
+      setMetaLocationQuery("");
+      return;
+    }
+
+    setTiktokLocations((prev) =>
+      prev.some((x) => x.toLowerCase() === next.toLowerCase())
+        ? prev
+        : [...prev, next],
+    );
+    setTiktokLocationQuery("");
+  };
+
+  const removeLocationTag = (platform: "meta" | "tiktok", value: string) => {
+    if (platform === "meta") {
+      setMetaLocations((prev) => prev.filter((x) => x !== value));
+      return;
+    }
+    setTiktokLocations((prev) => prev.filter((x) => x !== value));
+  };
+
+  const formDataToObject = (fd: FormData) => {
+    const obj: Record<string, any> = {};
+    for (const [key, value] of fd.entries()) {
+      if (key in obj) {
+        obj[key] = Array.isArray(obj[key]) ? [...obj[key], value] : [obj[key], value];
+      } else {
+        obj[key] = value;
+      }
+    }
+    return obj;
+  };
+
+  const handleCreateCampaignSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+    if (isCreatingCampaign) return;
+
+    const fd = new FormData(e.currentTarget);
+    const raw = formDataToObject(fd);
+
+    const platforms = Object.entries(selectedPlatforms)
+      .filter(([, enabled]) => Boolean(enabled))
+      .map(([platform]) => platform);
+
+    const payload = {
+      ...raw,
+      platforms,
+      currency,
+      audience: {
+        meta: { country: metaCountry, locations: metaLocations },
+        tiktok: { country: tiktokCountry, locations: tiktokLocations },
+      },
+      budgets: {
+        meta: { amount: metaBudgetAmount, frequency: metaBudgetFrequency },
+        tiktok: { amount: tiktokBudgetAmount, frequency: tiktokBudgetFrequency },
+      },
+      creatives: creativesByPlatform,
+    };
+
+    console.log("Create Campaign payload:", payload);
+
+    try {
+      setIsCreatingCampaign(true);
+      const res = await apiFetch("/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const text = await res.text();
+      console.log("Create Campaign response:", res.status, text);
+    } catch (err) {
+      console.error("Create Campaign error:", err);
+    } finally {
+      setIsCreatingCampaign(false);
+    }
+  };
+
   const handleCreativeSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!creativeType) return;
@@ -213,6 +351,11 @@ export default function NewCampaignPage() {
         throw new Error("Failed to save creative: " + err);
       }
 
+      const savedCreative = await saveRes
+        .json()
+        .catch(() => ({ heading: creativeHeading, subheading: creativeSubheading, imageUrl: secureUrl, platform: creativeType }));
+      setCreativesByPlatform((prev) => ({ ...prev, [creativeType]: savedCreative }));
+
       setIsCreativeModalOpen(false);
     } catch (err) {
       console.error("Creative upload error:", err);
@@ -263,7 +406,7 @@ export default function NewCampaignPage() {
             </div>
 
             {/* New Campaign Form */}
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleCreateCampaignSubmit}>
               {/* Campaign Name */}
               <div className="bg-white rounded-xl p-4">
                 <div className="flex gap-3 items-center">
@@ -347,6 +490,15 @@ export default function NewCampaignPage() {
                           <input
                             type="radio"
                             name="campaignGoal"
+                            value="sales"
+                            className="form-radio"
+                          />
+                          <span className="ml-2">Sales</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name="campaignGoal"
                             value="leads"
                             className="form-radio"
                           />
@@ -406,7 +558,13 @@ export default function NewCampaignPage() {
                         >
                           <Checkbox
                             id="meta"
-                            defaultChecked
+                            checked={selectedPlatforms.meta}
+                            onCheckedChange={(checked) =>
+                              setSelectedPlatforms((prev) => ({
+                                ...prev,
+                                meta: Boolean(checked),
+                              }))
+                            }
                             className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                           />
 
@@ -458,7 +616,13 @@ export default function NewCampaignPage() {
                         >
                           <Checkbox
                             id="tiktok"
-                            defaultChecked
+                            checked={selectedPlatforms.tiktok}
+                            onCheckedChange={(checked) =>
+                              setSelectedPlatforms((prev) => ({
+                                ...prev,
+                                tiktok: Boolean(checked),
+                              }))
+                            }
                             className="data-[state=checked]:bg-darkkhaki-200 data-[state=checked]:text-white data-[state=checked]:border-darkkhaki-200"
                           />
 
@@ -584,43 +748,83 @@ export default function NewCampaignPage() {
                             {/* country */}
                             <div className="p-2 bg-gray-50 h-52 rounded-xl">
                               <p>Country</p>
-                              <div className="border-b inline-flex items-center justify-between w-full pb-2">
-                                <p className="text-gray-400">Nigeria</p>
-                                <p className="text-peru-200">Change country</p>
+                              <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
+                                <div className="flex-1">
+                                  {isMetaCountryEditing ? (
+                                    <Select
+                                      value={metaCountry}
+                                      onValueChange={(v) => {
+                                        setMetaCountry(v);
+                                        setIsMetaCountryEditing(false);
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Select country" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectGroup>
+                                          <SelectLabel>Country</SelectLabel>
+                                          {COUNTRY_OPTIONS.map((c) => (
+                                            <SelectItem key={c} value={c}>
+                                              {c}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectGroup>
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <p className="text-gray-400">{metaCountry}</p>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="text-peru-200"
+                                  onClick={() => setIsMetaCountryEditing(true)}
+                                >
+                                  Change country
+                                </button>
                               </div>
                               <div className="mt-2">
                                 <InputGroup className="bg-white">
-                                  <InputGroupInput placeholder="Search for city or state" />
+                                  <InputGroupInput
+                                    placeholder="Search for city or state"
+                                    value={metaLocationQuery}
+                                    onChange={(e) =>
+                                      setMetaLocationQuery(e.target.value)
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        addLocationTag("meta", metaLocationQuery);
+                                      }
+                                    }}
+                                  />
                                   <InputGroupAddon>
                                     <Search />
                                   </InputGroupAddon>
                                 </InputGroup>
                                 {/* city/state tags */}
-                                <div className="mt-2 flex gap-2">
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Makurdi
-                                    </p>
-                                  </div>
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Abuja
-                                    </p>
-                                  </div>
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Lagos
-                                    </p>
-                                  </div>
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Kano
-                                    </p>
-                                  </div>
+                                <div className="mt-2 flex gap-2 flex-wrap">
+                                  {metaLocations.map((location) => (
+                                    <div
+                                      key={location}
+                                      className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md"
+                                    >
+                                      <button
+                                        type="button"
+                                        className="text-xs font-medium text-gray-700"
+                                        aria-label={`Remove ${location}`}
+                                        onClick={() =>
+                                          removeLocationTag("meta", location)
+                                        }
+                                      >
+                                        &times;
+                                      </button>
+                                      <p className="text-xs font-medium text-gray-700">
+                                        {location}
+                                      </p>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             </div>
@@ -721,7 +925,10 @@ export default function NewCampaignPage() {
                               </div>
                             </div>
                           </div>
-                          <Button className="mt-2 bg-khaki-200 hover:bg-khaki-300 text-black">
+                          <Button
+                            type="button"
+                            className="mt-2 bg-khaki-200 hover:bg-khaki-300 text-black"
+                          >
                             Save audience
                           </Button>
                         </div>
@@ -763,43 +970,86 @@ export default function NewCampaignPage() {
                             {/* country */}
                             <div className="p-2 bg-gray-50 h-52 rounded-xl">
                               <p>Country</p>
-                              <div className="border-b inline-flex items-center justify-between w-full pb-2">
-                                <p className="text-gray-400">Nigeria</p>
-                                <p className="text-peru-200">Change country</p>
+                              <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
+                                <div className="flex-1">
+                                  {isTiktokCountryEditing ? (
+                                    <Select
+                                      value={tiktokCountry}
+                                      onValueChange={(v) => {
+                                        setTiktokCountry(v);
+                                        setIsTiktokCountryEditing(false);
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Select country" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectGroup>
+                                          <SelectLabel>Country</SelectLabel>
+                                          {COUNTRY_OPTIONS.map((c) => (
+                                            <SelectItem key={c} value={c}>
+                                              {c}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectGroup>
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <p className="text-gray-400">{tiktokCountry}</p>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="text-peru-200"
+                                  onClick={() => setIsTiktokCountryEditing(true)}
+                                >
+                                  Change country
+                                </button>
                               </div>
                               <div className="mt-2">
                                 <InputGroup className="bg-white">
-                                  <InputGroupInput placeholder="Search for city or state" />
+                                  <InputGroupInput
+                                    placeholder="Search for city or state"
+                                    value={tiktokLocationQuery}
+                                    onChange={(e) =>
+                                      setTiktokLocationQuery(e.target.value)
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        addLocationTag(
+                                          "tiktok",
+                                          tiktokLocationQuery,
+                                        );
+                                      }
+                                    }}
+                                  />
                                   <InputGroupAddon>
                                     <Search />
                                   </InputGroupAddon>
                                 </InputGroup>
                                 {/* city/state tags */}
-                                <div className="mt-2 flex gap-2">
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Makurdi
-                                    </p>
-                                  </div>
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Abuja
-                                    </p>
-                                  </div>
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Lagos
-                                    </p>
-                                  </div>
-                                  <div className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                                    <p>&times;</p>
-                                    <p className="text-xs font-medium text-gray-700">
-                                      Kano
-                                    </p>
-                                  </div>
+                                <div className="mt-2 flex gap-2 flex-wrap">
+                                  {tiktokLocations.map((location) => (
+                                    <div
+                                      key={location}
+                                      className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md"
+                                    >
+                                      <button
+                                        type="button"
+                                        className="text-xs font-medium text-gray-700"
+                                        aria-label={`Remove ${location}`}
+                                        onClick={() =>
+                                          removeLocationTag("tiktok", location)
+                                        }
+                                      >
+                                        &times;
+                                      </button>
+                                      <p className="text-xs font-medium text-gray-700">
+                                        {location}
+                                      </p>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             </div>
@@ -900,7 +1150,10 @@ export default function NewCampaignPage() {
                               </div>
                             </div>
                           </div>
-                          <Button className="mt-2 bg-khaki-200 hover:bg-khaki-300 text-black">
+                          <Button
+                            type="button"
+                            className="mt-2 bg-khaki-200 hover:bg-khaki-300 text-black"
+                          >
                             Save audience
                           </Button>
                         </div>
@@ -941,6 +1194,27 @@ export default function NewCampaignPage() {
                         </p>
                       </div>
 
+                      <div className="mt-3 flex items-center justify-between">
+                        <p className="text-gray-500">Currency</p>
+                        <div className="w-40">
+                          <Select value={currency} onValueChange={setCurrency}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Currency</SelectLabel>
+                                {CURRENCY_OPTIONS.map((c) => (
+                                  <SelectItem key={c} value={c}>
+                                    {c}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
                       {/* Platform budgets */}
                       <div className="grid grid-cols-2 gap-2 mt-4">
                         {/* Meta Card */}
@@ -962,8 +1236,18 @@ export default function NewCampaignPage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-2 mt-2">
-                              <Input />
-                              <Select>
+                              <Input
+                                name="metaBudgetAmount"
+                                value={metaBudgetAmount}
+                                onChange={(e) => setMetaBudgetAmount(e.target.value)}
+                                placeholder="Amount"
+                              />
+                              <Select
+                                value={metaBudgetFrequency}
+                                onValueChange={(v) =>
+                                  setMetaBudgetFrequency(v as "daily" | "lifetime")
+                                }
+                              >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select frequency" />
                                 </SelectTrigger>
@@ -971,15 +1255,7 @@ export default function NewCampaignPage() {
                                   <SelectGroup>
                                     <SelectLabel>Frequency</SelectLabel>
                                     <SelectItem value="daily">Daily</SelectItem>
-                                    <SelectItem value="weekly">
-                                      Weekly
-                                    </SelectItem>
-                                    <SelectItem value="monthly">
-                                      Monthly
-                                    </SelectItem>
-                                    <SelectItem value="yearly">
-                                      Yearly
-                                    </SelectItem>
+                                    <SelectItem value="lifetime">Lifetime</SelectItem>
                                   </SelectGroup>
                                 </SelectContent>
                               </Select>
@@ -1006,8 +1282,18 @@ export default function NewCampaignPage() {
                               <span>Grow with Growdex</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2 mt-2">
-                              <Input />
-                              <Select>
+                              <Input
+                                name="tiktokBudgetAmount"
+                                value={tiktokBudgetAmount}
+                                onChange={(e) => setTiktokBudgetAmount(e.target.value)}
+                                placeholder="Amount"
+                              />
+                              <Select
+                                value={tiktokBudgetFrequency}
+                                onValueChange={(v) =>
+                                  setTiktokBudgetFrequency(v as "daily" | "lifetime")
+                                }
+                              >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select frequency" />
                                 </SelectTrigger>
@@ -1015,15 +1301,7 @@ export default function NewCampaignPage() {
                                   <SelectGroup>
                                     <SelectLabel>Frequency</SelectLabel>
                                     <SelectItem value="daily">Daily</SelectItem>
-                                    <SelectItem value="weekly">
-                                      Weekly
-                                    </SelectItem>
-                                    <SelectItem value="monthly">
-                                      Monthly
-                                    </SelectItem>
-                                    <SelectItem value="yearly">
-                                      Yearly
-                                    </SelectItem>
+                                    <SelectItem value="lifetime">Lifetime</SelectItem>
                                   </SelectGroup>
                                 </SelectContent>
                               </Select>
@@ -1125,9 +1403,13 @@ export default function NewCampaignPage() {
               </div>
 
               {/* create campaign btn */}
-              <Button className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer">
+              <Button
+                type="submit"
+                disabled={isCreatingCampaign}
+                className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer"
+              >
                 <CircleArrowRight />
-                Create campaign
+                {isCreatingCampaign ? "Creating..." : "Create campaign"}
               </Button>
             </form>
 
