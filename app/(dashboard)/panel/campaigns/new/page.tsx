@@ -274,32 +274,62 @@ export default function NewCampaignPage() {
     try {
       setIsUploading(true);
       setUploadProgress(0);
+      setUploadError(null);
 
       if (!creativeImage) {
-        console.warn("No image selected");
-        // Continue to allow heading/subheading-only creatives if desired
+        setUploadError("Please select an image or video.");
+        return;
       }
 
-      // Get signature from server
-      const signRes = await fetch("/api/cloudinary/sign", {
+      // Get signature stamp from backend
+      const signRes = await apiFetch("/media/generate_signature_stamp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ folder: "campaign_creatives" }),
       });
 
-      if (!signRes.ok) throw new Error("Failed to get signature from server");
-      const signJson = await signRes.json();
-      const { signature, timestamp, api_key, cloud_name } = signJson;
+      if (!signRes.ok) {
+        const errText = await signRes.text().catch(() => "");
+        throw new Error(
+          `Failed to get signature stamp (${signRes.status}): ${errText}`,
+        );
+      }
+
+      const signJson: any = await signRes.json().catch(() => ({}));
+      const signPayload = signJson?.data ?? signJson;
+      const signatureStamp =
+        signPayload?.signature_stamp ?? signPayload?.signatureStamp;
+
+      const signature =
+        signPayload?.signature ?? signatureStamp?.signature ?? signatureStamp;
+      const timestamp =
+        signPayload?.timestamp ?? signatureStamp?.timestamp ?? undefined;
+      const api_key =
+        signPayload?.api_key ?? signPayload?.apiKey ?? signatureStamp?.api_key;
+      const cloud_name =
+        signPayload?.cloud_name ??
+        signPayload?.cloudName ??
+        signatureStamp?.cloud_name;
+
+      if (!signature || !timestamp || !api_key || !cloud_name) {
+        throw new Error(
+          `Signature response missing required fields. Received: ${JSON.stringify(
+            signJson,
+          )}`,
+        );
+      }
 
       // Build FormData for Cloudinary
       const formData = new FormData();
-      if (creativeImage) formData.append("file", creativeImage);
-      if (api_key) formData.append("api_key", api_key);
-      if (timestamp) formData.append("timestamp", String(timestamp));
-      if (signature) formData.append("signature", signature);
+      formData.append("file", creativeImage);
+      formData.append("api_key", api_key);
+      formData.append("timestamp", String(timestamp));
+      formData.append("signature", String(signature));
       formData.append("folder", "campaign_creatives");
 
-      const resourceType = creativeImage?.type.startsWith("video/") ? "video" : "image";
+      const resourceType = creativeImage.type.startsWith("video/")
+        ? "video"
+        : "image";
       const uploadUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/${resourceType}/upload`;
 
       // Upload with progress using XHR
@@ -359,7 +389,9 @@ export default function NewCampaignPage() {
       setIsCreativeModalOpen(false);
     } catch (err) {
       console.error("Creative upload error:", err);
-      // TODO: surface error to user
+      setUploadError(
+        err instanceof Error ? err.message : "Failed to upload creative",
+      );
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
