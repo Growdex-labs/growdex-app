@@ -51,7 +51,6 @@ function ConnectPlatformsView({
   refreshSocialAccounts
 }: StepTwoProps) {
   const [platformBoxSelected, setPlatformBoxSelected] = useState<SocialPlatform>('meta');
-  console.log('from step-two.tsx', socialAccounts);
   return (
     <div>
       {/* Header */}

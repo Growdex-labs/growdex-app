@@ -76,6 +76,7 @@ export default function NewCampaignPage() {
   >("daily");
 
   const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [creativesByPlatform, setCreativesByPlatform] = useState<
     Partial<Record<"meta" | "tiktok", any>>
   >({});
@@ -224,7 +225,7 @@ export default function NewCampaignPage() {
     e: React.FormEvent<HTMLFormElement>,
   ) => {
     e.preventDefault();
-    if (isCreatingCampaign) return;
+    setSubmissionError(null);
 
     const fd = new FormData(e.currentTarget);
     const raw = formDataToObject(fd);
@@ -232,6 +233,11 @@ export default function NewCampaignPage() {
     const platforms = Object.entries(selectedPlatforms)
       .filter(([, enabled]) => Boolean(enabled))
       .map(([platform]) => platform);
+
+    if (platforms.length === 0) {
+      setSubmissionError("Please choose at least one platform.");
+      return;
+    }
 
     const payload = {
       ...raw,
@@ -1433,6 +1439,12 @@ export default function NewCampaignPage() {
                   </div>
                 </div>
               </div>
+
+              {submissionError && (
+                <p className="text-red-500 text-sm font-medium text-center">
+                  {submissionError}
+                </p>
+              )}
 
               {/* create campaign btn */}
               <Button

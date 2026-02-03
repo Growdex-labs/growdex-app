@@ -57,7 +57,7 @@ export function SpendingChart({ data }: SpendingChartProps) {
               {/* Platform icons */}
               <div className="flex gap-2">
                 <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center">
-                  <img src="/logos_meta-icon.png" alt="meta" className="w-3 h-3 text-white" />
+                  <img src="/logos_meta-icon.png" alt="meta" className="w-3 h-3" />
                 </div>
                 <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center">
                   <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">

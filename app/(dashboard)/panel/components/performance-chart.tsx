@@ -109,7 +109,7 @@ export function PerformanceChart({
               <div key={index} className="flex-1 flex flex-col items-center">
                 <div className="flex gap-1 md:gap-1.5 mb-2">
                   <div className="w-4 h-4 md:w-6 md:h-5 bg-blue-50 rounded-full flex items-center justify-center">
-                    <img src="/logos_meta-icon.png" className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+                    <img src="/logos_meta-icon.png" alt="meta" className="w-2.5 h-2.5 md:w-3 md:h-3" />
                   </div>
                   <div className="w-4 h-4 md:w-5 md:h-5 bg-black rounded-full flex items-center justify-center">
                     <svg

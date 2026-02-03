@@ -44,8 +44,6 @@ function OnboardingPageContent() {
     tiktok: { connected: false, needsReauth: false },
   });
 
-  console.log('from page.tsx', socialAccounts);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
