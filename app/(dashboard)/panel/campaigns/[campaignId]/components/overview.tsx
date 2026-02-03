@@ -19,11 +19,11 @@ interface OverviewProps {
 
 // Mock chart data
 const chartData = [
-  { date: "21/09/2025", facebook: 6000, instagram: 8000, tiktok: 10000 },
-  { date: "21/09/2025", facebook: 6500, instagram: 9500, tiktok: 6500 },
-  { date: "21/09/2025", facebook: 7500, instagram: 10000, tiktok: 7500 },
-  { date: "21/09/2025", facebook: 8000, instagram: 10500, tiktok: 11000 },
-  { date: "21/09/2025", facebook: 12500, instagram: 14500, tiktok: 7500 },
+  { date: "21/09/2025", meta: 6000, tiktok: 8000 },
+  { date: "21/09/2025", meta: 6500, tiktok: 9500 },
+  { date: "21/09/2025", meta: 7500, tiktok: 10000 },
+  { date: "21/09/2025", meta: 8000, tiktok: 10500 },
+  { date: "21/09/2025", meta: 12500, tiktok: 14500 },
 ];
 
 export function Overview({ campaign, subTab }: OverviewProps) {
