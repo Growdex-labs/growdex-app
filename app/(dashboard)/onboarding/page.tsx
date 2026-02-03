@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { connectSocialAccount, disconnectSocialAccount, type SocialPlatform } from '@/lib/oauth';
 import { fetchOnboardingStatus, savePersonalInfo, skipOnboarding } from '@/lib/onboarding';
+import { hydrateSocialAccounts } from '@/lib/social';
 import { StepOneOnboarding } from './components/step-one';
 import { StepTwoOnboarding } from './components/step-two';
 import { StepThreeOnboarding } from './components/step-three';
@@ -42,6 +43,8 @@ function OnboardingPageContent() {
     meta: { connected: false, needsReauth: false },
     tiktok: { connected: false, needsReauth: false },
   });
+
+  console.log('from page.tsx', socialAccounts);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -155,17 +158,17 @@ function OnboardingPageContent() {
     return () => clearTimeout(timeout);
   }, [error]);
 
+  const refreshSocialAccounts = async () => {
+    const res = await hydrateSocialAccounts();
+    if (res.success && res.data) {
+      setSocialAccounts(res.data);
+    }
+  };
+
   useEffect(() => {
     if (currentStep !== 2) return;
-
-    const hydrate = async () => {
-      const res = await fetchOnboardingStatus();
-
-      setSocialAccounts(res.data?.socialAccounts || { meta: { connected: false, needsReauth: false, assets: [] }, tiktok: { connected: false, needsReauth: false, assets: [] } });
-    };
-
-    hydrate();
-  }, [currentStep]);
+    refreshSocialAccounts();
+  }, [currentStep, searchParams]);
 
   return (
     <>
@@ -210,6 +213,7 @@ function OnboardingPageContent() {
               onNext={() => goToStep(2, { mode: 'confirm' })}
               onConfirm={() => goToStep(3)}
               handleSetupLater={handleSetupLater}
+              refreshSocialAccounts={refreshSocialAccounts}
             />
           )}
 

@@ -57,12 +57,12 @@ export function CollapsibleSidebar({ userName = 'Tunmi Lawal', userEmail = 'tunm
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors bg-white text-gray-800 cursor-pointer mb-4">
+        <Link href='/panel/campaigns/new' className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors bg-white text-gray-800 cursor-pointer mb-4">
           <Plus className='flex-shrink-0' />
           {!isCollapsed && (
             <span>Create campaign</span>
           )}
-        </button>
+        </Link>
         <div className="space-y-1 border-t border-dimGray pt-4">
           {navItems.map((item) => {
             const Icon = item.icon;
