@@ -10,7 +10,7 @@ interface SpendingChartProps {
 export function SpendingChart({ data }: SpendingChartProps) {
   // Calculate max value for scaling
   const maxValue = Math.max(
-    ...data.flatMap(d => [d.facebook, d.instagram, d.tiktok])
+    ...data.flatMap(d => [d.meta, d.tiktok])
   );
 
   // Scale factor to fit chart
@@ -48,21 +48,16 @@ export function SpendingChart({ data }: SpendingChartProps) {
             <div key={index} className="flex-1 flex flex-col items-center gap-4">
               {/* Bars container */}
               <div className="w-full flex items-end justify-center gap-1.5 h-56">
-                {/* Facebook bar */}
-                <div className="w-8 bg-gray-300 rounded-t-sm" style={{ height: `${item.facebook * scale}%` }} />
-                {/* Instagram bar */}
-                <div className="w-8 bg-yellow-400 rounded-t-sm" style={{ height: `${item.instagram * scale}%` }} />
+                {/* Meta bar */}
+                <div className="w-8 bg-gray-300 rounded-t-sm" style={{ height: `${item.meta * scale}%` }} />
                 {/* TikTok bar */}
                 <div className="w-8 bg-gray-800 rounded-t-sm" style={{ height: `${item.tiktok * scale}%` }} />
               </div>
 
               {/* Platform icons */}
               <div className="flex gap-2">
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                  <Facebook className="w-3 h-3 text-white" />
-                </div>
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                  <Instagram className="w-3 h-3 text-white" />
+                <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center">
+                  <img src="/logos_meta-icon.png" alt="meta" className="w-3 h-3 text-white" />
                 </div>
                 <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center">
                   <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
