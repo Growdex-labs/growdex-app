@@ -1,35 +1,104 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PanelLayout } from "../components/panel-layout";
 import { CampaignsSidebar } from "../components/campaigns-sidebar";
 import { CampaignsMobileHeader } from "../components/campaigns-mobile-header";
 import { CampaignsTable } from "../components/campaigns-table";
 import { ScheduledCampaignsCard } from "../components/scheduled-campaigns-card";
 import { SuspendedCampaignsTable } from "../components/suspended-campaigns-table";
-import { mockCampaigns, formatCurrency } from "@/lib/mock-data";
+import { Campaign, mockCampaigns, formatCurrency } from "@/lib/mock-data";
+import { fetchCampaigns } from "@/lib/campaigns";
 import { Search, Plus, FilePlus, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
+
+const utcDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "UTC",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<
     "active" | "suspended" | "scheduled"
   >("active");
 
-  const activeCampaigns = mockCampaigns.filter((c) => c.status === "active");
-  const suspendedCampaigns = mockCampaigns.filter(
-    (c) => c.status === "suspended"
-  );
-  const scheduledCampaigns = mockCampaigns.filter(
-    (c) => c.status === "scheduled"
+  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const run = async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const data = await fetchCampaigns();
+
+        const mapped: Campaign[] = (data ?? []).map((c) => {
+          const createdAt = c.createdAt ? new Date(c.createdAt) : null;
+          const started =
+            createdAt && !Number.isNaN(createdAt.getTime())
+              ? utcDateFormatter.format(createdAt)
+              : "-";
+          const backendStatus = String(c.status ?? "draft").toLowerCase();
+          const status: Campaign["status"] =
+            backendStatus === "active"
+              ? "active"
+              : backendStatus === "paused"
+                ? "paused"
+                : backendStatus === "suspended"
+                  ? "suspended"
+                  : "scheduled";
+
+          return {
+            id: c.id,
+            name: c.name,
+            platforms: c.platforms ?? [],
+            started,
+            impressions: 0,
+            reach: { min: 0, max: 0 },
+            ctr: 0,
+            ctrTrend: 0,
+            status,
+            goal: c.goal,
+          };
+        });
+
+        if (isMounted) setCampaigns(mapped);
+      } catch (err) {
+        if (!isMounted) return;
+        setLoadError(err instanceof Error ? err.message : "Failed to load");
+        setCampaigns(mockCampaigns);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const { activeCampaigns, suspendedCampaigns, scheduledCampaigns } = useMemo(
+    () => ({
+      activeCampaigns: campaigns.filter((c) => c.status === "active"),
+      suspendedCampaigns: campaigns.filter(
+        (c) => c.status === "suspended" || c.status === "paused",
+      ),
+      scheduledCampaigns: campaigns.filter((c) => c.status === "scheduled"),
+    }),
+    [campaigns],
   );
 
   const displayedCampaigns =
     activeTab === "active"
       ? activeCampaigns
       : activeTab === "suspended"
-      ? suspendedCampaigns
-      : scheduledCampaigns;
+        ? suspendedCampaigns
+        : scheduledCampaigns;
 
   return (
     <PanelLayout>
@@ -140,6 +209,16 @@ export default function CampaignsPage() {
               </div>
             </div>
 
+            {loadError && (
+              <div className="mb-4 text-sm text-red-600">{loadError}</div>
+            )}
+
+            {isLoading && (
+              <div className="mb-4 text-sm text-gray-500">
+                Loading campaigns…
+              </div>
+            )}
+
             {/* Action Bar */}
             <div className="mb-6">
               <div className="flex items-center justify-between">
@@ -155,7 +234,10 @@ export default function CampaignsPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 justify-between sm:justify-end flex-1">
-                  <Link href='/panel/campaigns/new' className="px-5 py-2.5 bg-khaki-200 text-gray-900 rounded-lg font-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors">
+                  <Link
+                    href="/panel/campaigns/new"
+                    className="px-5 py-2.5 bg-khaki-200 text-gray-900 rounded-lg font-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors"
+                  >
                     <Plus className="w-5 h-5" />
                     New campaign
                   </Link>
