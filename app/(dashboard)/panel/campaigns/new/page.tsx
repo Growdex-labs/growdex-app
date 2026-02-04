@@ -24,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/auth";
-import { createCampaign, type CampaignGoal } from "@/lib/campaigns";
+import { createCampaign, type BudgetType, type CampaignGoal } from "@/lib/campaigns";
 import {
   metaSpecialAdLocations,
   type MetaSpecialAdLocationCode,
@@ -49,9 +49,11 @@ import {
 export default function NewCampaignPage() {
   const [progressTab, setProgressTab] = useState<number>(0);
 
-  const COUNTRY_OPTIONS = (Object.entries(metaSpecialAdLocations) as Array<
-    [MetaSpecialAdLocationCode, string]
-  >)
+  const COUNTRY_OPTIONS = (
+    Object.entries(metaSpecialAdLocations) as Array<
+      [MetaSpecialAdLocationCode, string]
+    >
+  )
     .map(([code, name]) => ({ code, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
@@ -194,10 +196,7 @@ export default function NewCampaignPage() {
 
   const normalizeTag = (value: string) => value.trim().replace(/\s+/g, " ");
 
-  const addLocationTag = (
-    platform: "meta" | "tiktok",
-    value: string,
-  ) => {
+  const addLocationTag = (platform: "meta" | "tiktok", value: string) => {
     const next = normalizeTag(value);
     if (!next) return;
 
@@ -256,7 +255,9 @@ export default function NewCampaignPage() {
     const obj: Record<string, any> = {};
     for (const [key, value] of fd.entries()) {
       if (key in obj) {
-        obj[key] = Array.isArray(obj[key]) ? [...obj[key], value] : [obj[key], value];
+        obj[key] = Array.isArray(obj[key])
+          ? [...obj[key], value]
+          : [obj[key], value];
       } else {
         obj[key] = value;
       }
@@ -283,7 +284,9 @@ export default function NewCampaignPage() {
   };
 
   const startOfUtcDayIso = (d: Date) =>
-    new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString();
+    new Date(
+      Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+    ).toISOString();
 
   const addDaysUtcIso = (iso: string, days: number) => {
     const base = new Date(iso);
@@ -309,27 +312,39 @@ export default function NewCampaignPage() {
       return;
     }
 
-    const uniqueLocations = Array.from(
-      new Set<string>([...metaCountries, ...tiktokCountries]),
-    );
+    const selectedLocations = [
+      ...(selectedPlatforms.meta ? metaCountries : []),
+      ...(selectedPlatforms.tiktok ? tiktokCountries : []),
+    ];
+    const uniqueLocations = Array.from(new Set<string>(selectedLocations));
 
-    const budgetAmountMeta = Number(metaBudgetAmount || 0);
-    const budgetAmountTiktok = Number(tiktokBudgetAmount || 0);
+    const budgetAmountMeta = selectedPlatforms.meta
+      ? Number(metaBudgetAmount || 0)
+      : 0;
+    const budgetAmountTiktok = selectedPlatforms.tiktok
+      ? Number(tiktokBudgetAmount || 0)
+      : 0;
     const budgetAmount =
       (Number.isFinite(budgetAmountMeta) ? budgetAmountMeta : 0) +
       (Number.isFinite(budgetAmountTiktok) ? budgetAmountTiktok : 0);
 
-    const budgetType = (selectedPlatforms.meta
-      ? metaBudgetFrequency
-      : selectedPlatforms.tiktok
-        ? tiktokBudgetFrequency
-        : "daily") as "daily" | "lifetime";
+    const budgetType: BudgetType = (() => {
+      const types: BudgetType[] = [];
+      if (selectedPlatforms.meta) types.push(metaBudgetFrequency);
+      if (selectedPlatforms.tiktok) types.push(tiktokBudgetFrequency);
+
+      if (types.includes("lifetime")) return "lifetime";
+      return "daily";
+    })();
 
     const startDate = startOfUtcDayIso(new Date());
     const endDate = addDaysUtcIso(startDate, 7);
 
-    const creatives = Object.values(creativesByPlatform)
-      .filter(Boolean)
+    const creatives = (Object.entries(creativesByPlatform) as Array<
+      ["meta" | "tiktok", any]
+    >)
+      .filter(([platform, value]) => Boolean(value) && selectedPlatforms[platform])
+      .map(([, c]) => c)
       .map((c: any) => ({
         primaryText: String(c?.primaryText ?? c?.subheading ?? ""),
         headline: String(c?.headline ?? c?.heading ?? ""),
@@ -407,7 +422,10 @@ export default function NewCampaignPage() {
       const signRes = await apiFetch("/media/signature-stamp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ public_id: publicId, folder: CLOUDINARY_FOLDER }),
+        body: JSON.stringify({
+          public_id: publicId,
+          folder: CLOUDINARY_FOLDER,
+        }),
       });
 
       if (!signRes.ok) {
@@ -894,12 +912,17 @@ export default function NewCampaignPage() {
                                 </div>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <button type="button" className="text-peru-200">
+                                    <button
+                                      type="button"
+                                      className="text-peru-200"
+                                    >
                                       Change country
                                     </button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent className="w-72 max-h-72">
-                                    <DropdownMenuLabel>Countries</DropdownMenuLabel>
+                                    <DropdownMenuLabel>
+                                      Countries
+                                    </DropdownMenuLabel>
                                     {COUNTRY_OPTIONS.map(({ code, name }) => (
                                       <DropdownMenuCheckboxItem
                                         key={code}
@@ -929,7 +952,10 @@ export default function NewCampaignPage() {
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter") {
                                         e.preventDefault();
-                                        addLocationTag("meta", metaLocationQuery);
+                                        addLocationTag(
+                                          "meta",
+                                          metaLocationQuery,
+                                        );
                                       }
                                     }}
                                   />
@@ -1112,12 +1138,17 @@ export default function NewCampaignPage() {
                                 </div>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <button type="button" className="text-peru-200">
+                                    <button
+                                      type="button"
+                                      className="text-peru-200"
+                                    >
                                       Change country
                                     </button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent className="w-72 max-h-72">
-                                    <DropdownMenuLabel>Countries</DropdownMenuLabel>
+                                    <DropdownMenuLabel>
+                                      Countries
+                                    </DropdownMenuLabel>
                                     {COUNTRY_OPTIONS.map(({ code, name }) => (
                                       <DropdownMenuCheckboxItem
                                         key={code}
@@ -1372,13 +1403,17 @@ export default function NewCampaignPage() {
                                 min={0}
                                 step={0.01}
                                 value={metaBudgetAmount}
-                                onChange={(e) => setMetaBudgetAmount(e.target.value)}
+                                onChange={(e) =>
+                                  setMetaBudgetAmount(e.target.value)
+                                }
                                 placeholder="Amount"
                               />
                               <Select
                                 value={metaBudgetFrequency}
                                 onValueChange={(v) =>
-                                  setMetaBudgetFrequency(v as "daily" | "lifetime")
+                                  setMetaBudgetFrequency(
+                                    v as "daily" | "lifetime",
+                                  )
                                 }
                               >
                                 <SelectTrigger>
@@ -1388,7 +1423,9 @@ export default function NewCampaignPage() {
                                   <SelectGroup>
                                     <SelectLabel>Frequency</SelectLabel>
                                     <SelectItem value="daily">Daily</SelectItem>
-                                    <SelectItem value="lifetime">Lifetime</SelectItem>
+                                    <SelectItem value="lifetime">
+                                      Lifetime
+                                    </SelectItem>
                                   </SelectGroup>
                                 </SelectContent>
                               </Select>
@@ -1421,13 +1458,17 @@ export default function NewCampaignPage() {
                                 min={0}
                                 step={0.01}
                                 value={tiktokBudgetAmount}
-                                onChange={(e) => setTiktokBudgetAmount(e.target.value)}
+                                onChange={(e) =>
+                                  setTiktokBudgetAmount(e.target.value)
+                                }
                                 placeholder="Amount"
                               />
                               <Select
                                 value={tiktokBudgetFrequency}
                                 onValueChange={(v) =>
-                                  setTiktokBudgetFrequency(v as "daily" | "lifetime")
+                                  setTiktokBudgetFrequency(
+                                    v as "daily" | "lifetime",
+                                  )
                                 }
                               >
                                 <SelectTrigger>
@@ -1437,7 +1478,9 @@ export default function NewCampaignPage() {
                                   <SelectGroup>
                                     <SelectLabel>Frequency</SelectLabel>
                                     <SelectItem value="daily">Daily</SelectItem>
-                                    <SelectItem value="lifetime">Lifetime</SelectItem>
+                                    <SelectItem value="lifetime">
+                                      Lifetime
+                                    </SelectItem>
                                   </SelectGroup>
                                 </SelectContent>
                               </Select>

@@ -7,7 +7,6 @@ export const metaSpecialAdLocations = {
   AI: "Anguilla",
   AL: "Albania",
   AM: "Armenia",
-  AN: "Netherlands Antilles",
   AO: "Angola",
   AQ: "Antarctica",
   AR: "Argentina",

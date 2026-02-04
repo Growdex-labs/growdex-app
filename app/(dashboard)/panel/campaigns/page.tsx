@@ -12,6 +12,13 @@ import { fetchCampaigns } from "@/lib/campaigns";
 import { Search, Plus, FilePlus, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 
+const utcDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "UTC",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<
     "active" | "suspended" | "scheduled"
@@ -31,9 +38,7 @@ export default function CampaignsPage() {
 
         const mapped: Campaign[] = (data ?? []).map((c) => {
           const createdAt = c.createdAt ? new Date(c.createdAt) : null;
-          const started = createdAt
-            ? createdAt.toLocaleDateString("en-GB")
-            : "-";
+          const started = createdAt ? utcDateFormatter.format(createdAt) : "-";
 
           const backendStatus = String(c.status ?? "draft").toLowerCase();
           const status: Campaign["status"] =
@@ -78,7 +83,9 @@ export default function CampaignsPage() {
   const { activeCampaigns, suspendedCampaigns, scheduledCampaigns } = useMemo(
     () => ({
       activeCampaigns: campaigns.filter((c) => c.status === "active"),
-      suspendedCampaigns: campaigns.filter((c) => c.status === "suspended"),
+      suspendedCampaigns: campaigns.filter(
+        (c) => c.status === "suspended" || c.status === "paused",
+      ),
       scheduledCampaigns: campaigns.filter((c) => c.status === "scheduled"),
     }),
     [campaigns],
@@ -88,8 +95,8 @@ export default function CampaignsPage() {
     activeTab === "active"
       ? activeCampaigns
       : activeTab === "suspended"
-      ? suspendedCampaigns
-      : scheduledCampaigns;
+        ? suspendedCampaigns
+        : scheduledCampaigns;
 
   return (
     <PanelLayout>
@@ -205,7 +212,9 @@ export default function CampaignsPage() {
             )}
 
             {isLoading && (
-              <div className="mb-4 text-sm text-gray-500">Loading campaigns…</div>
+              <div className="mb-4 text-sm text-gray-500">
+                Loading campaigns…
+              </div>
             )}
 
             {/* Action Bar */}
@@ -223,7 +232,10 @@ export default function CampaignsPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 justify-between sm:justify-end flex-1">
-                  <Link href='/panel/campaigns/new' className="px-5 py-2.5 bg-khaki-200 text-gray-900 rounded-lg font-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors">
+                  <Link
+                    href="/panel/campaigns/new"
+                    className="px-5 py-2.5 bg-khaki-200 text-gray-900 rounded-lg font-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors"
+                  >
                     <Plus className="w-5 h-5" />
                     New campaign
                   </Link>
