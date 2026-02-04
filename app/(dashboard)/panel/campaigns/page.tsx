@@ -38,8 +38,10 @@ export default function CampaignsPage() {
 
         const mapped: Campaign[] = (data ?? []).map((c) => {
           const createdAt = c.createdAt ? new Date(c.createdAt) : null;
-          const started = createdAt ? utcDateFormatter.format(createdAt) : "-";
-
+          const started =
+            createdAt && !Number.isNaN(createdAt.getTime())
+              ? utcDateFormatter.format(createdAt)
+              : "-";
           const backendStatus = String(c.status ?? "draft").toLowerCase();
           const status: Campaign["status"] =
             backendStatus === "active"
