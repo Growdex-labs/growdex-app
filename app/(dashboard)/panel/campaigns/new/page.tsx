@@ -24,6 +24,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/auth";
+import { createCampaign, type CampaignGoal } from "@/lib/campaigns";
+import {
+  metaSpecialAdLocations,
+  type MetaSpecialAdLocationCode,
+} from "@/lib/meta-special-ad-locations";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -37,7 +49,11 @@ import {
 export default function NewCampaignPage() {
   const [progressTab, setProgressTab] = useState<number>(0);
 
-  const COUNTRY_OPTIONS = ["Nigeria"];
+  const COUNTRY_OPTIONS = (Object.entries(metaSpecialAdLocations) as Array<
+    [MetaSpecialAdLocationCode, string]
+  >)
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
 
   const [selectedPlatforms, setSelectedPlatforms] = useState({
@@ -45,10 +61,12 @@ export default function NewCampaignPage() {
     tiktok: true,
   });
 
-  const [metaCountry, setMetaCountry] = useState("Nigeria");
-  const [tiktokCountry, setTiktokCountry] = useState("Nigeria");
-  const [isMetaCountryEditing, setIsMetaCountryEditing] = useState(false);
-  const [isTiktokCountryEditing, setIsTiktokCountryEditing] = useState(false);
+  const [metaCountries, setMetaCountries] = useState<
+    MetaSpecialAdLocationCode[]
+  >(["NG"]);
+  const [tiktokCountries, setTiktokCountries] = useState<
+    MetaSpecialAdLocationCode[]
+  >(["NG"]);
 
   const [metaLocationQuery, setMetaLocationQuery] = useState("");
   const [tiktokLocationQuery, setTiktokLocationQuery] = useState("");
@@ -209,6 +227,31 @@ export default function NewCampaignPage() {
     setTiktokLocations((prev) => prev.filter((x) => x !== value));
   };
 
+  const toggleCountry = (
+    platform: "meta" | "tiktok",
+    code: MetaSpecialAdLocationCode,
+    checked: boolean,
+  ) => {
+    const setter = platform === "meta" ? setMetaCountries : setTiktokCountries;
+    setter((prev) => {
+      const exists = prev.includes(code);
+      if (checked) {
+        return exists ? prev : [...prev, code];
+      }
+
+      // keep at least one country selected
+      if (prev.length <= 1) return prev;
+      return prev.filter((c) => c !== code);
+    });
+  };
+
+  const formatCountriesSummary = (codes: MetaSpecialAdLocationCode[]) => {
+    if (!codes?.length) return "Select countries";
+    const names = codes.map((c) => metaSpecialAdLocations[c]).filter(Boolean);
+    if (names.length <= 2) return names.join(", ");
+    return `${names[0]}, ${names[1]} +${names.length - 2}`;
+  };
+
   const formDataToObject = (fd: FormData) => {
     const obj: Record<string, any> = {};
     for (const [key, value] of fd.entries()) {
@@ -219,6 +262,33 @@ export default function NewCampaignPage() {
       }
     }
     return obj;
+  };
+
+  const normalizeGoal = (goal: unknown): CampaignGoal => {
+    const g = String(goal ?? "").toLowerCase();
+    switch (g) {
+      case "awareness":
+        return "AWARENESS";
+      case "traffic":
+        return "TRAFFIC";
+      case "conversions":
+        return "CONVERSIONS";
+      case "sales":
+        return "SALES";
+      case "leads":
+        return "LEADS";
+      default:
+        return "AWARENESS";
+    }
+  };
+
+  const startOfUtcDayIso = (d: Date) =>
+    new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString();
+
+  const addDaysUtcIso = (iso: string, days: number) => {
+    const base = new Date(iso);
+    base.setUTCDate(base.getUTCDate() + days);
+    return base.toISOString();
   };
 
   const handleCreateCampaignSubmit = async (
@@ -239,35 +309,65 @@ export default function NewCampaignPage() {
       return;
     }
 
+    const uniqueLocations = Array.from(
+      new Set<string>([...metaCountries, ...tiktokCountries]),
+    );
+
+    const budgetAmountMeta = Number(metaBudgetAmount || 0);
+    const budgetAmountTiktok = Number(tiktokBudgetAmount || 0);
+    const budgetAmount =
+      (Number.isFinite(budgetAmountMeta) ? budgetAmountMeta : 0) +
+      (Number.isFinite(budgetAmountTiktok) ? budgetAmountTiktok : 0);
+
+    const budgetType = (selectedPlatforms.meta
+      ? metaBudgetFrequency
+      : selectedPlatforms.tiktok
+        ? tiktokBudgetFrequency
+        : "daily") as "daily" | "lifetime";
+
+    const startDate = startOfUtcDayIso(new Date());
+    const endDate = addDaysUtcIso(startDate, 7);
+
+    const creatives = Object.values(creativesByPlatform)
+      .filter(Boolean)
+      .map((c: any) => ({
+        primaryText: String(c?.primaryText ?? c?.subheading ?? ""),
+        headline: String(c?.headline ?? c?.heading ?? ""),
+        cta: String(c?.cta ?? "LEARN_MORE"),
+        mediaUrl: String(c?.mediaUrl ?? c?.imageUrl ?? ""),
+      }))
+      .filter((c) => Boolean(c.mediaUrl));
+
     const payload = {
-      ...raw,
-      platforms,
-      currency,
-      audience: {
-        meta: { country: metaCountry, locations: metaLocations },
-        tiktok: { country: tiktokCountry, locations: tiktokLocations },
+      name: String(raw.campaignName ?? ""),
+      goal: normalizeGoal(raw.campaignGoal),
+      platforms: platforms as Array<"meta" | "tiktok">,
+      targeting: {
+        locations: uniqueLocations,
+        ageMin: 18,
+        ageMax: 45,
+        gender: "all" as const,
+        interests: [],
       },
-      budgets: {
-        meta: { amount: metaBudgetAmount, frequency: metaBudgetFrequency },
-        tiktok: { amount: tiktokBudgetAmount, frequency: tiktokBudgetFrequency },
+      budget: {
+        amount: budgetAmount,
+        currency,
+        type: budgetType,
+        startDate,
+        endDate,
       },
-      creatives: creativesByPlatform,
+      creatives,
     };
 
     console.log("Create Campaign payload:", payload);
 
     try {
       setIsCreatingCampaign(true);
-      const res = await apiFetch("/campaigns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const text = await res.text();
-      console.log("Create Campaign response:", res.status, text);
+      const data = await createCampaign(payload);
+      console.log("Create Campaign response:", data);
     } catch (err) {
       console.error("Create Campaign error:", err);
+      setSubmissionError(err instanceof Error ? err.message : "Create failed");
     } finally {
       setIsCreatingCampaign(false);
     }
@@ -278,8 +378,6 @@ export default function NewCampaignPage() {
     if (!creativeType) return;
 
     try {
-      setIsUploading(true);
-      setUploadProgress(0);
       setUploadError(null);
 
       if (!creativeImage) {
@@ -287,11 +385,29 @@ export default function NewCampaignPage() {
         return;
       }
 
+      const CLOUDINARY_FOLDER = "growdex_campaigns";
+      const publicId = process.env.NEXT_PUBLIC_CLOUDINARY_PUBLIC_ID;
+      if (!publicId) {
+        setUploadError(
+          "Missing NEXT_PUBLIC_CLOUDINARY_PUBLIC_ID. Please set it in your environment.",
+        );
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "Once you upload this creative, it will be saved to Cloudinary and you won’t be able to edit it. To make changes later, you’ll need to upload a new creative.\n\nDo you want to continue?",
+      );
+
+      if (!confirmed) return;
+
+      setIsUploading(true);
+      setUploadProgress(0);
+
       // Get signature stamp from backend
-      const signRes = await apiFetch("/media/generate_signature_stamp", {
+      const signRes = await apiFetch("/media/signature-stamp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder: "campaign_creatives" }),
+        body: JSON.stringify({ public_id: publicId, folder: CLOUDINARY_FOLDER }),
       });
 
       if (!signRes.ok) {
@@ -303,19 +419,11 @@ export default function NewCampaignPage() {
 
       const signJson: any = await signRes.json().catch(() => ({}));
       const signPayload = signJson?.data ?? signJson;
-      const signatureStamp =
-        signPayload?.signature_stamp ?? signPayload?.signatureStamp;
 
-      const signature =
-        signPayload?.signature ?? signatureStamp?.signature ?? signatureStamp;
-      const timestamp =
-        signPayload?.timestamp ?? signatureStamp?.timestamp ?? undefined;
-      const api_key =
-        signPayload?.api_key ?? signPayload?.apiKey ?? signatureStamp?.api_key;
-      const cloud_name =
-        signPayload?.cloud_name ??
-        signPayload?.cloudName ??
-        signatureStamp?.cloud_name;
+      const signature = signPayload?.signature;
+      const timestamp = signPayload?.timestamp;
+      const api_key = signPayload?.api_key ?? signPayload?.apiKey;
+      const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
       if (!signature || !timestamp || !api_key || !cloud_name) {
         throw new Error(
@@ -331,7 +439,8 @@ export default function NewCampaignPage() {
       formData.append("api_key", api_key);
       formData.append("timestamp", String(timestamp));
       formData.append("signature", String(signature));
-      formData.append("folder", "campaign_creatives");
+      formData.append("public_id", publicId);
+      formData.append("folder", CLOUDINARY_FOLDER);
 
       const resourceType = creativeImage.type.startsWith("video/")
         ? "video"
@@ -370,27 +479,18 @@ export default function NewCampaignPage() {
       const secureUrl = uploadResult.secure_url;
       console.log("Cloudinary upload result", uploadResult);
 
-      // Persist creative to backend
-      const saveRes = await apiFetch("/campaigns/creatives", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          heading: creativeHeading,
-          subheading: creativeSubheading,
-          imageUrl: secureUrl,
+      setCreativesByPlatform((prev) => ({
+        ...prev,
+        [creativeType]: {
+          primaryText: creativeSubheading,
+          headline: creativeHeading,
+          cta: "LEARN_MORE",
+          mediaUrl: secureUrl,
+          publicId,
+          folder: CLOUDINARY_FOLDER,
           platform: creativeType,
-        }),
-      });
-
-      if (!saveRes.ok) {
-        const err = await saveRes.text();
-        throw new Error("Failed to save creative: " + err);
-      }
-
-      const savedCreative = await saveRes
-        .json()
-        .catch(() => ({ heading: creativeHeading, subheading: creativeSubheading, imageUrl: secureUrl, platform: creativeType }));
-      setCreativesByPlatform((prev) => ({ ...prev, [creativeType]: savedCreative }));
+        },
+      }));
 
       setIsCreativeModalOpen(false);
     } catch (err) {
@@ -788,39 +888,35 @@ export default function NewCampaignPage() {
                               <p>Country</p>
                               <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
                                 <div className="flex-1">
-                                  {isMetaCountryEditing ? (
-                                    <Select
-                                      value={metaCountry}
-                                      onValueChange={(v) => {
-                                        setMetaCountry(v);
-                                        setIsMetaCountryEditing(false);
-                                      }}
-                                    >
-                                      <SelectTrigger className="h-8">
-                                        <SelectValue placeholder="Select country" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectGroup>
-                                          <SelectLabel>Country</SelectLabel>
-                                          {COUNTRY_OPTIONS.map((c) => (
-                                            <SelectItem key={c} value={c}>
-                                              {c}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectGroup>
-                                      </SelectContent>
-                                    </Select>
-                                  ) : (
-                                    <p className="text-gray-400">{metaCountry}</p>
-                                  )}
+                                  <p className="text-gray-400">
+                                    {formatCountriesSummary(metaCountries)}
+                                  </p>
                                 </div>
-                                <button
-                                  type="button"
-                                  className="text-peru-200"
-                                  onClick={() => setIsMetaCountryEditing(true)}
-                                >
-                                  Change country
-                                </button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button type="button" className="text-peru-200">
+                                      Change country
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent className="w-72 max-h-72">
+                                    <DropdownMenuLabel>Countries</DropdownMenuLabel>
+                                    {COUNTRY_OPTIONS.map(({ code, name }) => (
+                                      <DropdownMenuCheckboxItem
+                                        key={code}
+                                        checked={metaCountries.includes(code)}
+                                        onCheckedChange={(checked) =>
+                                          toggleCountry(
+                                            "meta",
+                                            code,
+                                            Boolean(checked),
+                                          )
+                                        }
+                                      >
+                                        {name}
+                                      </DropdownMenuCheckboxItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
                               <div className="mt-2">
                                 <InputGroup className="bg-white">
@@ -1010,39 +1106,35 @@ export default function NewCampaignPage() {
                               <p>Country</p>
                               <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
                                 <div className="flex-1">
-                                  {isTiktokCountryEditing ? (
-                                    <Select
-                                      value={tiktokCountry}
-                                      onValueChange={(v) => {
-                                        setTiktokCountry(v);
-                                        setIsTiktokCountryEditing(false);
-                                      }}
-                                    >
-                                      <SelectTrigger className="h-8">
-                                        <SelectValue placeholder="Select country" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectGroup>
-                                          <SelectLabel>Country</SelectLabel>
-                                          {COUNTRY_OPTIONS.map((c) => (
-                                            <SelectItem key={c} value={c}>
-                                              {c}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectGroup>
-                                      </SelectContent>
-                                    </Select>
-                                  ) : (
-                                    <p className="text-gray-400">{tiktokCountry}</p>
-                                  )}
+                                  <p className="text-gray-400">
+                                    {formatCountriesSummary(tiktokCountries)}
+                                  </p>
                                 </div>
-                                <button
-                                  type="button"
-                                  className="text-peru-200"
-                                  onClick={() => setIsTiktokCountryEditing(true)}
-                                >
-                                  Change country
-                                </button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button type="button" className="text-peru-200">
+                                      Change country
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent className="w-72 max-h-72">
+                                    <DropdownMenuLabel>Countries</DropdownMenuLabel>
+                                    {COUNTRY_OPTIONS.map(({ code, name }) => (
+                                      <DropdownMenuCheckboxItem
+                                        key={code}
+                                        checked={tiktokCountries.includes(code)}
+                                        onCheckedChange={(checked) =>
+                                          toggleCountry(
+                                            "tiktok",
+                                            code,
+                                            Boolean(checked),
+                                          )
+                                        }
+                                      >
+                                        {name}
+                                      </DropdownMenuCheckboxItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
                               <div className="mt-2">
                                 <InputGroup className="bg-white">
