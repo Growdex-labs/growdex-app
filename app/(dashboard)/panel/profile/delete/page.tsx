@@ -3,23 +3,23 @@
 import { type JSX, useState } from "react";
 import Link from "next/link";
 import { PanelLayout } from "../../components/panel-layout";
-import { DashboardHeader } from "../../components/dashboard-header";
 import { ChevronLeft } from "lucide-react";
 import { DepositIcon, DepositIcon2 } from "@/components/svg";
+import { useMe } from "@/context/me-context";
 
 export default function DeleteAccountPage(): JSX.Element {
+  const { me, isLoading } = useMe();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
-  const [userEmail] = useState("emmabuka@email.com");
 
-  const profileData = {
-    name: "Emma Ebuka",
-    email: "emmabuka@email.com",
-    isVerified: true,
-    profileImage: "/profile.png",
-  };
+  const profileName =
+    me?.profile?.firstName && me?.profile?.lastName
+      ? `${me.profile.firstName} ${me.profile.lastName}`
+      : (me?.email ?? "Account");
+  const userEmail = me?.email ?? "";
+  const profileImage = "/profile.png";
 
   const handleDeactivateClick = () => {
     setIsDeleteModalOpen(true);
@@ -79,22 +79,15 @@ export default function DeleteAccountPage(): JSX.Element {
             <div>
               <div className="flex gap-4 items-start">
                 <img
-                  src={profileData.profileImage}
+                  src={profileImage}
                   alt="Profile"
                   className="w-24 h-24 md:w-28 md:h-28 rounded-lg object-cover bg-gray-100"
                 />
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                    {profileData.name}
+                    {isLoading ? "Loading…" : profileName}
                   </h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {profileData.email}
-                  </p>
-                  {profileData.isVerified && (
-                    <span className="inline-block mt-2 px-3 py-1 bg-khaki-300/10 text-khaki-200 text-xs font-semibold rounded-full">
-                      ✓ Verified User
-                    </span>
-                  )}
+                  <p className="text-sm text-gray-600 mt-1">{userEmail}</p>
                 </div>
               </div>
             </div>
@@ -146,7 +139,7 @@ export default function DeleteAccountPage(): JSX.Element {
                       Name
                     </p>
                     <p className="text-sm font-semibold text-gray-900">
-                      {profileData.name}
+                      {isLoading ? "Loading…" : profileName}
                     </p>
                   </div>
                   <div>
@@ -154,7 +147,7 @@ export default function DeleteAccountPage(): JSX.Element {
                       Email Address
                     </p>
                     <p className="text-sm font-semibold text-gray-900">
-                      {profileData.email}
+                      {userEmail}
                     </p>
                   </div>
                 </div>

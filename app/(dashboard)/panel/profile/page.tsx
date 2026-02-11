@@ -1,6 +1,6 @@
 "use client";
 
-import { type JSX } from "react";
+import { type JSX, useMemo } from "react";
 import Link from "next/link";
 import { PanelLayout } from "../components/panel-layout";
 import { DashboardHeader } from "../components/dashboard-header";
@@ -12,48 +12,67 @@ import {
   Linkedin,
   Trash2,
 } from "lucide-react";
+import { useMe } from "@/context/me-context";
 
 export default function MyProfilePage(): JSX.Element {
-  const profileData = {
-    name: "Emma Ebuka",
-    email: "emmabuka@email.com",
-    isVerified: true,
-    profileImage: "/profile.png",
-    linkedAccounts: [
+  const { me, isLoading } = useMe();
+
+  const profileData = useMemo(() => {
+    const name =
+      me?.profile?.firstName && me?.profile?.lastName
+        ? `${me.profile.firstName} ${me.profile.lastName}`
+        : (me?.email ?? "Account");
+
+    const linkedAccounts = [
       {
         id: 1,
         platform: "Facebook",
         icon: "facebook",
-        url: "https://facebook.id/emmaeebuka",
+        url: me?.brand?.facebookUrl ?? "",
       },
       {
         id: 2,
         platform: "Instagram",
         icon: "instagram",
-        url: "https://instagram.id/emmaeebuka",
+        url: me?.brand?.instagramUrl ?? "",
       },
       {
         id: 3,
-        platform: "LinkedIn",
+        platform: "Google",
         icon: "linkedin",
-        url: "https://linkedin.id/emmaeebuka",
+        url: me?.brand?.googleUrl ?? "",
       },
-    ],
-    personalDetails: {
-      firstName: "Emmanuel",
-      lastName: "Ebukachiubu",
-      phoneNumber: "08035567899",
-      email: "emmabuka@email.com",
-      gender: "Male",
-      country: "Nigeria",
-      language: "08035567899",
-    },
-    brandDetails: {
-      brandName: "Ebusky Collections",
-      brandAddress: "104, Osumbo Moadwe way, Lekki phase II",
-      registrationDate: "25th, December, 2018",
-    },
-  };
+    ].filter((a) => Boolean(a.url));
+
+    const registrationDate = me?.brand?.createdAt
+      ? new Date(me.brand.createdAt).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "—";
+
+    return {
+      name,
+      email: me?.email ?? "",
+      profileImage: "/profile.png",
+      linkedAccounts,
+      personalDetails: {
+        firstName: me?.profile?.firstName ?? "—",
+        lastName: me?.profile?.lastName ?? "—",
+        phoneNumber: me?.profile?.phone ?? "—",
+        email: me?.email ?? "—",
+        gender: "—",
+        country: me?.profile?.country ?? "—",
+        language: "—",
+      },
+      brandDetails: {
+        brandName: me?.brand?.name ?? "—",
+        brandAddress: me?.brand?.businessAddress ?? "—",
+        registrationDate,
+      },
+    };
+  }, [me]);
 
   return (
     <PanelLayout>
@@ -84,16 +103,11 @@ export default function MyProfilePage(): JSX.Element {
                     />
                     <div>
                       <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                        {profileData.name}
+                        {isLoading ? "Loading…" : profileData.name}
                       </h1>
                       <p className="text-sm text-gray-600 mt-1">
                         {profileData.email}
                       </p>
-                      {profileData.isVerified && (
-                        <span className="inline-block mt-2 px-3 py-1 bg-khaki-300/10 text-khaki-200 text-xs font-semibold rounded-full">
-                          ✓ Verified User
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -203,7 +217,7 @@ export default function MyProfilePage(): JSX.Element {
                         Phone Number
                       </p>
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                        <div className="w-6 h-6 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
                           O
                         </div>
                         <p className="text-sm md:text-base font-semibold text-gray-900">
@@ -273,7 +287,7 @@ export default function MyProfilePage(): JSX.Element {
                         Brand Registration Date
                       </p>
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                        <div className="w-8 h-8 bg-linear-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
                           A
                         </div>
                         <p className="text-sm md:text-base font-semibold text-gray-900">
