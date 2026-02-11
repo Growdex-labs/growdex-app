@@ -3,6 +3,7 @@
 import { PencilIcon, SaveIcon, CheckIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { mockCampaigns, Budget } from "@/lib/mock-data";
+import { useMe } from "@/context/me-context";
 import {
   Select,
   SelectContent,
@@ -21,25 +22,28 @@ export default function EditBudgetForm({
   budget,
   budgetStatus,
 }: EditBudgetFormProps) {
+  const { me } = useMe();
+  const brandName = me?.brand?.name ?? "Your Brand";
+
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [budgetTitle, setBudgetTitle] = useState(budget.name);
   const [selectedCampaign, setSelectedCampaign] = useState<string>(
-    budget.campaignId
+    budget.campaignId,
   );
   const [pauseOnBudgetReached, setPauseOnBudgetReached] = useState(
-    budget.pauseOnBudgetReached
+    budget.pauseOnBudgetReached,
   );
   const [facebookAmount, setFacebookAmount] = useState(
-    budget.facebookBudget.amount.toString()
+    budget.facebookBudget.amount.toString(),
   );
   const [facebookFrequency, setFacebookFrequency] = useState(
-    budget.facebookBudget.frequency
+    budget.facebookBudget.frequency,
   );
   const [tiktokAmount, setTiktokAmount] = useState(
-    budget.tiktokBudget.amount.toString()
+    budget.tiktokBudget.amount.toString(),
   );
   const [tiktokFrequency, setTiktokFrequency] = useState(
-    budget.tiktokBudget.frequency
+    budget.tiktokBudget.frequency,
   );
   const [hasChanges, setHasChanges] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,11 +104,8 @@ export default function EditBudgetForm({
       <div className="bg-slate-100 p-3 flex rounded-lg items-center mb-4">
         <div className="size-7 rounded-full bg-linear-to-br from-green-400 to-emerald-600 text-white mr-3 flex items-center justify-center text-sm font-bold">
           {budget.icon ? (
-            <img
-              src={budget.icon}
-              alt={budget.name}
-            />
-            ) : (
+            <img src={budget.icon} alt={budget.name} />
+          ) : (
             <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
           )}
         </div>
@@ -203,7 +204,7 @@ export default function EditBudgetForm({
 
             {/* Input Section */}
             <div className="flex-1">
-              <p className="text-xs text-gray-600 mb-2">Growdex Limited</p>
+              <p className="text-xs text-gray-600 mb-2">{brandName}</p>
               <div className="flex gap-2 mb-2">
                 <input
                   type="text"
@@ -254,7 +255,7 @@ export default function EditBudgetForm({
 
             {/* Input Section */}
             <div className="flex-1">
-              <p className="text-xs text-gray-600 mb-2">Grow with Growdex</p>
+              <p className="text-xs text-gray-600 mb-2">{brandName}</p>
               <div className="flex gap-2 mb-2">
                 <input
                   type="text"

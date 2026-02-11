@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
+import { useMe } from "@/context/me-context";
 
 const activeSessions = [
   {
@@ -30,11 +31,12 @@ const activeSessions = [
 ];
 
 export default function SecurityControlPage() {
+  const { me } = useMe();
   const [activeTab, setActiveTab] = useState("2fa");
   const [sessions, setSessions] = useState(activeSessions);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
-    null
+    null,
   );
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
@@ -45,8 +47,8 @@ export default function SecurityControlPage() {
   const [showEnableSuccess, setShowEnableSuccess] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
   const [enablePassword, setEnablePassword] = useState("");
-  const [enableOTP, setEnableOTP] = useState(["" , "", "", "", "", "", ""]);
-  const [userEmail] = useState("emmoeekos@email.com");
+  const [enableOTP, setEnableOTP] = useState(["", "", "", "", "", "", ""]);
+  const userEmail = me?.email ?? "";
 
   const handleTerminateClick = (sessionId: number) => {
     setSelectedSessionId(sessionId);
@@ -56,7 +58,7 @@ export default function SecurityControlPage() {
   const handleConfirmTerminate = () => {
     if (selectedSessionId !== null) {
       setSessions(
-        sessions.filter((session) => session.id !== selectedSessionId)
+        sessions.filter((session) => session.id !== selectedSessionId),
       );
     }
     setIsModalOpen(false);
@@ -110,7 +112,7 @@ export default function SecurityControlPage() {
       const newOTP = [...enableOTP];
       newOTP[index] = value;
       setEnableOTP(newOTP);
-      
+
       // Auto-focus next input
       if (value && index < 6) {
         const nextInput = document.getElementById(`otp-${index + 1}`);
@@ -131,7 +133,7 @@ export default function SecurityControlPage() {
     setShowEnableSuccess(false);
     setIs2FAModalOpen(false);
     setEnablePassword("");
-    setEnableOTP(["" , "", "", "", "", "", ""]);
+    setEnableOTP(["", "", "", "", "", "", ""]);
   };
 
   const handleCancel2FA = () => {
@@ -144,7 +146,7 @@ export default function SecurityControlPage() {
       setIs2FAModalOpen(false);
       setEnablePassword("");
       setDisablePassword("");
-      setEnableOTP(["" , "", "", "", "", "", ""]);
+      setEnableOTP(["", "", "", "", "", "", ""]);
     } else if (showDisable2FAConfirm || showEnableOTP) {
       setShowDisable2FAConfirm(false);
       setShowEnableOTP(false);
@@ -163,7 +165,7 @@ export default function SecurityControlPage() {
       viewBox="0 0 256 256"
       width="20"
       height="20"
-      className="flex-shrink-0"
+      className="shrink-0"
     >
       <defs>
         <radialGradient
@@ -202,7 +204,7 @@ export default function SecurityControlPage() {
       xmlns="http://www.w3.org/2000/svg"
       width="20"
       height="20"
-      className="flex-shrink-0"
+      className="shrink-0"
     >
       <path
         d="M4.7434,22.505A12.9769,12.9769,0,0,0,14.88,28.949l5.8848-10.1927L16,16.0058,11.2385,18.755l-1.5875-2.75L8.4885,13.9919,5.3553,8.5649A12.9894,12.9894,0,0,0,4.7434,22.505Z"
@@ -227,7 +229,7 @@ export default function SecurityControlPage() {
       xmlns="http://www.w3.org/2000/svg"
       width="20"
       height="20"
-      className="flex-shrink-0"
+      className="shrink-0"
       fill="#000000"
     >
       <path d="M17.05 20.28c-.98.95-2.05.8-3.08.38-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.12-.38C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8.905-.08 1.81-.78 2.99-.78 2.29 0 3.73 1.08 4.28 3.24-4.1 1.97-3.02 5.95-1.35 7.7 0 .01.01.01.01.02z" />
@@ -654,30 +656,35 @@ export default function SecurityControlPage() {
         <div className="fixed inset-0 bg-slate-200/30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
             {/* Initial 2FA Choice Screen */}
-            {!showDisable2FAConfirm && !showDisable2FASuccess && !showEnablePassword && !showEnableOTP && !showEnableSuccess && (
-              <>
-                <h2 className="text-xl font-bold text-gray-900 text-center mb-4">
-                  Two-Factor Authentication (2FA)
-                </h2>
-                <p className="text-gray-600 text-center mb-6">
-                  Do you want to add an extra layer of protection to your account?
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleDisable2FA}
-                    className="flex-1 px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors"
-                  >
-                    Disable 2FA
-                  </button>
-                  <button
-                    onClick={() => handleConfirm2FA("enable")}
-                    className="flex-1 px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800 transition-colors"
-                  >
-                    Enable 2FA
-                  </button>
-                </div>
-              </>
-            )}
+            {!showDisable2FAConfirm &&
+              !showDisable2FASuccess &&
+              !showEnablePassword &&
+              !showEnableOTP &&
+              !showEnableSuccess && (
+                <>
+                  <h2 className="text-xl font-bold text-gray-900 text-center mb-4">
+                    Two-Factor Authentication (2FA)
+                  </h2>
+                  <p className="text-gray-600 text-center mb-6">
+                    Do you want to add an extra layer of protection to your
+                    account?
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDisable2FA}
+                      className="flex-1 px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors"
+                    >
+                      Disable 2FA
+                    </button>
+                    <button
+                      onClick={() => handleConfirm2FA("enable")}
+                      className="flex-1 px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800 transition-colors"
+                    >
+                      Enable 2FA
+                    </button>
+                  </div>
+                </>
+              )}
 
             {/* Enable Password Screen */}
             {showEnablePassword && !showEnableOTP && !showEnableSuccess && (
@@ -686,7 +693,8 @@ export default function SecurityControlPage() {
                   Enable Two-Factor Authentication (2FA)
                 </h2>
                 <p className="text-gray-600 text-center text-sm mb-6">
-                  To continue, please enter your password. This will enable two-factor authentication
+                  To continue, please enter your password. This will enable
+                  two-factor authentication
                 </p>
 
                 {/* Email Address Field */}
@@ -753,7 +761,9 @@ export default function SecurityControlPage() {
                       type="text"
                       maxLength={1}
                       value={digit}
-                      onChange={(e) => handleEnableOTPChange(index, e.target.value)}
+                      onChange={(e) =>
+                        handleEnableOTPChange(index, e.target.value)
+                      }
                       className="w-10 h-10 border border-gray-300 rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-khaki-200"
                     />
                   ))}

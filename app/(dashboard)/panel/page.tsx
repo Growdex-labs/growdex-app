@@ -3,27 +3,43 @@
 import { useEffect, useState } from "react";
 import { PanelLayout } from "./components/panel-layout";
 import { DashboardHeader } from "./components/dashboard-header";
-import { MetricCard, ProgressBar } from "./components/metric-card";
-import { PerformanceChart } from './components/performance-chart';
+import { PerformanceChart } from "./components/performance-chart";
 import { CTRLineChart } from "./components/ctr-line-chart";
 import { DonutChart } from "./components/donut-chart";
-import {
-  mockDashboardMetrics,
-  mockChartData,
-  formatCurrency,
-  formatNumber,
-} from "@/lib/mock-data";
-import {
-  Megaphone,
-  TrendingUp,
-  Flame,
-  Users,
-  TrendingDown,
-} from "lucide-react";
+import { Users, TrendingDown } from "lucide-react";
 import { fetchPanelMetrics } from "@/lib/panel";
 
+type DashboardMetrics = {
+  totalSpent: number;
+  totalImpressions: number;
+  costPerConversion: { value: number; trend: number };
+  costPerClick: { value: number; trend: number };
+  clickThroughRate: { meta: number; tiktok: number; trend: number };
+  audienceReception: { value: string; trend: number };
+};
+
+const ZERO_METRICS: DashboardMetrics = {
+  totalSpent: 0,
+  totalImpressions: 0,
+  costPerConversion: { value: 0, trend: 0 },
+  costPerClick: { value: 0, trend: 0 },
+  clickThroughRate: { meta: 0, tiktok: 0, trend: 0 },
+  audienceReception: { value: "0", trend: 0 },
+};
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(value) ? value : 0);
+
+const formatNumber = (value: number) =>
+  Math.trunc(Number.isFinite(value) ? value : 0).toLocaleString("en-US");
+
 export default function PanelPage() {
-  const [metrics, setMetrics] = useState(mockDashboardMetrics);
+  const [metrics, setMetrics] = useState<DashboardMetrics>(ZERO_METRICS);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,50 +50,47 @@ export default function PanelPage() {
 
         if (result) {
           console.log("Dashboard metrics loaded:", result);
-
-          // Map API result to the DashboardMetrics shape used across the UI.
-          // The backend returns totals like `totalSpend`, `totalImpressions`,
-          // and platform breakdown in `byPlatform`. We merge fields into
-          // the existing mock shape so components depending on `campaigns`,
-          // `topPerformer`, etc. do not break.
-          const mapped = {
-            ...mockDashboardMetrics,
-            // prefer backend value when present (map naming differences)
-            totalSpent: result.totalSpend ?? mockDashboardMetrics.totalSpent,
+          setMetrics({
+            totalSpent:
+              typeof result.totalSpend === "number" ? result.totalSpend : 0,
             totalImpressions:
-              result.totalImpressions ?? mockDashboardMetrics.totalImpressions,
-            // costs
+              typeof result.totalImpressions === "number"
+                ? result.totalImpressions
+                : 0,
             costPerConversion: {
-              value: result.cpa ?? mockDashboardMetrics.costPerConversion.value,
-              trend: mockDashboardMetrics.costPerConversion.trend,
+              value: typeof result.cpa === "number" ? result.cpa : 0,
+              trend: 0,
             },
             costPerClick: {
-              value: result.cpc ?? mockDashboardMetrics.costPerClick.value,
-              trend: mockDashboardMetrics.costPerClick.trend,
+              value: typeof result.cpc === "number" ? result.cpc : 0,
+              trend: 0,
             },
-            // clickThroughRate expects { facebook, tiktok, trend }
             clickThroughRate: {
               meta:
-                result.byPlatform?.meta?.ctr ??
-                mockDashboardMetrics.clickThroughRate.meta,
+                typeof result.byPlatform?.meta?.ctr === "number"
+                  ? result.byPlatform.meta.ctr
+                  : 0,
               tiktok:
-                result.byPlatform?.tiktok?.ctr ??
-                mockDashboardMetrics.clickThroughRate.tiktok,
-              trend: mockDashboardMetrics.clickThroughRate.trend,
+                typeof result.byPlatform?.tiktok?.ctr === "number"
+                  ? result.byPlatform.tiktok.ctr
+                  : 0,
+              trend: 0,
             },
-            audienceReception:
-              result.audienceReception ??
-              mockDashboardMetrics.audienceReception,
-          };
-
-          setMetrics(mapped);
+            audienceReception: {
+              value:
+                typeof result.audienceReception === "string"
+                  ? result.audienceReception
+                  : "0",
+              trend: 0,
+            },
+          });
         } else {
-          console.log("No data returned, using mock data");
-          setMetrics(mockDashboardMetrics);
+          console.log("No data returned, keeping zeros");
+          setMetrics(ZERO_METRICS);
         }
       } catch (error) {
         console.error("Error loading dashboard metrics:", error);
-        setMetrics(mockDashboardMetrics);
+        setMetrics(ZERO_METRICS);
       } finally {
         setIsLoading(false);
       }
@@ -96,7 +109,7 @@ export default function PanelPage() {
           {/* Spending Chart - Takes 2 columns on desktop */}
           <div className="lg:col-span-2">
             <PerformanceChart
-              data={mockChartData}
+              data={[]}
               totalSpent={formatCurrency(metrics.totalSpent)}
               changePercentage={metrics.costPerConversion.trend}
             />
@@ -175,7 +188,10 @@ export default function PanelPage() {
             <div className="flex items-center gap-8 mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center">
-                  <img src="/logos_meta-icon.png" className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+                  <img
+                    src="/logos_meta-icon.png"
+                    className="w-2.5 h-2.5 md:w-3 md:h-3 text-white"
+                  />
                 </div>
                 <div className="flex gap-2">
                   <div className="text-2xl font-semibold text-blue-500">
@@ -234,10 +250,7 @@ export default function PanelPage() {
             </div>
 
             {/* Donut Chart */}
-            <DonutChart
-              meta={6789560}
-              tiktok={14300000}
-            />
+            <DonutChart meta={0} tiktok={0} />
           </div>
         </div>
       </div>

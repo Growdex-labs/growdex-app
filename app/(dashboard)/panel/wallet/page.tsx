@@ -9,9 +9,16 @@ import PaymentHistory from "./components/payment-history";
 import FundWallet from "./components/fund-wallet";
 import { WalletHeader } from "./components/wallet-header";
 import { useState } from "react";
+import { useMe } from "@/context/me-context";
 
 export default function WalletPage() {
   const [showBalance, setShowBalance] = useState(true);
+  const { me, isLoading } = useMe();
+
+  const cardHolderName =
+    me?.profile?.firstName && me?.profile?.lastName
+      ? `${me.profile.firstName} ${me.profile.lastName}`
+      : (me?.email ?? "Account");
 
   // Mock data - set to empty array to show empty state
   const savedCards = [
@@ -75,7 +82,7 @@ export default function WalletPage() {
                                   Card Holder
                                 </div>
                                 <div className="text-sm font-medium">
-                                  John Doe
+                                  {isLoading ? "Loading…" : cardHolderName}
                                 </div>
                               </div>
                               <div className="text-right">
@@ -191,7 +198,7 @@ export default function WalletPage() {
                                   Card Holder
                                 </div>
                                 <div className="text-sm font-medium">
-                                  Gina Ademola
+                                  {isLoading ? "Loading…" : cardHolderName}
                                 </div>
                               </div>
                               <div className="text-right">
@@ -268,7 +275,9 @@ export default function WalletPage() {
                             <div className="text-xs text-gray-400 mb-1">
                               Card Holder
                             </div>
-                            <div className="text-sm font-medium">John Doe</div>
+                            <div className="text-sm font-medium">
+                              {isLoading ? "Loading…" : cardHolderName}
+                            </div>
                           </div>
                           <div className="text-right">
                             <div className="text-xs text-gray-400 mb-1">
@@ -340,7 +349,7 @@ export default function WalletPage() {
                               Card Holder
                             </div>
                             <div className="text-sm font-medium">
-                              Gina Ademola
+                              {isLoading ? "Loading…" : cardHolderName}
                             </div>
                           </div>
                           <div className="text-right">
