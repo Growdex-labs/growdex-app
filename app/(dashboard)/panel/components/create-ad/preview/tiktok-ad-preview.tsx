@@ -10,7 +10,7 @@ interface TikTokAdPreviewProps {
 }
 
 export function TikTokAdPreview({
-  username = "@growdex",
+  username = "@yourbrand",
   caption = "",
   creative = null,
   profilePic = "/logo.png",

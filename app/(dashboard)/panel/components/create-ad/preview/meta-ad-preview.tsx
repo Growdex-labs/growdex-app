@@ -13,7 +13,7 @@ interface MetaAdPreviewProps {
 }
 
 export function MetaAdPreview({
-  brandName = "Growdex Limited",
+  brandName = "Your Brand",
   brandLogo = "/logo.png",
   caption = "",
   creative = null,

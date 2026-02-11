@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { DashboardHeader } from "../../components/dashboard-header";
 import { Camera, Upload, X } from "lucide-react";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { DepositIcon } from "@/components/svg";
 import Link from "next/link";
+import { useMe } from "@/context/me-context";
 
 interface ProfileFormData {
   firstName: string;
@@ -30,14 +31,15 @@ interface ProfileFormData {
 }
 
 export default function EditProfilePage(): JSX.Element {
+  const { me } = useMe();
   const [profileImage, setProfileImage] = useState<string>("/profile.png");
   const [formData, setFormData] = useState<ProfileFormData>({
-    firstName: "Tunmi",
-    lastName: "Lawal",
-    email: "tunmi@example.com",
-    phoneNumber: "+234 8012345678",
-    country: "Nigeria",
-    brandName: "Ebuko Limited",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    country: "",
+    brandName: "",
     twitterLink: "",
     facebookLink: "",
     googleLink: "",
@@ -47,6 +49,29 @@ export default function EditProfilePage(): JSX.Element {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!me) return;
+    if (initializedRef.current) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      firstName: me.profile?.firstName ?? "",
+      lastName: me.profile?.lastName ?? "",
+      email: me.email ?? "",
+      phoneNumber: me.profile?.phone ?? "",
+      country: me.profile?.country ?? "",
+      brandName: me.brand?.name ?? "",
+      twitterLink: me.brand?.twitterUrl ?? "",
+      facebookLink: me.brand?.facebookUrl ?? "",
+      googleLink: me.brand?.googleUrl ?? "",
+      instagramLink: me.brand?.instagramUrl ?? "",
+      businessAddress: me.brand?.businessAddress ?? "",
+    }));
+
+    initializedRef.current = true;
+  }, [me]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,7 +92,7 @@ export default function EditProfilePage(): JSX.Element {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({

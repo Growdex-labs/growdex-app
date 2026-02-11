@@ -1,6 +1,13 @@
-'use client';
+"use client";
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
 interface CTRChartProps {
   facebookData?: number[];
@@ -8,15 +15,15 @@ interface CTRChartProps {
 }
 
 export function CTRLineChart({
-  facebookData = [30, 65, 45, 70, 55, 80, 60, 55, 70, 85],
-  tiktokData = [50, 45, 65, 40, 75, 35, 55, 80, 55, 85]
+  facebookData = [],
+  tiktokData = [],
 }: CTRChartProps) {
-
   // Transform data into format Recharts expects
-  const chartData = facebookData.map((fbValue, index) => ({
+  const longest = Math.max(facebookData.length, tiktokData.length);
+  const chartData = Array.from({ length: longest }, (_, index) => ({
     index,
-    facebook: fbValue,
-    tiktok: tiktokData[index] || 0
+    facebook: facebookData[index] ?? 0,
+    tiktok: tiktokData[index] ?? 0,
   }));
 
   return (
@@ -32,15 +39,12 @@ export function CTRLineChart({
             vertical={false}
           />
 
-          <XAxis
-            dataKey="index"
-            hide={true}
-          />
+          <XAxis dataKey="index" hide={true} />
 
           <YAxis
             domain={[0, 100]}
             ticks={[20, 40, 60, 80, 100]}
-            tick={{ fill: '#9CA3AF', fontSize: 11 }}
+            tick={{ fill: "#9CA3AF", fontSize: 11 }}
             tickFormatter={(value) => `${value}%`}
             axisLine={false}
             tickLine={false}
