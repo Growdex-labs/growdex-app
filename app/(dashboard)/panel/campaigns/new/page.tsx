@@ -589,14 +589,28 @@ export default function NewCampaignPage() {
 
     console.log("Create Campaign payload:", payload);
 
+    // Store campaign data in session storage and redirect to publish page
     try {
       setIsCreatingCampaign(true);
-      const data = await createCampaign(payload);
-      console.log("Create Campaign response:", data);
+      sessionStorage.setItem(
+        "pendingCampaign",
+        JSON.stringify({
+          name: payload.name,
+          goal: payload.goal,
+          platforms: payload.platforms,
+          budget: payload.budget,
+          targeting: payload.targeting,
+          creatives: creativesByPlatform,
+        }),
+      );
+
+      // Redirect to publish page
+      window.location.href = "/panel/campaigns/new/publish";
     } catch (err) {
-      console.error("Create Campaign error:", err);
-      setSubmissionError(err instanceof Error ? err.message : "Create failed");
-    } finally {
+      console.error("Error preparing campaign:", err);
+      setSubmissionError(
+        err instanceof Error ? err.message : "Failed to prepare campaign",
+      );
       setIsCreatingCampaign(false);
     }
   };

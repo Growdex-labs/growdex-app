@@ -60,4 +60,48 @@ export const fetchAudiences = async (): Promise<Audience[]> => {
   return res.json();
 };
 
+export const fetchAudienceById = async (id: string): Promise<Audience> => {
+  const res = await apiFetch(`/audiences/${id}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Fetch audience failed (${res.status}): ${text}`);
+  }
+
+  return res.json();
+};
+
+export const updateAudience = async (
+  id: string,
+  payload: Partial<CreateAudiencePayload>,
+) => {
+  const res = await apiFetch(`/audiences/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Update audience failed (${res.status}): ${text}`);
+  }
+
+  return res.json();
+};
+
+export const deleteAudience = async (id: string) => {
+  const res = await apiFetch(`/audiences/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Delete audience failed (${res.status}): ${text}`);
+  }
+
+  return res.json();
+};
+
 export default createAudience;

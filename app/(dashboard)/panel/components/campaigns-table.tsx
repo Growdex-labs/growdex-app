@@ -139,25 +139,31 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {campaigns.map((campaign) => (
-              <tr
-                key={campaign.id}
-                onClick={() => router.push(`/panel/campaigns/${campaign.id}`)}
-                className="hover:bg-gray-50 transition-colors"
-              >
-                <td className="px-6 py-4">
-                  <div className="font-medium text-gray-900 whitespace-nowrap">
-                    {campaign.name}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    {campaign.platforms.map((platform) => (
-                      <div key={platform}>{getPlatformIcon(platform)}</div>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
+            {campaigns.map((campaign) => {
+              const isScheduledCampaign = campaign.status === "scheduled";
+              const navigationUrl = isScheduledCampaign
+                ? `/panel/campaigns/${campaign.id}/scheduled`
+                : `/panel/campaigns/${campaign.id}`;
+
+              return (
+                <tr
+                  key={campaign.id}
+                  onClick={() => router.push(navigationUrl)}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900 whitespace-nowrap">
+                      {campaign.name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      {campaign.platforms.map((platform) => (
+                        <div key={platform}>{getPlatformIcon(platform)}</div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
                   <div className="text-sm text-gray-600 whitespace-nowrap">
                     {campaign.started}
                   </div>
@@ -245,7 +251,8 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
                   </DropdownMenu>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

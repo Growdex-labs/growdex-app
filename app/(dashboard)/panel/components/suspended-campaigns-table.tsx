@@ -44,7 +44,7 @@ export function SuspendedCampaignsTable({
         );
       case "instagram":
         return (
-          <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+          <div className="w-6 h-6 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
             <svg
               className="w-3 h-3 text-white"
               viewBox="0 0 24 24"
@@ -118,12 +118,18 @@ export function SuspendedCampaignsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 border-khaki-200 rounded-lg">
-            {campaigns.map((campaign) => (
-              <tr
-                key={campaign.id}
-                onClick={() => router.push(`/panel/campaigns/${campaign.id}`)}
-                className="hover:bg-gray-50 transition-colors cursor-pointer"
-              >
+            {campaigns.map((campaign) => {
+              const isScheduledCampaign = campaign.status === "scheduled";
+              const navigationUrl = isScheduledCampaign
+                ? `/panel/campaigns/${campaign.id}/scheduled`
+                : `/panel/campaigns/${campaign.id}`;
+
+              return (
+                <tr
+                  key={campaign.id}
+                  onClick={() => router.push(navigationUrl)}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                >
                 <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={selectedIds.has(campaign.id)}
@@ -172,7 +178,8 @@ export function SuspendedCampaignsTable({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
