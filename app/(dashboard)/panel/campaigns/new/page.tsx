@@ -55,6 +55,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMe } from "@/context/me-context";
+import { hashFolderName } from "@/lib/encrypt";
+import { CLOUDINARY_FOLDER } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 
 type CreativeDraft = {
   primaryText?: string;
@@ -89,6 +92,7 @@ type CloudinaryUploadResponse = {
 
 export default function NewCampaignPage() {
   const { me } = useMe();
+  const router = useRouter();
   const brandName = me?.brand?.name ?? "Your Brand";
   const instagramAccountName = (() => {
     const url = me?.brand?.instagramUrl;
@@ -386,7 +390,7 @@ export default function NewCampaignPage() {
       case "traffic":
         return "TRAFFIC";
       case "conversions":
-        return "CONVERSIONS";
+        return "ENGAGEMENT";
       case "sales":
         return "SALES";
       case "leads":
@@ -593,6 +597,7 @@ export default function NewCampaignPage() {
       setIsCreatingCampaign(true);
       const data = await createCampaign(payload);
       console.log("Create Campaign response:", data);
+      router.push("/panel/campaigns");
     } catch (err) {
       console.error("Create Campaign error:", err);
       setSubmissionError(err instanceof Error ? err.message : "Create failed");
@@ -613,9 +618,9 @@ export default function NewCampaignPage() {
         return;
       }
 
-      const CLOUDINARY_FOLDER = "growdex_campaigns";
+      const encryptedFolder = await hashFolderName();
       const publicId =
-        `${CLOUDINARY_FOLDER}/${creativeImage.name}/` + Date.now();
+        `${encryptedFolder.slice(0, 20)}/${creativeImage.name}/` + Date.now();
 
       const confirmed = window.confirm(
         "Once you upload this creative, it will be saved to Cloudinary and you won’t be able to edit it. To make changes later, you’ll need to upload a new creative.\n\nDo you want to continue?",
