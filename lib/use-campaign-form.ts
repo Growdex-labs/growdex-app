@@ -41,14 +41,8 @@ export function useCampaignFormState() {
 
   const [metaInterestQuery, setMetaInterestQuery] = useState("");
   const [tiktokInterestQuery, setTiktokInterestQuery] = useState("");
-  const [metaInterests, setMetaInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
-  const [tiktokInterests, setTiktokInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
+  const [metaInterests, setMetaInterests] = useState<string[]>([]);
+  const [tiktokInterests, setTiktokInterests] = useState<string[]>([]);
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
