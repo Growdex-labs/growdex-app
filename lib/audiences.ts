@@ -101,6 +101,16 @@ export const deleteAudience = async (id: string) => {
     throw new Error(`Delete audience failed (${res.status}): ${text}`);
   }
 
+  // Handle 204 No Content or empty responses
+  if (res.status === 204) {
+    return null;
+  }
+
+  const contentType = res.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    return null;
+  }
+
   return res.json();
 };
 

@@ -40,7 +40,11 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
       case "meta":
         return (
           <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center">
-            <img src="/logos_meta-icon.png" alt="meta" className="w-3 h-3 text-white" />
+            <img
+              src="/logos_meta-icon.png"
+              alt="meta"
+              className="w-3 h-3 text-white"
+            />
           </div>
         );
       case "tiktok":
@@ -164,93 +168,96 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                  <div className="text-sm text-gray-600 whitespace-nowrap">
-                    {campaign.started}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 whitespace-nowrap">
-                    {campaign.impressions.toLocaleString()} views
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 whitespace-nowrap">
-                    {campaign.reach.min.toLocaleString()} -{" "}
-                    {campaign.reach.max.toLocaleString()}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-gray-900">
-                      {campaign.ctr}%
-                    </span>
-                    <span
-                      className={`text-sm flex items-center gap-1 ${
-                        campaign.ctrTrend >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {campaign.ctrTrend >= 0 ? "↑" : "↓"}{" "}
-                      {Math.abs(campaign.ctrTrend)}%
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-firebrick-500">
-                      ₦350.89
-                    </span>
-                    <TrendingDown className="w-4 h-4 text-firebrick-500" />
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col gap-1">
+                    <div className="text-sm text-gray-600 whitespace-nowrap">
+                      {campaign.started}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 whitespace-nowrap">
+                      {campaign.impressions.toLocaleString()} views
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 whitespace-nowrap">
+                      {campaign.reach.min.toLocaleString()} -{" "}
+                      {campaign.reach.max.toLocaleString()}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-gray-900">
+                        {campaign.ctr}%
+                      </span>
+                      <span
+                        className={`text-sm flex items-center gap-1 ${
+                          campaign.ctrTrend >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {campaign.ctrTrend >= 0 ? "↑" : "↓"}{" "}
+                        {Math.abs(campaign.ctrTrend)}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-bold text-firebrick-500">
-                        ₦1,300.80
+                        ₦350.89
                       </span>
                       <TrendingDown className="w-4 h-4 text-firebrick-500" />
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-peru-200 cursor-pointer">
-                      <Sparkles className="w-3 h-3" />
-                      optimize with AI
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-firebrick-500">
+                          ₦1,300.80
+                        </span>
+                        <TrendingDown className="w-4 h-4 text-firebrick-500" />
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-peru-200 cursor-pointer">
+                        <Sparkles className="w-3 h-3" />
+                        optimize with AI
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <button className="px-4 py-2 bg-bisque-50 text-firebrick-500 rounded-xl font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm whitespace-nowrap">
-                    <img src="/mdi_fire.png" alt="fire" className="w-4 h-4" />
-                    Budget Burn
-                  </button>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="bg-gray-50 rounded-lg px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
-                    Growth Recommendations
-                  </div>
-                </td>
-                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                        aria-label="Open menu"
-                      >
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-40" align="end">
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem>Pause</DropdownMenuItem>
-                        <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-500">
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
-              </tr>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button className="px-4 py-2 bg-bisque-50 text-firebrick-500 rounded-xl font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm whitespace-nowrap">
+                      <img src="/mdi_fire.png" alt="fire" className="w-4 h-4" />
+                      Budget Burn
+                    </button>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="bg-gray-50 rounded-lg px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
+                      Growth Recommendations
+                    </div>
+                  </td>
+                  <td
+                    className="px-6 py-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                          aria-label="Open menu"
+                        >
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-40" align="end">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem>Pause</DropdownMenuItem>
+                          <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-500">
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
               );
             })}
           </tbody>

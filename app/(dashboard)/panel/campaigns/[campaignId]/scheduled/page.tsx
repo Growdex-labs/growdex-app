@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useEffect } from "react";
+import { useState, useRef, useEffect, use } from "react";
 import { PanelLayout } from "../../../components/panel-layout";
 import { CampaignsSidebar } from "../../../components/campaigns-sidebar";
 import {
@@ -28,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/auth";
 import {
   createCampaign,
-  fetchCampaigns,
+  fetchCampaignById,
   type BudgetType,
   type CampaignGoal,
   type CreateCampaignPayload,
@@ -56,42 +55,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMe } from "@/context/me-context";
-
-type CreativeDraft = {
-  primaryText?: string;
-  headline?: string;
-  cta?: string;
-  mediaUrl?: string;
-  heading?: string;
-  subheading?: string;
-  imageUrl?: string;
-  publicId?: string;
-  folder?: string;
-  platform?: "meta" | "tiktok";
-};
-
-type FormObject = Record<string, FormDataEntryValue | FormDataEntryValue[]>;
-
-type SignatureStampPayload = {
-  signature?: string;
-  timestamp?: number | string;
-  api_key?: string;
-  apiKey?: string;
-};
-
-type SignatureStampResponse = SignatureStampPayload & {
-  data?: SignatureStampPayload;
-};
-
-type CloudinaryUploadResponse = {
-  secure_url?: string;
-  url?: string;
-} & Record<string, unknown>;
+import {
+  CreativeDraft,
+  FormObject,
+  SignatureStampPayload,
+  SignatureStampResponse,
+  CloudinaryUploadResponse,
+  validateFile,
+  toDateInputValue,
+  isVideoUrl,
+} from "@/lib/campaign-shared";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     campaignId: string;
-  };
+  }>;
 }
 
 export default function ScheduledCampaignPage({ params }: PageProps) {
@@ -207,14 +185,17 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Resolve params promise (Next.js may pass params as a Promise)
+  const resolvedParams = use(params);
+  const campaignId = resolvedParams.campaignId;
+
   // Load campaign data
   useEffect(() => {
     const loadCampaign = async () => {
       try {
         setIsLoading(true);
-        const campaigns = await fetchCampaigns();
-        const campaign = campaigns.find((c: any) => c.id === params.campaignId);
-        
+        const campaign = await fetchCampaignById(campaignId);
+
         if (!campaign) {
           setSubmissionError("Campaign not found");
           return;
@@ -223,7 +204,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         // Pre-fill form with campaign data
         setCampaignName(campaign.name || "");
         setCampaignGoal(campaign.goal || "AWARENESS");
-        
+
         // Platforms
         const platforms = campaign.platforms || [];
         setSelectedPlatforms({
@@ -234,13 +215,13 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         // Targeting
         if (campaign.targeting) {
           const targeting = campaign.targeting;
-          
+
           if (targeting.locations && targeting.locations.length > 0) {
             setMetaCountries(
-              targeting.locations as MetaSpecialAdLocationCode[]
+              targeting.locations as MetaSpecialAdLocationCode[],
             );
             setTiktokCountries(
-              targeting.locations as MetaSpecialAdLocationCode[]
+              targeting.locations as MetaSpecialAdLocationCode[],
             );
           }
 
@@ -257,18 +238,18 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         if (campaign.budget) {
           const budget = campaign.budget;
           setCurrency(budget.currency || "NGN");
-          
+
           if (budget.type === "daily" || budget.type === "lifetime") {
             setUnifiedBudgetFrequency(budget.type);
           }
-          
+
           setUnifiedBudgetAmount(String(budget.amount || ""));
 
           if (budget.startDate && budget.endDate) {
             setUseSchedule(true);
             const startDate = new Date(budget.startDate);
             const endDate = new Date(budget.endDate);
-            
+
             setScheduleStartDate(toDateInputValue(startDate));
             setScheduleEndDate(toDateInputValue(endDate));
             setScheduleTime("09:00");
@@ -277,11 +258,10 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
 
         // Creatives - not needed for scheduled view, but shown if available
         // Campaigns can be viewed with existing creatives or added later
-
       } catch (err) {
         console.error("Failed to load campaign:", err);
         setSubmissionError(
-          err instanceof Error ? err.message : "Failed to load campaign"
+          err instanceof Error ? err.message : "Failed to load campaign",
         );
       } finally {
         setIsLoading(false);
@@ -289,7 +269,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
     };
 
     loadCampaign();
-  }, [params.campaignId]);
+  }, [campaignId]);
   const openCreativeModal = (type: "meta" | "tiktok") => {
     setCreativeType(type);
     setCreativeHeading("");
@@ -469,14 +449,11 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
     try {
       setIsGoingLive(true);
 
-      const response = await apiFetch(
-        `/campaigns/${params.campaignId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "active" }),
-        }
-      );
+      const response = await apiFetch(`/campaigns/${campaignId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to activate campaign");
@@ -486,7 +463,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
     } catch (err) {
       console.error("Go live error:", err);
       setSubmissionError(
-        err instanceof Error ? err.message : "Failed to go live"
+        err instanceof Error ? err.message : "Failed to go live",
       );
       setIsGoingLive(false);
     }
@@ -817,7 +794,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
               {/* Campaign Goal Section */}
               <div
                 className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 0 ? "border-darkkhaki-200" : "border-transparent"
+                  progressTab === 0
+                    ? "border-darkkhaki-200"
+                    : "border-transparent"
                 }`}
                 onClick={() => setProgressTab(0)}
               >
@@ -844,7 +823,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
               {/* Choose Platform Section */}
               <div
                 className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 1 ? "border-darkkhaki-200" : "border-transparent"
+                  progressTab === 1
+                    ? "border-darkkhaki-200"
+                    : "border-transparent"
                 }`}
                 onClick={() => setProgressTab(1)}
               >
@@ -887,10 +868,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                       {/* TikTok Card */}
                       {selectedPlatforms.tiktok && (
                         <div className="inline-flex items-start gap-2 bg-mintcream-50 p-4 rounded-xl">
-                          <img
-                            src="/logos_tiktok-icon.png"
-                            alt="tiktok-icon"
-                          />
+                          <img src="/logos_tiktok-icon.png" alt="tiktok-icon" />
                           <div>
                             <p className="text-sm font-medium text-gray-700">
                               Grow with Growdex
@@ -912,7 +890,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
               {/* Target Audience */}
               <div
                 className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 2 ? "border-darkkhaki-200" : "border-transparent"
+                  progressTab === 2
+                    ? "border-darkkhaki-200"
+                    : "border-transparent"
                 }`}
                 onClick={() => setProgressTab(2)}
               >
@@ -932,14 +912,20 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                     <div className="mt-4 space-y-3 text-sm">
                       {metaCountries.length > 0 && (
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">Locations:</p>
-                          <p className="text-gray-600">{metaCountries.join(", ")}</p>
+                          <p className="font-medium text-gray-700">
+                            Locations:
+                          </p>
+                          <p className="text-gray-600">
+                            {metaCountries.join(", ")}
+                          </p>
                         </div>
                       )}
 
                       {metaInterests.length > 0 && (
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">Interests:</p>
+                          <p className="font-medium text-gray-700">
+                            Interests:
+                          </p>
                           <div className="flex flex-wrap gap-2 mt-2">
                             {metaInterests.map((interest) => (
                               <span
@@ -955,21 +941,31 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
 
                       {(metaAgeMin || metaAgeMax) && (
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">Age Range:</p>
-                          <p className="text-gray-600">{metaAgeMin} - {metaAgeMax}</p>
+                          <p className="font-medium text-gray-700">
+                            Age Range:
+                          </p>
+                          <p className="text-gray-600">
+                            {metaAgeMin} - {metaAgeMax}
+                          </p>
                         </div>
                       )}
 
                       {tiktokCountries.length > 0 && (
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">TikTok Locations:</p>
-                          <p className="text-gray-600">{tiktokCountries.join(", ")}</p>
+                          <p className="font-medium text-gray-700">
+                            TikTok Locations:
+                          </p>
+                          <p className="text-gray-600">
+                            {tiktokCountries.join(", ")}
+                          </p>
                         </div>
                       )}
 
                       {tiktokInterests.length > 0 && (
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">TikTok Interests:</p>
+                          <p className="font-medium text-gray-700">
+                            TikTok Interests:
+                          </p>
                           <div className="flex flex-wrap gap-2 mt-2">
                             {tiktokInterests.map((interest) => (
                               <span
@@ -990,7 +986,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
               {/* Budget and Schedule Section */}
               <div
                 className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 3 ? "border-darkkhaki-200" : "border-transparent"
+                  progressTab === 3
+                    ? "border-darkkhaki-200"
+                    : "border-transparent"
                 }`}
                 onClick={() => setProgressTab(3)}
               >
@@ -1007,20 +1005,26 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                     <div className="mt-4 space-y-4">
                       <div className="bg-gray-50 p-4 rounded-xl">
                         <p className="text-gray-700">
-                          <span className="font-medium">Amount:</span> {currency}{" "}
-                          {unifiedBudgetAmount}
+                          <span className="font-medium">Amount:</span>{" "}
+                          {currency} {unifiedBudgetAmount}
                         </p>
                         <p className="text-gray-700 mt-2">
                           <span className="font-medium">Type:</span>{" "}
-                          {unifiedBudgetFrequency === "daily" ? "Daily" : "Lifetime"}
+                          {unifiedBudgetFrequency === "daily"
+                            ? "Daily"
+                            : "Lifetime"}
                         </p>
                         <p className="text-gray-700 mt-2">
                           <span className="font-medium">Start Date:</span>{" "}
-                          {scheduleStartDate ? new Date(scheduleStartDate).toLocaleDateString() : "Not set"}
+                          {scheduleStartDate
+                            ? new Date(scheduleStartDate).toLocaleDateString()
+                            : "Not set"}
                         </p>
                         <p className="text-gray-700 mt-2">
                           <span className="font-medium">End Date:</span>{" "}
-                          {scheduleEndDate ? new Date(scheduleEndDate).toLocaleDateString() : "Not set"}
+                          {scheduleEndDate
+                            ? new Date(scheduleEndDate).toLocaleDateString()
+                            : "Not set"}
                         </p>
                       </div>
                     </div>

@@ -55,37 +55,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMe } from "@/context/me-context";
-
-type CreativeDraft = {
-  primaryText?: string;
-  headline?: string;
-  cta?: string;
-  mediaUrl?: string;
-  heading?: string;
-  subheading?: string;
-  imageUrl?: string;
-  publicId?: string;
-  folder?: string;
-  platform?: "meta" | "tiktok";
-};
-
-type FormObject = Record<string, FormDataEntryValue | FormDataEntryValue[]>;
-
-type SignatureStampPayload = {
-  signature?: string;
-  timestamp?: number | string;
-  api_key?: string;
-  apiKey?: string;
-};
-
-type SignatureStampResponse = SignatureStampPayload & {
-  data?: SignatureStampPayload;
-};
-
-type CloudinaryUploadResponse = {
-  secure_url?: string;
-  url?: string;
-} & Record<string, unknown>;
+import {
+  CreativeDraft,
+  FormObject,
+  SignatureStampPayload,
+  SignatureStampResponse,
+  CloudinaryUploadResponse,
+  validateFile,
+  toDateInputValue,
+  isVideoUrl,
+} from "@/lib/campaign-shared";
 
 export default function NewCampaignPage() {
   const { me } = useMe();

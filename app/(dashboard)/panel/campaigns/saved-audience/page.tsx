@@ -52,7 +52,7 @@ export default function SavedAudiencePage() {
     try {
       setDeleting(id);
       await deleteAudience(id);
-      setAudiences(audiences.filter((a) => a.id !== id));
+      setAudiences((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete audience");
     } finally {

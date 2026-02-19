@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { PanelLayout } from "../../../components/panel-layout";
 import { CampaignsSidebar } from "../../../components/campaigns-sidebar";
 import { CampaignsMobileHeader } from "../../../components/campaigns-mobile-header";
-import { fetchAudienceById, updateAudience, Audience } from "@/lib/audiences";
+import { fetchAudienceById, Audience } from "@/lib/audiences";
 
 type AudienceTab = "meta" | "tiktok";
 
@@ -29,7 +29,6 @@ export default function SavedAudienceDetailPage({
   const { audienceId } = use(params);
   const [audience, setAudience] = useState<Audience | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AudienceTab>("meta");
 
@@ -52,29 +51,6 @@ export default function SavedAudienceDetailPage({
 
     loadAudience();
   }, [audienceId]);
-
-  const handleSave = async () => {
-    if (!audience) return;
-
-    try {
-      setSaving(true);
-      const updated = await updateAudience(audience.id, {
-        name: audience.name,
-        country: audience.country,
-        locations: audience.locations,
-        interests: audience.interests,
-        platforms: audience.platforms,
-        metaConfig: audience.metaConfig,
-        tiktokConfig: audience.tiktokConfig,
-      });
-      setAudience(updated);
-      alert("Audience updated successfully!");
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update audience");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -149,7 +125,7 @@ export default function SavedAudienceDetailPage({
                 <div className="text-right">
                   <div className="text-xs text-gray-400">Total reach</div>
                   <div className="text-lg font-bold text-gray-900">
-                    25,000-50,000k
+                    —
                   </div>
                 </div>
               </div>
@@ -306,6 +282,7 @@ export default function SavedAudienceDetailPage({
                                 <input
                                   type="checkbox"
                                   className="h-4 w-4 rounded border-gray-300"
+                                  defaultChecked
                                   readOnly
                                 />
                                 <span>{range}</span>
@@ -351,16 +328,7 @@ export default function SavedAudienceDetailPage({
                   </div>
                 )}
 
-                <div className="mt-5">
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-xs font-medium hover:bg-khaki-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? "Saving..." : "Save audience"}
-                  </button>
-                </div>
+                {/* Note: This is a read-only view of the saved audience */}
               </div>
             </div>
           </div>

@@ -99,6 +99,19 @@ export const fetchCampaigns = async (): Promise<CampaignDto[]> => {
   return res.json();
 };
 
+export const fetchCampaignById = async (id: string): Promise<CampaignDto> => {
+  const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Fetch campaign by id failed (${res.status}): ${text}`);
+  }
+
+  return res.json();
+};
+
 export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
   const res = await apiFetch("/campaigns/metrics", { method: "GET" });
 

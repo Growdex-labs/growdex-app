@@ -55,21 +55,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMe } from "@/context/me-context";
-
-type CreativeDraft = {
-  primaryText?: string;
-  headline?: string;
-  cta?: string;
-  mediaUrl?: string;
-  heading?: string;
-  subheading?: string;
-  imageUrl?: string;
-  publicId?: string;
-  folder?: string;
-  platform?: "meta" | "tiktok";
-};
-
-type FormObject = Record<string, FormDataEntryValue | FormDataEntryValue[]>;
+import { CreativeDraft, FormObject, validateFile, toDateInputValue, isVideoUrl } from "@/lib/campaign-shared";
+import { useCampaignFormState } from "@/lib/use-campaign-form";
 
 export default function PublishCampaignPage() {
   const router = useRouter();
@@ -83,136 +70,110 @@ export default function PublishCampaignPage() {
     return last.startsWith("@") ? last.slice(1) : last;
   })();
 
-  const [progressTab, setProgressTab] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const COUNTRY_OPTIONS = (
-    Object.entries(metaSpecialAdLocations) as Array<
-      [MetaSpecialAdLocationCode, string]
-    >
-  )
-    .map(([code, name]) => ({ code, name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
-
-  const [selectedPlatforms, setSelectedPlatforms] = useState({
-    meta: true,
-    tiktok: true,
-  });
-
-  const [campaignName, setCampaignName] = useState("");
-  const [campaignGoal, setCampaignGoal] = useState("");
-
-  const [metaCountries, setMetaCountries] = useState<
-    MetaSpecialAdLocationCode[]
-  >(["NG"]);
-  const [tiktokCountries, setTiktokCountries] = useState<
-    MetaSpecialAdLocationCode[]
-  >(["NG"]);
-
-  const [metaLocationQuery, setMetaLocationQuery] = useState("");
-  const [tiktokLocationQuery, setTiktokLocationQuery] = useState("");
-  const [metaLocations, setMetaLocations] = useState<string[]>([
-    "Makurdi",
-    "Abuja",
-    "Lagos",
-    "Kano",
-  ]);
-  const [tiktokLocations, setTiktokLocations] = useState<string[]>([
-    "Makurdi",
-    "Abuja",
-    "Lagos",
-    "Kano",
-  ]);
-
-  const [metaInterestQuery, setMetaInterestQuery] = useState("");
-  const [tiktokInterestQuery, setTiktokInterestQuery] = useState("");
-  const [metaInterests, setMetaInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
-  const [tiktokInterests, setTiktokInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
-
-  const [metaAgeMin, setMetaAgeMin] = useState("18");
-  const [metaAgeMax, setMetaAgeMax] = useState("65");
-
-  const [currency, setCurrency] = useState("NGN");
-
-  const [unifiedBudgetAmount, setUnifiedBudgetAmount] = useState("");
-  const [unifiedBudgetFrequency, setUnifiedBudgetFrequency] = useState<
-    "daily" | "lifetime"
-  >("daily");
-  const [useSeparateBudgets, setUseSeparateBudgets] = useState(false);
-
-  const [useSchedule, setUseSchedule] = useState(false);
-  const [scheduleStartDate, setScheduleStartDate] = useState("");
-  const [scheduleEndDate, setScheduleEndDate] = useState("");
-  const [scheduleTime, setScheduleTime] = useState("09:00");
-
-  const [metaBudgetAmount, setMetaBudgetAmount] = useState("");
-  const [tiktokBudgetAmount, setTiktokBudgetAmount] = useState("");
-  const [metaBudgetFrequency, setMetaBudgetFrequency] = useState<
-    "daily" | "lifetime"
-  >("daily");
-  const [tiktokBudgetFrequency, setTiktokBudgetFrequency] = useState<
-    "daily" | "lifetime"
-  >("daily");
-
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const [creativesByPlatform, setCreativesByPlatform] = useState<
-    Partial<Record<"meta" | "tiktok", CreativeDraft>>
-  >({});
-
-  // Saved audiences
-  const [savedAudiences, setSavedAudiences] = useState<Audience[]>([]);
-  const [loadingAudiences, setLoadingAudiences] = useState(false);
-
-  // Creative modal state
-  const [isCreativeModalOpen, setIsCreativeModalOpen] = useState(false);
-  const [creativeType, setCreativeType] = useState<"meta" | "tiktok" | null>(
-    null,
-  );
-  const [creativeHeading, setCreativeHeading] = useState("");
-  const [creativeSubheading, setCreativeSubheading] = useState("");
-  const [creativeImage, setCreativeImage] = useState<File | null>(null);
-  const [creativePreview, setCreativePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const {
+    progressTab,
+    setProgressTab,
+    isLoading,
+    setIsLoading,
+    selectedPlatforms,
+    setSelectedPlatforms,
+    campaignName,
+    setCampaignName,
+    campaignGoal,
+    setCampaignGoal,
+    metaCountries,
+    setMetaCountries,
+    tiktokCountries,
+    setTiktokCountries,
+    metaLocationQuery,
+    setMetaLocationQuery,
+    tiktokLocationQuery,
+    setTiktokLocationQuery,
+    metaLocations,
+    setMetaLocations,
+    tiktokLocations,
+    setTiktokLocations,
+    metaInterestQuery,
+    setMetaInterestQuery,
+    tiktokInterestQuery,
+    setTiktokInterestQuery,
+    metaInterests,
+    setMetaInterests,
+    tiktokInterests,
+    setTiktokInterests,
+    metaAgeMin,
+    setMetaAgeMin,
+    metaAgeMax,
+    setMetaAgeMax,
+    currency,
+    setCurrency,
+    unifiedBudgetAmount,
+    setUnifiedBudgetAmount,
+    unifiedBudgetFrequency,
+    setUnifiedBudgetFrequency,
+    useSeparateBudgets,
+    setUseSeparateBudgets,
+    useSchedule,
+    setUseSchedule,
+    scheduleStartDate,
+    setScheduleStartDate,
+    scheduleEndDate,
+    setScheduleEndDate,
+    scheduleTime,
+    setScheduleTime,
+    metaBudgetAmount,
+    setMetaBudgetAmount,
+    tiktokBudgetAmount,
+    setTiktokBudgetAmount,
+    metaBudgetFrequency,
+    setMetaBudgetFrequency,
+    tiktokBudgetFrequency,
+    setTiktokBudgetFrequency,
+    isPublishing,
+    setIsPublishing,
+    submissionError,
+    setSubmissionError,
+    creativesByPlatform,
+    setCreativesByPlatform,
+    savedAudiences,
+    setSavedAudiences,
+    loadingAudiences,
+    setLoadingAudiences,
+    isCreativeModalOpen,
+    setIsCreativeModalOpen,
+    creativeType,
+    setCreativeType,
+    creativeHeading,
+    setCreativeHeading,
+    creativeSubheading,
+    setCreativeSubheading,
+    creativeImage,
+    setCreativeImage,
+    creativePreview,
+    setCreativePreview,
+    fileInputRef,
+    isUploading,
+    setIsUploading,
+    uploadProgress,
+    setUploadProgress,
+    uploadError,
+    setUploadError,
+  } = useCampaignFormState();
 
   // Load campaign data from session storage
   useEffect(() => {
     try {
       setIsLoading(true);
 
-      // Fallback test campaign used when sessionStorage has no pendingCampaign.
-      const TEST_CAMPAIGN = {
-        name: "Test Campaign",
-        goal: "AWARENESS",
-        platforms: ["meta", "tiktok"],
-        budget: {
-          amount: 600000,
-          currency: "NGN",
-          type: "lifetime",
-          startDate: "2026-02-17T00:00:00.000Z",
-          endDate: "2026-02-24T00:00:00.000Z",
-        },
-        targeting: {
-          locations: ["NG"],
-          ageMin: 18,
-          ageMax: 65,
-          gender: "all",
-          interests: ["technology", "fashion"],
-        },
-      } as any;
-
       const campaignData = sessionStorage.getItem("pendingCampaign");
-      const data = campaignData ? JSON.parse(campaignData) : TEST_CAMPAIGN;
+      if (!campaignData) {
+        // No pending campaign — redirect back to new campaign flow.
+        setIsLoading(false);
+        router.replace("/panel/campaigns/new");
+        return;
+      }
+
+      const data = JSON.parse(campaignData);
 
       setCampaignName(data.name || "");
       setCampaignGoal(data.goal || "AWARENESS");
@@ -281,38 +242,7 @@ export default function PublishCampaignPage() {
     }
   }, [router]);
 
-  // Helper functions
-  const validateFile = (file: File): { ok: boolean; error?: string } => {
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
-
-    if (!isImage && !isVideo) {
-      return {
-        ok: false,
-        error: "Unsupported file type. Upload an image or a video.",
-      };
-    }
-
-    const maxImage = 10 * 1024 * 1024;
-    const maxVideo = 50 * 1024 * 1024;
-
-    if (isImage && file.size > maxImage) {
-      return { ok: false, error: "Image is too large. Max 10 MB." };
-    }
-
-    if (isVideo && file.size > maxVideo) {
-      return { ok: false, error: "Video is too large. Max 50 MB." };
-    }
-
-    return { ok: true };
-  };
-
-  const toDateInputValue = (d: Date) => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
+  // Helper functions (imported from shared module)
 
   const normalizeGoal = (goal: unknown): CampaignGoal => {
     const g = String(goal ?? "").toLowerCase();
@@ -343,12 +273,7 @@ export default function PublishCampaignPage() {
     return base.toISOString();
   };
 
-  const isVideoUrl = (url: string) => {
-    const u = String(url ?? "");
-    if (!u) return false;
-    if (u.includes("/video/upload/")) return true;
-    return /\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(u);
-  };
+  // media URL helpers (imported)
 
   const combineLocalDateAndTimeToIso = (
     dateValue: string,
@@ -426,11 +351,17 @@ export default function PublishCampaignPage() {
         goal: normalizeGoal(campaignGoal),
         platforms: platforms as Array<"meta" | "tiktok">,
         targeting: {
-          locations: [],
+          locations: Array.from(new Set([
+            ...(selectedPlatforms.meta ? metaCountries : []),
+            ...(selectedPlatforms.tiktok ? tiktokCountries : []),
+          ])),
           ageMin: Number(metaAgeMin) || 18,
           ageMax: Number(metaAgeMax) || 65,
           gender: "all" as const,
-          interests: [],
+          interests: Array.from(new Set([
+            ...(selectedPlatforms.meta ? metaInterests : []),
+            ...(selectedPlatforms.tiktok ? tiktokInterests : []),
+          ])),
         },
         budget: {
           amount: Number(unifiedBudgetAmount || 0),

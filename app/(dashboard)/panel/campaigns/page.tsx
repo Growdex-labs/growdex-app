@@ -42,16 +42,24 @@ export default function CampaignsPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        
-        // Fetch both campaigns and metrics
-        const [campaignsData, metricsData] = await Promise.all([
+
+        // Fetch campaigns and metrics concurrently, but don't let metrics failure block campaigns
+        const [campaignsResult, metricsResult] = await Promise.allSettled([
           fetchCampaigns(),
           fetchCampaignMetrics(),
         ]);
 
-        // Set total spend from metrics
-        if (isMounted && metricsData.summary) {
-          setTotalSpend(metricsData.summary.totalSpend);
+        if (campaignsResult.status === "rejected") {
+          throw campaignsResult.reason;
+        }
+        const campaignsData = campaignsResult.value;
+
+        if (
+          isMounted &&
+          metricsResult.status === "fulfilled" &&
+          metricsResult.value.summary
+        ) {
+          setTotalSpend(metricsResult.value.summary.totalSpend);
         }
 
         const mapped: Campaign[] = (campaignsData ?? []).map((c) => {
