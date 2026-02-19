@@ -7,8 +7,8 @@ import { CampaignsMobileHeader } from "../components/campaigns-mobile-header";
 import { CampaignsTable } from "../components/campaigns-table";
 import { ScheduledCampaignsCard } from "../components/scheduled-campaigns-card";
 import { SuspendedCampaignsTable } from "../components/suspended-campaigns-table";
-import { Campaign, mockCampaigns, formatCurrency } from "@/lib/mock-data";
-import { fetchCampaigns } from "@/lib/campaigns";
+import { Campaign } from "@/lib/mock-data";
+import { fetchCampaigns, fetchCampaignMetrics } from "@/lib/campaigns";
 import { Search, Plus, FilePlus, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 
@@ -19,14 +19,22 @@ const utcDateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "2-digit",
 });
 
+const formatCurrency = (amount: number): string => {
+  return `N${amount.toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
 export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<
     "active" | "suspended" | "scheduled"
   >("active");
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [totalSpend, setTotalSpend] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -34,9 +42,27 @@ export default function CampaignsPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const data = await fetchCampaigns();
 
-        const mapped: Campaign[] = (data ?? []).map((c) => {
+        // Fetch campaigns and metrics concurrently, but don't let metrics failure block campaigns
+        const [campaignsResult, metricsResult] = await Promise.allSettled([
+          fetchCampaigns(),
+          fetchCampaignMetrics(),
+        ]);
+
+        if (campaignsResult.status === "rejected") {
+          throw campaignsResult.reason;
+        }
+        const campaignsData = campaignsResult.value;
+
+        if (
+          isMounted &&
+          metricsResult.status === "fulfilled" &&
+          metricsResult.value.summary
+        ) {
+          setTotalSpend(metricsResult.value.summary.totalSpend);
+        }
+
+        const mapped: Campaign[] = (campaignsData ?? []).map((c) => {
           const createdAt = c.createdAt ? new Date(c.createdAt) : null;
           const started =
             createdAt && !Number.isNaN(createdAt.getTime())
@@ -70,7 +96,7 @@ export default function CampaignsPage() {
       } catch (err) {
         if (!isMounted) return;
         setLoadError(err instanceof Error ? err.message : "Failed to load");
-        setCampaigns(mockCampaigns);
+        setCampaigns([]);
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -191,7 +217,7 @@ export default function CampaignsPage() {
                       Total Amount Spent
                     </div>
                     <div className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(12350987.67)}
+                      {formatCurrency(totalSpend)}
                     </div>
                   </div>
                 </div>

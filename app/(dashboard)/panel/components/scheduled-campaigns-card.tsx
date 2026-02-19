@@ -132,14 +132,16 @@ export function ScheduledCampaignsCard({
                       ₦500,000
                     </span>
                   </p>
-                  <p className="text-gray-500 text-left">{campaign.started} by 8:00am</p>
+                  <p className="text-gray-500 text-left">
+                    {campaign.started} by 8:00am
+                  </p>
                 </div>
               </div>
             </div>
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/panel/campaigns/${campaign.id}`);
+                router.push(`/panel/campaigns/${campaign.id}/scheduled`);
               }}
               className="p-1.5 hover:bg-yellow-50 rounded transition-colors ml-auto"
             >
@@ -154,7 +156,9 @@ export function ScheduledCampaignsCard({
         {campaigns.map((campaign) => (
           <div
             key={campaign.id}
-            onClick={() => router.push(`/panel/campaigns/${campaign.id}`)}
+            onClick={() =>
+              router.push(`/panel/campaigns/${campaign.id}/scheduled`)
+            }
             className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
           >
             <div className="flex items-center justify-between">
