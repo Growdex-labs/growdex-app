@@ -229,31 +229,6 @@ export default function NewCampaignPage() {
     fileInputRef.current?.click();
   };
 
-  const validateFile = (file: File): { ok: boolean; error?: string } => {
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
-
-    if (!isImage && !isVideo) {
-      return {
-        ok: false,
-        error: "Unsupported file type. Upload an image or a video.",
-      };
-    }
-
-    const maxImage = 10 * 1024 * 1024; // 10MB
-    const maxVideo = 50 * 1024 * 1024; // 50MB
-
-    if (isImage && file.size > maxImage) {
-      return { ok: false, error: "Image is too large. Max 10 MB." };
-    }
-
-    if (isVideo && file.size > maxVideo) {
-      return { ok: false, error: "Video is too large. Max 50 MB." };
-    }
-
-    return { ok: true };
-  };
-
   const normalizeTag = (value: string) => value.trim().replace(/\s+/g, " ");
 
   const addLocationTag = (platform: "meta" | "tiktok", value: string) => {
@@ -379,13 +354,6 @@ export default function NewCampaignPage() {
     new Date(
       Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
     ).toISOString();
-
-  const toDateInputValue = (d: Date) => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
 
   const addDaysDateInputValue = (dateValue: string, days: number) => {
     const base = new Date(`${dateValue}T00:00:00`);
@@ -861,13 +829,6 @@ export default function NewCampaignPage() {
     "Budget and schedule",
     "Creative setup",
   ];
-
-  const isVideoUrl = (url: string) => {
-    const u = String(url ?? "");
-    if (!u) return false;
-    if (u.includes("/video/upload/")) return true;
-    return /\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(u);
-  };
 
   return (
     <PanelLayout>

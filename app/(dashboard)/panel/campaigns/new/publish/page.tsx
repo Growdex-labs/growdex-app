@@ -621,7 +621,7 @@ export default function PublishCampaignPage() {
                           />
                           <div className="mb-3 border-r pr-4">
                             <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                              <span>Growdex Limited</span>
+                              <span>{brandName}</span>
                             </div>
                             <div className="flex items-center gap-2 mt-2">
                               <div className="w-2 h-2 bg-green-600 rounded-full" />
@@ -639,7 +639,7 @@ export default function PublishCampaignPage() {
                           <img src="/logos_tiktok-icon.png" alt="tiktok-icon" />
                           <div>
                             <p className="text-sm font-medium text-gray-700">
-                              Grow with Growdex
+                              {brandName}
                             </p>
                             <div className="flex items-center gap-2 mt-2">
                               <div className="w-2 h-2 bg-green-600 rounded-full" />
