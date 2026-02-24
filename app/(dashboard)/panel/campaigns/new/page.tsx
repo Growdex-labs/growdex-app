@@ -58,6 +58,8 @@ import {
   CreativeDraft,
   FormObject,
   isVideoUrl,
+  toDateInputValue,
+  validateFile,
 } from "@/lib/campaign-shared";
 import { hashFolderName } from "@/lib/encrypt";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
@@ -122,6 +124,7 @@ export default function NewCampaignPage() {
     "technology",
     "fashion",
   ]);
+  const [totalReach, setTotalReach] = useState<number>(0);
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
@@ -224,31 +227,6 @@ export default function NewCampaignPage() {
 
   const handleBrowseClick = () => {
     fileInputRef.current?.click();
-  };
-
-  const validateFile = (file: File): { ok: boolean; error?: string } => {
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
-
-    if (!isImage && !isVideo) {
-      return {
-        ok: false,
-        error: "Unsupported file type. Upload an image or a video.",
-      };
-    }
-
-    const maxImage = 10 * 1024 * 1024; // 10MB
-    const maxVideo = 50 * 1024 * 1024; // 50MB
-
-    if (isImage && file.size > maxImage) {
-      return { ok: false, error: "Image is too large. Max 10 MB." };
-    }
-
-    if (isVideo && file.size > maxVideo) {
-      return { ok: false, error: "Video is too large. Max 50 MB." };
-    }
-
-    return { ok: true };
   };
 
   const normalizeTag = (value: string) => value.trim().replace(/\s+/g, " ");
@@ -376,13 +354,6 @@ export default function NewCampaignPage() {
     new Date(
       Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
     ).toISOString();
-
-  const toDateInputValue = (d: Date) => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
 
   const addDaysDateInputValue = (dateValue: string, days: number) => {
     const base = new Date(`${dateValue}T00:00:00`);
@@ -1174,7 +1145,7 @@ export default function NewCampaignPage() {
                           <div>
                             <p className="text-gray-400">Total reach</p>
                             <h4 className="text-xl md:text-2xl">
-                              25,000 - 50,000k
+                              {totalReach}
                             </h4>
                           </div>
                           <div className="w-full inline-flex items-start justify-between gap-2 cursor-pointer group bg-gray-50 p-2 rounded-xl">
