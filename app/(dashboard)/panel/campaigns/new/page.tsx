@@ -55,6 +55,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMe } from "@/context/me-context";
+import {
+  CreativeDraft,
+  FormObject,
+  SignatureStampPayload,
+  SignatureStampResponse,
+  CloudinaryUploadResponse,
+  validateFile,
+  toDateInputValue,
+  isVideoUrl,
+} from "@/lib/campaign-shared";
 import { hashFolderName } from "@/lib/encrypt";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { useRouter } from "next/navigation";
@@ -89,6 +99,7 @@ type CloudinaryUploadResponse = {
   secure_url?: string;
   url?: string;
 } & Record<string, unknown>;
+
 
 export default function NewCampaignPage() {
   const { me } = useMe();
@@ -593,15 +604,28 @@ export default function NewCampaignPage() {
 
     console.log("Create Campaign payload:", payload);
 
+    // Store campaign data in session storage and redirect to publish page
     try {
       setIsCreatingCampaign(true);
-      const data = await createCampaign(payload);
-      console.log("Create Campaign response:", data);
-      router.push("/panel/campaigns");
+      sessionStorage.setItem(
+        "pendingCampaign",
+        JSON.stringify({
+          name: payload.name,
+          goal: payload.goal,
+          platforms: payload.platforms,
+          budget: payload.budget,
+          targeting: payload.targeting,
+          creatives: creativesByPlatform,
+        }),
+      );
+
+      // Redirect to publish page
+      window.location.href = "/panel/campaigns/new/publish";
     } catch (err) {
-      console.error("Create Campaign error:", err);
-      setSubmissionError(err instanceof Error ? err.message : "Create failed");
-    } finally {
+      console.error("Error preparing campaign:", err);
+      setSubmissionError(
+        err instanceof Error ? err.message : "Failed to prepare campaign",
+      );
       setIsCreatingCampaign(false);
     }
   };

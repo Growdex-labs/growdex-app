@@ -44,7 +44,7 @@ export function SuspendedCampaignsTable({
         );
       case "instagram":
         return (
-          <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+          <div className="w-6 h-6 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
             <svg
               className="w-3 h-3 text-white"
               viewBox="0 0 24 24"
@@ -118,61 +118,71 @@ export function SuspendedCampaignsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 border-khaki-200 rounded-lg">
-            {campaigns.map((campaign) => (
-              <tr
-                key={campaign.id}
-                onClick={() => router.push(`/panel/campaigns/${campaign.id}`)}
-                className="hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                  <Checkbox
-                    checked={selectedIds.has(campaign.id)}
-                    onCheckedChange={() => toggleSelect(campaign.id)}
-                  />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="font-medium text-gray-900 whitespace-nowrap">
-                    {campaign.name}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    {campaign.platforms.map((platform) => (
-                      <div key={platform}>{getPlatformIcon(platform)}</div>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-600 whitespace-nowrap">
-                    {campaign.started}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 whitespace-nowrap">
-                    {campaign.impressions.toLocaleString()} views
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 whitespace-nowrap">
-                    {campaign.reach.min.toLocaleString()} -{" "}
-                    {campaign.reach.max.toLocaleString()}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-firebrick-500">
-                      {campaign.ctr}%
-                    </span>
-                    <TrendingDown className="w-4 h-4 text-firebrick-500" />
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-lg font-bold text-firebrick-500 whitespace-nowrap">
-                    ₦350.89
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {campaigns.map((campaign) => {
+              const isScheduledCampaign = campaign.status === "scheduled";
+              const navigationUrl = isScheduledCampaign
+                ? `/panel/campaigns/${campaign.id}/scheduled`
+                : `/panel/campaigns/${campaign.id}`;
+
+              return (
+                <tr
+                  key={campaign.id}
+                  onClick={() => router.push(navigationUrl)}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <td
+                    className="px-6 py-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(campaign.id)}
+                      onCheckedChange={() => toggleSelect(campaign.id)}
+                    />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900 whitespace-nowrap">
+                      {campaign.name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      {campaign.platforms.map((platform) => (
+                        <div key={platform}>{getPlatformIcon(platform)}</div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-600 whitespace-nowrap">
+                      {campaign.started}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 whitespace-nowrap">
+                      {campaign.impressions.toLocaleString()} views
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 whitespace-nowrap">
+                      {campaign.reach.min.toLocaleString()} -{" "}
+                      {campaign.reach.max.toLocaleString()}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-firebrick-500">
+                        {campaign.ctr}%
+                      </span>
+                      <TrendingDown className="w-4 h-4 text-firebrick-500" />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-lg font-bold text-firebrick-500 whitespace-nowrap">
+                      ₦350.89
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

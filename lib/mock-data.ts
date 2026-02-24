@@ -447,3 +447,7 @@ export const mockWalletTransactions: WalletTransaction[] = [
     status: "Pending",
   },
 ];
+
+// Note: SavedAudience types and mocks have been removed.
+// Use the canonical Audience type from lib/audiences.ts instead.
+

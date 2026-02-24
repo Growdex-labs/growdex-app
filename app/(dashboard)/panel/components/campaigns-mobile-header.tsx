@@ -23,6 +23,7 @@ export function CampaignsMobileHeader(): JSX.Element {
     { label: "New campaign", href: "/panel/campaigns/new" },
     { label: "Wallet", href: "/panel/wallet" },
     { label: "Thrashed", href: "/panel/campaigns/thrashed" },
+    { label: "Saved audience", href: "/panel/campaigns/saved-audience" },
   ];
 
   const isActive = (href: string) => {
