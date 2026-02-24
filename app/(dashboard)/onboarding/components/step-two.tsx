@@ -31,6 +31,11 @@ function Header() {
           Connect your ad platforms
         </h1>
       </div>
+      <p className="text-gray-700">Growdex currently supports:</p>
+      <ul className="list-disc list-inside">
+        <li>Meta Ads</li>
+        <li>TikTok Ads</li>
+      </ul>
       <p className="text-gray-700 max-w-2xl">
         Don't worry, you're safe. We need to connect your accounts to enable
         you run unified ads across one dashboard.
