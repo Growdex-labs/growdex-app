@@ -13,12 +13,13 @@ export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: On
         <div>
             <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-                <span className="text-4xl">🎯</span>
                 <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
                 Welcome to Growdex!
                 </h1>
             </div>
-            <p className="text-lg md:text-xl text-gray-700">Great to have you here</p>
+            <p className="text-lg md:text-xl text-gray-700">
+                The Smart Ad Management Tool for Modern Businesses
+            </p>
             </div>
 
             <div className="grid grid-cols-2 gap-6 mb-8">

@@ -9,7 +9,7 @@ import { ScheduledCampaignsCard } from "../components/scheduled-campaigns-card";
 import { SuspendedCampaignsTable } from "../components/suspended-campaigns-table";
 import { Campaign } from "@/lib/mock-data";
 import { fetchCampaigns, fetchCampaignMetrics } from "@/lib/campaigns";
-import { Search, Plus, FilePlus, SlidersHorizontal } from "lucide-react";
+import { Search, Plus, FilePlus, SlidersHorizontal, Wallet } from "lucide-react";
 import Link from "next/link";
 
 const utcDateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -207,11 +207,11 @@ export default function CampaignsPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+            {activeTab === "active" && <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               {/* Total Amount Spent */}
               <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <img src="/dollar-sign.png" alt="dollar-alt" />
+                  <Wallet className="w-12 h-12 text-khaki-300" />
                   <div>
                     <div className="text-sm text-gray-400">
                       Total Amount Spent
@@ -233,7 +233,7 @@ export default function CampaignsPage() {
                   Budget Burn
                 </button>
               </div>
-            </div>
+            </div>}
 
             {loadError && (
               <div className="mb-4 text-sm text-red-600">{loadError}</div>

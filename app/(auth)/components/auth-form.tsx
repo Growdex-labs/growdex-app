@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { GoogleBtn } from './google-btn';
 import { toast } from 'sonner';
 
-export default function AuthForm({ title, isAuthType }: { title: string; isAuthType: 'login' | 'register' }) {
+export default function AuthForm({ title, subTitle = '', isAuthType }: { title: string; subTitle?: string; isAuthType: 'login' | 'register' }) {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -53,107 +53,121 @@ export default function AuthForm({ title, isAuthType }: { title: string; isAuthT
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8">
-        <div>
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+      <div className="min-h-screen flex bg-gray-50">
+        <div className='auth-container p-4 hidden md:flex flex-col gap-2 justify-end'>
+          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
               <img src="/logo.png" alt="logo" />
-            </div>
-            <span className="font-bold text-2xl text-gray-900">Growdex</span>
           </div>
-          <h2 className="text-center text-3xl font-bold text-gray-900">
-            {title}
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Please enter your details
-          </p>
+          <ul className='list-none mt-8 text-lg'>
+            <li className='flex items-center gap-2'>✔ Connect Meta & TikTok in minutes</li>
+            <li className='flex items-center gap-2'>✔ Centralized ad budgets with your Growdex Wallet</li>
+            <li className='flex items-center gap-2'>✔ Get AI-powered performance insights</li>
+            <li className='flex items-center gap-2'>✔ Stop switching between multiple platforms</li>
+          </ul>
         </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-1 py-1 rounded-lg text-xs text-center">
-              {error}
+        <div className="max-w-md w-full mx-auto flex flex-col justify-center space-y-8 p-8">
+          <div className='text-center'>
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                <img src="/logo.png" alt="logo" />
+              </div>
+              {/* <span className="font-bold text-2xl text-gray-900">Growdex</span> */}
             </div>
-          )}
+            <h2 className="text-3xl font-bold text-gray-900">
+              {title}
+            </h2>
+            <h4 className='mt-2 text-lg md:text-xl text-gray-700'>
+              {subTitle}
+            </h4>
+            <p className="mt-4 text-sm text-gray-600">
+              Please enter your details
+            </p>
+          </div>
 
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="Email" className="relative">
-                <input
-                  type="email"
-                  id="Email"
-                  placeholder="johndoe@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="peer mt-0.5 w-full border-gray-300 shadow-sm sm:text-sm px-4 py-3 border placeholder-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300 focus:border-transparent placeholder:opacity-0 focus:placeholder:opacity-100"
-                />
-
-                <span className="absolute inset-y-0 start-3 -translate-y-5 bg-white px-0.5 text-sm font-medium text-gray-700 transition-transform peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-5">
-                  Your email
-                </span>
-              </label>
-            </div>
-            {fieldErrors.email && (
-              <p className="text-red-500 text-xs mt-1">{fieldErrors.email[0]}</p>
+          <form className="mt-4 space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-1 py-1 rounded-lg text-xs text-center">
+                {error}
+              </div>
             )}
 
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="Email" className="relative">
+                  <input
+                    type="email"
+                    id="Email"
+                    placeholder="johndoe@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="peer mt-0.5 w-full border-gray-300 shadow-sm sm:text-sm px-4 py-3 border placeholder-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300 focus:border-transparent placeholder:opacity-0 focus:placeholder:opacity-100"
+                  />
+
+                  <span className="absolute inset-y-0 start-3 -translate-y-5 bg-white px-0.5 text-sm font-medium text-gray-700 transition-transform peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-5">
+                    Your email
+                  </span>
+                </label>
+              </div>
+              {fieldErrors.email && (
+                <p className="text-red-500 text-xs mt-1">{fieldErrors.email[0]}</p>
+              )}
+
+
+              <div>
+                <label htmlFor="Password" className="relative">
+                  <input
+                    type="password"
+                    id="Password"
+                    placeholder=""
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="peer mt-0.5 w-full border-gray-300 shadow-sm sm:text-sm px-4 py-3 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300 focus:border-transparent"
+                  />
+
+                  <span className="absolute inset-y-0 start-3 -translate-y-5 bg-white px-0.5 text-sm font-medium text-gray-700 transition-transform peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-5 flex items-center gap-2">
+                    <Lock className="w-5 h-5 flex-shrink-0 text-gray-500" /> Your password
+                  </span>
+                </label>
+              </div>
+              {fieldErrors.password && (
+                <p className="text-red-500 text-xs mt-1">{fieldErrors.password[0]}</p>
+              )}
+
+            </div>
 
             <div>
-              <label htmlFor="Password" className="relative">
-                <input
-                  type="password"
-                  id="Password"
-                  placeholder=""
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="peer mt-0.5 w-full border-gray-300 shadow-sm sm:text-sm px-4 py-3 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300 focus:border-transparent"
-                />
-
-                <span className="absolute inset-y-0 start-3 -translate-y-5 bg-white px-0.5 text-sm font-medium text-gray-700 transition-transform peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-5 flex items-center gap-2">
-                  <Lock className="w-5 h-5 flex-shrink-0 text-gray-500" /> Your password
-                </span>
-              </label>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-gray-900 bg-khaki-200 hover:bg-khaki-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Please wait...' : isAuthType === 'login' ? 'Sign in' : 'Sign up'}
+              </button>
             </div>
-            {fieldErrors.password && (
-              <p className="text-red-500 text-xs mt-1">{fieldErrors.password[0]}</p>
-            )}
 
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-gray-900 bg-khaki-200 hover:bg-khaki-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Please wait...' : isAuthType === 'login' ? 'Sign in' : 'Sign up'}
-            </button>
-          </div>
-
-          <div className="text-center text-sm text-gray-600">
-            Or
-            <GoogleBtn isAuthType={isAuthType} setError={setError} />
-            <div className="mt-2 flex items-center justify-center gap-2 font-medium">
-                {isAuthType === 'login'
-                ?
-                <>
-                New here?
-                <Link href="/signup" className='font-bold hover:underline'>Create an account</Link>
-                </>
-                :
-                <>
-                Got an account?
-                <Link href="/login" className='font-bold hover:underline'>Sign in</Link>
-                </>
-                }
+            <div className="text-center text-sm text-gray-600">
+              Or
+              <GoogleBtn isAuthType={isAuthType} setError={setError} />
+              <div className="mt-2 flex items-center justify-center gap-2 font-medium">
+                  {isAuthType === 'login'
+                  ?
+                  <>
+                  New here?
+                  <Link href="/signup" className='font-bold hover:underline'>Create an account</Link>
+                  </>
+                  :
+                  <>
+                  Got an account?
+                  <Link href="/login" className='font-bold hover:underline'>Sign in</Link>
+                  </>
+                  }
+              </div>
+              {isAuthType === 'login' ? <Link href="/forgot-password" className='mt-8 hover:underline'>Forgot password?</Link> : ''}
             </div>
-            {isAuthType === 'login' ? <Link href="/forgot-password" className='mt-8 hover:underline'>Forgot password?</Link> : ''}
-          </div>
-        </form>
-      </div>
+          </form>
+        </div>
     </div>
     );
 }
