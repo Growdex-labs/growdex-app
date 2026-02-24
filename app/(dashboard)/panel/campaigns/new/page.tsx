@@ -69,37 +69,6 @@ import { hashFolderName } from "@/lib/encrypt";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 
-type CreativeDraft = {
-  primaryText?: string;
-  headline?: string;
-  cta?: string;
-  mediaUrl?: string;
-  heading?: string;
-  subheading?: string;
-  imageUrl?: string;
-  publicId?: string;
-  folder?: string;
-  platform?: "meta" | "tiktok";
-};
-
-type FormObject = Record<string, FormDataEntryValue | FormDataEntryValue[]>;
-
-type SignatureStampPayload = {
-  signature?: string;
-  timestamp?: number | string;
-  api_key?: string;
-  apiKey?: string;
-};
-
-type SignatureStampResponse = SignatureStampPayload & {
-  data?: SignatureStampPayload;
-};
-
-type CloudinaryUploadResponse = {
-  secure_url?: string;
-  url?: string;
-} & Record<string, unknown>;
-
 
 export default function NewCampaignPage() {
   const { me } = useMe();

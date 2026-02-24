@@ -8,7 +8,7 @@ import { CampaignsTable } from "../components/campaigns-table";
 import { ScheduledCampaignsCard } from "../components/scheduled-campaigns-card";
 import { SuspendedCampaignsTable } from "../components/suspended-campaigns-table";
 import { Campaign } from "@/lib/mock-data";
-import { fetchCampaigns } from "@/lib/campaigns";
+import { fetchCampaigns, fetchCampaignMetrics } from "@/lib/campaigns";
 import { Search, Plus, FilePlus, SlidersHorizontal, Wallet } from "lucide-react";
 import Link from "next/link";
 
