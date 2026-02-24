@@ -1,5 +1,7 @@
 "use client";
 
+// TODO: This file is getting quite large. Consider splitting into multiple components or at least moving helper functions to a separate module. Or maybe just refactor the whole thing to use a single component with conditional rendering instead of a "progressTab" state.
+
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PanelLayout } from "../../../components/panel-layout";
@@ -252,7 +254,7 @@ export default function PublishCampaignPage() {
       case "traffic":
         return "TRAFFIC";
       case "conversions":
-        return "CONVERSIONS";
+        return "ENGAGEMENT";
       case "sales":
         return "SALES";
       case "leads":

@@ -11,7 +11,6 @@ import {
   InstagramIcon,
   MoreVerticalIcon,
   Search,
-  SparklesIcon,
   Users,
   UploadCloud,
 } from "lucide-react";
@@ -58,21 +57,14 @@ import { useMe } from "@/context/me-context";
 import {
   CreativeDraft,
   FormObject,
-  SignatureStampPayload,
-  SignatureStampResponse,
-  CloudinaryUploadResponse,
-  validateFile,
-  toDateInputValue,
   isVideoUrl,
 } from "@/lib/campaign-shared";
 import { hashFolderName } from "@/lib/encrypt";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
-import { useRouter } from "next/navigation";
 
 
 export default function NewCampaignPage() {
   const { me } = useMe();
-  const router = useRouter();
   const brandName = me?.brand?.name ?? "Your Brand";
   const instagramAccountName = (() => {
     const url = me?.brand?.instagramUrl;
@@ -612,11 +604,14 @@ export default function NewCampaignPage() {
       }
 
       const encryptedFolder = await hashFolderName();
+      const safeName = creativeImage.name
+        .replace(/\.[^/.]+$/, "")          // strip extension
+        .replace(/[^a-zA-Z0-9_-]/g, "_");  // replace unsafe chars
       const publicId =
-        `${encryptedFolder.slice(0, 20)}/${creativeImage.name}/` + Date.now();
+        `${encryptedFolder.slice(0, 20)}/${safeName}_${Date.now()}`;
 
       const confirmed = window.confirm(
-        "Once you upload this creative, it will be saved to Cloudinary and you won’t be able to edit it. To make changes later, you’ll need to upload a new creative.\n\nDo you want to continue?",
+        "Once you upload this creative, it will be saved to Cloudinary and you won't be able to edit it. To make changes later, you'll need to upload a new creative.\n\nDo you want to continue?",
       );
 
       if (!confirmed) return;
@@ -866,13 +861,6 @@ export default function NewCampaignPage() {
     "Budget and schedule",
     "Creative setup",
   ];
-
-  const isVideoUrl = (url: string) => {
-    const u = String(url ?? "");
-    if (!u) return false;
-    if (u.includes("/video/upload/")) return true;
-    return /\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(u);
-  };
 
   return (
     <PanelLayout>

@@ -80,11 +80,12 @@ export const createCampaign = async (payload: CreateCampaignPayload) => {
     body: JSON.stringify(payload),
   });
 
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
 
-  if (!res.ok) {
-    console.log(data.errors);
-    throw new Error(data.errors[0].message || data.message);
+  if(!res.ok) {
+    const errorMsg =
+      data?.errors?.[0]?.message || data?.message || `Request failed (${res.status})`;
+    throw new Error(errorMsg);
   }
 
   return data;
