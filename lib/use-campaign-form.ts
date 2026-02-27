@@ -50,8 +50,9 @@ export function useCampaignFormState() {
   const [currency, setCurrency] = useState("NGN");
 
   const [unifiedBudgetAmount, setUnifiedBudgetAmount] = useState("");
-  const [unifiedBudgetFrequency, setUnifiedBudgetFrequency] =
-    useState<"daily" | "lifetime">("daily");
+  const [unifiedBudgetFrequency, setUnifiedBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
   const [useSeparateBudgets, setUseSeparateBudgets] = useState(false);
 
   const [useSchedule, setUseSchedule] = useState(false);
@@ -61,10 +62,12 @@ export function useCampaignFormState() {
 
   const [metaBudgetAmount, setMetaBudgetAmount] = useState("");
   const [tiktokBudgetAmount, setTiktokBudgetAmount] = useState("");
-  const [metaBudgetFrequency, setMetaBudgetFrequency] =
-    useState<"daily" | "lifetime">("daily");
-  const [tiktokBudgetFrequency, setTiktokBudgetFrequency] =
-    useState<"daily" | "lifetime">("daily");
+  const [metaBudgetFrequency, setMetaBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
+  const [tiktokBudgetFrequency, setTiktokBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);

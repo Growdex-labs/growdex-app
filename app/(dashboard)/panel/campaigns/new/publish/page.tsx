@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/auth";
 import {
   createCampaign,
+  publishCampaign,
   type BudgetType,
   type CampaignGoal,
   type CreateCampaignPayload,
@@ -55,8 +56,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMe } from "@/context/me-context";
-import { CreativeDraft, FormObject, validateFile, toDateInputValue, isVideoUrl } from "@/lib/campaign-shared";
+import {
+  CreativeDraft,
+  FormObject,
+  validateFile,
+  toDateInputValue,
+  isVideoUrl,
+} from "@/lib/campaign-shared";
 import { useCampaignFormState } from "@/lib/use-campaign-form";
+import { GoalSection } from "../../components/GoalSection";
+import { PlatformSection } from "../../components/PlatformSection";
+import { AudienceSection } from "../../components/AudienceSection";
+import { BudgetSection } from "../../components/BudgetSection";
+import { CreativeSection } from "../../components/CreativeSection";
 
 export default function PublishCampaignPage() {
   const router = useRouter();
@@ -351,17 +363,21 @@ export default function PublishCampaignPage() {
         goal: normalizeGoal(campaignGoal),
         platforms: platforms as Array<"meta" | "tiktok">,
         targeting: {
-          locations: Array.from(new Set([
-            ...(selectedPlatforms.meta ? metaCountries : []),
-            ...(selectedPlatforms.tiktok ? tiktokCountries : []),
-          ])),
+          locations: Array.from(
+            new Set([
+              ...(selectedPlatforms.meta ? metaCountries : []),
+              ...(selectedPlatforms.tiktok ? tiktokCountries : []),
+            ]),
+          ),
           ageMin: Number(metaAgeMin) || 18,
           ageMax: Number(metaAgeMax) || 65,
           gender: "all" as const,
-          interests: Array.from(new Set([
-            ...(selectedPlatforms.meta ? metaInterests : []),
-            ...(selectedPlatforms.tiktok ? tiktokInterests : []),
-          ])),
+          interests: Array.from(
+            new Set([
+              ...(selectedPlatforms.meta ? metaInterests : []),
+              ...(selectedPlatforms.tiktok ? tiktokInterests : []),
+            ]),
+          ),
         },
         budget: {
           amount: Number(unifiedBudgetAmount || 0),
@@ -377,6 +393,17 @@ export default function PublishCampaignPage() {
 
       const result = await createCampaign(payload);
       console.log("Campaign created:", result);
+
+      // result.id is expected from createCampaign
+      if (result?.id) {
+        console.log("Publishing campaign ID:", result.id);
+        await publishCampaign(result.id);
+        console.log("Campaign published successfully");
+      } else {
+        console.warn(
+          "No ID returned from createCampaign, skipping publish call",
+        );
+      }
 
       // Clear session storage after successful creation
       sessionStorage.removeItem("pendingCampaign");
@@ -417,9 +444,11 @@ export default function PublishCampaignPage() {
 
         <div className="h-full flex-1 overflow-y-auto">
           <div className="p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
-              Review Campaign
-            </h1>
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Review Campaign
+              </h1>
+            </div>
 
             <div className="sticky top-0 z-10 bg-white border-b border-gray-200 grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 mt-1 p-4">
               {progressTitles.map((title, index) => (
@@ -438,11 +467,8 @@ export default function PublishCampaignPage() {
             </div>
 
             <form className="space-y-6" onSubmit={handlePublishCampaign}>
-              {/* Campaign Name */}
-              <div
-                className="bg-white rounded-xl p-4 flex items-center justify-between
-              "
-              >
+              {/* Campaign Name & Action Header */}
+              <div className="bg-white rounded-xl p-4 flex items-center justify-between">
                 <div className="flex gap-3 items-center">
                   <img src="/megaphone.png" alt="megaphone-icon" />
                   <div className="flex-1">
@@ -463,477 +489,113 @@ export default function PublishCampaignPage() {
                 <button
                   type="submit"
                   disabled={isPublishing}
-                  className="px-2 py-2 mr-4 border bg-transparent text-sm text-gray-800 rounded-lg font-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors"
+                  className="px-6 py-2 border bg-khaki-200 text-sm text-gray-800 rounded-lg font-bold flex items-center gap-2 hover:bg-khaki-300 transition-colors shadow-sm"
                 >
-                  Publish
+                  {isPublishing ? "Publishing..." : "Publish"}
                 </button>
               </div>
 
-              {/* Campaign Goal */}
-              <div
-                className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 0
-                    ? "border-darkkhaki-200"
-                    : "border-transparent"
-                }`}
-                onClick={() => setProgressTab(0)}
-              >
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                    <div className="w-0 h-40 border border-peru-200" />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                      Set campaign goal
-                    </label>
-                    <div className="mt-4 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          id="awareness"
-                          name="goal"
-                          value="AWARENESS"
-                          checked={campaignGoal === "AWARENESS"}
-                          onChange={(e) =>
-                            setCampaignGoal(e.target.value as any)
-                          }
-                          className="w-4 h-4"
-                        />
-                        <label
-                          htmlFor="awareness"
-                          className="text-sm font-medium text-gray-700"
-                        >
-                          Awareness
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          id="traffic"
-                          name="goal"
-                          value="TRAFFIC"
-                          checked={campaignGoal === "TRAFFIC"}
-                          onChange={(e) =>
-                            setCampaignGoal(e.target.value as any)
-                          }
-                          className="w-4 h-4"
-                        />
-                        <label
-                          htmlFor="traffic"
-                          className="text-sm font-medium text-gray-700"
-                        >
-                          Traffic
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          id="conversions"
-                          name="goal"
-                          value="CONVERSIONS"
-                          checked={campaignGoal === "CONVERSIONS"}
-                          onChange={(e) =>
-                            setCampaignGoal(e.target.value as any)
-                          }
-                          className="w-4 h-4"
-                        />
-                        <label
-                          htmlFor="conversions"
-                          className="text-sm font-medium text-gray-700"
-                        >
-                          Conversions
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          id="leads"
-                          name="goal"
-                          value="LEADS"
-                          checked={campaignGoal === "LEADS"}
-                          onChange={(e) =>
-                            setCampaignGoal(e.target.value as any)
-                          }
-                          className="w-4 h-4"
-                        />
-                        <label
-                          htmlFor="leads"
-                          className="text-sm font-medium text-gray-700"
-                        >
-                          Leads
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          id="sales"
-                          name="goal"
-                          value="SALES"
-                          checked={campaignGoal === "SALES"}
-                          onChange={(e) =>
-                            setCampaignGoal(e.target.value as any)
-                          }
-                          className="w-4 h-4"
-                        />
-                        <label
-                          htmlFor="sales"
-                          className="text-sm font-medium text-gray-700"
-                        >
-                          Sales
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Goal Section */}
+              <GoalSection
+                progressTab={progressTab}
+                setProgressTab={setProgressTab}
+                campaignGoal={campaignGoal as CampaignGoal}
+                setCampaignGoal={setCampaignGoal}
+                readOnly={true}
+              />
 
-              {/* Choose Platform */}
-              <div
-                className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 1
-                    ? "border-darkkhaki-200"
-                    : "border-transparent"
-                }`}
-                onClick={() => setProgressTab(1)}
-              >
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                    <div className="w-0 h-40 border border-peru-200" />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                      Choose platform
-                    </label>
-                    <p className="mt-2 font-gilroy-medium text-gray-500">
-                      What platforms are you running this ad on?
-                    </p>
+              {/* Platform Section */}
+              <PlatformSection
+                progressTab={progressTab}
+                setProgressTab={setProgressTab}
+                selectedPlatforms={selectedPlatforms}
+                setSelectedPlatforms={setSelectedPlatforms}
+                brandName={brandName}
+                instagramAccountName={instagramAccountName}
+                readOnly={true}
+              />
 
-                    <div className="flex mt-4 gap-4 flex-wrap">
-                      {/* Meta Card */}
-                      {selectedPlatforms.meta && (
-                        <div className="inline-flex items-start gap-2 bg-gray-50 p-4 rounded-xl">
-                          <img
-                            src="/logos_meta-icon.png"
-                            alt="meta"
-                            className="mt-2"
-                          />
-                          <div className="mb-3 border-r pr-4">
-                            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                              <span>{brandName}</span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <div className="w-2 h-2 bg-green-600 rounded-full" />
-                              <span className="text-xs text-green-600 font-medium">
-                                Connected
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+              {/* Audience Section */}
+              <AudienceSection
+                progressTab={progressTab}
+                setProgressTab={setProgressTab}
+                brandName={brandName}
+                instagramAccountName={instagramAccountName}
+                loadingAudiences={loadingAudiences}
+                savedAudiences={savedAudiences}
+                applyAudienceToForm={() => {}} // Disabled in review
+                formatCountriesSummary={(codes) => codes.join(", ")}
+                COUNTRY_OPTIONS={[]} // Not needed in readOnly
+                metaCountries={metaCountries}
+                tiktokCountries={tiktokCountries}
+                toggleCountry={() => {}}
+                metaLocationQuery=""
+                setMetaLocationQuery={() => {}}
+                tiktokLocationQuery=""
+                setTiktokLocationQuery={() => {}}
+                addLocationTag={() => {}}
+                metaLocations={metaLocations}
+                removeLocationTag={() => {}}
+                tiktokLocations={tiktokLocations}
+                metaAgeMin={metaAgeMin}
+                setMetaAgeMin={() => {}}
+                metaAgeMax={metaAgeMax}
+                setMetaAgeMax={() => {}}
+                metaInterestQuery=""
+                setMetaInterestQuery={() => {}}
+                addInterestTag={() => {}}
+                metaInterests={metaInterests}
+                removeInterestTag={() => {}}
+                tiktokInterestQuery=""
+                setTiktokInterestQuery={() => {}}
+                tiktokInterests={tiktokInterests}
+                bothPlatformsConnected={true}
+                saveAudienceForPlatform={() => {}}
+                saveAudienceCombined={() => {}}
+                readOnly={true}
+              />
 
-                      {/* TikTok Card */}
-                      {selectedPlatforms.tiktok && (
-                        <div className="inline-flex items-start gap-2 bg-mintcream-50 p-4 rounded-xl">
-                          <img src="/logos_tiktok-icon.png" alt="tiktok-icon" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">
-                              {brandName}
-                            </p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <div className="w-2 h-2 bg-green-600 rounded-full" />
-                              <span className="text-xs text-green-600 font-medium">
-                                Connected
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Budget Section */}
+              <BudgetSection
+                progressTab={progressTab}
+                setProgressTab={setProgressTab}
+                currency={currency}
+                setCurrency={() => {}}
+                CURRENCY_OPTIONS={[]}
+                brandName={brandName}
+                useSeparateBudgets={useSeparateBudgets}
+                setUseSeparateBudgets={() => {}}
+                unifiedBudgetAmount={unifiedBudgetAmount}
+                setUnifiedBudgetAmount={() => {}}
+                unifiedBudgetFrequency={unifiedBudgetFrequency}
+                setUnifiedBudgetFrequency={() => {}}
+                metaBudgetAmount={metaBudgetAmount}
+                setMetaBudgetAmount={() => {}}
+                metaBudgetFrequency={metaBudgetFrequency}
+                setMetaBudgetFrequency={() => {}}
+                tiktokBudgetAmount={tiktokBudgetAmount}
+                setTiktokBudgetAmount={() => {}}
+                tiktokBudgetFrequency={tiktokBudgetFrequency}
+                setTiktokBudgetFrequency={() => {}}
+                selectedPlatforms={selectedPlatforms}
+                readOnly={true}
+              />
 
-              {/* Target Audience */}
-              <div
-                className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 2
-                    ? "border-darkkhaki-200"
-                    : "border-transparent"
-                }`}
-                onClick={() => setProgressTab(2)}
-              >
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                    <div className="w-0 h-40 border border-peru-200" />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                      Target audience
-                    </label>
-                    <p className="mt-2 font-gilroy-medium text-gray-500">
-                      Select the audience you want to reach
-                    </p>
-
-                    <div className="mt-4 space-y-3 text-sm">
-                      {metaCountries.length > 0 && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">
-                            Locations:
-                          </p>
-                          <p className="text-gray-600">
-                            {metaCountries.join(", ")}
-                          </p>
-                        </div>
-                      )}
-
-                      {metaInterests.length > 0 && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">
-                            Interests:
-                          </p>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {metaInterests.map((interest) => (
-                              <span
-                                key={interest}
-                                className="bg-white px-2 py-1 rounded border border-gray-200 text-xs"
-                              >
-                                {interest}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {(metaAgeMin || metaAgeMax) && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">
-                            Age Range:
-                          </p>
-                          <p className="text-gray-600">
-                            {metaAgeMin} - {metaAgeMax}
-                          </p>
-                        </div>
-                      )}
-
-                      {tiktokCountries.length > 0 && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">
-                            TikTok Locations:
-                          </p>
-                          <p className="text-gray-600">
-                            {tiktokCountries.join(", ")}
-                          </p>
-                        </div>
-                      )}
-
-                      {tiktokInterests.length > 0 && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">
-                            TikTok Interests:
-                          </p>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {tiktokInterests.map((interest) => (
-                              <span
-                                key={interest}
-                                className="bg-white px-2 py-1 rounded border border-gray-200 text-xs"
-                              >
-                                {interest}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Budget and Schedule */}
-              <div
-                className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 3
-                    ? "border-darkkhaki-200"
-                    : "border-transparent"
-                }`}
-                onClick={() => setProgressTab(3)}
-              >
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                    <div className="w-0 h-full border border-peru-200" />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                      Budget and schedule
-                    </label>
-
-                    <div className="mt-4 space-y-4">
-                      <div className="bg-gray-50 p-4 rounded-xl">
-                        <p className="text-gray-700">
-                          <span className="font-medium">Amount:</span>{" "}
-                          {currency} {unifiedBudgetAmount}
-                        </p>
-                        <p className="text-gray-700 mt-2">
-                          <span className="font-medium">Type:</span>{" "}
-                          {unifiedBudgetFrequency === "daily"
-                            ? "Daily"
-                            : "Lifetime"}
-                        </p>
-                        <p className="text-gray-700 mt-2">
-                          <span className="font-medium">Start Date:</span>{" "}
-                          {scheduleStartDate
-                            ? new Date(scheduleStartDate).toLocaleDateString()
-                            : "Not set"}
-                        </p>
-                        <p className="text-gray-700 mt-2">
-                          <span className="font-medium">End Date:</span>{" "}
-                          {scheduleEndDate
-                            ? new Date(scheduleEndDate).toLocaleDateString()
-                            : "Not set"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Creative setup */}
-              <div
-                className={`bg-white rounded-xl p-4 border ${
-                  progressTab === 4
-                    ? "border-darkkhaki-200"
-                    : "border-transparent"
-                }`}
-                onClick={() => setProgressTab(4)}
-              >
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                    <div className="w-0 h-full border border-peru-200" />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                      Creative setup
-                    </label>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      {/* Meta Creative */}
-                      <div
-                        className={`bg-gray-50 rounded-xl p-3 ${selectedPlatforms.meta ? "" : "opacity-50"}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex gap-3 items-center">
-                            <img
-                              src="/logos_meta-icon.png"
-                              alt="meta"
-                              className="h-8"
-                            />
-                            <div>
-                              <p className="font-medium">Meta creative</p>
-                              <p className="text-sm text-gray-600">
-                                {creativesByPlatform.meta?.headline ??
-                                  creativesByPlatform.meta?.heading ??
-                                  "—"}
-                              </p>
-                            </div>
-                          </div>
-                          <MoreVerticalIcon />
-                        </div>
-
-                        <div className="mt-3">
-                          {creativesByPlatform.meta?.mediaUrl ? (
-                            isVideoUrl(creativesByPlatform.meta.mediaUrl) ? (
-                              <video
-                                src={creativesByPlatform.meta.mediaUrl}
-                                controls
-                                className="w-full h-44 object-cover rounded-lg bg-white"
-                              />
-                            ) : (
-                              <img
-                                src={creativesByPlatform.meta.mediaUrl}
-                                alt="meta creative"
-                                className="w-full h-44 object-cover rounded-lg bg-white"
-                              />
-                            )
-                          ) : (
-                            <img
-                              src="/media-creative.png"
-                              alt="no creative"
-                              className="w-full h-44 object-cover rounded-lg"
-                            />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* TikTok Creative */}
-                      <div
-                        className={`bg-gray-50 rounded-xl p-3 ${selectedPlatforms.tiktok ? "" : "opacity-50"}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex gap-3 items-center">
-                            <img
-                              src="/logos_tiktok-icon.png"
-                              alt="tiktok"
-                              className="h-8"
-                            />
-                            <div>
-                              <p className="font-medium">TikTok creative</p>
-                              <p className="text-sm text-gray-600">
-                                {creativesByPlatform.tiktok?.headline ??
-                                  creativesByPlatform.tiktok?.heading ??
-                                  "—"}
-                              </p>
-                            </div>
-                          </div>
-                          <MoreVerticalIcon />
-                        </div>
-
-                        <div className="mt-3">
-                          {creativesByPlatform.tiktok?.mediaUrl ? (
-                            isVideoUrl(creativesByPlatform.tiktok.mediaUrl) ? (
-                              <video
-                                src={creativesByPlatform.tiktok.mediaUrl}
-                                controls
-                                className="w-full h-44 object-cover rounded-lg bg-white"
-                              />
-                            ) : (
-                              <img
-                                src={creativesByPlatform.tiktok.mediaUrl}
-                                alt="tiktok creative"
-                                className="w-full h-44 object-cover rounded-lg bg-white"
-                              />
-                            )
-                          ) : (
-                            <img
-                              src="/media-creative.png"
-                              alt="no creative"
-                              className="w-full h-44 object-cover rounded-lg"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Creative Section */}
+              <CreativeSection
+                progressTab={progressTab}
+                setProgressTab={setProgressTab}
+                selectedPlatforms={selectedPlatforms}
+                creativesByPlatform={creativesByPlatform as any}
+                openCreativeModal={() => {}}
+                readOnly={true}
+              />
 
               {submissionError && (
                 <p className="text-red-500 text-sm font-medium text-center">
                   {submissionError}
                 </p>
               )}
-
-              <Button
-                type="submit"
-                disabled={isPublishing}
-                className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer"
-              >
-                <CircleArrowRight />
-                {isPublishing ? "Publishing..." : "Publish campaign"}
-              </Button>
             </form>
           </div>
         </div>

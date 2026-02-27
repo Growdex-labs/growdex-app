@@ -162,7 +162,7 @@ export const mockCampaigns: Campaign[] = [
     adsCount: 5,
     optimizationPercentage: 75,
     cpc: 350.89,
-    cpa: 1300.80,
+    cpa: 1300.8,
   },
   {
     id: "2",
@@ -179,7 +179,7 @@ export const mockCampaigns: Campaign[] = [
     adsCount: 8,
     optimizationPercentage: 60,
     cpc: 275.45,
-    cpa: 1150.00,
+    cpa: 1150.0,
   },
   {
     id: "3",
@@ -196,7 +196,7 @@ export const mockCampaigns: Campaign[] = [
     adsCount: 10,
     optimizationPercentage: 80,
     cpc: 310.25,
-    cpa: 1450.50,
+    cpa: 1450.5,
   },
   {
     id: "6",
@@ -213,7 +213,7 @@ export const mockCampaigns: Campaign[] = [
     adsCount: 5,
     optimizationPercentage: 75,
     cpc: 350.89,
-    cpa: 1300.80,
+    cpa: 1300.8,
   },
   {
     id: "4",
@@ -464,4 +464,3 @@ export const mockWalletTransactions: WalletTransaction[] = [
 
 // Note: SavedAudience types and mocks have been removed.
 // Use the canonical Audience type from lib/audiences.ts instead.
-

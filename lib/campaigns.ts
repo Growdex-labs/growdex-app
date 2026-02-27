@@ -122,3 +122,15 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
 
   return res.json();
 };
+export const publishCampaign = async (id: string) => {
+  const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}/publish`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Publish campaign failed (${res.status}): ${text}`);
+  }
+
+  return res.json();
+};
