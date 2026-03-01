@@ -8,7 +8,7 @@ export function WalletSidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: 'Balance', href: '/panel/wallet' },
+    { label: 'Billing', href: '/panel/wallet' },
     { label: 'Budget', href: '/panel/wallet/budget' },
   ];
 
