@@ -10,7 +10,7 @@ import { WalletSidebar } from "./components/wallet-sidebar";
 
 interface PaymentUrl {
   platform: "meta" | "tiktok";
-  url: string;
+  billingUrl: string;
 }
 
 const PLATFORM_CONFIG = {
@@ -71,20 +71,25 @@ export default function PaymentPage() {
         // TODO: Replace with actual endpoint from API
         const urlMap: Record<string, string> = {};
 
-        // Fetch payment URL for each connected platform
-        for (const platform of connectedPlatforms) {
-          try {
-            const res = await apiFetch(`/payments/${platform}`, {
-              method: "GET",
-            });
+        // Fetch billing Info
+        try {
+          const res = await apiFetch("/users/ad-accounts/billing", {
+            method: "GET",
+          });
 
-            if (res.ok) {
-              const data = (await res.json()) as { url: string };
-              urlMap[platform] = data.url;
-            }
-          } catch (err) {
-            console.error(`Failed to fetch payment URL for ${platform}:`, err);
+          if (res.ok) {
+            const data = (await res.json()) as {
+              platform: string;
+              billingUrl: string;
+            }[];
+            console.log("Fetched billing URL:", data);
+
+            data.forEach((item) => {
+              urlMap[item.platform] = item.billingUrl;
+            });
           }
+        } catch (err) {
+          console.error("Failed to fetch billing URL", err);
         }
 
         if (mounted) setPaymentUrls(urlMap);
@@ -108,8 +113,8 @@ export default function PaymentPage() {
     };
   }, [connectedPlatforms, meLoading]);
 
-  const handlePaymentClick = (platform: string, url: string) => {
-    if (!url) return;
+  const handlePaymentClick = (platform: string, billingUrl: string) => {
+    if (!billingUrl) return;
 
     setLoadingPlatform(platform);
 
@@ -119,7 +124,7 @@ export default function PaymentPage() {
     const top = window.screenY + (window.outerHeight - height) / 2;
 
     const popup = window.open(
-      url,
+      billingUrl,
       `${platform}_payment`,
       `width=${width},height=${height},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
     );
@@ -169,7 +174,7 @@ export default function PaymentPage() {
             {(meLoading || loading) && hasConnectedPlatforms === false ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <Loader2 className="w-12 h-12 text-gray-400 animate-spin mb-4" />
-                <p className="text-gray-600">Loading payment options...</p>
+                <p className="text-gray-600">Loading billing options...</p>
               </div>
             ) : !hasConnectedPlatforms ? (
               /* Empty State - No Connected Platforms */
@@ -242,7 +247,7 @@ export default function PaymentPage() {
                               paymentUrl && handlePaymentClick(platform, paymentUrl)
                             }
                             disabled={!paymentUrl || isLoading}
-                            className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
+                            className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
                               !paymentUrl || isLoading
                                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                                 : "bg-gradient-to-r from-amber-400 to-yellow-500 text-gray-900 hover:shadow-lg hover:scale-105 active:scale-95"
@@ -267,7 +272,7 @@ export default function PaymentPage() {
                     Secure Payment Processing
                   </h3>
                   <p className="text-sm text-gray-700">
-                    All payments are processed securely through the selected payment platform. Your
+                    All payments are processed securely through your selected ad platform. Your
                     payment information is encrypted and never stored on our servers.
                   </p>
                 </div>
