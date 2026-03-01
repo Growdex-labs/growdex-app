@@ -10,8 +10,8 @@ export function useCampaignFormState() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [selectedPlatforms, setSelectedPlatforms] = useState({
-    meta: true,
-    tiktok: true,
+    meta: false,
+    tiktok: false,
   });
 
   const [campaignName, setCampaignName] = useState("");

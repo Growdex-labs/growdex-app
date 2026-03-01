@@ -71,7 +71,7 @@ export default function NewCampaignPage() {
   })();
 
   const [progressTab, setProgressTab] = useState<number>(0);
-  const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("CONVERSIONS");
+  const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("ENGAGEMENT");
 
   const COUNTRY_OPTIONS = (
     Object.entries(metaSpecialAdLocations) as Array<
@@ -83,8 +83,8 @@ export default function NewCampaignPage() {
   const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
 
   const [selectedPlatforms, setSelectedPlatforms] = useState({
-    meta: true,
-    tiktok: true,
+    meta: false,
+    tiktok: false,
   });
 
   const [metaCountries, setMetaCountries] = useState<
