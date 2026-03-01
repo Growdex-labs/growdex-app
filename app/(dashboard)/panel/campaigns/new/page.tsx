@@ -4,7 +4,19 @@ import { useState, useRef } from "react";
 import { useEffect } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { CampaignsSidebar } from "../../components/campaigns-sidebar";
-import { CircleArrowRight, SparklesIcon, UploadCloud } from "lucide-react";
+import {
+  ChevronDown,
+  CircleArrowRight,
+  Facebook,
+  InstagramIcon,
+  MoreVerticalIcon,
+  Search,
+  SparklesIcon,
+  Users,
+  UploadCloud,
+} from "lucide-react";
+import { PluggedIcon, PluggedOutIcon } from "@/components/svg";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,18 +46,18 @@ import { useMe } from "@/context/me-context";
 import {
   CreativeDraft,
   FormObject,
-  SignatureStampPayload,
-  SignatureStampResponse,
-  CloudinaryUploadResponse,
-  validateFile,
-  toDateInputValue,
   isVideoUrl,
+  toDateInputValue,
+  validateFile,
 } from "@/lib/campaign-shared";
 import { GoalSection } from "../components/GoalSection";
 import { PlatformSection } from "../components/PlatformSection";
 import { AudienceSection } from "../components/AudienceSection";
 import { BudgetSection } from "../components/BudgetSection";
 import { CreativeSection } from "../components/CreativeSection";
+import { hashFolderName } from "@/lib/encrypt";
+import { CLOUDINARY_FOLDER } from "@/lib/constants";
+
 
 export default function NewCampaignPage() {
   const { me } = useMe();
@@ -107,6 +119,7 @@ export default function NewCampaignPage() {
     "technology",
     "fashion",
   ]);
+  const [totalReach, setTotalReach] = useState<number>(0);
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
@@ -322,7 +335,7 @@ export default function NewCampaignPage() {
       case "traffic":
         return "TRAFFIC";
       case "conversions":
-        return "CONVERSIONS";
+        return "ENGAGEMENT";
       case "sales":
         return "SALES";
       case "leads":
@@ -556,12 +569,15 @@ export default function NewCampaignPage() {
         return;
       }
 
-      const CLOUDINARY_FOLDER = "growdex_campaigns";
+      const encryptedFolder = await hashFolderName();
+      const safeName = creativeImage.name
+        .replace(/\.[^/.]+$/, "")          // strip extension
+        .replace(/[^a-zA-Z0-9_-]/g, "_");  // replace unsafe chars
       const publicId =
-        `${CLOUDINARY_FOLDER}/${creativeImage.name}/` + Date.now();
+        `${encryptedFolder.slice(0, 20)}/${safeName}_${Date.now()}`;
 
       const confirmed = window.confirm(
-        "Once you upload this creative, it will be saved to Cloudinary and you won’t be able to edit it. To make changes later, you’ll need to upload a new creative.\n\nDo you want to continue?",
+        "Once you upload this creative, it will be saved to Cloudinary and you won't be able to edit it. To make changes later, you'll need to upload a new creative.\n\nDo you want to continue?",
       );
 
       if (!confirmed) return;

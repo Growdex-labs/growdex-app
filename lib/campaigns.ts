@@ -3,7 +3,7 @@ import { apiFetch } from "./auth";
 export type CampaignGoal =
   | "AWARENESS"
   | "TRAFFIC"
-  | "CONVERSIONS"
+  | "ENGAGEMENT"
   | "SALES"
   | "LEADS";
 
@@ -80,12 +80,15 @@ export const createCampaign = async (payload: CreateCampaignPayload) => {
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Create campaign failed (${res.status}): ${text}`);
+  const data = await res.json().catch(() => ({}));
+
+  if(!res.ok) {
+    const errorMsg =
+      data?.errors?.[0]?.message || data?.message || `Request failed (${res.status})`;
+    throw new Error(errorMsg);
   }
 
-  return res.json();
+  return data;
 };
 
 export const fetchCampaigns = async (): Promise<CampaignDto[]> => {
