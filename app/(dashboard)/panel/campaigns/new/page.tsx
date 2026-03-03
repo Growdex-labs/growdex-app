@@ -224,6 +224,34 @@ export default function NewCampaignPage() {
     fileInputRef.current?.click();
   };
 
+  const fetchReachEstimate = async (
+    platform: "meta" | "tiktok",
+    type: "interest" | "location" | "country",
+    value: string,
+  ) => {
+    try {
+      // Placeholder endpoint
+      const res = await apiFetch("/campaigns/reach-estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, type, value }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const reach = Number(data.reach) || 10000;
+        setTotalReach((prev) => prev + reach);
+      } else {
+        // Fallback mock increment
+        setTotalReach((prev) => prev + 10000);
+      }
+    } catch (err) {
+      console.error("Failed to fetch reach estimate:", err);
+      // Fallback mock increment
+      setTotalReach((prev) => prev + 10000);
+    }
+  };
+
   const normalizeTag = (value: string) => value.trim().replace(/\s+/g, " ");
 
   const addLocationTag = (platform: "meta" | "tiktok", value: string) => {
@@ -231,20 +259,24 @@ export default function NewCampaignPage() {
     if (!next) return;
 
     if (platform === "meta") {
-      setMetaLocations((prev) =>
-        prev.some((x) => x.toLowerCase() === next.toLowerCase())
-          ? prev
-          : [...prev, next],
-      );
+      const lower = next.toLowerCase();
+      if (metaLocations.some((x) => x.toLowerCase() === lower)) {
+        setMetaLocationQuery("");
+        return;
+      }
+      setMetaLocations((prev) => [...prev, next]);
+      fetchReachEstimate("meta", "location", next);
       setMetaLocationQuery("");
       return;
     }
 
-    setTiktokLocations((prev) =>
-      prev.some((x) => x.toLowerCase() === next.toLowerCase())
-        ? prev
-        : [...prev, next],
-    );
+    const lower = next.toLowerCase();
+    if (tiktokLocations.some((x) => x.toLowerCase() === lower)) {
+      setTiktokLocationQuery("");
+      return;
+    }
+    setTiktokLocations((prev) => [...prev, next]);
+    fetchReachEstimate("tiktok", "location", next);
     setTiktokLocationQuery("");
   };
 
@@ -261,20 +293,26 @@ export default function NewCampaignPage() {
     if (!next) return;
 
     if (platform === "meta") {
-      setMetaInterests((prev) =>
-        prev.some((x) => x.toLowerCase() === next.toLowerCase())
-          ? prev
-          : [...prev, next],
-      );
+      const lower = next.toLowerCase();
+      if (metaInterests.some((x) => x.toLowerCase() === lower)) {
+        setMetaInterestQuery("");
+        return;
+      }
+
+      setMetaInterests((prev) => [...prev, next]);
+      fetchReachEstimate("meta", "interest", next);
       setMetaInterestQuery("");
       return;
     }
 
-    setTiktokInterests((prev) =>
-      prev.some((x) => x.toLowerCase() === next.toLowerCase())
-        ? prev
-        : [...prev, next],
-    );
+    const lower = next.toLowerCase();
+    if (tiktokInterests.some((x) => x.toLowerCase() === lower)) {
+      setTiktokInterestQuery("");
+      return;
+    }
+
+    setTiktokInterests((prev) => [...prev, next]);
+    fetchReachEstimate("tiktok", "interest", next);
     setTiktokInterestQuery("");
   };
 
@@ -292,16 +330,17 @@ export default function NewCampaignPage() {
     checked: boolean,
   ) => {
     const setter = platform === "meta" ? setMetaCountries : setTiktokCountries;
-    setter((prev) => {
-      const exists = prev.includes(code);
-      if (checked) {
-        return exists ? prev : [...prev, code];
-      }
+    const currentList = platform === "meta" ? metaCountries : tiktokCountries;
 
-      // keep at least one country selected
-      if (prev.length <= 1) return prev;
-      return prev.filter((c) => c !== code);
-    });
+    if (checked) {
+      if (currentList.includes(code)) return;
+      setter((prev) => [...prev, code]);
+      fetchReachEstimate(platform, "country", code);
+      return;
+    }
+
+    if (currentList.length <= 1) return;
+    setter((prev) => prev.filter((c) => c !== code));
   };
 
   const formatCountriesSummary = (codes: MetaSpecialAdLocationCode[]) => {
@@ -543,6 +582,7 @@ export default function NewCampaignPage() {
           budget: payload.budget,
           targeting: payload.targeting,
           creatives: creativesByPlatform,
+          totalReach: totalReach,
         }),
       );
 
@@ -940,6 +980,7 @@ export default function NewCampaignPage() {
                 bothPlatformsConnected={bothPlatformsConnected}
                 saveAudienceForPlatform={saveAudienceForPlatform}
                 saveAudienceCombined={saveAudienceCombined}
+                totalReach={totalReach}
               />
 
               {/* Budget */}

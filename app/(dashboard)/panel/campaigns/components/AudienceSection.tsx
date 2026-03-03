@@ -68,6 +68,7 @@ interface AudienceSectionProps {
   saveAudienceForPlatform: (platform: "meta" | "tiktok") => void;
   saveAudienceCombined: () => void;
   readOnly?: boolean;
+  totalReach: number;
 }
 
 export const AudienceSection = ({
@@ -107,6 +108,7 @@ export const AudienceSection = ({
   saveAudienceForPlatform,
   saveAudienceCombined,
   readOnly = false,
+  totalReach,
 }: AudienceSectionProps) => {
   return (
     <div
@@ -138,7 +140,7 @@ export const AudienceSection = ({
               <div className="rounded-4xl border p-3 space-y-2">
                 <div>
                   <p className="text-gray-400">Total reach</p>
-                  <h4 className="text-xl md:text-2xl">25,000 - 50,000k</h4>
+                  <h4 className="text-xl md:text-2xl">{totalReach.toLocaleString()}</h4>
                 </div>
                 <div className="w-full inline-flex items-start justify-between gap-2 cursor-pointer group bg-gray-50 p-2 rounded-xl">
                   <div className="flex gap-4">

@@ -115,6 +115,8 @@ export default function PublishCampaignPage() {
     setMetaInterests,
     tiktokInterests,
     setTiktokInterests,
+    totalReach,
+    setTotalReach,
     metaAgeMin,
     setMetaAgeMin,
     metaAgeMax,
@@ -226,6 +228,10 @@ export default function PublishCampaignPage() {
         } catch (err) {
           // ignore if shape mismatches
         }
+      }
+
+      if (data.totalReach) {
+        setTotalReach(data.totalReach);
       }
 
       if (data.budget) {
@@ -555,6 +561,7 @@ export default function PublishCampaignPage() {
                 saveAudienceForPlatform={() => {}}
                 saveAudienceCombined={() => {}}
                 readOnly={true}
+                totalReach={totalReach}
               />
 
               {/* Budget Section */}
