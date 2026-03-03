@@ -71,51 +71,13 @@ interface AudienceSectionProps {
   totalReach: number;
 }
 
-export const AudienceSection = ({
-  progressTab,
-  setProgressTab,
-  brandName,
-  instagramAccountName,
-  loadingAudiences,
-  savedAudiences,
-  applyAudienceToForm,
-  formatCountriesSummary,
-  COUNTRY_OPTIONS,
-  metaCountries,
-  tiktokCountries,
-  toggleCountry,
-  metaLocationQuery,
-  setMetaLocationQuery,
-  tiktokLocationQuery,
-  setTiktokLocationQuery,
-  addLocationTag,
-  metaLocations,
-  removeLocationTag,
-  tiktokLocations,
-  metaAgeMin,
-  setMetaAgeMin,
-  metaAgeMax,
-  setMetaAgeMax,
-  metaInterestQuery,
-  setMetaInterestQuery,
-  addInterestTag,
-  metaInterests,
-  removeInterestTag,
-  tiktokInterestQuery,
-  setTiktokInterestQuery,
-  tiktokInterests,
-  bothPlatformsConnected,
-  saveAudienceForPlatform,
-  saveAudienceCombined,
-  readOnly = false,
-  totalReach,
-}: AudienceSectionProps) => {
+export const AudienceSection = (props: AudienceSectionProps) => {
   return (
     <div
       className={`bg-white rounded-xl p-4 border ${
-        progressTab === 2 ? "border-darkkhaki-200" : "border-transparent"
+        props.progressTab === 2 ? "border-darkkhaki-200" : "border-transparent"
       }`}
-      onClick={() => setProgressTab(2)}
+      onClick={() => props.setProgressTab(2)}
     >
       <div>
         <div className="flex gap-3">
@@ -140,7 +102,7 @@ export const AudienceSection = ({
               <div className="rounded-4xl border p-3 space-y-2">
                 <div>
                   <p className="text-gray-400">Total reach</p>
-                  <h4 className="text-xl md:text-2xl">{totalReach.toLocaleString()}</h4>
+                  <h4 className="text-xl md:text-2xl">{props.totalReach.toLocaleString()}</h4>
                 </div>
                 <div className="w-full inline-flex items-start justify-between gap-2 cursor-pointer group bg-gray-50 p-2 rounded-xl">
                   <div className="flex gap-4">
@@ -157,7 +119,7 @@ export const AudienceSection = ({
                         <div className="p-1 bg-gray-600 rounded-full">
                           <Facebook className="w-4 h-4 text-white" />
                         </div>
-                        <span>{brandName}</span>
+                        <span>{props.brandName}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <PluggedIcon fill="#0A883F" />
@@ -171,7 +133,7 @@ export const AudienceSection = ({
                     <div className="mt-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                         <InstagramIcon className="w-4 h-4 text-gray-500" />
-                        <span>{instagramAccountName}</span>
+                        <span>{props.instagramAccountName}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <button
@@ -198,21 +160,21 @@ export const AudienceSection = ({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56">
-                      {loadingAudiences ? (
+                      {props.loadingAudiences ? (
                         <div className="px-2 py-1 text-xs text-gray-500">
                           Loading...
                         </div>
-                      ) : savedAudiences.length === 0 ? (
+                      ) : props.savedAudiences.length === 0 ? (
                         <div className="px-2 py-1 text-xs text-gray-500">
                           No saved audiences
                         </div>
                       ) : (
                         <>
                           <DropdownMenuLabel>Saved Audiences</DropdownMenuLabel>
-                          {savedAudiences.map((audience) => (
+                          {props.savedAudiences.map((audience) => (
                             <DropdownMenuCheckboxItem
                               key={audience.id}
-                              onClick={() => applyAudienceToForm(audience)}
+                              onClick={() => props.applyAudienceToForm(audience)}
                               checked={false}
                             >
                               {audience.name}
@@ -232,7 +194,7 @@ export const AudienceSection = ({
                     <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
                       <div className="flex-1">
                         <p className="text-gray-400">
-                          {formatCountriesSummary(metaCountries)}
+                          {props.formatCountriesSummary(props.metaCountries)}
                         </p>
                       </div>
                       <DropdownMenu>
@@ -245,12 +207,12 @@ export const AudienceSection = ({
                           <DropdownMenuLabel>
                             Countries (Multiple choice)
                           </DropdownMenuLabel>
-                          {COUNTRY_OPTIONS.map(({ code, name }) => (
+                          {props.COUNTRY_OPTIONS.map(({ code, name }) => (
                             <DropdownMenuCheckboxItem
                               key={code}
-                              checked={metaCountries.includes(code)}
+                              checked={props.metaCountries.includes(code)}
                               onCheckedChange={(checked) =>
-                                toggleCountry("meta", code, Boolean(checked))
+                                props.toggleCountry("meta", code, Boolean(checked))
                               }
                             >
                               {name}
@@ -263,12 +225,12 @@ export const AudienceSection = ({
                       <InputGroup className="bg-white">
                         <InputGroupInput
                           placeholder="Search for city or state"
-                          value={metaLocationQuery}
-                          onChange={(e) => setMetaLocationQuery(e.target.value)}
+                          value={props.metaLocationQuery}
+                          onChange={(e) => props.setMetaLocationQuery(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              addLocationTag("meta", metaLocationQuery);
+                              props.addLocationTag("meta", props.metaLocationQuery);
                             }
                           }}
                         />
@@ -278,7 +240,7 @@ export const AudienceSection = ({
                       </InputGroup>
                       {/* city/state tags */}
                       <div className="mt-2 flex gap-2 flex-wrap">
-                        {metaLocations.map((location) => (
+                        {props.metaLocations.map((location) => (
                           <div
                             key={location}
                             className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md"
@@ -288,7 +250,7 @@ export const AudienceSection = ({
                               className="text-xs font-medium text-gray-700"
                               aria-label={`Remove ${location}`}
                               onClick={() =>
-                                removeLocationTag("meta", location)
+                                props.removeLocationTag("meta", location)
                               }
                             >
                               &times;
@@ -313,8 +275,8 @@ export const AudienceSection = ({
                           inputMode="numeric"
                           min={13}
                           max={80}
-                          value={metaAgeMin}
-                          onChange={(e) => setMetaAgeMin(e.target.value)}
+                          value={props.metaAgeMin}
+                          onChange={(e) => props.setMetaAgeMin(e.target.value)}
                           placeholder="18"
                           className="mt-2"
                         />
@@ -326,8 +288,8 @@ export const AudienceSection = ({
                           inputMode="numeric"
                           min={13}
                           max={80}
-                          value={metaAgeMax}
-                          onChange={(e) => setMetaAgeMax(e.target.value)}
+                          value={props.metaAgeMax}
+                          onChange={(e) => props.setMetaAgeMax(e.target.value)}
                           placeholder="65"
                           className="mt-2"
                         />
@@ -348,12 +310,12 @@ export const AudienceSection = ({
                     <InputGroup className="bg-white">
                       <InputGroupInput
                         placeholder="Search for category"
-                        value={metaInterestQuery}
-                        onChange={(e) => setMetaInterestQuery(e.target.value)}
+                        value={props.metaInterestQuery}
+                        onChange={(e) => props.setMetaInterestQuery(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
-                            addInterestTag("meta", metaInterestQuery);
+                            props.addInterestTag("meta", props.metaInterestQuery);
                           }
                         }}
                       />
@@ -362,7 +324,7 @@ export const AudienceSection = ({
                       </InputGroupAddon>
                     </InputGroup>
                     <div className="mt-2 flex gap-2 flex-wrap">
-                      {metaInterests.map((interest) => (
+                      {props.metaInterests.map((interest) => (
                         <div
                           key={interest}
                           className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md"
@@ -371,7 +333,7 @@ export const AudienceSection = ({
                             type="button"
                             className="text-xs font-medium text-gray-700"
                             aria-label={`Remove ${interest}`}
-                            onClick={() => removeInterestTag("meta", interest)}
+                            onClick={() => props.removeInterestTag("meta", interest)}
                           >
                             &times;
                           </button>
@@ -383,11 +345,11 @@ export const AudienceSection = ({
                     </div>
                   </div>
                 </div>
-                {!bothPlatformsConnected && (
+                {!props.bothPlatformsConnected && (
                   <Button
                     type="button"
                     className="mt-2 bg-khaki-200 hover:bg-khaki-300 text-black"
-                    onClick={() => saveAudienceForPlatform("meta")}
+                    onClick={() => props.saveAudienceForPlatform("meta")}
                   >
                     Save audience
                   </Button>
@@ -404,7 +366,7 @@ export const AudienceSection = ({
                     {/* TikTok Account */}
                     <div className="flex flex-col gap-2 items-start">
                       <p className="text-sm font-medium text-gray-700">
-                        <span>{brandName}</span>
+                        <span>{props.brandName}</span>
                       </p>
                       <div className="flex items-center gap-2">
                         <PluggedIcon fill="#0A883F" />
@@ -428,21 +390,21 @@ export const AudienceSection = ({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56">
-                      {loadingAudiences ? (
+                      {props.loadingAudiences ? (
                         <div className="px-2 py-1 text-xs text-gray-500">
                           Loading...
                         </div>
-                      ) : savedAudiences.length === 0 ? (
+                      ) : props.savedAudiences.length === 0 ? (
                         <div className="px-2 py-1 text-xs text-gray-500">
                           No saved audiences
                         </div>
                       ) : (
                         <>
                           <DropdownMenuLabel>Saved Audiences</DropdownMenuLabel>
-                          {savedAudiences.map((audience) => (
+                          {props.savedAudiences.map((audience) => (
                             <DropdownMenuCheckboxItem
                               key={audience.id}
-                              onClick={() => applyAudienceToForm(audience)}
+                              onClick={() => props.applyAudienceToForm(audience)}
                               checked={false}
                             >
                               {audience.name}
@@ -462,7 +424,7 @@ export const AudienceSection = ({
                     <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
                       <div className="flex-1">
                         <p className="text-gray-400">
-                          {formatCountriesSummary(tiktokCountries)}
+                          {props.formatCountriesSummary(props.tiktokCountries)}
                         </p>
                       </div>
                       <DropdownMenu>
@@ -473,12 +435,12 @@ export const AudienceSection = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-72 max-h-72">
                           <DropdownMenuLabel>Countries</DropdownMenuLabel>
-                          {COUNTRY_OPTIONS.map(({ code, name }) => (
+                          {props.COUNTRY_OPTIONS.map(({ code, name }) => (
                             <DropdownMenuCheckboxItem
                               key={code}
-                              checked={tiktokCountries.includes(code)}
+                              checked={props.tiktokCountries.includes(code)}
                               onCheckedChange={(checked) =>
-                                toggleCountry("tiktok", code, Boolean(checked))
+                                props.toggleCountry("tiktok", code, Boolean(checked))
                               }
                             >
                               {name}
@@ -491,14 +453,14 @@ export const AudienceSection = ({
                       <InputGroup className="bg-white">
                         <InputGroupInput
                           placeholder="Search for city or state"
-                          value={tiktokLocationQuery}
+                          value={props.tiktokLocationQuery}
                           onChange={(e) =>
-                            setTiktokLocationQuery(e.target.value)
+                            props.setTiktokLocationQuery(e.target.value)
                           }
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              addLocationTag("tiktok", tiktokLocationQuery);
+                              props.addLocationTag("tiktok", props.tiktokLocationQuery);
                             }
                           }}
                         />
@@ -508,7 +470,7 @@ export const AudienceSection = ({
                       </InputGroup>
                       {/* city/state tags */}
                       <div className="mt-2 flex gap-2 flex-wrap">
-                        {tiktokLocations.map((location) => (
+                        {props.tiktokLocations.map((location) => (
                           <div
                             key={location}
                             className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md"
@@ -518,7 +480,7 @@ export const AudienceSection = ({
                               className="text-xs font-medium text-gray-700"
                               aria-label={`Remove ${location}`}
                               onClick={() =>
-                                removeLocationTag("tiktok", location)
+                                props.removeLocationTag("tiktok", location)
                               }
                             >
                               &times;
@@ -594,12 +556,12 @@ export const AudienceSection = ({
                     <InputGroup className="bg-white">
                       <InputGroupInput
                         placeholder="Search for category"
-                        value={tiktokInterestQuery}
-                        onChange={(e) => setTiktokInterestQuery(e.target.value)}
+                        value={props.tiktokInterestQuery}
+                        onChange={(e) => props.setTiktokInterestQuery(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
-                            addInterestTag("tiktok", tiktokInterestQuery);
+                            props.addInterestTag("tiktok", props.tiktokInterestQuery);
                           }
                         }}
                       />
@@ -608,7 +570,7 @@ export const AudienceSection = ({
                       </InputGroupAddon>
                     </InputGroup>
                     <div className="mt-2 flex gap-2 flex-wrap">
-                      {tiktokInterests.map((interest) => (
+                      {props.tiktokInterests.map((interest) => (
                         <div
                           key={interest}
                           className="inline-flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md"
@@ -618,7 +580,7 @@ export const AudienceSection = ({
                             className="text-xs font-medium text-gray-700"
                             aria-label={`Remove ${interest}`}
                             onClick={() =>
-                              removeInterestTag("tiktok", interest)
+                              props.removeInterestTag("tiktok", interest)
                             }
                           >
                             &times;
@@ -631,11 +593,11 @@ export const AudienceSection = ({
                     </div>
                   </div>
                 </div>
-                {!bothPlatformsConnected && (
+                {!props.bothPlatformsConnected && (
                   <Button
                     type="button"
                     className="mt-2 bg-khaki-200 hover:bg-khaki-300 text-black"
-                    onClick={() => saveAudienceForPlatform("tiktok")}
+                    onClick={() => props.saveAudienceForPlatform("tiktok")}
                   >
                     Save audience
                   </Button>
@@ -643,12 +605,12 @@ export const AudienceSection = ({
               </div>
 
               {/* General Save button */}
-              {bothPlatformsConnected && (
+              {props.bothPlatformsConnected && (
                 <div className="mt-4">
                   <Button
                     type="button"
                     className="bg-khaki-200 hover:bg-khaki-300 text-black"
-                    onClick={saveAudienceCombined}
+                    onClick={props.saveAudienceCombined}
                   >
                     Save audience
                   </Button>
