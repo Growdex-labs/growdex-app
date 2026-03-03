@@ -570,12 +570,18 @@ export default function NewCampaignPage() {
 
     console.log("Create Campaign payload:", payload);
 
-    // Store campaign data in session storage and redirect to publish page
     try {
       setIsCreatingCampaign(true);
+
+      const created = await createCampaign(payload);
+      if (!created.id) {
+        throw new Error("Created campaign did not return an ID");
+      }
+
       sessionStorage.setItem(
         "pendingCampaign",
         JSON.stringify({
+          id: created.id,
           name: payload.name,
           goal: payload.goal,
           platforms: payload.platforms,
@@ -589,9 +595,9 @@ export default function NewCampaignPage() {
       // Redirect to publish page
       window.location.href = "/panel/campaigns/new/publish";
     } catch (err) {
-      console.error("Error preparing campaign:", err);
+      console.error("Error creating campaign:", err);
       setSubmissionError(
-        err instanceof Error ? err.message : "Failed to prepare campaign",
+        err instanceof Error ? err.message : "Failed to create campaign",
       );
       setIsCreatingCampaign(false);
     }
@@ -1063,12 +1069,12 @@ export default function NewCampaignPage() {
                         onChange={(e) => setScheduleStartDate(e.target.value)}
                         aria-label="Start date"
                       />
-                      {/* <Input
+                      <Input
                         type="date"
                         value={scheduleEndDate}
                         onChange={(e) => setScheduleEndDate(e.target.value)}
                         aria-label="End date"
-                      /> */}
+                      />
                       <Input
                         type="time"
                         value={scheduleTime}
