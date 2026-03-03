@@ -1063,12 +1063,12 @@ export default function NewCampaignPage() {
                         onChange={(e) => setScheduleStartDate(e.target.value)}
                         aria-label="Start date"
                       />
-                      <Input
+                      {/* <Input
                         type="date"
                         value={scheduleEndDate}
                         onChange={(e) => setScheduleEndDate(e.target.value)}
                         aria-label="End date"
-                      />
+                      /> */}
                       <Input
                         type="time"
                         value={scheduleTime}
@@ -1087,14 +1087,14 @@ export default function NewCampaignPage() {
                 </p>
               )}
 
-              {/* create campaign btn */}
+              {/* create draft campaign btn */}
               <Button
                 type="submit"
                 disabled={isCreatingCampaign}
                 className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer"
               >
                 <CircleArrowRight />
-                {isCreatingCampaign ? "Creating..." : "Create campaign"}
+                {isCreatingCampaign ? "Saving..." : "Save draft"}
               </Button>
             </form>
 
