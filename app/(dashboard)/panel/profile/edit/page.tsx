@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type JSX } from "react";
+import { useRouter } from "next/navigation";
 import { PanelLayout } from "../../components/panel-layout";
 import { DashboardHeader } from "../../components/dashboard-header";
 import { Camera, Upload, X } from "lucide-react";
@@ -14,6 +15,7 @@ import {
 import { DepositIcon } from "@/components/svg";
 import Link from "next/link";
 import { useMe } from "@/context/me-context";
+import { updateCurrentUser } from "@/lib/auth";
 
 interface ProfileFormData {
   firstName: string;
@@ -31,6 +33,7 @@ interface ProfileFormData {
 }
 
 export default function EditProfilePage(): JSX.Element {
+  const router = useRouter();
   const { me } = useMe();
   const [profileImage, setProfileImage] = useState<string>("/profile.png");
   const [formData, setFormData] = useState<ProfileFormData>({
@@ -101,9 +104,50 @@ export default function EditProfilePage(): JSX.Element {
     }));
   };
 
-  const handleSaveChanges = () => {
-    console.log("Saving profile changes:", formData);
-    // Add save logic here
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const { refresh } = useMe();
+
+  const handleSaveChanges = async () => {
+    setSaveError(null);
+    setSaveSuccess(false);
+    setIsSaving(true);
+
+    try {
+      const payload = {
+        profile: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phoneNumber,
+          country: formData.country,
+        },
+        brand: {
+          name: formData.brandName,
+          businessAddress: formData.businessAddress,
+          instagramUrl: formData.instagramLink,
+          facebookUrl: formData.facebookLink,
+          googleUrl: formData.googleLink,
+          twitterUrl: formData.twitterLink,
+        },
+      };
+
+      await updateCurrentUser(payload);
+      await refresh();
+      setSaveSuccess(true);
+
+      // Redirect to profile page
+      router.push("/panel/profile");
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Error updating profile:", err);
+      setSaveError(err.message || "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -399,12 +443,23 @@ export default function EditProfilePage(): JSX.Element {
 
               {/* Save Changes Button */}
               <div className="mt-8 pt-6 border-t border-gray-200">
+                {saveError && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {saveError}
+                  </div>
+                )}
+                {saveSuccess && (
+                  <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                    Profile updated successfully!
+                  </div>
+                )}
                 <button
                   onClick={handleSaveChanges}
-                  className="w-full px-6 py-3 md:py-3.5 bg-yellow-300 hover:bg-yellow-400 text-gray-900 font-semibold rounded-lg transition-colors text-sm md:text-base flex items-center justify-center gap-2"
+                  disabled={isSaving}
+                  className="w-full px-6 py-3 md:py-3.5 bg-yellow-300 hover:bg-yellow-400 disabled:bg-yellow-200 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-colors text-sm md:text-base flex items-center justify-center gap-2"
                 >
                   <DepositIcon />
-                  Save changes
+                  {isSaving ? "Saving..." : "Save changes"}
                 </button>
               </div>
             </div>
