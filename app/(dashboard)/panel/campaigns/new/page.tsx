@@ -58,7 +58,6 @@ import { CreativeSection } from "../components/CreativeSection";
 import { hashFolderName } from "@/lib/encrypt";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 
-
 export default function NewCampaignPage() {
   const { me } = useMe();
   const brandName = me?.brand?.name ?? "Your Brand";
@@ -83,7 +82,7 @@ export default function NewCampaignPage() {
   const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
 
   const [selectedPlatforms, setSelectedPlatforms] = useState({
-    meta: false,
+    meta: true,
     tiktok: false,
   });
 
@@ -480,7 +479,8 @@ export default function NewCampaignPage() {
       ? splitBudgetType
       : unifiedBudgetFrequency;
 
-    const defaultStartDate = startOfUtcDayIso(new Date());
+    // Add a 15-minute buffer to ensure "now" is always in the future for the backend
+    const defaultStartDate = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     const defaultEndDate = addDaysUtcIso(defaultStartDate, 7);
 
     let startDate = defaultStartDate;
@@ -513,6 +513,13 @@ export default function NewCampaignPage() {
 
       startDate = scheduledStart;
       endDate = scheduledEnd;
+    }
+
+    const minBuffer = 5 * 60 * 1000;
+    if (new Date(startDate).getTime() < Date.now() + minBuffer) {
+      // If the provided start date is in the past or too close to now,
+      // auto-correct it to 15 minutes in the future.
+      startDate = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     }
 
     const fallbackAgeMin = 18;
@@ -617,10 +624,9 @@ export default function NewCampaignPage() {
 
       const encryptedFolder = await hashFolderName();
       const safeName = creativeImage.name
-        .replace(/\.[^/.]+$/, "")          // strip extension
-        .replace(/[^a-zA-Z0-9_-]/g, "_");  // replace unsafe chars
-      const publicId =
-        `${encryptedFolder.slice(0, 20)}/${safeName}_${Date.now()}`;
+        .replace(/\.[^/.]+$/, "") // strip extension
+        .replace(/[^a-zA-Z0-9_-]/g, "_"); // replace unsafe chars
+      const publicId = `${encryptedFolder.slice(0, 20)}/${safeName}_${Date.now()}`;
 
       const confirmed = window.confirm(
         "Once you upload this creative, it will be saved to Cloudinary and you won't be able to edit it. To make changes later, you'll need to upload a new creative.\n\nDo you want to continue?",

@@ -51,7 +51,9 @@ export const GoalSection = ({
                   value="awareness"
                   checked={campaignGoal.toLowerCase() === "awareness"}
                   onChange={(e) =>
-                    setCampaignGoal(e.target.value.toUpperCase())
+                    setCampaignGoal(
+                      e.target.value.toUpperCase() as CampaignGoal,
+                    )
                   }
                   disabled={readOnly}
                   className="form-radio"
@@ -65,7 +67,9 @@ export const GoalSection = ({
                   value="traffic"
                   checked={campaignGoal.toLowerCase() === "traffic"}
                   onChange={(e) =>
-                    setCampaignGoal(e.target.value.toUpperCase())
+                    setCampaignGoal(
+                      e.target.value.toUpperCase() as CampaignGoal,
+                    )
                   }
                   disabled={readOnly}
                   className="form-radio"
@@ -79,7 +83,9 @@ export const GoalSection = ({
                   value="conversions"
                   checked={campaignGoal.toLowerCase() === "conversions"}
                   onChange={(e) =>
-                    setCampaignGoal(e.target.value.toUpperCase())
+                    setCampaignGoal(
+                      e.target.value.toUpperCase() as CampaignGoal,
+                    )
                   }
                   disabled={readOnly}
                   className="form-radio"
@@ -93,7 +99,9 @@ export const GoalSection = ({
                   value="sales"
                   checked={campaignGoal.toLowerCase() === "sales"}
                   onChange={(e) =>
-                    setCampaignGoal(e.target.value.toUpperCase())
+                    setCampaignGoal(
+                      e.target.value.toUpperCase() as CampaignGoal,
+                    )
                   }
                   disabled={readOnly}
                   className="form-radio"
@@ -107,7 +115,9 @@ export const GoalSection = ({
                   value="leads"
                   checked={campaignGoal.toLowerCase() === "leads"}
                   onChange={(e) =>
-                    setCampaignGoal(e.target.value.toUpperCase())
+                    setCampaignGoal(
+                      e.target.value.toUpperCase() as CampaignGoal,
+                    )
                   }
                   disabled={readOnly}
                   className="form-radio"

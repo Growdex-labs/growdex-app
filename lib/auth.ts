@@ -27,31 +27,35 @@ export const apiFetch = async (
   options: RequestInit = {},
 ): Promise<Response> => {
   if (!API_BASE_URL) {
-    throw new Error('API_BASE_URL is not defined');
+    throw new Error("API_BASE_URL is not defined");
   }
 
   // Always include cookies
   let res = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
-    credentials: 'include',
+    credentials: "include",
   });
 
-  if (url !== '/auth/refresh' && url !== '/auth/login' && url !== '/auth/register') {
+  if (
+    url !== "/auth/refresh" &&
+    url !== "/auth/login" &&
+    url !== "/auth/register"
+  ) {
     if (res.status === 401) {
       // Attempt refresh
       const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
       });
 
       if (refreshRes.ok) {
         // Retry original request
         res = await fetch(`${API_BASE_URL}${url}`, {
           ...options,
-          credentials: 'include',
+          credentials: "include",
         });
       } else {
-        window.location.href = '/login';
+        window.location.href = "/login";
       }
     }
   }
@@ -64,9 +68,9 @@ export const apiFetch = async (
  * Returns onboardingCompleted and other metadata from backend
  */
 export const login = async (email: string, password: string) => {
-  const res = await apiFetch('/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await apiFetch("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 
@@ -83,9 +87,9 @@ export const login = async (email: string, password: string) => {
  * Returns onboardingCompleted and other metadata from backend
  */
 export const register = async (email: string, password: string) => {
-  const res = await apiFetch('/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await apiFetch("/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 
@@ -102,9 +106,9 @@ export const register = async (email: string, password: string) => {
  * Returns success and other metadata from backend
  */
 export const forgotPassword = async (email: string) => {
-  const res = await apiFetch('/auth/forgot-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await apiFetch("/auth/forgot-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
 
@@ -120,10 +124,14 @@ export const forgotPassword = async (email: string) => {
  * Reset password
  * Returns success and other metadata from backend
  */
-export const resetPassword = async (token: string, password: string, confirmPassword: string) => {
-  const res = await apiFetch('/auth/reset-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+export const resetPassword = async (
+  token: string,
+  password: string,
+  confirmPassword: string,
+) => {
+  const res = await apiFetch("/auth/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, password, confirmPassword }),
   });
 
@@ -140,8 +148,8 @@ export const resetPassword = async (token: string, password: string, confirmPass
  * Backend should clear httpOnly cookies
  */
 export const logout = async () => {
-  await apiFetch('/auth/logout', { method: 'POST' });
-  window.location.href = '/login';
+  await apiFetch("/auth/logout", { method: "POST" });
+  window.location.href = "/login";
 };
 
 /**
@@ -149,9 +157,43 @@ export const logout = async () => {
  * Backend returns user info if access_token valid
  */
 export const getCurrentUser = async () => {
-  const res = await apiFetch('/users/me', { method: 'GET' });
+  const res = await apiFetch("/users/me", { method: "GET" });
 
   if (!res.ok) return null;
+
+  return res.json();
+};
+/**
+ * Update current user / brand info
+ * Backend updates user profile or brand info
+ */
+export const updateCurrentUser = async (payload: {
+  profile?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    country?: string;
+  };
+  brand?: {
+    name?: string;
+    businessAddress?: string;
+    size?: number;
+    instagramUrl?: string;
+    tiktokUrl?: string;
+    facebookUrl?: string;
+    googleUrl?: string;
+  };
+}) => {
+  const res = await apiFetch("/users/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Update failed" }));
+    throw err;
+  }
 
   return res.json();
 };

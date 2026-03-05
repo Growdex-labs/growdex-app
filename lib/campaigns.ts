@@ -82,9 +82,11 @@ export const createCampaign = async (payload: CreateCampaignPayload) => {
 
   const data = await res.json().catch(() => ({}));
 
-  if(!res.ok) {
+  if (!res.ok) {
     const errorMsg =
-      data?.errors?.[0]?.message || data?.message || `Request failed (${res.status})`;
+      data?.errors?.[0]?.message ||
+      data?.message ||
+      `Request failed (${res.status})`;
     throw new Error(errorMsg);
   }
 
@@ -126,9 +128,12 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
   return res.json();
 };
 
-export const updateCampaign = async (id: string, payload: Partial<CreateCampaignPayload>) => {
+export const updateCampaign = async (
+  id: string,
+  payload: Partial<CreateCampaignPayload>,
+) => {
   const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}`, {
-    method: "PUT",
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
@@ -137,7 +142,9 @@ export const updateCampaign = async (id: string, payload: Partial<CreateCampaign
 
   if (!res.ok) {
     const errorMsg =
-      data?.errors?.[0]?.message || data?.message || `Update failed (${res.status})`;
+      data?.errors?.[0]?.message ||
+      data?.message ||
+      `Update failed (${res.status})`;
     throw new Error(errorMsg);
   }
 
