@@ -38,6 +38,7 @@ export default function SecurityControlPage() {
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
     null,
   );
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [showDisable2FAConfirm, setShowDisable2FAConfirm] = useState(false);
@@ -331,7 +332,9 @@ export default function SecurityControlPage() {
                           </p>
                         </div>
                       </div>
-                      <button className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors whitespace-nowrap">
+                      <button 
+                        onClick={() => setIsChangePasswordModalOpen(true)}
+                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors whitespace-nowrap">
                         Change Password
                       </button>
                     </div>
@@ -440,7 +443,9 @@ export default function SecurityControlPage() {
                           </p>
                         </div>
                       </div>
-                      <button className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors whitespace-nowrap">
+                      <button 
+                        onClick={() => setIsChangePasswordModalOpen(true)}
+                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors whitespace-nowrap">
                         Change Password
                       </button>
                     </div>
@@ -549,7 +554,9 @@ export default function SecurityControlPage() {
                           </p>
                         </div>
                       </div>
-                      <button className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors whitespace-nowrap">
+                      <button 
+                        onClick={() => setIsChangePasswordModalOpen(true)}
+                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors whitespace-nowrap">
                         Change Password
                       </button>
                     </div>
@@ -645,6 +652,67 @@ export default function SecurityControlPage() {
                 className="flex-1 px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800 transition-colors"
               >
                 Terminate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {isChangePasswordModalOpen && (
+        <div className="fixed inset-0 bg-slate-200/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6">
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Change Password
+            </h2>
+            <p className="text-gray-900 text-center text-xs font-bold mb-6">
+              Update password for enhanced account security
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-200"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-200"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-200"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsChangePasswordModalOpen(false)}
+                className="flex-1 px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-semibold hover:bg-khaki-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                className="flex-1 px-4 py-2 bg-[#8B2A0F] text-white rounded-lg text-sm font-semibold hover:bg-[#681c08] transition-colors"
+              >
+                Apply Changes
               </button>
             </div>
           </div>

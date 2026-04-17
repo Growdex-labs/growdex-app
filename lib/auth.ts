@@ -51,7 +51,7 @@ export const apiFetch = async (
           credentials: 'include',
         });
       } else {
-        window.location.href = '/login';
+        window.location.href = '/login'; // ⚠️ AUTH BYPASSED FOR UI DEV — uncomment when done
       }
     }
   }
@@ -152,6 +152,24 @@ export const getCurrentUser = async () => {
   const res = await apiFetch('/users/me', { method: 'GET' });
 
   if (!res.ok) return null;
+
+  return res.json();
+};
+
+/**
+ * Verify MFA code
+ */
+export const verifyMFA = async (token: string) => {
+  const res = await apiFetch('/auth/verify-mfa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
 
   return res.json();
 };

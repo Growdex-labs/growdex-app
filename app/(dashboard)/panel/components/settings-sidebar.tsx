@@ -8,7 +8,6 @@ export function SettingsSidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Manage Permissions", href: "/panel/settings/manage-permissions" },
     { label: "Manage Account", href: "/panel/settings/manage-account" },
     {
       label: "Security & Access Control",
@@ -27,9 +26,6 @@ export function SettingsSidebar() {
   const isActive = (href: string) => {
     if (href === "/panel/settings/manage-account") {
       return pathname === "/panel/settings/manage-account";
-    }
-    if (href === "/panel/settings/manage-permissions") {
-      return pathname === "/panel/settings/manage-permissions";
     }
     if (href === "/panel/settings/security-control") {
       return pathname === "/panel/settings/security-control";

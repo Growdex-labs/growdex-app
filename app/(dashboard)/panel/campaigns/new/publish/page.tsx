@@ -160,6 +160,12 @@ export default function PublishCampaignPage() {
     setUploadProgress,
     uploadError,
     setUploadError,
+    landingPageUrl,
+    setLandingPageUrl,
+    appId,
+    setAppId,
+    leadFormId,
+    setLeadFormId,
   } = useCampaignFormState();
 
   // Load campaign data from session storage
@@ -179,6 +185,10 @@ export default function PublishCampaignPage() {
 
       setCampaignName(data.name || "");
       setCampaignGoal(data.goal || "AWARENESS");
+      
+      if (data.landingPageUrl) setLandingPageUrl(data.landingPageUrl);
+      if (data.appId) setAppId(data.appId);
+      if (data.leadFormId) setLeadFormId(data.leadFormId);
 
       const platforms = data.platforms || [];
       setSelectedPlatforms({
@@ -259,6 +269,8 @@ export default function PublishCampaignPage() {
         return "SALES";
       case "leads":
         return "LEADS";
+      case "app_promotion":
+        return "APP_PROMOTION";
       default:
         return "AWARENESS";
     }
@@ -372,6 +384,20 @@ export default function PublishCampaignPage() {
           startDate,
           endDate,
         },
+        landingPageUrl:
+          (normalizeGoal(campaignGoal) === "TRAFFIC" ||
+            normalizeGoal(campaignGoal) === "SALES") &&
+          landingPageUrl
+            ? landingPageUrl
+            : undefined,
+        appId:
+          normalizeGoal(campaignGoal) === "APP_PROMOTION" && appId
+            ? appId
+            : undefined,
+        leadFormId:
+          normalizeGoal(campaignGoal) === "LEADS" && leadFormId
+            ? leadFormId
+            : undefined,
         creatives,
       };
 
@@ -585,6 +611,79 @@ export default function PublishCampaignPage() {
                           Sales
                         </label>
                       </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          id="app_promotion"
+                          name="goal"
+                          value="APP_PROMOTION"
+                          checked={campaignGoal === "APP_PROMOTION"}
+                          onChange={(e) =>
+                            setCampaignGoal(e.target.value as any)
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label
+                          htmlFor="app_promotion"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          App Promotion
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Goal Specific Details */}
+                    <div className="mt-6 flex flex-col gap-4 max-w-md">
+                      {(campaignGoal === "TRAFFIC" || campaignGoal === "SALES") && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Landing Page URL (Website)
+                          </label>
+                          <input
+                            type="text"
+                            name="landingPageUrl"
+                            value={landingPageUrl}
+                            onChange={(e) => setLandingPageUrl(e.target.value)}
+                            placeholder="https://example.com"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300"
+                            readOnly
+                          />
+                        </div>
+                      )}
+
+                      {campaignGoal === "LEADS" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Lead Form ID
+                          </label>
+                          <input
+                            type="text"
+                            name="leadFormId"
+                            value={leadFormId}
+                            onChange={(e) => setLeadFormId(e.target.value)}
+                            placeholder="e.g. 1234567890"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300"
+                            readOnly
+                          />
+                        </div>
+                      )}
+
+                      {campaignGoal === "APP_PROMOTION" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            App ID
+                          </label>
+                          <input
+                            type="text"
+                            name="appId"
+                            value={appId}
+                            onChange={(e) => setAppId(e.target.value)}
+                            placeholder="e.g. com.growdex.app or Apple App ID"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300"
+                            readOnly
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -21,30 +21,46 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
       setError('');
 
       try {
-        // TODO: Replace with your actual backend API endpoint
         const response = isAuthType === 'login'
         ? await login(email, password)
         : await register(email, password);
 
-        // display check your email for verification
+        if (response.status === 'MFA_SETUP_REQUIRED' || response.status === 'MFA_CHALLENGE') {
+          sessionStorage.setItem('mfa_status', response.status);
+          if (response.uri) sessionStorage.setItem('mfa_uri', response.uri);
+          if (response.secret) sessionStorage.setItem('mfa_secret', response.secret);
+          
+          router.push('/mfa');
+          return;
+        }
+
         toast.success(isAuthType === 'login' ? 'Login successful' : 'Registration successful', {
           description: isAuthType === 'login' ? 'Redirecting...' : 'Check your email for verification',
           duration: 3000,
         })
         setTimeout(() => {
-          router.push('/');
-        }, 3000);
+          router.push('/panel');
+        }, 1500);
       } catch (err: any) {
         console.error(isAuthType === 'login' ? 'Login error:' : 'Register error:', err);
+        
+        // Handle 401/403 with MFA_SETUP_REQUIRED or MFA_CHALLENGE
+        if (err.status === 'MFA_SETUP_REQUIRED' || err.status === 'MFA_CHALLENGE') {
+          sessionStorage.setItem('mfa_status', err.status);
+          if (err.uri) sessionStorage.setItem('mfa_uri', err.uri);
+          if (err.secret) sessionStorage.setItem('mfa_secret', err.secret);
+          
+          router.push('/mfa');
+          return;
+        }
+
         if (err.formErrors && err.formErrors.length > 0) {
           setError(err.formErrors[0]);
         }
         if (err.fieldErrors) {
           setFieldErrors(err.fieldErrors);
-          // If no form error but we have field errors, clear generic error
           if (!err.formErrors || err.formErrors.length === 0) setError('');
         } else if (!err.formErrors) {
-          // Fallback for non-structured errors
           setError(err.message || (isAuthType === 'login' ? 'Login failed. Please check your credentials.' : 'Register failed. Please check your credentials.'));
         }
       } finally {

@@ -153,6 +153,12 @@ export default function NewCampaignPage() {
 
   const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  
+  const [landingPageUrl, setLandingPageUrl] = useState("");
+  const [appId, setAppId] = useState("");
+  const [leadFormId, setLeadFormId] = useState("");
+  const [campaignGoal, setCampaignGoal] = useState("awareness");
+  
   const [creativesByPlatform, setCreativesByPlatform] = useState<
     Partial<Record<"meta" | "tiktok", CreativeDraft>>
   >({});
@@ -345,6 +351,8 @@ export default function NewCampaignPage() {
         return "SALES";
       case "leads":
         return "LEADS";
+      case "app_promotion":
+        return "APP_PROMOTION";
       default:
         return "AWARENESS";
     }
@@ -524,6 +532,12 @@ export default function NewCampaignPage() {
         gender: "all" as const,
         interests: uniqueInterests,
       },
+      landingPageUrl:
+        (campaignGoal === "traffic" || campaignGoal === "sales") && landingPageUrl
+          ? landingPageUrl
+          : undefined,
+      appId: campaignGoal === "app_promotion" && appId ? appId : undefined,
+      leadFormId: campaignGoal === "leads" && leadFormId ? leadFormId : undefined,
       budget: {
         amount: budgetAmount,
         currency,
@@ -547,6 +561,9 @@ export default function NewCampaignPage() {
           platforms: payload.platforms,
           budget: payload.budget,
           targeting: payload.targeting,
+          landingPageUrl: payload.landingPageUrl,
+          appId: payload.appId,
+          leadFormId: payload.leadFormId,
           creatives: creativesByPlatform,
         }),
       );
@@ -907,7 +924,7 @@ export default function NewCampaignPage() {
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center gap-1">
                       <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                      <div className="w-0 h-36 border border-peru-200" />
+                      <div className="w-0 h-64 border border-peru-200" />
                     </div>
                     <div>
                       <label
@@ -923,6 +940,8 @@ export default function NewCampaignPage() {
                             type="radio"
                             name="campaignGoal"
                             value="awareness"
+                            checked={campaignGoal === "awareness"}
+                            onChange={(e) => setCampaignGoal(e.target.value)}
                             className="form-radio"
                           />
                           <span className="ml-2">Awareness</span>
@@ -932,6 +951,8 @@ export default function NewCampaignPage() {
                             type="radio"
                             name="campaignGoal"
                             value="traffic"
+                            checked={campaignGoal === "traffic"}
+                            onChange={(e) => setCampaignGoal(e.target.value)}
                             className="form-radio"
                           />
                           <span className="ml-2">Traffic</span>
@@ -941,6 +962,8 @@ export default function NewCampaignPage() {
                             type="radio"
                             name="campaignGoal"
                             value="conversions"
+                            checked={campaignGoal === "conversions"}
+                            onChange={(e) => setCampaignGoal(e.target.value)}
                             className="form-radio"
                           />
                           <span className="ml-2">Conversions</span>
@@ -950,6 +973,8 @@ export default function NewCampaignPage() {
                             type="radio"
                             name="campaignGoal"
                             value="sales"
+                            checked={campaignGoal === "sales"}
+                            onChange={(e) => setCampaignGoal(e.target.value)}
                             className="form-radio"
                           />
                           <span className="ml-2">Sales</span>
@@ -959,11 +984,25 @@ export default function NewCampaignPage() {
                             type="radio"
                             name="campaignGoal"
                             value="leads"
+                            checked={campaignGoal === "leads"}
+                            onChange={(e) => setCampaignGoal(e.target.value)}
                             className="form-radio"
                           />
                           <span className="ml-2">Leads</span>
                         </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name="campaignGoal"
+                            value="app_promotion"
+                            checked={campaignGoal === "app_promotion"}
+                            onChange={(e) => setCampaignGoal(e.target.value)}
+                            className="form-radio"
+                          />
+                          <span className="ml-2">App Promotion</span>
+                        </label>
                       </div>
+
                       <div className="bg-gray-50 p-2 mt-4 w-fit">
                         <ul className="list-disc list-inside">
                           <li>
@@ -2018,6 +2057,69 @@ export default function NewCampaignPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Goal Specific Details (Conditional Box) */}
+              {(campaignGoal === "traffic" || campaignGoal === "sales" || campaignGoal === "leads" || campaignGoal === "app_promotion") && (
+                <div className="bg-white rounded-xl p-4 border border-transparent">
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
+                      <div className="w-0 h-full border border-peru-200" />
+                    </div>
+                    <div className="w-full">
+                      <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
+                        Additional details
+                      </label>
+                      <div className="mt-4 flex flex-col gap-4 max-w-md">
+                        {(campaignGoal === "traffic" || campaignGoal === "sales") && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Landing Page URL (Website) *
+                            </label>
+                            <Input
+                              name="landingPageUrl"
+                              value={landingPageUrl}
+                              onChange={(e) => setLandingPageUrl(e.target.value)}
+                              placeholder="https://example.com"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Required for Traffic & Sales goals.</p>
+                          </div>
+                        )}
+
+                        {campaignGoal === "leads" && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Lead Form ID *
+                            </label>
+                            <Input
+                              name="leadFormId"
+                              value={leadFormId}
+                              onChange={(e) => setLeadFormId(e.target.value)}
+                              placeholder="e.g. 1234567890"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Required for Lead Generation.</p>
+                          </div>
+                        )}
+
+                        {campaignGoal === "app_promotion" && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              App ID *
+                            </label>
+                            <Input
+                              name="appId"
+                              value={appId}
+                              onChange={(e) => setAppId(e.target.value)}
+                              placeholder="e.g. com.growdex.app or Apple App ID"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Required for App Promotion.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Setup Creative */}
               <div

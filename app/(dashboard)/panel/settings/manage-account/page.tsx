@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
+import { useRouter } from "next/navigation";
 
 const connectedAccountsData = [
   {
@@ -30,6 +31,7 @@ const connectedAccountsData = [
 ];
 
 export default function ManageAccountPage() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState(connectedAccountsData);
 
   const handleDisconnect = (accountId: number) => {
@@ -131,7 +133,9 @@ export default function ManageAccountPage() {
 
             {/* Settings Content */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
-              <button className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors ml-auto mb-4 flex items-center gap-2 whitespace-nowrap">
+              <button 
+                onClick={() => router.push('/onboarding?step=2')}
+                className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors ml-auto mb-4 flex items-center gap-2 whitespace-nowrap">
                 <span className="text-lg">+</span> Connect New Account
               </button>
 
