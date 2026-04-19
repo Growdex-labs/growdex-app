@@ -39,7 +39,7 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
           duration: 3000,
         })
         setTimeout(() => {
-          router.push('/panel');
+          router.push(response.onboardingCompleted ? '/panel' : '/onboarding');
         }, 1500);
       } catch (err: any) {
         console.error(isAuthType === 'login' ? 'Login error:' : 'Register error:', err);

@@ -21,6 +21,21 @@ export function PrivacyPolicyClient() {
 
   useEffect(() => {
     const container = document.getElementById("privacy-scroll-container");
+    if (!container) return;
+
+    // Handle initial hash on mount
+    const hash = window.location.hash.slice(1);
+    const matchedSection = SECTIONS.find((s) => s.id === hash);
+    if (matchedSection) {
+      setActiveSection(matchedSection.id);
+      const element = document.getElementById(matchedSection.id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      setActiveSection(SECTIONS[0].id);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         let maxVisibleRatio = 0;
@@ -39,7 +54,7 @@ export function PrivacyPolicyClient() {
       },
       {
         root: container,
-        rootMargin: "-10% 0px -80% 0px", // triggers when section is in top half
+        rootMargin: "-10% 0px -80% 0px", // triggers in a 10% band near the top
         threshold: [0, 0.25, 0.5, 0.75, 1],
       }
     );
@@ -57,11 +72,12 @@ export function PrivacyPolicyClient() {
     const element = document.getElementById(id);
     const container = document.getElementById("privacy-scroll-container");
     if (element && container) {
-      const offset = 0;
-      const elementPosition = element.offsetTop;
-      
+      const elementRect = element.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const targetTop = elementRect.top - containerRect.top + container.scrollTop;
+
       container.scrollTo({
-        top: elementPosition - offset,
+        top: targetTop,
         behavior: "smooth"
       });
       // Optionally update url without jump

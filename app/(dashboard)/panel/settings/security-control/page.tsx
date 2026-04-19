@@ -5,6 +5,7 @@ import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
 import { useMe } from "@/context/me-context";
+import { apiFetch } from "@/lib/auth";
 
 const activeSessions = [
   {
@@ -39,6 +40,11 @@ export default function SecurityControlPage() {
     null,
   );
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [showDisable2FAConfirm, setShowDisable2FAConfirm] = useState(false);
@@ -157,6 +163,49 @@ export default function SecurityControlPage() {
       setEnablePassword("");
     } else {
       setIs2FAModalOpen(false);
+    }
+  };
+
+  const handleApplyPasswordChanges = async () => {
+    setPasswordError("");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+      return;
+    }
+
+    setIsSubmittingPassword(true);
+
+    try {
+      const res = await apiFetch("/users/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        setPasswordError(error.message || "Failed to update password");
+        return;
+      }
+
+      // Success - reset and close
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setIsChangePasswordModalOpen(false);
+    } catch (err) {
+      setPasswordError("An error occurred. Please try again.");
+    } finally {
+      setIsSubmittingPassword(false);
     }
   };
 
@@ -669,6 +718,12 @@ export default function SecurityControlPage() {
               Update password for enhanced account security
             </p>
 
+            {passwordError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-sm">
+                {passwordError}
+              </div>
+            )}
+
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -677,6 +732,8 @@ export default function SecurityControlPage() {
                 <input
                   type="password"
                   placeholder="••••••••"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-200"
                 />
               </div>
@@ -687,6 +744,8 @@ export default function SecurityControlPage() {
                 <input
                   type="password"
                   placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-200"
                 />
               </div>
@@ -697,6 +756,8 @@ export default function SecurityControlPage() {
                 <input
                   type="password"
                   placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-200"
                 />
               </div>
@@ -704,15 +765,23 @@ export default function SecurityControlPage() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => setIsChangePasswordModalOpen(false)}
+                onClick={() => {
+                  setIsChangePasswordModalOpen(false);
+                  setPasswordError("");
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
                 className="flex-1 px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-semibold hover:bg-khaki-300 transition-colors"
               >
                 Cancel
               </button>
               <button
-                className="flex-1 px-4 py-2 bg-[#8B2A0F] text-white rounded-lg text-sm font-semibold hover:bg-[#681c08] transition-colors"
+                onClick={handleApplyPasswordChanges}
+                disabled={isSubmittingPassword || !currentPassword || !newPassword || !confirmPassword}
+                className="flex-1 px-4 py-2 bg-[#8B2A0F] text-white rounded-lg text-sm font-semibold hover:bg-[#681c08] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Apply Changes
+                {isSubmittingPassword ? "Updating..." : "Apply Changes"}
               </button>
             </div>
           </div>

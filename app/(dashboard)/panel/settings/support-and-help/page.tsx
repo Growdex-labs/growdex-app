@@ -14,7 +14,7 @@ export default function SupportAndHelpSettingsPage() {
         "Explore FAQs, campaign setup guides, and troubleshooting resources.",
       emoji: "🔒",
       buttonText: "Visit Help Center",
-      buttonHref: "http://growdex.ai/help-center",
+      buttonHref: "https://growdex.ai/help-center",
     },
     {
       id: "chat-support",

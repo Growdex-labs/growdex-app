@@ -9,6 +9,8 @@ import React, {
 } from "react";
 import { Socket } from "socket.io-client";
 import { getSocket, disconnectSocket } from "@/lib/socket";
+import { useMe } from "@/context/me-context";
+import { apiFetch } from "@/lib/auth";
 
 // ─── Notification type ──────────────────────────────────────────────────────
 
@@ -53,55 +55,17 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
 }
 
-// ─── Seed data (static historical notifications) ─────────────────────────────
-
-const SEED_NOTIFICATIONS: Notification[] = [
-  {
-    id: "seed-1",
-    content: "You got a new request for customer to sign in.",
-    action: "Mark as read",
-    time: "12:50pm",
-    date: "Today",
-    isRead: false,
-  },
-  {
-    id: "seed-2",
-    content: "You missed some AI optimization opportunities in Campaigns. See them here.",
-    action: "Mark as read",
-    time: "10:50am",
-    date: "Today",
-    isRead: false,
-  },
-  {
-    id: "seed-3",
-    content: "You got a new request for customer sign in.",
-    action: "Mark as read",
-    time: "9:00am",
-    date: formatDateLabel(new Date(Date.now() - 2 * 86400000)), // 2 days ago → e.g. "Tuesday"
-    isRead: true,
-  },
-  {
-    id: "seed-4",
-    content: "Campaign 'Summer Sale' has been paused due to low budget.",
-    action: "Mark as read",
-    time: "3:15pm",
-    date: formatDateLabel(new Date(Date.now() - 2 * 86400000)),
-    isRead: true,
-  },
-];
-
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
+  const { me } = useMe();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(SEED_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     const s = getSocket();
     setSocket(s);
-
-    s.connect();
 
     s.on("connect", () => {
       setIsConnected(true);
@@ -113,19 +77,17 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for Incoming Server Pushes (Backend Spec Step 3)
     s.on("notification", (data: any) => {
-      console.log("New Notification Received:", data);
-      
       const now = data.timestamp ? new Date(data.timestamp) : new Date();
-      
+
       const newNotif: Notification = {
-        id: data.id ?? `notif-${Date.now()}`,
+        id: data.id ?? crypto.randomUUID(),
         content: data.content?.message || data.content?.title || "New notification",
         action: "Mark as read", // Default action
         time: formatTime(now),
         date: formatDateLabel(now),
         isRead: false,
       };
-      
+
       setNotifications((prev) => [newNotif, ...prev]);
     });
 
@@ -133,9 +95,56 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       s.off("connect");
       s.off("disconnect");
       s.off("notification");
-      disconnectSocket();
     };
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    if (me) {
+      socket.connect();
+    } else {
+      socket.disconnect();
+    }
+
+    return () => {
+      if (socket) {
+        disconnectSocket();
+      }
+    };
+  }, [me, socket]);
+
+  useEffect(() => {
+    if (!me) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const res = await apiFetch("/notifications/history", { method: "GET" });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const history = Array.isArray(data) ? data : data.notifications || [];
+
+        const mapped: Notification[] = history.map((item: any) => {
+          const timestamp = item.timestamp ? new Date(item.timestamp) : new Date();
+          return {
+            id: item.id || `notif-${Date.now()}-${Math.random()}`,
+            content: item.content?.message || item.content?.title || item.message || "Notification",
+            action: "Mark as read",
+            time: formatTime(timestamp),
+            date: formatDateLabel(timestamp),
+            isRead: item.isRead ?? false,
+          };
+        });
+
+        setNotifications(mapped);
+      } catch (err) {
+        console.error("Failed to fetch notification history:", err);
+      }
+    };
+
+    fetchNotifications();
+  }, [me]);
 
   const markAllRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));

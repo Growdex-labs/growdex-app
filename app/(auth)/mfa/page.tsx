@@ -256,12 +256,14 @@ function MfaPageContent() {
                         {loading ? "Submitting..." : "Submit code"}
                       </button>
 
-                      <button
-                        onClick={() => router.push("/panel")}
-                        className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-                      >
-                        » Skip authentication
-                      </button>
+                      {status !== "MFA_SETUP_REQUIRED" && (
+                        <button
+                          onClick={() => router.push("/panel")}
+                          className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+                        >
+                          » Skip authentication
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

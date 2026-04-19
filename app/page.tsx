@@ -10,9 +10,27 @@ export default function Home() {
 
   useEffect(() => {
     const checkAndRedirect = async () => {
-      // ⚠️ AUTH BYPASSED FOR UI DEV — restore original checkAndRedirect when done
-      setIsChecking(false);
-      router.push('/panel');
+      try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+          setIsChecking(false);
+          router.push('/login');
+          return;
+        }
+
+        if (!user.onboardingCompleted) {
+          setIsChecking(false);
+          router.push('/onboarding');
+          return;
+        }
+
+        setIsChecking(false);
+        router.push('/panel');
+      } catch (error) {
+        setIsChecking(false);
+        router.push('/login');
+      }
     };
 
     checkAndRedirect();

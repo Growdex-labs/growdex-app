@@ -75,14 +75,19 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
           </div>
 
           {/* Notification Button */}
-          <div className="flex gap-2 relative">
-            <Bell className="shrink-0 cursor-pointer text-khaki-300 size-6" onClick={onNotificationClick} />
+          <button
+            type="button"
+            onClick={onNotificationClick}
+            aria-label="Open notifications"
+            className="flex gap-2 relative shrink-0 cursor-pointer bg-transparent border-none p-0"
+          >
+            <Bell className="text-khaki-300 size-6" />
             {unreadCount > 0 && (
               <div className="w-5 h-5 bg-khaki-300 rounded-full absolute -top-2 -right-3 flex items-center justify-center text-xs text-gray-900 font-bold">
                 {unreadCount}
               </div>
             )}
-          </div>
+          </button>
         </div>
       </div>
 

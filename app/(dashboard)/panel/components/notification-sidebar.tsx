@@ -37,7 +37,18 @@ function sortedDateKeys(groups: Record<string, Notification[]>): string[] {
     if (b === "Today") return 1;
     if (a === "Yesterday") return -1;
     if (b === "Yesterday") return 1;
-    return 0;
+
+    // Parse remaining keys as dates for chronological sorting
+    const dateA = new Date(a);
+    const dateB = new Date(b);
+
+    // If both are valid dates, sort descending (newest first)
+    if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+      return dateB.getTime() - dateA.getTime();
+    }
+
+    // Fallback to string comparison
+    return b.localeCompare(a);
   });
 }
 
@@ -101,10 +112,16 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
         {/* ── Header ────────────────────────────────────────────── */}
         <SheetHeader className="px-4 pt-5 pb-3 space-y-0">
           <div className="flex items-center gap-2">
-            <ChevronsRight
-              className="size-6 text-gray-500 cursor-pointer hover:text-white transition-colors shrink-0"
+            <button
+              type="button"
               onClick={onClose}
-            />
+              aria-label="Close"
+              className="bg-transparent border-none p-0 cursor-pointer"
+            >
+              <ChevronsRight
+                className="size-6 text-gray-500 hover:text-white transition-colors shrink-0"
+              />
+            </button>
             <div className="flex items-center gap-2 flex-1">
               <div className="bg-red-700 p-1 rounded-full">
                 <BellIcon className="size-5" />

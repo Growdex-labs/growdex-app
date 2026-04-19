@@ -36,7 +36,7 @@ export const apiFetch = async (
     credentials: 'include',
   });
 
-  if (url !== '/auth/refresh' && url !== '/auth/login' && url !== '/auth/register') {
+  if (url !== '/auth/refresh' && url !== '/auth/login' && url !== '/auth/register' && url !== '/auth/verify-mfa') {
     if (res.status === 401) {
       // Attempt refresh
       const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -51,7 +51,7 @@ export const apiFetch = async (
           credentials: 'include',
         });
       } else {
-        window.location.href = '/login'; // ⚠️ AUTH BYPASSED FOR UI DEV — uncomment when done
+        window.location.href = '/login';
       }
     }
   }

@@ -124,7 +124,7 @@ export default function NewCampaignPage() {
     "technology",
     "fashion",
   ]);
-  const [totalReach, setTotalReach] = useState<number>(0);
+  const [totalReach, setTotalReach] = useState<number>(25000);
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
@@ -2422,7 +2422,7 @@ export default function NewCampaignPage() {
                             Browse or drag and drop an image or video here
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            Supported: JPG, PNG (max 10MB); MP4 (max 50MB)
+                            Supported: JPG, PNG (max 10MB); MP4 (max 10MB)
                           </p>
                           <input
                             ref={fileInputRef}
