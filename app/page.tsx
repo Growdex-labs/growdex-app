@@ -14,22 +14,21 @@ export default function Home() {
         const user = await getCurrentUser();
 
         if (!user) {
-          setIsChecking(false);
           router.push('/login');
           return;
         }
 
         if (!user.onboardingCompleted) {
-          setIsChecking(false);
           router.push('/onboarding');
           return;
         }
 
-        setIsChecking(false);
         router.push('/panel');
       } catch (error) {
-        setIsChecking(false);
+        console.error('Check and redirect failed:', error);
         router.push('/login');
+      } finally {
+        setIsChecking(false);
       }
     };
 

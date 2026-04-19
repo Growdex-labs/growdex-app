@@ -39,12 +39,12 @@ function sortedDateKeys(groups: Record<string, Notification[]>): string[] {
     if (b === "Yesterday") return 1;
 
     // Parse remaining keys as dates for chronological sorting
-    const dateA = new Date(a);
-    const dateB = new Date(b);
-
+    const timeA = Date.parse(a);
+    const timeB = Date.parse(b);
+    
     // If both are valid dates, sort descending (newest first)
-    if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
-      return dateB.getTime() - dateA.getTime();
+    if (!isNaN(timeA) && !isNaN(timeB)) {
+      return timeB - timeA;
     }
 
     // Fallback to string comparison
@@ -55,9 +55,6 @@ function sortedDateKeys(groups: Record<string, Notification[]>): string[] {
 // ─── Single notification row ──────────────────────────────────────────────────
 
 function NotificationRow({ item }: { item: Notification }) {
-  // Derive initials or a placeholder avatar letter
-  const avatarLetter = item.content.charAt(0).toUpperCase();
-
   return (
     <div className="flex items-start gap-3 py-3">
       {/* Checkbox */}
@@ -87,11 +84,6 @@ function NotificationRow({ item }: { item: Notification }) {
           </button>
         </div>
       </div>
-
-      {/* Avatar bubble */}
-      {/* <div className="shrink-0 w-9 h-9 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-sm mt-0.5">
-        {avatarLetter}
-      </div> */}
     </div>
   );
 }
@@ -113,14 +105,11 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
         <SheetHeader className="px-4 pt-5 pb-3 space-y-0">
           <div className="flex items-center gap-2">
             <button
-              type="button"
               onClick={onClose}
+              className="p-1 -ml-1 rounded-md text-gray-500 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-khaki-200 shrink-0"
               aria-label="Close"
-              className="bg-transparent border-none p-0 cursor-pointer"
             >
-              <ChevronsRight
-                className="size-6 text-gray-500 hover:text-white transition-colors shrink-0"
-              />
+              <ChevronsRight className="size-6" />
             </button>
             <div className="flex items-center gap-2 flex-1">
               <div className="bg-red-700 p-1 rounded-full">

@@ -58,14 +58,38 @@ function formatTime(date: Date): string {
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const { me } = useMe();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { me } = useMe();
 
+  // Root teardown: only null the singleton when the provider unmounts entirely
   useEffect(() => {
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
+
+  // Socket Connection & Listener Lifecycle
+  useEffect(() => {
+    if (!me) {
+      if (socket) {
+        socket.off("connect");
+        socket.off("disconnect");
+        socket.off("notification");
+        socket.disconnect(); // Disconnect current session, don't null the singleton
+        setSocket(null);
+        setIsConnected(false);
+      }
+      return;
+    }
+
     const s = getSocket();
     setSocket(s);
+
+    if (!s.connected) {
+      s.connect();
+    }
 
     s.on("connect", () => {
       setIsConnected(true);
@@ -77,17 +101,19 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for Incoming Server Pushes (Backend Spec Step 3)
     s.on("notification", (data: any) => {
+      console.log("New Notification Received:", data);
+      
       const now = data.timestamp ? new Date(data.timestamp) : new Date();
-
+      
       const newNotif: Notification = {
-        id: data.id ?? crypto.randomUUID(),
+        id: data.id ?? `notif-${Date.now()}`,
         content: data.content?.message || data.content?.title || "New notification",
         action: "Mark as read", // Default action
         time: formatTime(now),
         date: formatDateLabel(now),
         isRead: false,
       };
-
+      
       setNotifications((prev) => [newNotif, ...prev]);
     });
 
@@ -95,25 +121,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       s.off("connect");
       s.off("disconnect");
       s.off("notification");
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    if (me) {
-      socket.connect();
-    } else {
-      socket.disconnect();
-    }
-
-    return () => {
-      if (socket) {
-        disconnectSocket();
-      }
+      s.disconnect(); // Simply disconnect the instance, singleton cleanup is handled by root effect
     };
   }, [me, socket]);
 
+  // Fetch Notification History on Login
   useEffect(() => {
     if (!me) return;
 

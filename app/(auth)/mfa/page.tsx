@@ -119,7 +119,7 @@ function MfaPageContent() {
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">
+          <div id="otp-error" className="mb-6 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
@@ -232,16 +232,21 @@ function MfaPageContent() {
                       {otp.map((digit, index) => (
                         <input
                           key={index}
+                          id={`otp-${index}`}
                           ref={(el) => {
                             inputRefs.current[index] = el;
                           }}
                           type="text"
+                          inputMode="numeric"
+                          pattern="\d*"
                           maxLength={1}
                           value={digit}
                           onChange={(e) =>
                             handleOtpChange(index, e.target.value)
                           }
                           onKeyDown={(e) => handleKeyDown(index, e)}
+                          aria-label={`Digit ${index + 1}`}
+                          aria-describedby={error ? "otp-error" : undefined}
                           className="w-12 h-14 md:w-14 md:h-16 border border-gray-200 rounded-lg text-center text-xl font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors"
                         />
                       ))}
@@ -307,14 +312,19 @@ function MfaPageContent() {
                 {otp.map((digit, index) => (
                   <input
                     key={index}
+                    id={`otp-challenge-${index}`}
                     ref={(el) => {
                       inputRefs.current[index] = el;
                     }}
                     type="text"
+                    inputMode="numeric"
+                    pattern="\d*"
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
+                    aria-label={`Digit ${index + 1}`}
+                    aria-describedby={error ? "otp-error" : undefined}
                     className="w-12 h-14 md:w-14 md:h-16 border border-gray-200 rounded-lg text-center text-xl font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors"
                   />
                 ))}

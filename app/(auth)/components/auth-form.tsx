@@ -26,6 +26,10 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
         : await register(email, password);
 
         if (response.status === 'MFA_SETUP_REQUIRED' || response.status === 'MFA_CHALLENGE') {
+          sessionStorage.removeItem('mfa_status');
+          sessionStorage.removeItem('mfa_uri');
+          sessionStorage.removeItem('mfa_secret');
+
           sessionStorage.setItem('mfa_status', response.status);
           if (response.uri) sessionStorage.setItem('mfa_uri', response.uri);
           if (response.secret) sessionStorage.setItem('mfa_secret', response.secret);
@@ -46,6 +50,10 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
         
         // Handle 401/403 with MFA_SETUP_REQUIRED or MFA_CHALLENGE
         if (err.status === 'MFA_SETUP_REQUIRED' || err.status === 'MFA_CHALLENGE') {
+          sessionStorage.removeItem('mfa_status');
+          sessionStorage.removeItem('mfa_uri');
+          sessionStorage.removeItem('mfa_secret');
+
           sessionStorage.setItem('mfa_status', err.status);
           if (err.uri) sessionStorage.setItem('mfa_uri', err.uri);
           if (err.secret) sessionStorage.setItem('mfa_secret', err.secret);
