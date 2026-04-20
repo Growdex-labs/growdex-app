@@ -18,6 +18,9 @@ export default function Home() {
           return;
         }
 
+        // Persist user for onboarding/session consumption
+        sessionStorage.setItem('growdex_user', JSON.stringify(user));
+
         if (!user.onboardingCompleted) {
           router.push('/onboarding');
           return;
