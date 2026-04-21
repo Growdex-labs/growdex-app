@@ -1,11 +1,13 @@
 import { Audience } from "@/lib/audiences";
 import { MetaSpecialAdLocationCode } from "@/lib/meta-special-ad-locations";
+import React from "react";
 
 export interface AudienceSectionProps {
   progressTab: number;
   setProgressTab: (tab: number) => void;
   brandName: string;
   instagramAccountName: string;
+  selectedPlatforms: { [key: string]: boolean };
   loadingAudiences: boolean;
   savedAudiences: Audience[];
   applyAudienceToForm: (audience: Audience) => void;
@@ -42,5 +44,8 @@ export interface AudienceSectionProps {
   saveAudienceForPlatform: (platform: "meta" | "tiktok") => void;
   saveAudienceCombined: () => void;
   readOnly?: boolean;
-  totalReach: number;
+  lowerReach: number;
+  upperReach: number;
+  setLowerReach: React.Dispatch<React.SetStateAction<number>>;
+  setUpperReach: React.Dispatch<React.SetStateAction<number>>;
 }

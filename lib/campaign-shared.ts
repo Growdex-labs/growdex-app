@@ -71,4 +71,16 @@ export const isVideoUrl = (url: string) => {
   return /\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(u);
 };
 
+export const startOfUtcDayIso = (d: Date) =>
+  new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+  ).toISOString();
+
+export const addDaysDateInputValue = (dateValue: string, days: number) => {
+  const base = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return dateValue;
+  base.setDate(base.getDate() + days);
+  return toDateInputValue(base);
+};
+
 export default {};

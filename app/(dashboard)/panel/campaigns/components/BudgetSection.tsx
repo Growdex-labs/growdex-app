@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { BudgetType } from "@/lib/campaigns";
+import { addDaysDateInputValue, toDateInputValue } from "@/lib/campaign-shared";
 
 interface BudgetSectionProps {
   progressTab: number;
@@ -40,6 +41,14 @@ interface BudgetSectionProps {
     tiktok: boolean;
   };
   readOnly?: boolean;
+  useSchedule: boolean;
+  setUseSchedule: (val: boolean) => void;
+  scheduleStartDate: string;
+  setScheduleStartDate: React.Dispatch<React.SetStateAction<string>>;
+  scheduleEndDate: string;
+  setScheduleEndDate: React.Dispatch<React.SetStateAction<string>>;
+  scheduleTime: string;
+  setScheduleTime: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const BudgetSection = ({
@@ -65,6 +74,14 @@ export const BudgetSection = ({
   setTiktokBudgetFrequency,
   selectedPlatforms,
   readOnly = false,
+  useSchedule,
+  setUseSchedule,
+  scheduleStartDate,
+  setScheduleStartDate,
+  scheduleEndDate,
+  setScheduleEndDate,
+  scheduleTime,
+  setScheduleTime,
 }: BudgetSectionProps) => {
   return (
     <div
@@ -84,7 +101,7 @@ export const BudgetSection = ({
               htmlFor="platform"
               className="block text-sm font-medium text-gray-800 font-gilroy-bold"
             >
-              Budget
+              Budget & Schedule
             </label>
             <div className="flex items-center justify-between font-gilroy-medium">
               <p className="mt-2 text-gray-500">
@@ -325,6 +342,79 @@ export const BudgetSection = ({
                 </div>
               </div>
             </div>
+
+            {/* Schedule toggle */}
+              <div className="mt-2 flex items-center  gap-2 mb-2">
+                <div>
+                  <p className="text-sm font-medium font-gilroy-bold">
+                    Schedule campaign for later date
+                  </p>
+                </div>
+
+                <Switch
+                  checked={useSchedule}
+                  className="data-[state=checked]:bg-khaki-200 data-[state=unchecked]:bg-gray-200 border border-peru-200"
+                  onCheckedChange={(checked) => {
+                    const next = Boolean(checked);
+                    setUseSchedule(next);
+
+                    if (next) {
+                      const today = new Date();
+                      const start = toDateInputValue(today);
+                      const end = addDaysDateInputValue(start, 7);
+                      setScheduleStartDate((prev: string) => prev || start);
+                      setScheduleEndDate((prev: string) => prev || end);
+                      setScheduleTime((prev: string) => prev || "09:00");
+                    }
+                  }}
+                  aria-label="Schedule campaign for later date"
+                />
+              </div>
+
+              {useSchedule && (
+                <div className="bg-white rounded-xl p-4 border border-darkkhaki-200 flex gap-2">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-4 h-4 rounded-full bg-dimYellow border border-peru-200" />
+                    <div className="w-0 h-full border border-peru-200" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
+                      Schedule ad
+                    </label>
+
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <label htmlFor="start-date">
+                        Start Date
+                        <Input
+                          type="date"
+                          value={scheduleStartDate}
+                          onChange={(e) => setScheduleStartDate(e.target.value)}
+                          aria-label="Start date"
+                        />
+                      </label>
+                      <label htmlFor="end-date">
+                        End Date(optional)
+                        <Input
+                          type="date"
+                          value={scheduleEndDate}
+                          onChange={(e) => setScheduleEndDate(e.target.value)}
+                          aria-label="End date"
+                        />
+                      </label>
+                      <label htmlFor="time">
+                        Time
+                        <Input
+                          type="time"
+                          value={scheduleTime}
+                          onChange={(e) => setScheduleTime(e.target.value)}
+                          className="text-peru-200"
+                          aria-label="Time"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { getTimeBasedGreeting } from "@/lib/greeting";
 import { ChevronDown } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useMe } from "@/context/me-context";
+import Link from "next/link";
 
 export function DashboardHeader() {
   const greeting = getTimeBasedGreeting();
@@ -23,7 +24,7 @@ export function DashboardHeader() {
 
         <div className="flex items-center gap-4">
           {/* User Profile Button */}
-          <button className="h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors gap-4 cursor-pointer">
+          <Link href="/panel/profile" className="h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors gap-4 cursor-pointer">
             <img src="/profile.png" alt="profile-icon" />
             <div className="flex flex-col items-start">
               <span className="text-sm font-semibold text-gray-400">
@@ -31,7 +32,7 @@ export function DashboardHeader() {
               </span>
               <span className="text-xs text-gray-300">Edit profile</span>
             </div>
-          </button>
+          </Link>
         </div>
       </div>
       {pathname === "/panel" && (

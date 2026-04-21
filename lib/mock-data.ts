@@ -229,8 +229,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Brand Awareness",
     adsCount: 6,
     optimizationPercentage: 0,
-    cpc: null,
-    cpa: null,
+    cpc: undefined,
+    cpa: undefined,
   },
   {
     id: "5",
@@ -247,8 +247,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Sales",
     adsCount: 4,
     optimizationPercentage: 0,
-    cpc: null,
-    cpa: null,
+    cpc: undefined,
+    cpa: undefined,
   },
 ];
 

@@ -107,7 +107,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
   });
 
   const [campaignName, setCampaignName] = useState("");
-  const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("CONVERSIONS");
+  const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("AWARENESS");
 
   const [metaCountries, setMetaCountries] = useState<
     MetaSpecialAdLocationCode[]
@@ -144,6 +144,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
+
+  const [lowerReach, setLowerReach] = useState(1000);
+  const [upperReach, setUpperReach] = useState(5000);
 
   const [currency, setCurrency] = useState("NGN");
 
@@ -785,6 +788,11 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
               <AudienceSection
                 progressTab={progressTab}
                 setProgressTab={setProgressTab}
+                selectedPlatforms={selectedPlatforms}
+                lowerReach={lowerReach}
+                upperReach={upperReach}
+                setLowerReach={setLowerReach}
+                setUpperReach={setUpperReach}
                 brandName={brandName}
                 instagramAccountName={instagramAccountName}
                 loadingAudiences={false}
@@ -843,6 +851,14 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                 setTiktokBudgetAmount={() => {}}
                 tiktokBudgetFrequency={tiktokBudgetFrequency}
                 setTiktokBudgetFrequency={() => {}}
+                useSchedule={useSchedule}
+                setUseSchedule={() => {}}
+                scheduleStartDate={scheduleStartDate}
+                setScheduleStartDate={() => {}}
+                scheduleEndDate={scheduleEndDate}
+                setScheduleEndDate={() => {}}
+                scheduleTime={scheduleTime}
+                setScheduleTime={() => {}}
                 selectedPlatforms={selectedPlatforms}
                 readOnly={true}
               />

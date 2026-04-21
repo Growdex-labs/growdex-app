@@ -118,8 +118,10 @@ export default function PublishCampaignPage() {
     setMetaInterests,
     tiktokInterests,
     setTiktokInterests,
-    totalReach,
-    setTotalReach,
+    lowerReach,
+    setLowerReach,
+    upperReach,
+    setUpperReach,
     metaAgeMin,
     setMetaAgeMin,
     metaAgeMax,
@@ -197,13 +199,13 @@ export default function PublishCampaignPage() {
       if (res.ok) {
         const data = await res.json();
         const reach = Number(data.reach) || 10000;
-        setTotalReach((prev) => prev + reach);
+        // setTotalReach((prev) => prev + reach);
       } else {
-        setTotalReach((prev) => prev + 10000);
+        // setTotalReach((prev) => prev + 10000);
       }
     } catch (err) {
       console.error("Failed to fetch reach estimate:", err);
-      setTotalReach((prev) => prev + 10000);
+      // setTotalReach((prev) => prev + 10000);
     }
   };
 
@@ -376,7 +378,7 @@ export default function PublishCampaignPage() {
       }
 
       if (data.totalReach) {
-        setTotalReach(data.totalReach);
+        // setTotalReach(data.totalReach);
       }
 
       if (data.budget) {
@@ -894,6 +896,7 @@ export default function PublishCampaignPage() {
                 setProgressTab={setProgressTab}
                 brandName={brandName}
                 instagramAccountName={instagramAccountName}
+                selectedPlatforms={selectedPlatforms}
                 loadingAudiences={loadingAudiences}
                 savedAudiences={savedAudiences}
                 applyAudienceToForm={() => {}}
@@ -925,7 +928,10 @@ export default function PublishCampaignPage() {
                 bothPlatformsConnected={true}
                 saveAudienceForPlatform={() => {}}
                 saveAudienceCombined={() => {}}
-                totalReach={totalReach}
+                lowerReach={lowerReach}
+                upperReach={upperReach}
+                setLowerReach={setLowerReach}
+                setUpperReach={setUpperReach}
               />
 
               {/* Budget Section */}
@@ -951,6 +957,14 @@ export default function PublishCampaignPage() {
                 tiktokBudgetFrequency={tiktokBudgetFrequency}
                 setTiktokBudgetFrequency={setTiktokBudgetFrequency}
                 selectedPlatforms={selectedPlatforms}
+                useSchedule={useSchedule}
+                setUseSchedule={setUseSchedule}
+                scheduleStartDate={scheduleStartDate}
+                setScheduleStartDate={setScheduleStartDate}
+                scheduleEndDate={scheduleEndDate}
+                setScheduleEndDate={setScheduleEndDate}
+                scheduleTime={scheduleTime}
+                setScheduleTime={setScheduleTime}
               />
 
               {/* Creative Section */}

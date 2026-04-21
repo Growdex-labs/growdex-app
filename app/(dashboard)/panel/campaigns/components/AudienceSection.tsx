@@ -24,10 +24,180 @@ import {
 } from "@/components/ui/input-group";
 import { PluggedIcon, PluggedOutIcon } from "@/components/svg";
 import { AudienceSectionProps } from "@/types/audience";
-import { FC } from "react";
+import { FC, useState, useEffect } from "react";
+import { apiFetch } from "@/lib/auth";
 
 
 export const AudienceSection: FC<AudienceSectionProps> = (props) => {
+  // Meta Interests Auto-complete state
+  const [interestResults, setInterestResults] = useState<
+    { id: string; name: string; audience_size_lower_bound: number; audience_size_upper_bound: number }[]
+  >([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Debounce Meta API interest search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (props.metaInterestQuery.trim().length >= 2) {
+        setIsSearching(true);
+        try {
+          const res = await apiFetch(
+            `/campaigns/meta-interests/search?q=${encodeURIComponent(
+              props.metaInterestQuery
+            )}`
+          );
+          const json = await res.json();
+          if (json.success && json.data) {
+            setInterestResults(json.data);
+          }
+        } catch (e) {
+          console.error("Failed to search interests", e);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setInterestResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [props.metaInterestQuery]);
+
+  const handleAddInterest = (interest: { id: string; name: string; audience_size_lower_bound: number; audience_size_upper_bound: number }) => {
+    props.addInterestTag("meta", interest.name);
+    props.setLowerReach((prev) => prev + interest.audience_size_lower_bound);
+    props.setUpperReach((prev) => prev + interest.audience_size_upper_bound);
+    props.setMetaInterestQuery("");
+    setInterestResults([]);
+  };
+
+  // Meta Location Auto-complete state
+  const [locationResults, setLocationResults] = useState<any[]>([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
+  // Debounce Meta API location search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (props.metaLocationQuery.trim().length >= 2) {
+        setIsSearchingLocation(true);
+        try {
+          const res = await apiFetch(
+            `/campaigns/meta-locations/search?q=${encodeURIComponent(
+              props.metaLocationQuery
+            )}`
+          );
+          const json = await res.json();
+          if (json.success && json.data) {
+            setLocationResults(json.data);
+          }
+        } catch (e) {
+          console.error("Failed to search locations", e);
+        } finally {
+          setIsSearchingLocation(false);
+        }
+      } else {
+        setLocationResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [props.metaLocationQuery]);
+
+  const handleAddLocation = (location: { key: string; name: string; type: string; country_code: string; audience_size_lower_bound?: number; audience_size_upper_bound?: number }) => {
+    props.addLocationTag("meta", location.name);
+    if (location.audience_size_lower_bound) props.setLowerReach((prev) => prev + location.audience_size_lower_bound!);
+    if (location.audience_size_upper_bound) props.setUpperReach((prev) => prev + location.audience_size_upper_bound!);
+    props.setMetaLocationQuery("");
+    setLocationResults([]);
+  };
+
+  // TikTok Interests Auto-complete state
+  const [tiktokInterestResults, setTiktokInterestResults] = useState<
+    { id: string; name: string; audience_size?: number }[]
+  >([]);
+  const [isSearchingTiktokInterest, setIsSearchingTiktokInterest] = useState(false);
+
+  // Debounce TikTok API interest search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (props.tiktokInterestQuery.trim().length >= 2) {
+        setIsSearchingTiktokInterest(true);
+        try {
+          const res = await apiFetch(
+            `/campaigns/tiktok-interests/search?q=${encodeURIComponent(
+              props.tiktokInterestQuery
+            )}`
+          );
+          const json = await res.json();
+          if (json.success && json.data) {
+            setTiktokInterestResults(json.data);
+          }
+        } catch (e) {
+          console.error("Failed to search tiktok interests", e);
+        } finally {
+          setIsSearchingTiktokInterest(false);
+        }
+      } else {
+        setTiktokInterestResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [props.tiktokInterestQuery]);
+
+  const handleAddTiktokInterest = (interest: { id: string; name: string; audience_size?: number }) => {
+    props.addInterestTag("tiktok", interest.name);
+    // TikTok might not provide exact reach bounds in same format, adapt as needed
+    if (interest.audience_size) {
+      props.setLowerReach((prev) => prev + interest.audience_size!);
+      props.setUpperReach((prev) => prev + interest.audience_size!);
+    }
+    props.setTiktokInterestQuery("");
+    setTiktokInterestResults([]);
+  };
+
+  // TikTok Location Auto-complete state
+  const [tiktokLocationResults, setTiktokLocationResults] = useState<any[]>([]);
+  const [isSearchingTiktokLocation, setIsSearchingTiktokLocation] = useState(false);
+
+  // Debounce TikTok API location search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (props.tiktokLocationQuery.trim().length >= 2) {
+        setIsSearchingTiktokLocation(true);
+        try {
+          const res = await apiFetch(
+            `/campaigns/tiktok-locations/search?q=${encodeURIComponent(
+              props.tiktokLocationQuery
+            )}`
+          );
+          const json = await res.json();
+          if (json.success && json.data) {
+            setTiktokLocationResults(json.data);
+          }
+        } catch (e) {
+          console.error("Failed to search tiktok locations", e);
+        } finally {
+          setIsSearchingTiktokLocation(false);
+        }
+      } else {
+        setTiktokLocationResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [props.tiktokLocationQuery]);
+
+  const handleAddTiktokLocation = (location: { id: string; name: string; type?: string; country_code?: string; audience_size?: number }) => {
+    props.addLocationTag("tiktok", location.name);
+     if (location.audience_size) {
+      props.setLowerReach((prev) => prev + location.audience_size!);
+      props.setUpperReach((prev) => prev + location.audience_size!);
+    }
+    props.setTiktokLocationQuery("");
+    setTiktokLocationResults([]);
+  };
+
   return (
     <div
       className={`bg-white rounded-xl p-4 border ${
@@ -55,10 +225,11 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
             {/* Audience reach cards */}
             <div className="w-full flex flex-col gap-2 mt-4">
               {/* Meta Card */}
-              <div className="rounded-4xl border p-3 space-y-2">
+              {props.selectedPlatforms.meta &&
+               <div className="rounded-4xl border p-3 space-y-2">
                 <div>
                   <p className="text-gray-400">Total reach</p>
-                  <h4 className="text-xl md:text-2xl">{props.totalReach.toLocaleString()}</h4>
+                  <h4 className="text-xl md:text-2xl">{props.lowerReach} - {props.upperReach}</h4>
                 </div>
                 <div className="w-full inline-flex items-start justify-between gap-2 cursor-pointer group bg-gray-50 p-2 rounded-xl">
                   <div className="flex gap-4">
@@ -177,23 +348,55 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-2 relative">
                       <InputGroup className="bg-white">
                         <InputGroupInput
                           placeholder="Search for city or state"
                           value={props.metaLocationQuery}
-                          onChange={(e) => props.setMetaLocationQuery(e.target.value)}
+                          onChange={(e) =>
+                            props.setMetaLocationQuery(e.target.value)
+                          }
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              props.addLocationTag("meta", props.metaLocationQuery);
+                              if (locationResults.length > 0) {
+                                handleAddLocation(locationResults[0]);
+                              } else {
+                                props.addLocationTag(
+                                  "meta",
+                                  props.metaLocationQuery
+                                );
+                              }
                             }
                           }}
                         />
                         <InputGroupAddon>
-                          <Search />
+                          {isSearchingLocation ? (
+                            <div className="animate-spin w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full" />
+                          ) : (
+                            <Search />
+                          )}
                         </InputGroupAddon>
                       </InputGroup>
+
+                      {locationResults.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {locationResults.map((result) => (
+                            <button
+                              key={result.key || result.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex justify-between items-center"
+                              onClick={() => handleAddLocation(result)}
+                            >
+                              <span>{result.name}</span>
+                              <span className="text-xs text-gray-400">
+                                {result.type} ({result.country_code})
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       {/* city/state tags */}
                       <div className="mt-2 flex gap-2 flex-wrap">
                         {props.metaLocations.map((location) => (
@@ -262,23 +465,42 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                     profile data.
                   </p>
                   <hr className="my-4" />
-                  <div>
+                  <div className="relative">
                     <InputGroup className="bg-white">
                       <InputGroupInput
-                        placeholder="Search for category"
+                        placeholder="Search interests (e.g., Football, Technology)..."
                         value={props.metaInterestQuery}
-                        onChange={(e) => props.setMetaInterestQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            props.addInterestTag("meta", props.metaInterestQuery);
-                          }
-                        }}
+                        onChange={(e) =>
+                          props.setMetaInterestQuery(e.target.value)
+                        }
                       />
                       <InputGroupAddon>
-                        <Search />
+                        {isSearching ? (
+                          <div className="animate-spin w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full" />
+                        ) : (
+                          <Search />
+                        )}
                       </InputGroupAddon>
                     </InputGroup>
+
+                    {interestResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {interestResults.map((result) => (
+                          <button
+                            key={result.id}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex justify-between items-center"
+                            onClick={() => handleAddInterest(result)}
+                          >
+                            <span>{result.name}</span>
+                            <span className="text-xs text-gray-400">
+                              ID: {result.id}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="mt-2 flex gap-2 flex-wrap">
                       {props.metaInterests.map((interest) => (
                         <div
@@ -310,9 +532,10 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                     Save audience
                   </Button>
                 )}
-              </div>
+              </div>}
 
               {/* Tiktok Card */}
+              {props.selectedPlatforms.tiktok &&
               <div className="rounded-4xl border p-3 space-y-2">
                 <div className="w-full inline-flex items-start justify-between gap-2 cursor-pointer group bg-mintcream-50 p-2 rounded-xl">
                   <div className="flex gap-2 items-center">
@@ -405,7 +628,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-2 relative">
                       <InputGroup className="bg-white">
                         <InputGroupInput
                           placeholder="Search for city or state"
@@ -416,14 +639,44 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              props.addLocationTag("tiktok", props.tiktokLocationQuery);
+                              if (tiktokLocationResults.length > 0) {
+                                handleAddTiktokLocation(tiktokLocationResults[0]);
+                              } else {
+                                props.addLocationTag(
+                                  "tiktok",
+                                  props.tiktokLocationQuery
+                                );
+                              }
                             }
                           }}
                         />
                         <InputGroupAddon>
-                          <Search />
+                         {isSearchingTiktokLocation ? (
+                            <div className="animate-spin w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full" />
+                          ) : (
+                            <Search />
+                          )}
                         </InputGroupAddon>
                       </InputGroup>
+
+                      {tiktokLocationResults.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {tiktokLocationResults.map((result) => (
+                            <button
+                              key={result.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex justify-between items-center"
+                              onClick={() => handleAddTiktokLocation(result)}
+                            >
+                              <span>{result.name}</span>
+                              <span className="text-xs text-gray-400">
+                                {result.type} ({result.country_code})
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       {/* city/state tags */}
                       <div className="mt-2 flex gap-2 flex-wrap">
                         {props.tiktokLocations.map((location) => (
@@ -508,23 +761,42 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                     profile data.
                   </p>
                   <hr className="my-4" />
-                  <div>
+                  <div className="relative">
                     <InputGroup className="bg-white">
                       <InputGroupInput
                         placeholder="Search for category"
                         value={props.tiktokInterestQuery}
-                        onChange={(e) => props.setTiktokInterestQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            props.addInterestTag("tiktok", props.tiktokInterestQuery);
-                          }
-                        }}
+                        onChange={(e) =>
+                          props.setTiktokInterestQuery(e.target.value)
+                        }
                       />
                       <InputGroupAddon>
-                        <Search />
+                        {isSearchingTiktokInterest ? (
+                          <div className="animate-spin w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full" />
+                        ) : (
+                          <Search />
+                        )}
                       </InputGroupAddon>
                     </InputGroup>
+
+                    {tiktokInterestResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {tiktokInterestResults.map((result) => (
+                          <button
+                            key={result.id}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex justify-between items-center"
+                            onClick={() => handleAddTiktokInterest(result)}
+                          >
+                            <span>{result.name}</span>
+                            <span className="text-xs text-gray-400">
+                              ID: {result.id}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="mt-2 flex gap-2 flex-wrap">
                       {props.tiktokInterests.map((interest) => (
                         <div
@@ -558,7 +830,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                     Save audience
                   </Button>
                 )}
-              </div>
+              </div>}
 
               {/* General Save button */}
               {props.bothPlatformsConnected && (

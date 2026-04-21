@@ -29,7 +29,7 @@ export interface CreateCampaignPayload {
     currency: string;
     type: BudgetType;
     startDate: string;
-    endDate: string;
+    endDate: string | undefined;
   };
   creatives: Array<{
     primaryText: string;

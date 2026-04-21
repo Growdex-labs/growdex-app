@@ -95,30 +95,15 @@ export default function NewCampaignPage() {
 
   const [metaLocationQuery, setMetaLocationQuery] = useState("");
   const [tiktokLocationQuery, setTiktokLocationQuery] = useState("");
-  const [metaLocations, setMetaLocations] = useState<string[]>([
-    "Makurdi",
-    "Abuja",
-    "Lagos",
-    "Kano",
-  ]);
-  const [tiktokLocations, setTiktokLocations] = useState<string[]>([
-    "Makurdi",
-    "Abuja",
-    "Lagos",
-    "Kano",
-  ]);
+  const [metaLocations, setMetaLocations] = useState<string[]>([]);
+  const [tiktokLocations, setTiktokLocations] = useState<string[]>([]);
 
   const [metaInterestQuery, setMetaInterestQuery] = useState("");
   const [tiktokInterestQuery, setTiktokInterestQuery] = useState("");
-  const [metaInterests, setMetaInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
-  const [tiktokInterests, setTiktokInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
-  const [totalReach, setTotalReach] = useState<number>(0);
+  const [metaInterests, setMetaInterests] = useState<string[]>([]);
+  const [tiktokInterests, setTiktokInterests] = useState<string[]>([]);
+  const [lowerReach, setLowerReach] = useState<number>(0);
+  const [upperReach, setUpperReach] = useState<number>(0);
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
@@ -131,7 +116,7 @@ export default function NewCampaignPage() {
   >("daily");
   const [useSeparateBudgets, setUseSeparateBudgets] = useState(false);
 
-  const [useSchedule, setUseSchedule] = useState(false);
+  const [useSchedule, setUseSchedule] = useState(true);
   const [scheduleStartDate, setScheduleStartDate] = useState("");
   const [scheduleEndDate, setScheduleEndDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("09:00");
@@ -238,16 +223,17 @@ export default function NewCampaignPage() {
 
       if (res.ok) {
         const data = await res.json();
+        console.log("Reach estimate response:", data);
         const reach = Number(data.reach) || 10000;
-        setTotalReach((prev) => prev + reach);
+        // setTotalReach((prev) => prev + reach);
       } else {
         // Fallback mock increment
-        setTotalReach((prev) => prev + 10000);
+        // setTotalReach((prev) => prev + 10000);
       }
     } catch (err) {
       console.error("Failed to fetch reach estimate:", err);
       // Fallback mock increment
-      setTotalReach((prev) => prev + 10000);
+      // setTotalReach((prev) => prev + 10000);
     }
   };
 
@@ -383,17 +369,7 @@ export default function NewCampaignPage() {
     }
   };
 
-  const startOfUtcDayIso = (d: Date) =>
-    new Date(
-      Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-    ).toISOString();
 
-  const addDaysDateInputValue = (dateValue: string, days: number) => {
-    const base = new Date(`${dateValue}T00:00:00`);
-    if (Number.isNaN(base.getTime())) return dateValue;
-    base.setDate(base.getDate() + days);
-    return toDateInputValue(base);
-  };
 
   const combineLocalDateAndTimeToIso = (
     dateValue: string,
@@ -481,38 +457,43 @@ export default function NewCampaignPage() {
 
     // Add a 15-minute buffer to ensure "now" is always in the future for the backend
     const defaultStartDate = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    const defaultEndDate = addDaysUtcIso(defaultStartDate, 7);
+    // const defaultEndDate = addDaysUtcIso(defaultStartDate, 7);
 
     let startDate = defaultStartDate;
-    let endDate = defaultEndDate;
+    let endDate; // open-ended by default
     if (useSchedule) {
       if (!scheduleStartDate) {
         setSubmissionError("Please select a start date.");
         return;
       }
-      if (!scheduleEndDate) {
-        setSubmissionError("Please select an end date.");
-        return;
-      }
+      // if (!scheduleEndDate) {
+      //   setSubmissionError("Please select an end date.");
+      //   return;
+      // }
 
       const scheduledStart = combineLocalDateAndTimeToIso(
         scheduleStartDate,
         scheduleTime,
       );
-      const scheduledEnd = combineLocalDateAndTimeToIso(
-        scheduleEndDate,
-        scheduleTime,
-      );
+      // Clean up empty optional fields
+      if (scheduleEndDate) {
+        const scheduledEnd = combineLocalDateAndTimeToIso(
+          scheduleEndDate,
+          scheduleTime,
+        );
 
-      if (
-        new Date(scheduledEnd).getTime() < new Date(scheduledStart).getTime()
-      ) {
-        setSubmissionError("End date must be the same as or after start date.");
-        return;
+        if (
+          new Date(scheduledEnd).getTime() < new Date(scheduledStart).getTime()
+        ) {
+          setSubmissionError("End date must be the same as or after start date.");
+          return;
+        }
+        endDate = scheduledEnd;
+      } else {
+        endDate = undefined;
       }
 
       startDate = scheduledStart;
-      endDate = scheduledEnd;
     }
 
     const minBuffer = 5 * 60 * 1000;
@@ -595,7 +576,8 @@ export default function NewCampaignPage() {
           budget: payload.budget,
           targeting: payload.targeting,
           creatives: creativesByPlatform,
-          totalReach: totalReach,
+          lowerReach,
+          upperReach,
         }),
       );
 
@@ -960,6 +942,7 @@ export default function NewCampaignPage() {
                 progressTab={progressTab}
                 setProgressTab={setProgressTab}
                 brandName={brandName}
+                selectedPlatforms={selectedPlatforms}
                 instagramAccountName={instagramAccountName}
                 loadingAudiences={loadingAudiences}
                 savedAudiences={savedAudiences}
@@ -992,10 +975,13 @@ export default function NewCampaignPage() {
                 bothPlatformsConnected={bothPlatformsConnected}
                 saveAudienceForPlatform={saveAudienceForPlatform}
                 saveAudienceCombined={saveAudienceCombined}
-                totalReach={totalReach}
+                lowerReach={lowerReach}
+                upperReach={upperReach}
+                setLowerReach={setLowerReach}
+                setUpperReach={setUpperReach}
               />
 
-              {/* Budget */}
+              {/* Budget & Schedule */}
               <BudgetSection
                 progressTab={progressTab}
                 setProgressTab={setProgressTab}
@@ -1018,6 +1004,14 @@ export default function NewCampaignPage() {
                 tiktokBudgetFrequency={tiktokBudgetFrequency}
                 setTiktokBudgetFrequency={setTiktokBudgetFrequency}
                 selectedPlatforms={selectedPlatforms}
+                useSchedule={useSchedule}
+                setUseSchedule={setUseSchedule}
+                scheduleStartDate={scheduleStartDate}
+                setScheduleStartDate={setScheduleStartDate}
+                scheduleEndDate={scheduleEndDate}
+                setScheduleEndDate={setScheduleEndDate}
+                scheduleTime={scheduleTime}
+                setScheduleTime={setScheduleTime}
               />
 
               {/* Setup Creative */}
@@ -1028,70 +1022,6 @@ export default function NewCampaignPage() {
                 creativesByPlatform={creativesByPlatform}
                 openCreativeModal={openCreativeModal}
               />
-
-              {/* Schedule toggle */}
-              <div className="mt-2 flex items-center  gap-2 ">
-                <div>
-                  <p className="text-sm font-medium font-gilroy-bold">
-                    Schedule campaign for later date
-                  </p>
-                </div>
-
-                <Switch
-                  checked={useSchedule}
-                  className="data-[state=checked]:bg-khaki-200 data-[state=unchecked]:bg-gray-200 border border-peru-200"
-                  onCheckedChange={(checked) => {
-                    const next = Boolean(checked);
-                    setUseSchedule(next);
-
-                    if (next) {
-                      const today = new Date();
-                      const start = toDateInputValue(today);
-                      const end = addDaysDateInputValue(start, 7);
-                      setScheduleStartDate((prev) => prev || start);
-                      setScheduleEndDate((prev) => prev || end);
-                      setScheduleTime((prev) => prev || "09:00");
-                    }
-                  }}
-                  aria-label="Schedule campaign for later date"
-                />
-              </div>
-
-              {useSchedule && (
-                <div className="bg-white rounded-xl p-4 border border-darkkhaki-200 flex gap-2">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-4 h-4 rounded-full bg-dimYellow border border-peru-200" />
-                    <div className="w-0 h-full border border-peru-200" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                      Schedule ad
-                    </label>
-
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <Input
-                        type="date"
-                        value={scheduleStartDate}
-                        onChange={(e) => setScheduleStartDate(e.target.value)}
-                        aria-label="Start date"
-                      />
-                      <Input
-                        type="date"
-                        value={scheduleEndDate}
-                        onChange={(e) => setScheduleEndDate(e.target.value)}
-                        aria-label="End date"
-                      />
-                      <Input
-                        type="time"
-                        value={scheduleTime}
-                        onChange={(e) => setScheduleTime(e.target.value)}
-                        className="text-peru-200"
-                        aria-label="Time"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {submissionError && (
                 <p className="text-red-500 text-sm font-medium text-center">
@@ -1106,7 +1036,7 @@ export default function NewCampaignPage() {
                 className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer"
               >
                 <CircleArrowRight />
-                {isCreatingCampaign ? "Saving..." : "Save draft"}
+                {isCreatingCampaign ? "Saving..." : "Save + Review"}
               </Button>
             </form>
 
