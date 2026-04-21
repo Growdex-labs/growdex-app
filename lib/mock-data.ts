@@ -29,6 +29,8 @@ export interface Campaign {
   description?: string;
   goal?: string;
   optimizationPercentage?: number;
+  cpc?: number; // Cost per Click
+  cpa?: number; // Cost per Action/Conversion
 }
 
 export interface ChartDataPoint {
@@ -159,6 +161,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Sales",
     adsCount: 5,
     optimizationPercentage: 75,
+    cpc: 350.89,
+    cpa: 1300.8,
   },
   {
     id: "2",
@@ -174,6 +178,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Conversions",
     adsCount: 8,
     optimizationPercentage: 60,
+    cpc: 275.45,
+    cpa: 1150.0,
   },
   {
     id: "3",
@@ -189,6 +195,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Leads",
     adsCount: 10,
     optimizationPercentage: 80,
+    cpc: 310.25,
+    cpa: 1450.5,
   },
   {
     id: "6",
@@ -204,6 +212,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Sales",
     adsCount: 5,
     optimizationPercentage: 75,
+    cpc: 350.89,
+    cpa: 1300.8,
   },
   {
     id: "4",
@@ -219,6 +229,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Brand Awareness",
     adsCount: 6,
     optimizationPercentage: 0,
+    cpc: undefined,
+    cpa: undefined,
   },
   {
     id: "5",
@@ -235,6 +247,8 @@ export const mockCampaigns: Campaign[] = [
     goal: "Sales",
     adsCount: 4,
     optimizationPercentage: 0,
+    cpc: undefined,
+    cpa: undefined,
   },
 ];
 
@@ -450,4 +464,3 @@ export const mockWalletTransactions: WalletTransaction[] = [
 
 // Note: SavedAudience types and mocks have been removed.
 // Use the canonical Audience type from lib/audiences.ts instead.
-

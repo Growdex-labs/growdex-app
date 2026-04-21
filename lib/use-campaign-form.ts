@@ -11,7 +11,7 @@ export function useCampaignFormState() {
 
   const [selectedPlatforms, setSelectedPlatforms] = useState({
     meta: true,
-    tiktok: true,
+    tiktok: false,
   });
 
   const [campaignName, setCampaignName] = useState("");
@@ -41,14 +41,10 @@ export function useCampaignFormState() {
 
   const [metaInterestQuery, setMetaInterestQuery] = useState("");
   const [tiktokInterestQuery, setTiktokInterestQuery] = useState("");
-  const [metaInterests, setMetaInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
-  const [tiktokInterests, setTiktokInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
+  const [metaInterests, setMetaInterests] = useState<string[]>([]);
+  const [tiktokInterests, setTiktokInterests] = useState<string[]>([]);
+  const [lowerReach, setLowerReach] = useState<number>(0);
+  const [upperReach, setUpperReach] = useState<number>(0);
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
@@ -56,8 +52,9 @@ export function useCampaignFormState() {
   const [currency, setCurrency] = useState("NGN");
 
   const [unifiedBudgetAmount, setUnifiedBudgetAmount] = useState("");
-  const [unifiedBudgetFrequency, setUnifiedBudgetFrequency] =
-    useState<"daily" | "lifetime">("daily");
+  const [unifiedBudgetFrequency, setUnifiedBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
   const [useSeparateBudgets, setUseSeparateBudgets] = useState(false);
 
   const [useSchedule, setUseSchedule] = useState(false);
@@ -67,10 +64,12 @@ export function useCampaignFormState() {
 
   const [metaBudgetAmount, setMetaBudgetAmount] = useState("");
   const [tiktokBudgetAmount, setTiktokBudgetAmount] = useState("");
-  const [metaBudgetFrequency, setMetaBudgetFrequency] =
-    useState<"daily" | "lifetime">("daily");
-  const [tiktokBudgetFrequency, setTiktokBudgetFrequency] =
-    useState<"daily" | "lifetime">("daily");
+  const [metaBudgetFrequency, setMetaBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
+  const [tiktokBudgetFrequency, setTiktokBudgetFrequency] = useState<
+    "daily" | "lifetime"
+  >("daily");
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
@@ -127,6 +126,10 @@ export function useCampaignFormState() {
     setMetaInterests,
     tiktokInterests,
     setTiktokInterests,
+    lowerReach,
+    setLowerReach,
+    upperReach,
+    setUpperReach,
     metaAgeMin,
     setMetaAgeMin,
     metaAgeMax,

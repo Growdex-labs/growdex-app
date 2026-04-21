@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/panel/settings/manage-permissions");
+    router.replace("/panel/settings/manage-account");
   }, [router]);
 
   return (
