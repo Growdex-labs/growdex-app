@@ -15,36 +15,7 @@ export default function PanelRootLayout({
 
   useEffect(() => {
     const checkAccess = async () => {
-      // First check authentication
-      console.log('Checking authentication...');
-      const user = await getCurrentUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      // Check onboarding status from local storage first for quick check
-      console.log('Checking onboarding status...');
-      console.log('User:', user);
-      // saving user to session storage
-      sessionStorage.setItem('growdex_user', JSON.stringify(user));
-      if (!isOnboardingComplete()) {
-        if (!user.onboardingCompleted) {
-          console.log('User needs to complete onboarding, going to onboarding...');
-          console.log('Checking what step to navigate to...');
-          if (user.profile?.firstName && user.profile?.lastName && user.brand?.name) {
-            console.log('User has completed step 1, going to step 2...');
-            router.push('/onboarding?step=2');
-            return;
-          }
-          router.push('/onboarding');
-          return;
-        } else {
-          console.log('User has completed onboarding, going to dashboard...');
-          markOnboardingComplete();
-        }
-      }
-
+      // ⚠️ AUTH BYPASSED FOR UI DEV — restore original checkAccess when done
       setIsLoading(false);
     };
 

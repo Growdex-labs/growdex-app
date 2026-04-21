@@ -16,6 +16,9 @@ export function useCampaignFormState() {
 
   const [campaignName, setCampaignName] = useState("");
   const [campaignGoal, setCampaignGoal] = useState("");
+  const [landingPageUrl, setLandingPageUrl] = useState("");
+  const [appId, setAppId] = useState("");
+  const [leadFormId, setLeadFormId] = useState("");
 
   const [metaCountries, setMetaCountries] = useState<
     MetaSpecialAdLocationCode[]
@@ -107,6 +110,12 @@ export function useCampaignFormState() {
     setCampaignName,
     campaignGoal,
     setCampaignGoal,
+    landingPageUrl,
+    setLandingPageUrl,
+    appId,
+    setAppId,
+    leadFormId,
+    setLeadFormId,
     metaCountries,
     setMetaCountries,
     tiktokCountries,

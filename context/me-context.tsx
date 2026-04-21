@@ -80,10 +80,7 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       try {
         const res = await apiFetch("/users/me", { method: "GET" });
-        if (!res.ok) {
-          setMe(null);
-          return;
-        }
+        if (!res.ok) { setMe(null); return; }
         const json = (await res.json()) as MeResponse;
         setMe(json);
       } catch (err) {
