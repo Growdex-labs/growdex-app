@@ -44,14 +44,14 @@ export const validateFile = (file: File): { ok: boolean; error?: string } => {
   }
 
   const maxImage = 10 * 1024 * 1024; // 10MB
-  const maxVideo = 50 * 1024 * 1024; // 50MB
+  const maxVideo = 10 * 1024 * 1024; // 10MB
 
   if (isImage && file.size > maxImage) {
     return { ok: false, error: "Image is too large. Max 10 MB." };
   }
 
   if (isVideo && file.size > maxVideo) {
-    return { ok: false, error: "Video is too large. Max 50 MB." };
+    return { ok: false, error: "Video is too large. Max 10 MB." };
   }
 
   return { ok: true };

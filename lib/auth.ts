@@ -36,11 +36,7 @@ export const apiFetch = async (
     credentials: "include",
   });
 
-  if (
-    url !== "/auth/refresh" &&
-    url !== "/auth/login" &&
-    url !== "/auth/register"
-  ) {
+  if (url !== '/auth/refresh' && url !== '/auth/login' && url !== '/auth/register' && url !== '/auth/verify-mfa') {
     if (res.status === 401) {
       // Attempt refresh
       const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -163,6 +159,7 @@ export const getCurrentUser = async () => {
 
   return res.json();
 };
+
 /**
  * Update current user / brand info
  * Backend updates user profile or brand info
@@ -192,6 +189,24 @@ export const updateCurrentUser = async (payload: {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: "Update failed" }));
+    throw err;
+  }
+
+  return res.json();
+}
+
+/**
+ * Verify MFA code
+ */
+export const verifyMFA = async (token: string) => {
+  const res = await apiFetch('/auth/verify-mfa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
     throw err;
   }
 

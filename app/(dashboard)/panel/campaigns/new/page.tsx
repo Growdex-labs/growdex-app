@@ -132,6 +132,11 @@ export default function NewCampaignPage() {
 
   const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const [landingPageUrl, setLandingPageUrl] = useState("");
+  const [appId, setAppId] = useState("");
+  const [leadFormId, setLeadFormId] = useState("");
+
   const [creativesByPlatform, setCreativesByPlatform] = useState<
     Partial<Record<"meta" | "tiktok", CreativeDraft>>
   >({});
@@ -364,6 +369,8 @@ export default function NewCampaignPage() {
         return "SALES";
       case "leads":
         return "LEADS";
+      case "app_promotion":
+        return "APP_PROMOTION";
       default:
         return "AWARENESS";
     }
@@ -546,6 +553,12 @@ export default function NewCampaignPage() {
         gender: "all" as const,
         interests: uniqueInterests,
       },
+      landingPageUrl:
+        (campaignGoal.toLowerCase() === "traffic" || campaignGoal.toLowerCase() === "sales") && landingPageUrl
+          ? landingPageUrl
+          : undefined,
+      appId: campaignGoal.toLowerCase() === "app_promotion" && appId ? appId : undefined,
+      leadFormId: campaignGoal.toLowerCase() === "leads" && leadFormId ? leadFormId : undefined,
       budget: {
         amount: budgetAmount,
         currency,
@@ -575,6 +588,9 @@ export default function NewCampaignPage() {
           platforms: payload.platforms,
           budget: payload.budget,
           targeting: payload.targeting,
+          landingPageUrl: payload.landingPageUrl,
+          appId: payload.appId,
+          leadFormId: payload.leadFormId,
           creatives: creativesByPlatform,
           lowerReach,
           upperReach,
@@ -1014,6 +1030,72 @@ export default function NewCampaignPage() {
                 setScheduleTime={setScheduleTime}
               />
 
+              {/* Goal Specific Details (Conditional Box) */}
+              {(campaignGoal.toLowerCase() === "traffic"
+              || campaignGoal.toLowerCase() === "sales"
+              || campaignGoal.toLowerCase() === "leads"
+              || campaignGoal.toLowerCase() === "app_promotion") && (
+                <div className="bg-white rounded-xl p-4 border border-transparent">
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
+                      <div className="w-0 h-full border border-peru-200" />
+                    </div>
+                    <div className="w-full">
+                      <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
+                        Additional details
+                      </label>
+                      <div className="mt-4 flex flex-col gap-4 max-w-md">
+                        {(campaignGoal.toLowerCase() === "traffic" || campaignGoal.toLowerCase() === "sales") && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Landing Page URL (Website) *
+                            </label>
+                            <Input
+                              name="landingPageUrl"
+                              value={landingPageUrl}
+                              onChange={(e) => setLandingPageUrl(e.target.value)}
+                              placeholder="https://example.com"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Required for Traffic & Sales goals.</p>
+                          </div>
+                        )}
+
+                        {campaignGoal.toLowerCase() === "leads" && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Lead Form ID *
+                            </label>
+                            <Input
+                              name="leadFormId"
+                              value={leadFormId}
+                              onChange={(e) => setLeadFormId(e.target.value)}
+                              placeholder="e.g. 1234567890"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Required for Lead Generation.</p>
+                          </div>
+                        )}
+
+                        {campaignGoal.toLowerCase() === "app_promotion" && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              App ID *
+                            </label>
+                            <Input
+                              name="appId"
+                              value={appId}
+                              onChange={(e) => setAppId(e.target.value)}
+                              placeholder="e.g. com.growdex.app or Apple App ID"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Required for App Promotion.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Setup Creative */}
               <CreativeSection
                 progressTab={progressTab}
@@ -1097,7 +1179,7 @@ export default function NewCampaignPage() {
                             Browse or drag and drop an image or video here
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            Supported: JPG, PNG (max 10MB); MP4 (max 50MB)
+                            Supported: JPG, PNG (max 10MB); MP4 (max 10MB)
                           </p>
                           <input
                             ref={fileInputRef}

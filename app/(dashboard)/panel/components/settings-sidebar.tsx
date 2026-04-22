@@ -28,9 +28,6 @@ export function SettingsSidebar() {
     if (href === "/panel/settings/manage-account") {
       return pathname === "/panel/settings/manage-account";
     }
-    if (href === "/panel/settings/manage-permissions") {
-      return pathname === "/panel/settings/manage-permissions";
-    }
     if (href === "/panel/settings/security-control") {
       return pathname === "/panel/settings/security-control";
     }

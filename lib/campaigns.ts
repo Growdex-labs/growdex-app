@@ -5,7 +5,8 @@ export type CampaignGoal =
   | "TRAFFIC"
   | "ENGAGEMENT"
   | "SALES"
-  | "LEADS";
+  | "LEADS"
+  | "APP_PROMOTION";
 
 export type CampaignPlatform = "meta" | "tiktok";
 
@@ -24,6 +25,9 @@ export interface CreateCampaignPayload {
     gender: CampaignGender;
     interests: string[];
   };
+  landingPageUrl?: string;
+  appId?: string;
+  leadFormId?: string;
   budget: {
     amount: number;
     currency: string;

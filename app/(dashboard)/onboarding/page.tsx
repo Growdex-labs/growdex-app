@@ -164,6 +164,23 @@ function OnboardingPageContent() {
   };
 
   useEffect(() => {
+    const hydrate = async () => {
+      const res = await fetchOnboardingStatus();
+      if (res.success && res.data) {
+        const personal = res.data.personalInfo;
+        const [first, ...rest] = personal.name.split(' ');
+        setFormData({
+          firstName: first || '',
+          lastName: rest.join(' ') || '',
+          organizationName: personal.organizationName || '',
+          organizationSize: Number(personal.organizationSize) || 0,
+        });
+      }
+    };
+    hydrate();
+  }, []);
+
+  useEffect(() => {
     if (currentStep !== 2) return;
     refreshSocialAccounts();
   }, [currentStep, searchParams]);

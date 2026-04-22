@@ -179,6 +179,12 @@ export default function PublishCampaignPage() {
     setUploadProgress,
     uploadError,
     setUploadError,
+    landingPageUrl,
+    setLandingPageUrl,
+    appId,
+    setAppId,
+    leadFormId,
+    setLeadFormId,
   } = useCampaignFormState();
 
   const [campaignId, setCampaignId] = useState<string | null>(null);
@@ -341,6 +347,10 @@ export default function PublishCampaignPage() {
       setCampaignName(data.name || "");
       setCampaignGoal(data.goal || "AWARENESS");
 
+      if (data.landingPageUrl) setLandingPageUrl(data.landingPageUrl);
+      if (data.appId) setAppId(data.appId);
+      if (data.leadFormId) setLeadFormId(data.leadFormId);
+
       const platforms = data.platforms || [];
       setSelectedPlatforms({
         meta: platforms.includes("meta"),
@@ -424,6 +434,8 @@ export default function PublishCampaignPage() {
         return "SALES";
       case "leads":
         return "LEADS";
+      case "app_promotion":
+        return "APP_PROMOTION";
       default:
         return "AWARENESS";
     }

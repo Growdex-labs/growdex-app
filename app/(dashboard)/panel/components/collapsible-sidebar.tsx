@@ -11,14 +11,21 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Bell,
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useMe } from "@/context/me-context";
+import { useSocket } from "@/context/socket-context";
 
-export function CollapsibleSidebar() {
+interface CollapsibleSidebarProps {
+  onNotificationClick?: () => void;
+}
+
+export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const { me, isLoading } = useMe();
+  const { unreadCount } = useSocket();
 
   const userName =
     me?.profile?.firstName && me?.profile?.lastName
@@ -57,13 +64,30 @@ export function CollapsibleSidebar() {
     >
       {/* Logo Section */}
       <div className={`p-6 ${isCollapsed ? "px-4" : "px-6"}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 shrink-0">
-            <img src="/logo.png" alt="logo" />
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 shrink-0">
+              <img src="/logo.png" alt="logo" />
+            </div>
+            {!isCollapsed && (
+              <span className="font-semibold text-xl">Growdex</span>
+            )}
           </div>
-          {!isCollapsed && (
-            <span className="font-semibold text-xl">Growdex</span>
-          )}
+
+          {/* Notification Button */}
+          <button
+            type="button"
+            onClick={onNotificationClick}
+            aria-label="Open notifications"
+            className="flex gap-2 relative shrink-0 cursor-pointer bg-transparent border-none p-0"
+          >
+            <Bell className="text-khaki-300 size-6" />
+            {unreadCount > 0 && (
+              <div className="w-5 h-5 bg-khaki-300 rounded-full absolute -top-2 -right-3 flex items-center justify-center text-xs text-gray-900 font-bold">
+                {unreadCount}
+              </div>
+            )}
+          </button>
         </div>
       </div>
 

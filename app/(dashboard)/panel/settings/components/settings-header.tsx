@@ -17,7 +17,6 @@ export function SettingsHeader(): JSX.Element {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Manage Permissions", href: "/panel/settings/manage-permissions" },
     { label: "Manage Account", href: "/panel/settings/manage-account" },
     {
       label: "Security & Access Control",
