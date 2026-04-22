@@ -259,20 +259,25 @@ export default function CampaignsPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 justify-between sm:justify-end flex-1">
+                <div className="flex items-center gap-3 justify-between sm:justify-end flex-1">
+                  {/* New Campaign */}
                   <Link
                     href="/panel/campaigns/new"
-                    className="px-5 py-2.5 bg-khaki-200 text-gray-900 rounded-lg font-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors"
+                    className="flex items-center gap-2 h-11 px-5 bg-khaki-200 hover:bg-khaki-300 text-gray-900 rounded-lg font-medium transition-colors"
                   >
                     <Plus className="w-5 h-5" />
-                    New campaign
+                    <span className="hidden sm:inline text-sm">New campaign</span>
                   </Link>
-                  <button className="px-5 py-2.5 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hidden sm:flex items-center gap-2 hover:bg-gray-50 transition-colors">
+
+                  {/* Add Metric */}
+                  <button className="hidden sm:flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors">
                     <FilePlus className="w-5 h-5" />
-                    Add metric
+                    <span className="hidden sm:inline text-sm">Add metric</span>
                   </button>
-                  <button className="px-5 py-2.5 sm:border sm:border-gray-300 bg-white text-peru-200 rounded-lg font-medium flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                    <SlidersHorizontal className="w-5 h-5" />
+
+                  {/* Filter */}
+                  <button className="flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors">
+                    <SlidersHorizontal className="w-5 h-5 text-peru-200" />
                     Filter
                   </button>
                 </div>

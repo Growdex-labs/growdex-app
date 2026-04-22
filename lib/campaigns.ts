@@ -33,7 +33,7 @@ export interface CreateCampaignPayload {
     currency: string;
     type: BudgetType;
     startDate: string;
-    endDate: string;
+    endDate: string | undefined;
   };
   creatives: Array<{
     primaryText: string;
@@ -86,9 +86,11 @@ export const createCampaign = async (payload: CreateCampaignPayload) => {
 
   const data = await res.json().catch(() => ({}));
 
-  if(!res.ok) {
+  if (!res.ok) {
     const errorMsg =
-      data?.errors?.[0]?.message || data?.message || `Request failed (${res.status})`;
+      data?.errors?.[0]?.message ||
+      data?.message ||
+      `Request failed (${res.status})`;
     throw new Error(errorMsg);
   }
 
@@ -125,6 +127,42 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`Fetch campaign metrics failed (${res.status}): ${text}`);
+  }
+
+  return res.json();
+};
+
+export const updateCampaign = async (
+  id: string,
+  payload: Partial<CreateCampaignPayload>,
+) => {
+  const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const errorMsg =
+      data?.errors?.[0]?.message ||
+      data?.message ||
+      `Update failed (${res.status})`;
+    throw new Error(errorMsg);
+  }
+
+  return data;
+};
+
+export const publishCampaign = async (id: string) => {
+  const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}/publish`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Publish campaign failed (${res.status}): ${text}`);
   }
 
   return res.json();

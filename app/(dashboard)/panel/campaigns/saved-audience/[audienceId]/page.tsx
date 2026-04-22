@@ -124,9 +124,7 @@ export default function SavedAudienceDetailPage({
 
                 <div className="text-right">
                   <div className="text-xs text-gray-400">Total reach</div>
-                  <div className="text-lg font-bold text-gray-900">
-                    —
-                  </div>
+                  <div className="text-lg font-bold text-gray-900">—</div>
                 </div>
               </div>
 

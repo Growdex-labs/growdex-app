@@ -203,7 +203,9 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-bold text-firebrick-500">
-                        ₦350.89
+                        {campaign.cpc
+                          ? `₦${campaign.cpc.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : "—"}
                       </span>
                       <TrendingDown className="w-4 h-4 text-firebrick-500" />
                     </div>
@@ -212,7 +214,9 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-firebrick-500">
-                          ₦1,300.80
+                          {campaign.cpa
+                            ? `₦${campaign.cpa.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : "—"}
                         </span>
                         <TrendingDown className="w-4 h-4 text-firebrick-500" />
                       </div>
