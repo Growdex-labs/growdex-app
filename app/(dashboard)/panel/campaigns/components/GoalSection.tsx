@@ -124,6 +124,20 @@ export const GoalSection = ({
                 />
                 <span className="ml-2">Leads</span>
               </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="campaignGoal"
+                  value="app_promotion"
+                  checked={campaignGoal.toLowerCase() === "app_promotion"}
+                  onChange={(e) =>
+                    setCampaignGoal(
+                      e.target.value.toUpperCase() as CampaignGoal,
+                    )}
+                  className="form-radio"
+                />
+                <span className="ml-2">App Promotion</span>
+              </label>
             </div>
             <div className="bg-gray-50 p-2 mt-4 w-fit">
               <ul className="list-disc list-inside">
