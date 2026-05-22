@@ -220,7 +220,6 @@ export default function WalletPage() {
         `${platform}_payment`,
         `width=${w},height=${h},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,noopener,noreferrer`,
       );
-      );
       if (!popup) {
         setCardErrors((prev) => ({ ...prev, [platform]: "Popup blocked. Please allow popups for this site." }));
         setLoadingPlatform(null);
