@@ -207,7 +207,8 @@ export default function WalletPage() {
       const popup = window.open(
         billingUrl,
         `${platform}_payment`,
-        `width=${w},height=${h},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`,
+        `width=${w},height=${h},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,noopener,noreferrer`,
+      );
       );
       if (!popup) {
         setError("Popup blocked. Please allow popups for this site.");
