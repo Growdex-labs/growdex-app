@@ -5,7 +5,10 @@ import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
 import { useMe } from "@/context/me-context";
-import { apiFetch } from "@/lib/auth";
+import { apiFetch, enableMFA, disableMFA, getMFAStatus } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 const activeSessions = [
   {
@@ -33,6 +36,7 @@ const activeSessions = [
 
 export default function SecurityControlPage() {
   const { me } = useMe();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("2fa");
   const [sessions, setSessions] = useState(activeSessions);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,8 +61,25 @@ export default function SecurityControlPage() {
   const [showEnableOTP, setShowEnableOTP] = useState(false);
   const [showEnableSuccess, setShowEnableSuccess] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
+  const [disableToken, setDisableToken] = useState("");
   const [enablePassword, setEnablePassword] = useState("");
   const [enableOTP, setEnableOTP] = useState(["", "", "", "", "", ""]);
+  const [isRedirectingToMFA, setIsRedirectingToMFA] = useState(false);
+  const [isDisabling, setIsDisabling] = useState(false);
+  const [disableError, setDisableError] = useState("");
+
+  // Fetch initial status
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await getMFAStatus();
+        setIs2FAEnabled(res.status);
+      } catch (err) {
+        console.error("Failed to fetch MFA status", err);
+      }
+    };
+    fetchStatus();
+  }, []);
   
   const userEmail = me?.email ?? "";
 
@@ -155,10 +176,23 @@ export default function SecurityControlPage() {
     setShowDisable2FAConfirm(true);
   };
 
-  const handleConfirmDisable2FA = () => {
-    // Disable 2FA logic here
-    setIs2FAEnabled(false);
-    setShowDisable2FASuccess(true);
+  const handleConfirmDisable2FA = async () => {
+    if (!disablePassword || !disableToken) {
+        setDisableError("Both password and 6-digit code are required");
+        return;
+    }
+    
+    setIsDisabling(true);
+    setDisableError("");
+    try {
+      await disableMFA(disableToken, disablePassword);
+      setIs2FAEnabled(false);
+      setShowDisable2FASuccess(true);
+    } catch (err: any) {
+      setDisableError(err.message || "Failed to disable 2FA");
+    } finally {
+      setIsDisabling(false);
+    }
   };
 
   const handleDisable2FAComplete = () => {
@@ -170,7 +204,26 @@ export default function SecurityControlPage() {
 
   const handleConfirm2FA = (action: "enable" | "disable") => {
     if (action === "enable") {
-      setShowEnablePassword(true);
+      // Instead of showing a password prompt in the modal, redirect to the full MFA setup page
+      handleSetup2FA();
+    }
+  };
+
+  const handleSetup2FA = async () => {
+    setIsRedirectingToMFA(true);
+    try {
+      const res = await enableMFA();
+      if (res.status === 'MFA_SETUP_REQUIRED') {
+        sessionStorage.setItem("mfa_status", res.status);
+        if (res.uri) sessionStorage.setItem("mfa_uri", res.uri);
+        if (res.secret) sessionStorage.setItem("mfa_secret", res.secret);
+        setIs2FAModalOpen(false);
+        router.push("/mfa?mode=settings");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to initiate MFA setup");
+    } finally {
+      setIsRedirectingToMFA(false);
     }
   };
 
@@ -603,18 +656,19 @@ export default function SecurityControlPage() {
                   <p className="text-gray-600 text-center text-sm font-medium mb-6">
                     Enhance your account security with 2FA
                   </p>
-                  <div className="flex gap-3">
+                  <div className="space-y-3">
                     <button
                       onClick={handleDisable2FA}
-                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+                      className="w-full px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
                     >
-                      Disable
+                      Disable 2FA
                     </button>
                     <button
-                      onClick={() => handleConfirm2FA("enable")}
-                      className="flex-1 px-4 py-2 bg-[#8B2A0F] text-white rounded-lg text-sm font-bold hover:bg-[#681c08] transition-colors"
+                      onClick={handleSetup2FA}
+                      disabled={isRedirectingToMFA}
+                      className="w-full px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-bold hover:bg-khaki-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Enable
+                      {isRedirectingToMFA ? "Redirecting..." : "Setup 2FA →"}
                     </button>
                   </div>
                   <button onClick={handleCancel2FA} className="w-full mt-4 text-xs text-gray-400 font-bold hover:text-gray-600">Close</button>
@@ -671,10 +725,45 @@ export default function SecurityControlPage() {
             {showDisable2FAConfirm && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-bold text-red-600 text-center">Disable 2FA?</h2>
-                  <p className="text-xs text-gray-500 text-center">This will make your account less secure.</p>
+                  <p className="text-xs text-gray-500 text-center">This will make your account <span className="font-bold text-black">less secure</span>.</p>
+                  
+                  <div className="mt-4 space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Confirm Password</label>
+                      <input
+                        type="password"
+                        placeholder="Your password"
+                        value={disablePassword}
+                        onChange={(e) => setDisablePassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">6-Digit Code</label>
+                      <input
+                        type="text"
+                        placeholder="123456"
+                        maxLength={6}
+                        value={disableToken}
+                        onChange={(e) => setDisableToken(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-200 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {disableError && (
+                    <p className="text-red-500 text-xs text-center">{disableError}</p>
+                  )}
+
                   <div className="flex gap-2">
-                    <button onClick={handleCancel2FA} className="flex-1 p-2 bg-gray-100 rounded-lg font-bold">Go Back</button>
-                    <button onClick={handleConfirmDisable2FA} className="flex-1 p-2 bg-red-600 text-white rounded-lg font-bold">Disable</button>
+                    <button onClick={handleCancel2FA} className="flex-1 p-2 bg-gray-100 rounded-lg font-bold text-sm">Go Back</button>
+                    <button 
+                        onClick={handleConfirmDisable2FA} 
+                        disabled={isDisabling}
+                        className="flex-1 p-2 bg-red-600 text-white rounded-lg font-bold text-sm disabled:opacity-50"
+                    >
+                        {isDisabling ? "Disabling..." : "Disable"}
+                    </button>
                   </div>
                 </div>
             )}

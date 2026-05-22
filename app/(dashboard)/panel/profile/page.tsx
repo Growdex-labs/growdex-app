@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { PanelLayout } from "../components/panel-layout";
 import { DashboardHeader } from "../components/dashboard-header";
-import { Camera, Upload, X, Edit2 } from "lucide-react";
+import { Camera, Upload, X, Edit2, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,7 +15,9 @@ import {
 import { DepositIcon } from "@/components/svg";
 import Link from "next/link";
 import { useMe } from "@/context/me-context";
-import { updateCurrentUser } from "@/lib/auth";
+import { apiFetch, updateCurrentUser, updateUserAvatar } from "@/lib/auth";
+import { hashFolderName } from "@/lib/encrypt";
+import { CLOUDINARY_FOLDER } from "@/lib/constants";
 
 interface ProfileFormData {
   firstName: string;
@@ -57,6 +59,11 @@ export default function MyProfilePage(): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
 
+  // Avatar upload state
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarUploadProgress, setAvatarUploadProgress] = useState(0);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!me) return;
 
@@ -79,6 +86,10 @@ export default function MyProfilePage(): JSX.Element {
         });
         initializedRef.current = true;
     }
+    // Set avatar from backend if available
+    if (me.avatarUrl) {
+      setProfileImage(me.avatarUrl);
+    }
   }, [me]);
 
   const toggleEdit = () => {
@@ -98,25 +109,133 @@ export default function MyProfilePage(): JSX.Element {
             instagramLink: me.brand?.instagramUrl ?? "",
             businessAddress: me.brand?.businessAddress ?? "",
           });
+        // Revert avatar preview
+        setProfileImage(me.avatarUrl ?? "/profile.png");
       }
       setIsEditing(!isEditing);
+      setAvatarError(null);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setProfileImage(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Validate file
+    const maxSizeMB = 5;
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setAvatarError(`File too large. Maximum size is ${maxSizeMB}MB.`);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please select an image file.");
+      return;
+    }
+
+    // Show local preview immediately
+    const localPreview = URL.createObjectURL(file);
+    setProfileImage(localPreview);
+    setAvatarError(null);
+
+    try {
+      setIsUploadingAvatar(true);
+      setAvatarUploadProgress(0);
+
+      // Build a unique public_id
+      const encryptedFolder = await hashFolderName();
+      const safeName = file.name
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+      const publicId = `${encryptedFolder.slice(0, 20)}/avatar_${safeName}_${Date.now()}`;
+
+      // Get signature stamp from backend
+      const signRes = await apiFetch("/media/signature-stamp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          public_id: publicId,
+          folder: CLOUDINARY_FOLDER,
+        }),
+      });
+
+      if (!signRes.ok) {
+        const errText = await signRes.text().catch(() => "");
+        throw new Error(`Failed to get upload signature (${signRes.status}): ${errText}`);
+      }
+
+      const signPayload = await signRes.json();
+      const { signature, timestamp, api_key } = signPayload;
+      const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+      // Upload to Cloudinary
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", api_key);
+      formData.append("timestamp", String(timestamp));
+      formData.append("signature", String(signature));
+      formData.append("public_id", publicId);
+      formData.append("folder", CLOUDINARY_FOLDER);
+
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`;
+
+      const uploadResult: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", uploadUrl);
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setAvatarUploadProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText)); }
+            catch (err) { reject(err); }
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Upload network error"));
+        xhr.send(formData);
+      });
+
+      const secureUrl = uploadResult.secure_url;
+      const etag = uploadResult.etag ?? "";
+
+      // Persist to backend
+      await updateUserAvatar(secureUrl, etag);
+
+      // Refresh context so sidebar/header pick up the new avatar
+      await refresh();
+
+      setProfileImage(secureUrl);
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      setAvatarError(err instanceof Error ? err.message : "Failed to upload avatar");
+      // Revert preview on error
+      setProfileImage(me?.avatarUrl ?? "/profile.png");
+    } finally {
+      setIsUploadingAvatar(false);
+      setAvatarUploadProgress(0);
+      // Reset file input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const handleImageDelete = () => {
-    setProfileImage("/avatar-placeholder.png");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  const handleImageDelete = async () => {
+    try {
+      setIsUploadingAvatar(true);
+      setAvatarError(null);
+      await updateUserAvatar("", "");
+      await refresh();
+      setProfileImage("/profile.png");
+    } catch (err) {
+      console.error("Avatar delete error:", err);
+      setAvatarError(err instanceof Error ? err.message : "Failed to remove avatar");
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -169,13 +288,12 @@ export default function MyProfilePage(): JSX.Element {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
       console.error("Error updating profile:", err);
-      // Wait, isSavedSuccess logic correct in the original? "Failed to update profile", then setSuccess?
-      // No, it sets error if caught.
       setSaveError(err.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
     }
   };
+
 
   return (
     <PanelLayout>
@@ -203,47 +321,62 @@ export default function MyProfilePage(): JSX.Element {
                 </div>
 
                 {/* Profile Picture Section */}
-                <div className="flex items-center sm:items-end gap-2 sm:gap-6">
-                  <div className="relative">
-                    <img
-                      src={profileImage}
-                      alt="Profile"
-                      className="w-32 h-32 rounded-lg object-cover bg-gray-100"
-                    />
-                    {isEditing && (
+                <div className="flex flex-col gap-4 w-full">
+                  <div className="flex items-center sm:items-end gap-2 sm:gap-6">
+                    <div className="relative">
+                      <img
+                        src={profileImage}
+                        alt="Profile"
+                        className="w-32 h-32 rounded-lg object-cover bg-gray-100"
+                      />
+                      {isUploadingAvatar && (
+                        <div className="absolute inset-0 bg-black/50 rounded-lg flex flex-col items-center justify-center text-white text-xs font-semibold gap-1">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          {avatarUploadProgress > 0 && <span>{avatarUploadProgress}%</span>}
+                        </div>
+                      )}
+                      {isEditing && !isUploadingAvatar && (
                         <div className="absolute -bottom-2 -right-4 flex gap-2">
-                        <button
+                          <button
                             onClick={() => fileInputRef.current?.click()}
                             className="p-2 bg-yellow-300 hover:bg-yellow-400 rounded-full transition-colors"
                             title="Upload photo"
-                        >
+                          >
                             <Camera className="w-4 h-4 text-gray-900" />
-                        </button>
+                          </button>
                         </div>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={!isEditing || isUploadingAvatar}
+                    />
+                    {isEditing && (
+                      <div className="flex gap-2 mt-10 sm:mt-0">
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingAvatar}
+                          className="px-4 py-2 bg-yellow-300 hover:bg-yellow-400 disabled:bg-yellow-200 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
+                        >
+                          Upload New
+                        </button>
+                        <button
+                          onClick={handleImageDelete}
+                          disabled={isUploadingAvatar}
+                          className="px-4 py-2 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap mr-2"
+                        >
+                          Delete Image
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    disabled={!isEditing}
-                  />
-                  {isEditing && (
-                    <div className="flex gap-2 mt-10 sm:mt-0">
-                        <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 bg-yellow-300 hover:bg-yellow-400 text-gray-900 font-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
-                        >
-                        Upload New
-                        </button>
-                        <button
-                        onClick={handleImageDelete}
-                        className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 font-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap mr-2"
-                        >
-                        Delete Image
-                        </button>
+                  {avatarError && (
+                    <div className="text-xs text-red-600 font-medium max-w-md bg-red-50 border border-red-200 rounded p-2 mt-1">
+                      {avatarError}
                     </div>
                   )}
                 </div>

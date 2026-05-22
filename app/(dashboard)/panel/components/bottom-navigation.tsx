@@ -29,14 +29,17 @@ export function BottomNavigation() {
   // Right items (2 items)
   const rightItems: NavItem[] = [
     { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
-    { icon: Settings, label: "Settings", href: "/panel/settings" },
+    { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
   ];
 
-  const isActive = (href: string) => {
-    if (href === "/panel") {
+  const isActive = (item: NavItem) => {
+    if (item.href === "/panel") {
       return pathname === "/panel";
     }
-    return pathname?.startsWith(href);
+    if (item.label === "Settings") {
+      return pathname?.startsWith("/panel/settings");
+    }
+    return pathname?.startsWith(item.href);
   };
 
   return (
@@ -49,7 +52,7 @@ export function BottomNavigation() {
           <div className="flex items-center justify-around flex-1 h-full mr-10">
             {leftItems.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.href);
+              const active = isActive(item);
 
               return (
                 <Link
@@ -79,7 +82,7 @@ export function BottomNavigation() {
           <div className="flex items-center justify-around flex-1 ml-10 h-full">
             {rightItems.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.href);
+              const active = isActive(item);
 
               return (
                 <Link

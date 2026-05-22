@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, Suspense, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
-import { verifyMFA } from "@/lib/auth";
+import { verifyMFA, confirmMFA } from "@/lib/auth";
 import { toast } from "sonner";
 
 function MfaPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isSettingsMode = searchParams.get("mode") === "settings";
 
   const [status, setStatus] = useState<string | null>(null);
   const [uri, setUri] = useState<string | null>(null);
@@ -25,12 +27,17 @@ function MfaPageContent() {
     const u = sessionStorage.getItem("mfa_uri");
     const sec = sessionStorage.getItem("mfa_secret");
 
-    if (!s) {
+    // In settings mode, we allow access even without sessionStorage data
+    if (!s && !isSettingsMode) {
       router.push("/login");
       return;
     }
 
-    setStatus(s);
+    // In settings mode without stored data, default to setup required
+    const resolvedStatus = s || (isSettingsMode ? "MFA_SETUP_REQUIRED" : null);
+    if (!resolvedStatus) return;
+
+    setStatus(resolvedStatus);
     if (u) setUri(u);
     if (sec) setSecret(sec);
 
@@ -39,7 +46,7 @@ function MfaPageContent() {
         .then((url) => setQrDataUrl(url))
         .catch((err) => console.error("QR Code Generation Error:", err));
     }
-  }, [router]);
+  }, [router, isSettingsMode]);
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.match(/^[0-9]?$/)) {
@@ -73,13 +80,20 @@ function MfaPageContent() {
     setError("");
 
     try {
-      const res = await verifyMFA(token);
-      toast.success("Authentication successful");
+      const isSetup = status === "MFA_SETUP_REQUIRED";
+      const res = isSetup ? await confirmMFA(token) : await verifyMFA(token);
+      
+      toast.success(isSetup ? "MFA setup complete" : "Authentication successful");
 
       // Clear sensitive info
       sessionStorage.removeItem("mfa_status");
       sessionStorage.removeItem("mfa_uri");
       sessionStorage.removeItem("mfa_secret");
+
+      if (isSettingsMode) {
+        router.push("/panel/settings/security-control");
+        return;
+      }
 
       if (res.onboardingCompleted) {
         router.push("/panel");
@@ -93,6 +107,19 @@ function MfaPageContent() {
     }
   };
 
+  const handleSetupLater = () => {
+    // Clear any pending MFA session data
+    sessionStorage.removeItem("mfa_status");
+    sessionStorage.removeItem("mfa_uri");
+    sessionStorage.removeItem("mfa_secret");
+
+    if (isSettingsMode) {
+      router.push("/panel/settings/security-control");
+    } else {
+      router.push("/onboarding");
+    }
+  };
+
   if (!status) return null;
 
   const isSetup = status === "MFA_SETUP_REQUIRED";
@@ -101,21 +128,23 @@ function MfaPageContent() {
     <div className="flex-1 p-4 lg:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex justify-end mb-6">
+        <div className="md:hidden flex justify-end mb-12">
           <button className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
             Menu ☰
           </button>
         </div>
 
-        <div className="mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            Secure your Growdex account
-          </h1>
-          <p className="text-gray-600">
-            {isSetup
-              ? "You can secure your account by following the processes"
-              : "Enter your authentication code."}
-          </p>
+        <div className="mb-12 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              Secure your Growdex account
+            </h1>
+            <p className="text-gray-600">
+              {isSetup
+                ? "You can secure your account by following the processes"
+                : "Enter your authentication code."}
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -256,19 +285,17 @@ function MfaPageContent() {
                       <button
                         onClick={handleSubmit}
                         disabled={loading || otp.join("").length < 6}
-                        className="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-8 py-3 bg-khaki-200 text-gray-900 font-semibold rounded-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {loading ? "Submitting..." : "Submit code"}
                       </button>
 
-                      {status !== "MFA_SETUP_REQUIRED" && (
-                        <button
-                          onClick={() => router.push("/panel")}
-                          className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-                        >
-                          » Skip authentication
-                        </button>
-                      )}
+                      <button
+                        onClick={handleSetupLater}
+                        className="text-gray-400 hover:text-gray-600 text-sm transition-colors"
+                      >
+                        {isSettingsMode ? "Go back" : "Setup later"}
+                      </button>
                     </div>
                   </div>
                 </div>
