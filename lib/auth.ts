@@ -36,7 +36,21 @@ export const apiFetch = async (
     credentials: "include",
   });
 
-  if (url !== '/auth/refresh' && url !== '/auth/login' && url !== '/auth/register' && url !== '/auth/verify-mfa') {
+  const authEndpoints = [
+    '/auth/refresh',
+    '/auth/login',
+    '/auth/register',
+    '/auth/mfa/verify',
+    '/auth/mfa/enable',
+    '/auth/mfa/confirm',
+    '/auth/mfa/status',
+    '/auth/mfa/disable',
+    '/auth/verify-email',
+    '/auth/forgot-password',
+    '/auth/reset-password'
+  ];
+
+  if (!authEndpoints.includes(url)) {
     if (res.status === 401) {
       // Attempt refresh
       const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -67,7 +81,7 @@ export const login = async (email: string, password: string) => {
   const res = await apiFetch("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, useMfa: true }),
   });
 
   if (!res.ok) {
@@ -86,7 +100,7 @@ export const register = async (email: string, password: string) => {
   const res = await apiFetch("/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, useMfa: true }),
   });
 
   if (!res.ok) {
@@ -144,7 +158,7 @@ export const resetPassword = async (
  * Backend should clear httpOnly cookies
  */
 export const logout = async () => {
-  await apiFetch("/auth/logout", { method: "POST" });
+  await apiFetch("/auth/logout", { method: "POST", body: JSON.stringify({}) });
   window.location.href = "/login";
 };
 
@@ -196,10 +210,10 @@ export const updateCurrentUser = async (payload: {
 }
 
 /**
- * Verify MFA code
+ * Verify MFA code during login challenge
  */
 export const verifyMFA = async (token: string) => {
-  const res = await apiFetch('/auth/verify-mfa', {
+  const res = await apiFetch('/auth/mfa/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
@@ -207,6 +221,93 @@ export const verifyMFA = async (token: string) => {
 
   if (!res.ok) {
     const err = await res.json();
+    throw err;
+  }
+
+  return res.json();
+};
+
+/**
+ * Trigger MFA setup (requires access_token)
+ */
+export const enableMFA = async () => {
+  const res = await apiFetch('/auth/mfa/enable', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}), // Empty object for Fastify
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
+
+  return res.json();
+};
+
+/**
+ * Finalize MFA activation (requires access_token)
+ */
+export const confirmMFA = async (token: string) => {
+  const res = await apiFetch('/auth/mfa/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
+
+  return res.status === 201 ? { success: true } : res.json();
+};
+
+/**
+ * Check current user's MFA status
+ */
+export const getMFAStatus = async () => {
+  const res = await apiFetch('/auth/mfa/status', { method: 'GET' });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
+
+  return res.json(); // { status: true/false }
+};
+
+/**
+ * Disable MFA
+ */
+export const disableMFA = async (token: string, password: string) => {
+  const res = await apiFetch('/auth/mfa/disable', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
+
+  return res.json();
+};
+
+/**
+ * Update the current user's avatar
+ * Backend expects: { avatarUrl: string, avatarEtag: string }
+ */
+export const updateUserAvatar = async (avatarUrl: string, avatarEtag: string) => {
+  const res = await apiFetch('/users/me/user', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatarUrl, avatarEtag }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: 'Avatar update failed' }));
     throw err;
   }
 

@@ -29,7 +29,7 @@ export function BottomNavigation() {
   // Right items (2 items)
   const rightItems: NavItem[] = [
     { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
-    { icon: Settings, label: "Settings", href: "/panel/settings" },
+    { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
   ];
 
   const isActive = (href: string) => {

@@ -32,10 +32,17 @@ export type MeBrand = {
   createdAt: string;
 };
 
-export type PlatformConnection = Record<string, unknown>;
+export type PlatformConnection = {
+  platform: string;
+  accountName?: string;
+  accountId?: string;
+  status?: string;
+  [key: string]: unknown; // allow extra fields from the API without breaking
+};
 
 export type MeResponse = {
   email: string;
+  avatarUrl: string | null;
   onboardingCompleted: boolean;
   profile: MeProfile;
   brand: MeBrand;
@@ -51,12 +58,42 @@ type MeContextValue = {
 
 const MeContext = createContext<MeContextValue | undefined>(undefined);
 
+
+const MOCK_ME: MeResponse = {
+  email: "devtest@growdex.io",
+  avatarUrl: null,
+  onboardingCompleted: true,
+  profile: {
+    id: "mock-id",
+    firstName: "Dev",
+    lastName: "Tester",
+    phone: null,
+    country: null,
+  },
+  brand: {
+    id: "mock-brand-id",
+    name: "Growdex Dev Brand",
+    businessAddress: null,
+    size: null,
+    instagramUrl: null,
+    facebookUrl: null,
+    twitterUrl: null,
+    googleUrl: null,
+    createdAt: new Date().toISOString(),
+  },
+  platformConnections: [
+    { platform: "meta", accountName: "Growdex Meta Ads", accountId: "mock-meta-123", status: "active" },
+    { platform: "tiktok", accountName: "Growdex TikTok Ads", accountId: "mock-tiktok-456", status: "active" },
+  ],
+};
+
 const AUTH_PREFIXES = [
   "/login",
   "/signup",
   "/forgot-password",
   "/reset-password",
   "/verify",
+  "/mfa",
 ];
 
 const shouldSkipMeFetch = (pathname: string | null) => {
@@ -84,9 +121,15 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
         const json = (await res.json()) as MeResponse;
         setMe(json);
       } catch (err) {
-        setMe(null);
-        setError(err instanceof Error ? err.message : "Failed to load user");
+        if (process.env.NEXT_PUBLIC_APP_ENV === 'development') {
+          console.warn('[DEV] Backend unreachable — injecting MOCK_ME');
+          setMe(MOCK_ME);
+        } else {
+          setMe(null);
+          setError(err instanceof Error ? err.message : 'Failed to load user');
+        }
       } finally {
+
         setIsLoading(false);
         inFlightRef.current = null;
       }

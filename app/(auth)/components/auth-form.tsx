@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login, register } from '@/lib/auth';
-import { Lock } from 'lucide-react';
+import { Lock, FlaskConical } from 'lucide-react';
 import Link from 'next/link';
 import { GoogleBtn } from './google-btn';
 import { toast } from 'sonner';
+
+const isDev = process.env.NEXT_PUBLIC_APP_ENV === 'development';
 
 export default function AuthForm({ title, subTitle = '', isAuthType }: { title: string; subTitle?: string; isAuthType: 'login' | 'register' }) {
     const router = useRouter();
@@ -74,6 +76,12 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
       } finally {
         setIsLoading(false);
       }
+    };
+
+    const handleDevLogin = () => {
+      console.warn('[DEV] Bypassing auth + MFA — injecting mock session');
+      toast.success('Dev session active — no backend required');
+      router.push('/panel');
     };
 
     return (
@@ -169,6 +177,16 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
               >
                 {isLoading ? 'Please wait...' : isAuthType === 'login' ? 'Sign in' : 'Sign up'}
               </button>
+
+              {isDev && isAuthType === 'login' && (
+                <button
+                  type="button"
+                  onClick={handleDevLogin}
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-dashed border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-lg transition-colors"
+                >
+                  🧪 Dev quick-login (bypasses auth &amp; MFA)
+                </button>
+              )}
             </div>
 
             <div className="text-center text-sm text-gray-600">

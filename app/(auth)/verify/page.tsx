@@ -30,12 +30,28 @@ function VerifyEmailContent() {
           throw new Error(data.error || 'Verification failed');
         }
 
+        const data = await response.json();
         setStatus('success');
         setMessage('Account verified successfully!');
 
+        if (data.status === 'MFA_SETUP_REQUIRED' || data.status === 'MFA_CHALLENGE') {
+          sessionStorage.removeItem('mfa_status');
+          sessionStorage.removeItem('mfa_uri');
+          sessionStorage.removeItem('mfa_secret');
+
+          sessionStorage.setItem('mfa_status', data.status);
+          if (data.uri) sessionStorage.setItem('mfa_uri', data.uri);
+          if (data.secret) sessionStorage.setItem('mfa_secret', data.secret);
+          
+          setTimeout(() => {
+            router.push('/mfa');
+          }, 2000);
+          return;
+        }
+
         // Redirect after a short delay so user sees the success message
         setTimeout(() => {
-          router.push('/panel');
+          router.push(data.onboardingCompleted ? '/panel' : '/onboarding');
         }, 2000);
       } catch (error: any) {
         console.error('Error verifying email:', error);

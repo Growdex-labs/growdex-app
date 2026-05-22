@@ -25,7 +25,7 @@ export function DashboardHeader() {
         <div className="flex items-center gap-4">
           {/* User Profile Button */}
           <Link href="/panel/profile" className="h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors gap-4 cursor-pointer">
-            <img src="/profile.png" alt="profile-icon" />
+            <img src={me?.avatarUrl ?? "/profile.png"} alt="profile-icon" className="w-8 h-8 rounded-full object-cover bg-gray-100" />
             <div className="flex flex-col items-start">
               <span className="text-sm font-semibold text-gray-400">
                 {isLoading ? "Loading…" : userName}

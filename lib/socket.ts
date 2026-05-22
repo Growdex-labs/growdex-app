@@ -1,9 +1,9 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+const SOCKET_URL = process.env.NEXT_PUBLIC_WS_API_URL;
 
 if (!SOCKET_URL) {
-  console.warn("NEXT_PUBLIC_BACKEND_API_URL is not defined; socket connection will fail");
+  console.warn("NEXT_PUBLIC_WS_API_URL is not defined; socket connection will fail");
 }
 
 let socket: Socket | null = null;

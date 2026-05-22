@@ -1,41 +1,90 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
 import { useRouter } from "next/navigation";
+import { hydrateSocialAccounts } from "@/lib/social";
+import { disconnectSocialAccount, SocialPlatform } from "@/lib/oauth";
+import { Loader2, PlusCircle, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
-const connectedAccountsData = [
-  {
-    id: 1,
-    platform: "Meta Ads",
-    icon: "meta",
-    accountName: "Growdex Agency",
-    status: "Connected",
-  },
-  {
-    id: 2,
-    platform: "Tiktok Ads",
-    icon: "tiktok",
-    accountName: "Ebuko Ventures",
-    status: "Connected",
-  },
-  {
-    id: 3,
-    platform: "Meta Ads",
-    icon: "meta",
-    accountName: "Growdex Agency",
-    status: "Connected",
-  },
-];
+interface ConnectedAccount {
+  id: string;
+  platform: string;
+  icon: "meta" | "tiktok";
+  accountName: string;
+  status: string;
+}
 
 export default function ManageAccountPage() {
   const router = useRouter();
-  const [accounts, setAccounts] = useState(connectedAccountsData);
+  const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
-  const handleDisconnect = (accountId: number) => {
-    setAccounts(accounts.filter((account) => account.id !== accountId));
+  const fetchAccounts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await hydrateSocialAccounts();
+      if (res.success && res.data) {
+        const mappedAccounts: ConnectedAccount[] = [];
+        
+        if (res.data.meta?.connected) {
+          mappedAccounts.push({
+            id: 'meta',
+            platform: "Meta Ads",
+            icon: "meta",
+            accountName: res.data.meta.assets?.[0]?.adAccountName || "Meta Account",
+            status: "Connected",
+          });
+        }
+        
+        if (res.data.tiktok?.connected) {
+          mappedAccounts.push({
+            id: 'tiktok',
+            platform: "TikTok Ads",
+            icon: "tiktok",
+            accountName: res.data.tiktok.assets?.[0]?.name || "TikTok Account",
+            status: "Connected",
+          });
+        }
+        
+        setAccounts(mappedAccounts);
+      } else {
+        setError(res.error || "Failed to fetch connected accounts");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  const handleDisconnect = async (accountId: string) => {
+    const platform = accountId as SocialPlatform;
+    setDisconnectingId(accountId);
+    
+    try {
+      const result = await disconnectSocialAccount(platform);
+      if (result.success) {
+        toast.success(`Disconnected from ${platform === 'meta' ? 'Meta' : 'TikTok'}`);
+        setAccounts(accounts.filter((account) => account.id !== accountId));
+      } else {
+        toast.error(result.error || `Failed to disconnect ${platform}`);
+      }
+    } catch (err) {
+      toast.error("An error occurred while disconnecting");
+    } finally {
+      setDisconnectingId(null);
+    }
   };
 
   const MetaIcon = () => (
@@ -108,40 +157,33 @@ export default function ManageAccountPage() {
   return (
     <PanelLayout>
       <div className="flex h-screen overflow-hidden bg-gray-50">
-        {/* Secondary Sidebar - Desktop Only */}
         <div className="hidden md:block">
           <SettingsSidebar />
         </div>
 
-        {/* Main Content */}
         <div className="flex-1 overflow-auto">
-          {/* Mobile Header */}
           <SettingsHeader />
 
           <div className="p-4 md:p-6">
-            {/* Connected Ads Account Header */}
             <div className="mb-6 bg-khaki-200 rounded-lg px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3 mx-auto">
                 <span className="text-sm md:text-base font-semibold text-gray-900">
                   Connected Ads Account
                 </span>
                 <span className="px-3 py-1 bg-white text-gray-900 rounded-full text-xs font-semibold">
-                  {accounts.length}
+                  {isLoading ? "..." : accounts.length}
                 </span>
               </div>
             </div>
 
-            {/* Settings Content */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
               <button 
                 onClick={() => router.push('/onboarding?step=2')}
                 className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors ml-auto mb-4 flex items-center gap-2 whitespace-nowrap">
-                <span className="text-lg">+</span> Connect New Account
+                <PlusCircle className="w-4 h-4" /> Connect New Account
               </button>
 
-              {/* Accounts Table */}
               <div className="bg-white rounded-lg overflow-hidden ">
-                {/* Header */}
                 <div className="bg-khaki-200/50 rounded-lg px-4 py-2 mb-4 grid grid-cols-4 gap-2 md:gap-4">
                   <div className="text-xs md:text-sm font-semibold text-gray-700 whitespace-nowrap">
                     Platform
@@ -157,42 +199,78 @@ export default function ManageAccountPage() {
                   </div>
                 </div>
 
-                {/* Items */}
-                <div className="">
-                  {accounts.map((account) => (
-                    <div
-                      key={account.id}
-                      className="px-4 py-3 rounded-lg bg-gray-100 mb-4 hover:bg-gray-50 transition-colors grid grid-cols-4 gap-2 md:gap-4 items-center"
-                    >
-                      <div className="text-xs md:text-sm text-gray-700 flex items-center gap-1 md:gap-2">
-                        {account.icon === "meta" ? (
-                          <MetaIcon />
-                        ) : (
-                          <TiktokIcon />
-                        )}
-                        <span className="truncate">{account.platform}</span>
-                      </div>
-                      <div className="text-xs md:text-sm text-gray-700 truncate whitespace-nowrap">
-                        {account.accountName}
-                      </div>
-                      <div className="text-xs md:text-sm">
-                        <span className="px-1 md:px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium whitespace-nowrap">
-                          {account.status}
-                        </span>
-                      </div>
-                      <div className="text-xs md:text-sm flex justify-center md:justify-start">
-                        <button
-                          onClick={() => handleDisconnect(account.id)}
-                          className="px-1 md:px-3 py-1 md:bg-red-100 text-red-700 md:hover:bg-red-200 rounded text-xs font-medium transition-colors whitespace-nowrap flex items-center justify-center md:justify-start gap-1"
-                        >
-                          <span className="hidden md:inline">Disconnect</span>
-                          <span className="md:hidden text-lg leading-none">
-                            ⋯
-                          </span>
-                        </button>
-                      </div>
+                <div className="min-h-[200px]">
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 text-khaki-600 animate-spin mb-2" />
+                      <p className="text-sm text-gray-500">Loading accounts...</p>
                     </div>
-                  ))}
+                  ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <AlertCircle className="w-8 h-8 text-red-500 mb-2" />
+                      <p className="text-sm text-red-600 font-medium">{error}</p>
+                      <button 
+                        onClick={fetchAccounts}
+                        className="mt-4 text-xs text-gray-500 hover:text-gray-700 underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  ) : accounts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <PlusCircle className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-900">No accounts connected</h3>
+                      <p className="text-xs text-gray-500 mt-1 max-w-[200px] mx-auto">
+                        Connect your Meta or TikTok Ads accounts to start managing them.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="">
+                      {accounts.map((account) => (
+                        <div
+                          key={account.id}
+                          className="px-4 py-3 rounded-lg bg-gray-100 mb-4 hover:bg-gray-50 transition-colors grid grid-cols-4 gap-2 md:gap-4 items-center"
+                        >
+                          <div className="text-xs md:text-sm text-gray-700 flex items-center gap-1 md:gap-2">
+                            {account.icon === "meta" ? (
+                              <MetaIcon />
+                            ) : (
+                              <TiktokIcon />
+                            )}
+                            <span className="truncate">{account.platform}</span>
+                          </div>
+                          <div className="text-xs md:text-sm text-gray-700 truncate whitespace-nowrap">
+                            {account.accountName}
+                          </div>
+                          <div className="text-xs md:text-sm">
+                            <span className="px-1 md:px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium whitespace-nowrap">
+                              {account.status}
+                            </span>
+                          </div>
+                          <div className="text-xs md:text-sm flex justify-center md:justify-start">
+                            <button
+                              onClick={() => handleDisconnect(account.id)}
+                              disabled={disconnectingId === account.id}
+                              className="px-1 md:px-3 py-1 md:bg-red-100 text-red-700 md:hover:bg-red-200 rounded text-xs font-medium transition-colors whitespace-nowrap flex items-center justify-center md:justify-start gap-1 disabled:opacity-50"
+                            >
+                              {disconnectingId === account.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <span className="hidden md:inline">Disconnect</span>
+                                  <span className="md:hidden text-lg leading-none">
+                                    ⋯
+                                  </span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

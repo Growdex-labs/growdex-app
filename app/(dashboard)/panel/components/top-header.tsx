@@ -42,7 +42,7 @@ export function TopHeader() {
         <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
           <Link href="/panel/profile">
             <img
-              src="/profile.png"
+              src={me?.avatarUrl ?? "/profile.png"}
               className="object-cover w-full h-full rounded-full"
               alt="profile-icon"
             />

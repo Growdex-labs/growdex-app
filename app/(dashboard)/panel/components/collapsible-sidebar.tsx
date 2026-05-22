@@ -46,7 +46,7 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
     { icon: LayoutDashboard, label: "Overview", href: "/panel" },
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
     { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
-    { icon: Settings, label: "Settings", href: "/panel/settings" },
+    { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
   ];
 
   const isActive = (href: string) => {
