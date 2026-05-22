@@ -66,11 +66,13 @@ function PlatformCard({
   isLoadingFund,
   onFund,
   accountName,
+  error,
 }: {
   platform: Platform;
   isLoadingFund: boolean;
   onFund: () => void;
   accountName: string;
+  error?: string | null;
 }) {
   const cfg = PLATFORM_CONFIG[platform];
 
@@ -89,6 +91,14 @@ function PlatformCard({
         <div className="flex items-center justify-center bg-gray-50 py-10 min-h-[190px]">
           {cfg.logo}
         </div>
+
+        {/* inline error alert inside the specific wallet card */}
+        {error && (
+          <div className="px-4 py-2 bg-red-50 border-t border-red-100 flex items-start gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-red-600 leading-normal">{error}</p>
+          </div>
+        )}
 
         {/* footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
@@ -124,6 +134,7 @@ export default function WalletPage() {
   const [paymentUrls, setPaymentUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cardErrors, setCardErrors] = useState<Record<string, string | null>>({});
   const [loadingPlatform, setLoadingPlatform] = useState<string | null>(null);
 
   /* Derive connected platforms from me context */
@@ -172,7 +183,7 @@ export default function WalletPage() {
   /* Open payment URL in a popup window */
   async function handleFund(platform: string) {
     setLoadingPlatform(platform);
-    setError(null);
+    setCardErrors((prev) => ({ ...prev, [platform]: null }));
     try {
       let billingUrl = paymentUrls[platform];
 
@@ -196,7 +207,7 @@ export default function WalletPage() {
       }
 
       if (!billingUrl) {
-        setError(`Could not retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.`);
+        setCardErrors((prev) => ({ ...prev, [platform]: `Could not retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.` }));
         setLoadingPlatform(null);
         return;
       }
@@ -211,7 +222,7 @@ export default function WalletPage() {
       );
       );
       if (!popup) {
-        setError("Popup blocked. Please allow popups for this site.");
+        setCardErrors((prev) => ({ ...prev, [platform]: "Popup blocked. Please allow popups for this site." }));
         setLoadingPlatform(null);
         return;
       }
@@ -241,7 +252,7 @@ export default function WalletPage() {
           return;
         }
       }
-      setError(`Failed to retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.`);
+      setCardErrors((prev) => ({ ...prev, [platform]: `Failed to retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.` }));
       setLoadingPlatform(null);
     }
   }
@@ -306,6 +317,7 @@ export default function WalletPage() {
                   platform={platform}
                   isLoadingFund={loadingPlatform === platform}
                   accountName={getAccountName(platform)}
+                  error={cardErrors[platform]}
                   onFund={() => {
                     handleFund(platform);
                   }}

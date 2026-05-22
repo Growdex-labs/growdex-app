@@ -80,8 +80,14 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
 
     const handleDevLogin = () => {
       console.warn('[DEV] Bypassing auth + MFA — injecting mock session');
+      if (typeof document !== 'undefined') {
+        document.cookie = "dev_session=true; path=/; max-age=86400; SameSite=Lax";
+        document.cookie = "access_token=mock-dev-token; path=/; max-age=86400; SameSite=Lax";
+      }
       toast.success('Dev session active — no backend required');
-      router.push('/panel');
+      setTimeout(() => {
+        window.location.href = '/panel';
+      }, 500);
     };
 
     return (
