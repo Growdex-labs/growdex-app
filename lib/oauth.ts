@@ -8,7 +8,7 @@ export type SocialPlatform = 'meta' | 'tiktok';
  */
 export const openOAuthPopup = (
   platform: SocialPlatform,
-  onSuccess: (data: { code?: string }) => void,
+  onSuccess: () => void,
   onError: (error: string) => void
 ): Window | null => {
   const width = 600;
@@ -42,7 +42,7 @@ export const openOAuthPopup = (
       isCompleted = true;
       window.removeEventListener('message', messageHandler);
       popup.close();
-      onSuccess({ code: event.data.code });
+      onSuccess();
     }
 
     if (event.data?.type === 'oauth_error' && event.data.platform === platform) {
@@ -68,23 +68,6 @@ export const openOAuthPopup = (
   return popup;
 };
 
-export const testConnectSocialAccount = async (platform: SocialPlatform) => {
-  const res = await apiFetch('/users/onboarding/connect/' + platform, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ code: 'test' }),
-  });
-
-  if (!res.ok) {
-    throw new Error('Failed to connect account');
-  }
-
-  const data = await res.json();
-  return data;
-};
-
 /**
  * Connect a social account via OAuth
  */
@@ -94,41 +77,7 @@ export const connectSocialAccount = async (
   return new Promise((resolve) => {
     openOAuthPopup(
       platform,
-      async ({ code }) => {
-        try {
-          if (platform === 'meta') {
-            resolve({ success: true });
-            return;
-          }
-
-          if (!code) {
-            throw new Error('OAuth code was not returned');
-          }
-
-          const response = await apiFetch(
-            `/users/onboarding/connect/${platform}`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ code }),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error('Failed to connect account');
-          }
-
-          const data = await response.json();
-          resolve({ success: true, data });
-        } catch (err) {
-          resolve({
-            success: false,
-            error: err instanceof Error ? err.message : 'OAuth failed',
-          });
-        }
-      },
+      () => resolve({ success: true }),
       (error) => resolve({ success: false, error })
     );
   });
