@@ -172,6 +172,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
 
   const [isGoingLive, setIsGoingLive] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [submissionSuccess, setSubmissionSuccess] = useState<string | null>(
+    null,
+  );
   const [creativesByPlatform, setCreativesByPlatform] = useState<
     Partial<Record<"meta" | "tiktok", CreativeDraft>>
   >({});
@@ -422,20 +425,49 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
   const handleGoLive = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmissionError(null);
+    setSubmissionSuccess(null);
 
     try {
       setIsGoingLive(true);
 
       await publishCampaign(campaignId as string);
+      const publishedCampaign = await waitForPublishCompletion(
+        campaignId as string,
+      );
 
-      window.location.href = "/panel/campaigns";
+      setSubmissionSuccess(
+        publishedCampaign.status === "active"
+          ? "Campaign is live."
+          : "Campaign publish completed.",
+      );
     } catch (err) {
       console.error("Go live error:", err);
       setSubmissionError(
         err instanceof Error ? err.message : "Failed to go live",
       );
+    } finally {
       setIsGoingLive(false);
     }
+  };
+
+  const waitForPublishCompletion = async (id: string) => {
+    const maxAttempts = 30;
+    const delayMs = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+      const campaign = await fetchCampaignById(id);
+      if (campaign.status === "active") {
+        return campaign;
+      }
+
+      if (campaign.status === "failed") {
+        throw new Error(campaign.publishError || "Campaign publishing failed.");
+      }
+    }
+
+    throw new Error("Campaign is still publishing. Check again in a moment.");
   };
 
   const handleCreativeSubmit = async (e?: React.FormEvent) => {
@@ -876,6 +908,11 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
               {submissionError && (
                 <p className="text-red-500 text-sm font-medium text-center">
                   {submissionError}
+                </p>
+              )}
+              {submissionSuccess && (
+                <p className="text-emerald-600 text-sm font-medium text-center">
+                  {submissionSuccess}
                 </p>
               )}
             </form>

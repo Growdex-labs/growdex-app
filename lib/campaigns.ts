@@ -64,6 +64,7 @@ export interface CampaignDto {
     endDate?: string;
   };
   status?: string;
+  publishError?: string | null;
   createdAt?: string;
 }
 
