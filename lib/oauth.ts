@@ -8,7 +8,7 @@ export type SocialPlatform = 'meta' | 'tiktok';
  */
 export const openOAuthPopup = (
   platform: SocialPlatform,
-  onSuccess: (data: { code: string }) => void,
+  onSuccess: (data: { code?: string }) => void,
   onError: (error: string) => void
 ): Window | null => {
   const width = 600;
@@ -30,9 +30,13 @@ export const openOAuthPopup = (
 
   // Track completion to avoid race condition between manual close and message receipt
   let isCompleted = false;
+  const allowedOrigins = new Set([
+    window.location.origin,
+    API_BASE_URL ? new URL(API_BASE_URL).origin : '',
+  ]);
 
   const messageHandler = (event: MessageEvent) => {
-    if (event.origin !== window.location.origin) return;
+    if (!allowedOrigins.has(event.origin)) return;
 
     if (event.data?.type === 'oauth_success' && event.data.platform === platform) {
       isCompleted = true;
@@ -92,6 +96,15 @@ export const connectSocialAccount = async (
       platform,
       async ({ code }) => {
         try {
+          if (platform === 'meta') {
+            resolve({ success: true });
+            return;
+          }
+
+          if (!code) {
+            throw new Error('OAuth code was not returned');
+          }
+
           const response = await apiFetch(
             `/users/onboarding/connect/${platform}`,
             {
