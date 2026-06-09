@@ -1,8 +1,9 @@
 "use client";
 
-import { mockCampaigns, getAdsByCampaignId } from "@/lib/mock-data";
+import { getAdsByCampaignId, type Campaign } from "@/lib/mock-data";
+import { fetchCampaignById, type CampaignDto } from "@/lib/campaigns";
 import { useRouter } from "next/navigation";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { CampaignsSidebar } from "../../components/campaigns-sidebar";
 import { CampaignHeader } from "./components/campaign-header";
@@ -32,14 +33,54 @@ export default function CampaignDetailPage({
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [activeSubTab, setActiveSubTab] = useState<string>("modular");
   const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { campaignId } = use(params);
   const router = useRouter();
 
-  // Find the campaign
-  const campaign = mockCampaigns.find((c) => c.id === campaignId);
   const campaignAds = getAdsByCampaignId(campaignId);
 
-  console.log(campaign);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCampaign = async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const data = await fetchCampaignById(campaignId);
+        if (isMounted) {
+          setCampaign(mapCampaign(data));
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        setLoadError(
+          err instanceof Error ? err.message : "Failed to load campaign",
+        );
+        setCampaign(null);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadCampaign();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [campaignId]);
+
+  if (isLoading) {
+    return (
+      <PanelLayout>
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-gray-500">Loading campaign...</div>
+        </div>
+      </PanelLayout>
+    );
+  }
 
   if (!campaign) {
     return (
@@ -50,7 +91,7 @@ export default function CampaignDetailPage({
               Campaign Not Found
             </h1>
             <p className="text-gray-600 mb-6">
-              The campaign you are looking for does not exist.
+              {loadError || "The campaign you are looking for does not exist."}
             </p>
             <button
               onClick={() => router.push("/panel/campaigns")}
@@ -276,4 +317,43 @@ export default function CampaignDetailPage({
       </div>
     </PanelLayout>
   );
+}
+
+function mapCampaign(campaign: CampaignDto): Campaign {
+  const createdAt = campaign.createdAt ? new Date(campaign.createdAt) : null;
+  const started =
+    createdAt && !Number.isNaN(createdAt.getTime())
+      ? new Intl.DateTimeFormat("en-GB", {
+          timeZone: "UTC",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(createdAt)
+      : "-";
+  const status = String(campaign.status ?? "scheduled").toLowerCase();
+
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    platforms: campaign.platforms ?? [],
+    started,
+    impressions: 0,
+    reach: { min: 0, max: 0 },
+    ctr: 0,
+    ctrTrend: 0,
+    status:
+      status === "active"
+        ? "active"
+        : status === "paused"
+          ? "paused"
+          : status === "suspended"
+            ? "suspended"
+            : "scheduled",
+    goal: campaign.goal,
+    description:
+      campaign.targeting?.locations?.length
+        ? `Targeting ${campaign.targeting.locations.join(", ")}`
+        : "No description provided.",
+    optimizationPercentage: 0,
+  };
 }

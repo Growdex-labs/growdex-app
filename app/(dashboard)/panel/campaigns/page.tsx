@@ -35,6 +35,12 @@ export default function CampaignsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [totalSpend, setTotalSpend] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isMetricMenuOpen, setIsMetricMenuOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [platformFilter, setPlatformFilter] = useState<"all" | "meta" | "tiktok">(
+    "all",
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -119,12 +125,21 @@ export default function CampaignsPage() {
     [campaigns],
   );
 
-  const displayedCampaigns =
+  const displayedCampaigns = (
     activeTab === "active"
       ? activeCampaigns
       : activeTab === "suspended"
         ? suspendedCampaigns
-        : scheduledCampaigns;
+        : scheduledCampaigns
+  ).filter((campaign) => {
+    const matchesSearch = campaign.name
+      .toLowerCase()
+      .includes(searchTerm.trim().toLowerCase());
+    const matchesPlatform =
+      platformFilter === "all" || campaign.platforms.includes(platformFilter);
+
+    return matchesSearch && matchesPlatform;
+  });
 
   return (
     <PanelLayout>
@@ -254,6 +269,8 @@ export default function CampaignsPage() {
                   <input
                     type="text"
                     placeholder="Search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                   />
                 </div>
@@ -270,24 +287,70 @@ export default function CampaignsPage() {
                   </Link>
 
                   {/* Add Metric */}
-                  <button className="hidden sm:flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => setIsMetricMenuOpen((value) => !value)}
+                    className="hidden sm:flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
+                  >
                     <FilePlus className="w-5 h-5" />
                     <span className="hidden sm:inline text-sm">Add metric</span>
                   </button>
 
                   {/* Filter */}
-                  <button className="flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => setIsFilterOpen((value) => !value)}
+                    className="flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
+                  >
                     <SlidersHorizontal className="w-5 h-5 text-peru-200" />
                     Filter
                   </button>
                 </div>
               </div>
 
+              {isMetricMenuOpen && (
+                <div className="mt-3 flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700">
+                  {["CTR", "CPC", "CPA", "Reach", "Impressions"].map(
+                    (metric) => (
+                      <button
+                        key={metric}
+                        type="button"
+                        className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50"
+                      >
+                        {metric}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+
+              {isFilterOpen && (
+                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 text-sm">
+                  <span className="font-medium text-gray-700">Platform</span>
+                  {(["all", "meta", "tiktok"] as const).map((platform) => (
+                    <button
+                      key={platform}
+                      type="button"
+                      onClick={() => setPlatformFilter(platform)}
+                      className={`rounded-full px-3 py-1 capitalize ${
+                        platformFilter === platform
+                          ? "bg-khaki-200 text-gray-900"
+                          : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {platform}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="relative flex-1 max-w-md mt-4 sm:hidden">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-100 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                 />
               </div>

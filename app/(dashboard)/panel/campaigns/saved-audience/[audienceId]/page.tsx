@@ -34,15 +34,20 @@ export default function SavedAudienceDetailPage({
 
   useEffect(() => {
     const loadAudience = async () => {
+      if (!isUuid(audienceId)) {
+        setAudience(null);
+        setError("The audience you are looking for does not exist.");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const data = await fetchAudienceById(audienceId);
         setAudience(data);
         setError(null);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch audience",
-        );
+        setError("The audience you are looking for does not exist.");
         setAudience(null);
       } finally {
         setLoading(false);
@@ -333,5 +338,11 @@ export default function SavedAudienceDetailPage({
         </div>
       </div>
     </PanelLayout>
+  );
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
   );
 }

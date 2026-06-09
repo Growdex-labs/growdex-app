@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock } from 'lucide-react';
 import { resetPassword } from '@/lib/auth';
@@ -15,9 +15,36 @@ function ResetPasswordContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (!token) {
+      toast.error('Invalid link');
+    }
+  }, [token]);
+
   if (!token) {
-    toast.error('Invalid link');
-    router.push('/login');
+    return (
+      <div className="max-w-md w-full space-y-8 p-8 text-center">
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+            <img src="/logo.png" alt="logo" />
+          </div>
+          <span className="font-bold text-2xl text-gray-900">Growdex</span>
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900">
+          Invalid reset link
+        </h2>
+        <p className="text-gray-600">
+          Request a new password reset link to continue.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push('/forgot-password')}
+          className="w-full py-3 px-4 rounded-lg text-gray-900 bg-khaki-200 hover:bg-khaki-300 font-medium"
+        >
+          Request reset link
+        </button>
+      </div>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

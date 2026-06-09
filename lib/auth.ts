@@ -18,6 +18,23 @@ export interface ApiResponse<T = any> {
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
+const compactOptionalFields = <T extends Record<string, unknown>>(value: T): T => {
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, entry]) => {
+      if (entry === "") return [];
+      if (
+        entry &&
+        typeof entry === "object" &&
+        !Array.isArray(entry)
+      ) {
+        const compacted = compactOptionalFields(entry as Record<string, unknown>);
+        return Object.keys(compacted).length ? [[key, compacted]] : [];
+      }
+      return [[key, entry]];
+    }),
+  ) as T;
+};
+
 const getMockResponse = (url: string, options?: RequestInit): Response => {
   let data: any = { success: true };
 
@@ -148,9 +165,7 @@ export const apiFetch = async (
     '/auth/refresh',
     '/auth/login',
     '/auth/register',
-    '/auth/mfa/verify',
-    '/auth/mfa/enable',
-    '/auth/mfa/confirm',
+    '/auth/verify-mfa',
     '/auth/mfa/status',
     '/auth/mfa/disable',
     '/auth/verify-email',
@@ -303,10 +318,11 @@ export const updateCurrentUser = async (payload: {
     googleUrl?: string;
   };
 }) => {
+  const compactPayload = compactOptionalFields(payload);
   const res = await apiFetch("/users/me", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(compactPayload),
   });
 
   if (!res.ok) {
@@ -321,7 +337,7 @@ export const updateCurrentUser = async (payload: {
  * Verify MFA code during login challenge
  */
 export const verifyMFA = async (token: string) => {
-  const res = await apiFetch('/auth/mfa/verify', {
+  const res = await apiFetch('/auth/verify-mfa', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
@@ -357,7 +373,7 @@ export const enableMFA = async () => {
  * Finalize MFA activation (requires access_token)
  */
 export const confirmMFA = async (token: string) => {
-  const res = await apiFetch('/auth/mfa/confirm', {
+  const res = await apiFetch('/auth/verify-mfa', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
@@ -368,7 +384,7 @@ export const confirmMFA = async (token: string) => {
     throw err;
   }
 
-  return res.status === 201 ? { success: true } : res.json();
+  return res.json();
 };
 
 /**
