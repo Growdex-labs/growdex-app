@@ -62,7 +62,7 @@ export default function IntegrationSuccessPage() {
             reconnecting.
           </p>
           <a
-            href="/settings/integrations"
+            href="/panel/settings/manage-account"
             className="inline-flex rounded-md bg-black px-4 py-2 text-white text-sm"
           >
             Go to integrations
@@ -105,7 +105,7 @@ export default function IntegrationSuccessPage() {
             Go to dashboard
           </a>
           <a
-            href="/settings/integrations"
+            href="/panel/settings/manage-account"
             className="rounded-md border px-4 py-2 text-sm"
           >
             Manage integrations
