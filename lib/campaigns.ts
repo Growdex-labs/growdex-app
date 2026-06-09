@@ -40,6 +40,7 @@ export interface CreateCampaignPayload {
     headline: string;
     cta: string;
     mediaUrl: string;
+    landingPageUrl?: string;
   }>;
 }
 

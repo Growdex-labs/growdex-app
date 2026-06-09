@@ -539,6 +539,7 @@ export default function NewCampaignPage() {
         headline: String(c?.headline ?? c?.heading ?? ""),
         cta: String(c?.cta ?? "LEARN_MORE"),
         mediaUrl: String(c?.mediaUrl ?? c?.imageUrl ?? ""),
+        landingPageUrl: landingPageUrl || undefined,
       }))
       .filter((c) => Boolean(c.mediaUrl));
 
