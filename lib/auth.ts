@@ -35,10 +35,107 @@ const compactOptionalFields = <T extends Record<string, unknown>>(value: T): T =
   ) as T;
 };
 
+const isMockableDevUrl = (url: string) =>
+  url === "/users/me" ||
+  url === "/users/me/user" ||
+  url === "/users/ad-accounts/billing" ||
+  url === "/users/onboarding/status" ||
+  url === "/notifications/history" ||
+  url === "/media/signature-stamp" ||
+  url === "/auth/mfa/status" ||
+  url === "/auth/mfa/enable" ||
+  url === "/auth/mfa/disable" ||
+  url === "/auth/verify-mfa" ||
+  url === "/campaigns" ||
+  url === "/campaigns/metrics" ||
+  url.startsWith("/campaigns/") ||
+  url === "/audiences" ||
+  url.startsWith("/audiences/");
+
 const getMockResponse = (url: string, options?: RequestInit): Response => {
   let data: any = { success: true };
+  let status = 200;
+  const mockCampaigns = [
+    {
+      id: "fe8df890-0917-4cd0-9d41-fb2fd2fbfcc7",
+      name: "Growdex Meta Traffic Test",
+      goal: "TRAFFIC",
+      platforms: ["meta"],
+      targeting: {
+        locations: ["NG"],
+        ageMin: 18,
+        ageMax: 65,
+        gender: "all",
+        interests: ["technology", "business"],
+      },
+      budget: {
+        amount: 500000,
+        currency: "NGN",
+        type: "daily",
+        startDate: "2026-06-09T08:00:00.000Z",
+        endDate: "2026-06-16T08:00:00.000Z",
+      },
+      status: "scheduled",
+      createdAt: "2026-06-09T08:00:00.000Z",
+    },
+    {
+      id: "18f4520f-5424-450d-9e8f-35d9b8450c09",
+      name: "Codex Test Campaign",
+      goal: "AWARENESS",
+      platforms: ["meta", "tiktok"],
+      targeting: {
+        locations: ["NG"],
+        ageMin: 18,
+        ageMax: 65,
+        gender: "all",
+        interests: ["marketing"],
+      },
+      budget: {
+        amount: 500000,
+        currency: "NGN",
+        type: "daily",
+        startDate: "2026-06-09T08:00:00.000Z",
+        endDate: "2026-06-16T08:00:00.000Z",
+      },
+      status: "scheduled",
+      createdAt: "2026-06-09T08:00:00.000Z",
+    },
+  ];
+  const mockAudiences = [
+    {
+      id: "7a6d3fb4-d254-4f8a-b4c3-4dd2dd923733",
+      name: "Growth audience",
+      country: ["NG"],
+      locations: ["Lagos"],
+      interests: ["Technology"],
+      platforms: ["meta", "tiktok"],
+      metaConfig: { ageMin: 18, ageMax: 65, gender: "ALL" },
+      tiktokConfig: {
+        ageRanges: ["AGE_18_24", "AGE_25_34"],
+        gender: "GENDER_UNLIMITED",
+      },
+    },
+  ];
 
-  if (url === "/users/me") {
+  if (url === "/users/me" && options?.method === "PATCH") {
+    if (options?.body && typeof window !== "undefined") {
+      try {
+        const bodyObj = JSON.parse(options.body as string);
+        if (bodyObj.profile) {
+          const currentProfile = localStorage.getItem("mock_profile")
+            ? JSON.parse(localStorage.getItem("mock_profile")!)
+            : { firstName: "Dev", lastName: "User", phone: "1234567890", country: "United States" };
+          localStorage.setItem("mock_profile", JSON.stringify({ ...currentProfile, ...bodyObj.profile }));
+        }
+        if (bodyObj.brand) {
+          const currentBrand = localStorage.getItem("mock_brand")
+            ? JSON.parse(localStorage.getItem("mock_brand")!)
+            : { name: "Mock Brand", size: 10, businessAddress: "123 Dev Street", instagramUrl: "https://instagram.com/mock", facebookUrl: "https://facebook.com/mock", googleUrl: "https://google.com/mock", twitterUrl: "https://twitter.com/mock" };
+          localStorage.setItem("mock_brand", JSON.stringify({ ...currentBrand, ...bodyObj.brand }));
+        }
+      } catch (e) {}
+    }
+  } else if (url === "/users/me") {
     let mockAvatar: string | null = null;
     let mockProfileStr = null;
     let mockBrandStr = null;
@@ -83,29 +180,111 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
         }
       } catch (e) {}
     }
-  } else if (url === "/users/me" && options?.method === "PATCH") {
-    if (options?.body && typeof window !== "undefined") {
-      try {
-        const bodyObj = JSON.parse(options.body as string);
-        if (bodyObj.profile) {
-          const currentProfile = localStorage.getItem("mock_profile")
-            ? JSON.parse(localStorage.getItem("mock_profile")!)
-            : { firstName: "Dev", lastName: "User", phone: "1234567890", country: "United States" };
-          localStorage.setItem("mock_profile", JSON.stringify({ ...currentProfile, ...bodyObj.profile }));
-        }
-        if (bodyObj.brand) {
-          const currentBrand = localStorage.getItem("mock_brand")
-            ? JSON.parse(localStorage.getItem("mock_brand")!)
-            : { name: "Mock Brand", size: 10, businessAddress: "123 Dev Street", instagramUrl: "https://instagram.com/mock", facebookUrl: "https://facebook.com/mock", googleUrl: "https://google.com/mock", twitterUrl: "https://twitter.com/mock" };
-          localStorage.setItem("mock_brand", JSON.stringify({ ...currentBrand, ...bodyObj.brand }));
-        }
-      } catch (e) {}
-    }
   } else if (url === "/users/ad-accounts/billing") {
     data = [
       { platform: "meta", billingUrl: "https://www.facebook.com/ads/manager/billing" },
       { platform: "tiktok", billingUrl: "https://ads.tiktok.com/i18n/dashboard" }
     ];
+  } else if (url === "/users/onboarding/status") {
+    data = {
+      meta: {
+        connected: true,
+        needsReauth: false,
+        assets: [
+          {
+            adAccountId: "mock-meta-123",
+            adAccountName: "Growdex Meta Ads",
+            pageName: "Growdex",
+            instagram: "growdex",
+            isPrimary: true,
+          },
+        ],
+      },
+      tiktok: {
+        connected: true,
+        needsReauth: false,
+        assets: [
+          {
+            advertiserId: "mock-tiktok-456",
+            name: "Growdex TikTok Ads",
+            isPrimary: true,
+          },
+        ],
+      },
+    };
+  } else if (url === "/notifications/history") {
+    data = {
+      notifications: [
+        {
+          id: "mock-notification-1",
+          content: { title: "Campaign ready", message: "Your campaign draft is ready to review." },
+          timestamp: "2026-06-10T08:00:00.000Z",
+          isRead: false,
+        },
+      ],
+    };
+  } else if (url === "/auth/mfa/status") {
+    data = { status: false };
+  } else if (url === "/auth/mfa/enable") {
+    data = {
+      status: "MFA_SETUP_REQUIRED",
+      uri: "otpauth://totp/Growdex:devtest@growdex.io?secret=JBSWY3DPEHPK3PXP&issuer=Growdex",
+      secret: "JBSWY3DPEHPK3PXP",
+    };
+  } else if (url === "/auth/mfa/disable" || url === "/auth/verify-mfa") {
+    data = { success: true, status: true };
+  } else if (url === "/campaigns" && options?.method === "POST") {
+    data = {
+      ...mockCampaigns[0],
+      id: "3e8d9f6a-820e-4cc8-a6d0-9729ff9d9fb8",
+      status: "scheduled",
+    };
+  } else if (url === "/campaigns") {
+    data = mockCampaigns;
+  } else if (url === "/campaigns/metrics") {
+    data = {
+      summary: {
+        totalSpend: 0,
+        activeCount: 0,
+        suspendedCount: 0,
+        scheduledCount: mockCampaigns.length,
+        completedCount: 0,
+      },
+      campaigns: mockCampaigns,
+    };
+  } else if (url.startsWith("/campaigns/") && url.endsWith("/publish")) {
+    data = { success: true, status: "publishing" };
+  } else if (url.startsWith("/campaigns/")) {
+    const id = decodeURIComponent(url.replace("/campaigns/", ""));
+    const campaign = mockCampaigns.find((item) => item.id === id);
+    if (campaign) {
+      data = campaign;
+    } else {
+      status = 404;
+      data = { message: "Campaign not found" };
+    }
+  } else if (url === "/audiences" && options?.method === "POST") {
+    try {
+      const body = options.body ? JSON.parse(options.body as string) : {};
+      data = {
+        ...mockAudiences[0],
+        ...body,
+        id: "a6a70d27-428a-4b7e-877b-b5429f13f0e19",
+      };
+    } catch {
+      data = mockAudiences[0];
+    }
+  } else if (url === "/audiences") {
+    data = mockAudiences;
+  } else if (url.startsWith("/audiences/")) {
+    const id = decodeURIComponent(url.replace("/audiences/", ""));
+    const audience = mockAudiences.find((item) => item.id === id);
+    if (audience) {
+      data = audience;
+    } else {
+      status = 404;
+      data = { message: "Audience not found" };
+    }
   } else if (url === "/media/signature-stamp") {
     data = {
       signature: "mock_signature",
@@ -115,7 +294,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
   }
 
   return new Response(JSON.stringify(data), {
-    status: 200,
+    status,
     headers: { "Content-Type": "application/json" },
   });
 };
@@ -132,6 +311,10 @@ export const apiFetch = async (
   const hasDevSession = typeof document !== 'undefined' && document.cookie.includes('dev_session=true');
 
   if (isDev && hasDevSession) {
+    if (isMockableDevUrl(url)) {
+      return getMockResponse(url, options);
+    }
+
     try {
       if (!API_BASE_URL) {
         throw new Error("API_BASE_URL is not defined");
@@ -141,13 +324,23 @@ export const apiFetch = async (
         credentials: "include",
       });
 
-      if (res.status === 401 || res.status >= 500) {
+      if ((res.status === 401 || res.status >= 500) && isMockableDevUrl(url)) {
         return getMockResponse(url, options);
       }
       return res;
     } catch (err) {
-      console.warn(`[DEV] Backend connection failed for ${url} — returning mock response.`);
-      return getMockResponse(url, options);
+      return new Response(
+        JSON.stringify({
+          message:
+            err instanceof Error
+              ? err.message
+              : `Backend connection failed for ${url}`,
+        }),
+        {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
   }
 

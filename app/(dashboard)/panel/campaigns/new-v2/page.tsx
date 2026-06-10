@@ -18,7 +18,7 @@ export default function CreateCampaignPage() {
       interests: [] as string[],
     },
     budget: {
-      amount: 100,
+      amount: 1000,
       currency: "USD",
       type: "daily",
       startDate: new Date().toISOString().slice(0, 16),
@@ -114,11 +114,76 @@ export default function CreateCampaignPage() {
     });
   };
 
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      return "Campaign name is required.";
+    }
+
+    if (formData.platforms.length === 0) {
+      return "Select at least one platform.";
+    }
+
+    if (
+      !Number.isFinite(formData.budget.amount) ||
+      formData.budget.amount < 1000
+    ) {
+      return "Budget amount must be at least 1000.";
+    }
+
+    const startDate = new Date(formData.budget.startDate);
+    if (!formData.budget.startDate || Number.isNaN(startDate.getTime())) {
+      return "Start date is required.";
+    }
+
+    if (formData.budget.endDate) {
+      const endDate = new Date(formData.budget.endDate);
+      if (Number.isNaN(endDate.getTime())) {
+        return "End date is invalid.";
+      }
+      if (endDate.getTime() < startDate.getTime()) {
+        return "End date must be after the start date.";
+      }
+    }
+
+    if (
+      formData.targeting.ageMin < 18 ||
+      formData.targeting.ageMax > 65 ||
+      formData.targeting.ageMin > formData.targeting.ageMax
+    ) {
+      return "Audience age range must stay between 18 and 65.";
+    }
+
+    const mediaUrl = formData.creatives[0].mediaUrl.trim();
+    if (!mediaUrl) {
+      return "Media URL is required.";
+    }
+    if (!mediaUrl.startsWith("https://")) {
+      return "Media URL must use HTTPS.";
+    }
+
+    if (!formData.creatives[0].primaryText.trim()) {
+      return "Primary text is required.";
+    }
+
+    if (!formData.creatives[0].headline.trim()) {
+      return "Headline is required.";
+    }
+
+    return "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
     setSuccess(false);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       // Create a shallow copy structure where we need to modify nested fields
@@ -156,10 +221,16 @@ export default function CreateCampaignPage() {
         throw new Error(json.message || "Failed to create campaign");
       }
 
+      const publishRes = await apiFetch(`/campaigns/${json.id}/publish`, {
+        method: "POST",
+      });
+
+      if (!publishRes.ok) {
+        const publishJson = await publishRes.json().catch(() => null);
+        throw new Error(publishJson?.message || "Failed to publish campaign");
+      }
+
       setSuccess(true);
-      // Automatically publish after creation for a seamless flow,
-      // or redirect to dashboard
-      await apiFetch(`/campaigns/${json.id}/publish`, { method: "POST" });
 
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
@@ -183,7 +254,7 @@ export default function CreateCampaignPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="campaign-form">
+      <form onSubmit={handleSubmit} className="campaign-form" noValidate>
         <div className="form-grid">
           {/* LEFT COLUMN */}
           <div className="form-column">

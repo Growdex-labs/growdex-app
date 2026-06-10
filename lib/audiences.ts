@@ -44,7 +44,8 @@ export const createAudience = async (payload: CreateAudiencePayload) => {
     throw new Error(`Create audience failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+  return data?.data ?? data;
 };
 
 export const fetchAudiences = async (): Promise<Audience[]> => {
@@ -57,7 +58,13 @@ export const fetchAudiences = async (): Promise<Audience[]> => {
     throw new Error(`Fetch audiences failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.audiences)) return data.audiences;
+  if (Array.isArray(data?.data)) return data.data;
+
+  throw new Error("Fetch audiences returned an invalid response shape");
 };
 
 export const fetchAudienceById = async (id: string): Promise<Audience> => {
@@ -70,7 +77,8 @@ export const fetchAudienceById = async (id: string): Promise<Audience> => {
     throw new Error(`Fetch audience failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+  return data?.data ?? data;
 };
 
 export const updateAudience = async (
@@ -88,7 +96,8 @@ export const updateAudience = async (
     throw new Error(`Update audience failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+  return data?.data ?? data;
 };
 
 export const deleteAudience = async (id: string) => {

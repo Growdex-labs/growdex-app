@@ -83,6 +83,7 @@ export default function MyProfilePage(): JSX.Element {
             googleLink: me.brand?.googleUrl ?? "",
             instagramLink: me.brand?.instagramUrl ?? "",
             businessAddress: me.brand?.businessAddress ?? "",
+            password: "",
         });
         initializedRef.current = true;
     }
@@ -108,6 +109,7 @@ export default function MyProfilePage(): JSX.Element {
             googleLink: me.brand?.googleUrl ?? "",
             instagramLink: me.brand?.instagramUrl ?? "",
             businessAddress: me.brand?.businessAddress ?? "",
+            password: "",
           });
         // Revert avatar preview
         setProfileImage(me.avatarUrl ?? "/profile.png");

@@ -167,10 +167,7 @@ export default function WalletPage() {
         }
       } catch (err) {
         console.error("Failed to fetch billing URLs on mount", err);
-        // In production we show the error; in development we allow rendering cards normally
-        if (process.env.NEXT_PUBLIC_APP_ENV !== 'development') {
-          if (mounted) setError("Failed to load billing information.");
-        }
+        if (mounted) setError("Failed to load billing information.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -198,14 +195,6 @@ export default function WalletPage() {
         }
       }
 
-      // Development fallback if connection doesn't exist on the backend
-      if (!billingUrl && process.env.NEXT_PUBLIC_APP_ENV === 'development') {
-        console.warn(`[DEV] No billing URL found for ${platform} — using local fallback`);
-        billingUrl = platform === 'meta'
-          ? 'https://www.facebook.com/ads/manager/billing'
-          : 'https://ads.tiktok.com/i18n/dashboard';
-      }
-
       if (!billingUrl) {
         setCardErrors((prev) => ({ ...prev, [platform]: `Could not retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.` }));
         setLoadingPlatform(null);
@@ -230,27 +219,6 @@ export default function WalletPage() {
       }, 500);
     } catch (err) {
       console.error(`Failed to load billing URL for ${platform}`, err);
-      
-      // Development fallback on error/network failure
-      if (process.env.NEXT_PUBLIC_APP_ENV === 'development') {
-        const fallbackUrl = platform === 'meta'
-          ? 'https://www.facebook.com/ads/manager/billing'
-          : 'https://ads.tiktok.com/i18n/dashboard';
-        const w = 700, h = 800;
-        const left = window.screenX + (window.outerWidth - w) / 2;
-        const top = window.screenY + (window.outerHeight - h) / 2;
-        const popup = window.open(
-          fallbackUrl,
-          `${platform}_payment`,
-          `width=${w},height=${h},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`,
-        );
-        if (popup) {
-          const timer = setInterval(() => {
-            if (popup.closed) { clearInterval(timer); setLoadingPlatform(null); }
-          }, 500);
-          return;
-        }
-      }
       setCardErrors((prev) => ({ ...prev, [platform]: `Failed to retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.` }));
       setLoadingPlatform(null);
     }

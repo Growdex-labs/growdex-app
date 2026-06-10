@@ -23,7 +23,7 @@ export default function SupportAndHelpSettingsPage() {
         "Get personalized support or submit a tickets directly to our team.",
       emoji: "🔒",
       buttonText: "Contact Support",
-      buttonHref: "#",
+      buttonHref: "mailto:support@growdex.ai?subject=Growdex%20support%20request",
     },
     {
       id: "feedback",
@@ -31,7 +31,7 @@ export default function SupportAndHelpSettingsPage() {
       description: "Share ideas or report issues to help us improve Growdex.",
       emoji: "🔒",
       buttonText: "Give Feedback",
-      buttonHref: "#",
+      buttonHref: "mailto:feedback@growdex.ai?subject=Growdex%20product%20feedback",
     },
   ];
 

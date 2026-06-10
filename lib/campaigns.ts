@@ -107,7 +107,13 @@ export const fetchCampaigns = async (): Promise<CampaignDto[]> => {
     throw new Error(`Fetch campaigns failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.campaigns)) return data.campaigns;
+  if (Array.isArray(data?.data)) return data.data;
+
+  throw new Error("Fetch campaigns returned an invalid response shape");
 };
 
 export const fetchCampaignById = async (id: string): Promise<CampaignDto> => {
@@ -120,7 +126,14 @@ export const fetchCampaignById = async (id: string): Promise<CampaignDto> => {
     throw new Error(`Fetch campaign by id failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+
+  if (data?.id) return data;
+  if (data?.data?.id) {
+    return data.data;
+  }
+
+  throw new Error("Fetch campaign by id returned an invalid response shape");
 };
 
 export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
@@ -131,7 +144,14 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
     throw new Error(`Fetch campaign metrics failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+
+  if (data?.summary && Array.isArray(data?.campaigns)) return data;
+  if (data?.data?.summary && Array.isArray(data?.data?.campaigns)) {
+    return data.data;
+  }
+
+  throw new Error("Fetch campaign metrics returned an invalid response shape");
 };
 
 export const updateCampaign = async (

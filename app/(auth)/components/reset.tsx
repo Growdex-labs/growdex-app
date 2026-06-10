@@ -151,7 +151,7 @@ function ResetPasswordContent() {
             disabled={isLoading}
             className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-gray-900 bg-khaki-200 hover:bg-khaki-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Resetting...' : 'Go to Sign in'}
+            {isLoading ? 'Resetting...' : 'Reset password'}
           </button>
         </div>
 
