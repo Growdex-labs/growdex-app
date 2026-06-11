@@ -10,7 +10,8 @@ export const useGoogleAuth = () => {
 
     try {
       // Full-page redirect to your backend OAuth endpoint
-      window.location.href = process.env.NEXT_PUBLIC_BACKEND_API_URL + '/auth/google';
+      const oauthBase = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? process.env.NEXT_PUBLIC_BACKEND_API_URL;
+      window.location.href = oauthBase + '/auth/google';
     } catch (err) {
       console.error('Google authentication error:', err);
       setError('Google authentication failed. Please try again.');
