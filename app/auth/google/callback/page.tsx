@@ -2,7 +2,11 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const DIRECT_API = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? process.env.NEXT_PUBLIC_BACKEND_API_URL ?? '';
+const DIRECT_API = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
+if (!DIRECT_API) {
+  throw new Error('NEXT_PUBLIC_GOOGLE_AUTH_URL or NEXT_PUBLIC_BACKEND_API_URL must be defined');
+}
 
 async function fetchUserDirect() {
   const res = await fetch(`${DIRECT_API}/users/me`, {
