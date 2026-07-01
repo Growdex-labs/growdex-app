@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { login, register } from '@/lib/auth';
+import { login, register, resendVerification } from '@/lib/auth';
 import { Lock, FlaskConical } from 'lucide-react';
 import Link from 'next/link';
 import { GoogleBtn } from './google-btn';
@@ -16,16 +16,36 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+    const [needsVerification, setNeedsVerification] = useState(false);
+    const [isResending, setIsResending] = useState(false);
+
+    const handleResend = async () => {
+      setIsResending(true);
+      try {
+        await resendVerification(email);
+        toast.success('Verification email sent', { description: 'Check your inbox.' });
+      } catch {
+        toast.error('Could not resend verification email');
+      } finally {
+        setIsResending(false);
+      }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsLoading(true);
       setError('');
+      setNeedsVerification(false);
 
       try {
         const response = isAuthType === 'login'
         ? await login(email, password)
         : await register(email, password);
+
+        if (response.status === 'EMAIL_NOT_VERIFIED') {
+          setNeedsVerification(true);
+          return;
+        }
 
         if (response.status === 'MFA_SETUP_REQUIRED' || response.status === 'MFA_CHALLENGE') {
           sessionStorage.removeItem('mfa_status');
@@ -126,6 +146,20 @@ export default function AuthForm({ title, subTitle = '', isAuthType }: { title: 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-1 py-1 rounded-lg text-xs text-center">
                 {error}
+              </div>
+            )}
+
+            {needsVerification && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-lg text-sm text-center space-y-2">
+                <p>Please verify your email before signing in. Check your inbox for the verification link.</p>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={isResending}
+                  className="font-semibold underline hover:no-underline disabled:opacity-50"
+                >
+                  {isResending ? 'Sending...' : 'Resend verification email'}
+                </button>
               </div>
             )}
 
