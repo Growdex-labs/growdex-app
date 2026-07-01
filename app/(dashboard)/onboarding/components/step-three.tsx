@@ -1,69 +1,83 @@
-interface StepThreeProps {
-    isLoading :boolean;
-    handleGoToDashboard: () => void;
+import { ChangeEvent } from "react";
+import { FormDataProps } from "../page";
+import { StepHeading, PrimaryButton, SkipLink } from "./onboarding-layout";
+
+interface StepGoalsProps {
+  formData: FormDataProps;
+  toggleGoal: (goal: string) => void;
+  change: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  onNext: () => void;
+  onSkip: () => void;
+  isLoading?: boolean;
 }
 
-export function StepThreeOnboarding({ isLoading, handleGoToDashboard }: StepThreeProps) {
-    return (
-        <div>
-              <div className="mb-12">
-                <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
-                  You're all set up!
-                </h1>
-                <p className="text-xl text-gray-700">
-                  Let's help you get started. Take the Growdex Setup Wizard
-                </p>
-              </div>
+const GOALS = [
+  { id: "leads", icon: "🎯", title: "Generate Leads", description: "Generate prospects and inquiries" },
+  { id: "sales", icon: "💰", title: "Generate Sales", description: "Drive purchases and revenue" },
+  { id: "traffic", icon: "🚀", title: "Drive Traffic", description: "Send people to your website" },
+  { id: "awareness", icon: "📣", title: "Build Awareness", description: "Increase reach and visibility" },
+];
 
-              <ul className="space-y-3 mb-12">
-                <li className="flex items-center gap-3 text-gray-700">
-                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Create your first campaign
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Connect your social accounts
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Fund your ad wallet
-                </li>
-              </ul>
+export function StepThreeOnboarding({ formData, toggleGoal, change, onNext, onSkip, isLoading }: StepGoalsProps) {
+  return (
+    <div>
+      <StepHeading
+        title="Set your marketing goals"
+        subtitle="We'll use your goals to recommend the right campaign strategies and optimization opportunities."
+      />
 
-              <div className="flex justify-between items-center">
-                <button
-                  onClick={handleGoToDashboard}
-                  disabled={isLoading}
-                  className="px-8 py-3 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Completing...' : 'Go to dashboard'}
-                </button>
-                {/* <button
-                  onClick={handleSetupLater}
-                  disabled={isLoading}
-                  className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-                >
-                  Setup later
-                </button> */}
-              </div>
-            </div>
-    );
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {GOALS.map((goal) => {
+          const selected = formData.goals.includes(goal.id);
+          return (
+            <button
+              key={goal.id}
+              type="button"
+              onClick={() => toggleGoal(goal.id)}
+              className={`relative flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
+                selected
+                  ? "border-khaki-300 bg-dimYellow"
+                  : "border-[#c8cbd7] bg-[#f9faff] hover:border-khaki-300"
+              }`}
+            >
+              <span className="text-xl leading-none">{goal.icon}</span>
+              <span className="flex flex-col">
+                <span className="text-sm font-semibold text-[#333]">{goal.title}</span>
+                <span className="mt-0.5 text-xs text-[#666]">{goal.description}</span>
+              </span>
+              {selected && (
+                <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-md bg-khaki-300 text-[#333]">
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 10.5L8 14.5L16 5.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-8">
+        <p className="text-xs text-[#666]">Don&apos;t see your goal?</p>
+        <p className="mb-2 text-sm font-medium text-khaki-300">Tell Growdex what you want to achieve</p>
+        <textarea
+          name="customGoal"
+          value={formData.customGoal}
+          onChange={change}
+          rows={3}
+          placeholder="I want more leads for my real estate company in Lagos."
+          className="w-full resize-none rounded-xl border border-[#c8cbd7] bg-[#f9faff] px-4 py-3 text-sm text-[#4d4d4d] outline-none placeholder:text-[#c8cbd7] focus:border-khaki-300 focus:ring-2 focus:ring-khaki-200/40"
+        />
+      </div>
+
+      <div className="mt-8 flex items-center justify-between">
+        <PrimaryButton onClick={onNext} disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Next'}
+        </PrimaryButton>
+        <SkipLink onClick={onSkip} disabled={isLoading}>
+          I&apos;ll finish this later
+        </SkipLink>
+      </div>
+    </div>
+  );
 }

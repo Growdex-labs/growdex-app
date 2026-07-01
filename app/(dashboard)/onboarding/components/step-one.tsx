@@ -1,102 +1,80 @@
 import { ChangeEvent } from "react";
 import { FormDataProps } from "../page";
+import { StepHeading, PrimaryButton, SkipLink } from "./onboarding-layout";
+import { OnboardingField, FieldBadge } from "./field";
 
-interface OnboardStepProps {
-    formData: FormDataProps;
-    inputChange: (e: ChangeEvent<HTMLInputElement>) => void;
-    onNext: () => void;
-    isLoading: boolean;
-};
+interface StepProfileProps {
+  formData: FormDataProps;
+  inputChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onNext: () => void;
+  onSkip: () => void;
+  isLoading: boolean;
+}
 
-export function StepOneOnboarding({formData, inputChange, onNext, isLoading}: OnboardStepProps) {
-    return (
-        <div>
-            <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-                <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
-                Welcome to Growdex!
-                </h1>
-            </div>
-            <p className="text-lg md:text-xl text-gray-700">
-                The Smart Ad Management Tool for Modern Businesses
-            </p>
-            </div>
+export function StepOneOnboarding({ formData, inputChange, onNext, onSkip, isLoading }: StepProfileProps) {
+  const organizationMissing = !formData.organizationName;
 
-            <div className="grid grid-cols-2 gap-6 mb-8">
-            <div>
-                <label className="block text-xs md:text-sm text-gray-500 mb-2">
-                Your first name <span className="text-red-500">*</span>
-                </label>
-                <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={inputChange}
-                required
-                placeholder="John"
-                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-            </div>
+  return (
+    <div>
+      <StepHeading
+        title="Manage Your Advertising in One Place"
+        subtitle="Create, monitor, and optimize campaigns across multiple platforms."
+      />
 
-            <div>
-                <label className="block text-xs md:text-sm text-gray-500 mb-2">
-                Your last name <span className="text-red-500">*</span>
-                </label>
-                <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={inputChange}
-                required
-                placeholder="Doe"
-                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-            </div>
-
-            <div>
-                <label className="block text-xs md:text-sm text-gray-500 mb-2">
-                Organization name
-                </label>
-                <input
-                type="text"
-                name="organizationName"
-                value={formData.organizationName}
-                onChange={inputChange}
-                placeholder="Doe Junior"
-                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-            </div>
-
-            <div>
-                <label className="block text-xs md:text-sm text-gray-500 mb-2">
-                Organization size
-                </label>
-                <input
-                type="number"
-                name="organizationSize"
-                value={formData.organizationSize}
-                onChange={inputChange}
-                placeholder="25"
-                className="w-full px-2 md:px-4 py-1 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-            </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-            <button
-                onClick={onNext}
-                disabled={isLoading}
-                className="px-8 py-3 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-                {isLoading ? 'Saving...' : 'Next'}
-            </button>
-            <button
-                onClick={onNext}
-                className="text-gray-400 text-sm md:text-base hover:text-gray-600 transition-colors"
-            >
-                Setup social accounts
-            </button>
-            </div>
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <OnboardingField
+            label="Your name"
+            name="firstName"
+            value={formData.firstName}
+            onChange={inputChange}
+            placeholder="John"
+          />
+          <OnboardingField
+            label="Last name"
+            name="lastName"
+            value={formData.lastName}
+            onChange={inputChange}
+            placeholder="Doe"
+          />
         </div>
-    );
+
+        <OnboardingField
+          label="Organization name"
+          name="organizationName"
+          value={formData.organizationName}
+          onChange={inputChange}
+          placeholder="Doe Junior"
+          required
+          badge={organizationMissing ? <FieldBadge>Required</FieldBadge> : undefined}
+        />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <OnboardingField
+            label="Industry"
+            name="industry"
+            value={formData.industry}
+            onChange={inputChange}
+            placeholder="Real estate"
+          />
+          <OnboardingField
+            label="Monthly budget"
+            name="monthlyBudget"
+            value={formData.monthlyBudget}
+            onChange={inputChange}
+            placeholder="$1,000 - $5,000"
+          />
+        </div>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between">
+        <PrimaryButton onClick={onNext} disabled={isLoading}>
+          {isLoading ? "Saving..." : "Next"}
+        </PrimaryButton>
+        <SkipLink onClick={onSkip} disabled={isLoading}>
+          Setup social accounts later
+        </SkipLink>
+      </div>
+    </div>
+  );
 }

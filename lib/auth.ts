@@ -10,7 +10,7 @@
  * Use `apiFetch` for all authenticated requests.
  */
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -39,6 +39,9 @@ const isMockableDevUrl = (url: string) =>
   url === "/users/me" ||
   url === "/users/me/user" ||
   url === "/users/ad-accounts/billing" ||
+  url === "/users/onboarding" ||
+  url === "/users/onboarding/business" ||
+  url === "/users/onboarding/goals" ||
   url === "/users/onboarding/status" ||
   url === "/notifications/history" ||
   url === "/media/signature-stamp" ||
@@ -53,7 +56,7 @@ const isMockableDevUrl = (url: string) =>
   url.startsWith("/audiences/");
 
 const getMockResponse = (url: string, options?: RequestInit): Response => {
-  let data: any = { success: true };
+  let data: unknown = { success: true };
   let status = 200;
   const mockCampaigns = [
     {
@@ -133,7 +136,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
             : { name: "Mock Brand", size: 10, businessAddress: "123 Dev Street", instagramUrl: "https://instagram.com/mock", facebookUrl: "https://facebook.com/mock", googleUrl: "https://google.com/mock", twitterUrl: "https://twitter.com/mock" };
           localStorage.setItem("mock_brand", JSON.stringify({ ...currentBrand, ...bodyObj.brand }));
         }
-      } catch (e) {}
+      } catch {}
     }
   } else if (url === "/users/me") {
     let mockAvatar: string | null = null;
@@ -178,8 +181,60 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
         if (bodyObj.avatarUrl !== undefined) {
           localStorage.setItem("mock_avatar_url", bodyObj.avatarUrl);
         }
-      } catch (e) {}
+      } catch {}
     }
+  } else if (url === "/users/onboarding") {
+    if (options?.body && typeof window !== "undefined") {
+      try {
+        const bodyObj = JSON.parse(options.body as string);
+        localStorage.setItem(
+          "mock_profile",
+          JSON.stringify({
+            firstName: bodyObj.firstName,
+            lastName: bodyObj.lastName,
+            industry: bodyObj.industry,
+            monthlyBudget: bodyObj.monthlyBudget,
+          }),
+        );
+        localStorage.setItem(
+          "mock_brand",
+          JSON.stringify({
+            name: bodyObj.organizationName,
+            size: bodyObj.organizationSize ?? 0,
+            industry: bodyObj.industry,
+          }),
+        );
+      } catch {}
+    }
+    data = { success: true };
+  } else if (url === "/users/onboarding/business") {
+    if (options?.body && typeof window !== "undefined") {
+      try {
+        const bodyObj = JSON.parse(options.body as string);
+        const currentBrand = localStorage.getItem("mock_brand")
+          ? JSON.parse(localStorage.getItem("mock_brand")!)
+          : {};
+        localStorage.setItem(
+          "mock_brand",
+          JSON.stringify({
+            ...currentBrand,
+            businessName: bodyObj.businessName,
+            website: bodyObj.website,
+            advertisingBudget: bodyObj.advertisingBudget,
+            industry: bodyObj.industry ?? currentBrand.industry,
+            country: bodyObj.country,
+          }),
+        );
+      } catch {}
+    }
+    data = { success: true };
+  } else if (url === "/users/onboarding/goals") {
+    if (options?.body && typeof window !== "undefined") {
+      try {
+        localStorage.setItem("mock_goals", options.body as string);
+      } catch {}
+    }
+    data = { success: true };
   } else if (url === "/users/ad-accounts/billing") {
     data = [
       { platform: "meta", billingUrl: "https://www.facebook.com/ads/manager/billing" },
@@ -319,7 +374,7 @@ export const apiFetch = async (
       if (!API_BASE_URL) {
         throw new Error("API_BASE_URL is not defined");
       }
-      let res = await fetch(`${API_BASE_URL}${url}`, {
+      const res = await fetch(`${API_BASE_URL}${url}`, {
         ...options,
         credentials: "include",
       });
@@ -397,7 +452,9 @@ export const login = async (email: string, password: string) => {
   const res = await apiFetch("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, useMfa: true }),
+    // MFA is optional: the backend still challenges users who have 2FA enabled,
+    // but users who never opted in are not forced through setup.
+    body: JSON.stringify({ email, password }),
   });
 
   if (!res.ok) {
@@ -416,7 +473,25 @@ export const register = async (email: string, password: string) => {
   const res = await apiFetch("/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, useMfa: true }),
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw err;
+  }
+
+  return res.json();
+};
+
+/**
+ * Resend the email-verification message for an unverified account.
+ */
+export const resendVerification = async (email: string) => {
+  const res = await apiFetch("/auth/resend-verification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
   });
 
   if (!res.ok) {

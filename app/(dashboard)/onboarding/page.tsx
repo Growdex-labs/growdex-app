@@ -2,21 +2,41 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { connectSocialAccount, disconnectSocialAccount, type SocialPlatform } from '@/lib/oauth';
-import { fetchOnboardingStatus, savePersonalInfo, skipOnboarding } from '@/lib/onboarding';
+import { connectSocialAccount, type SocialPlatform } from '@/lib/oauth';
+import {
+  fetchOnboardingStatus,
+  savePersonalInfo,
+  saveBusinessInfo,
+  saveMarketingGoals,
+  skipOnboarding,
+} from '@/lib/onboarding';
 import { hydrateSocialAccounts } from '@/lib/social';
+import { SocialAccountSetupProps } from '@/types/social';
+import { OnboardingLayout } from './components/onboarding-layout';
 import { StepOneOnboarding } from './components/step-one';
 import { StepTwoOnboarding } from './components/step-two';
 import { StepThreeOnboarding } from './components/step-three';
-import { StepSideOnboarding } from './components/step-side';
-import { SocialAccountSetupProps } from '@/types/social';
+import { StepConnectOnboarding } from './components/step-connect';
 
 export interface FormDataProps {
-  firstName: string,
-  lastName: string,
-  organizationName: string,
-  organizationSize: number,
+  firstName: string;
+  lastName: string;
+  organizationName: string;
+  organizationSize: number;
+  // Step 1 — profile
+  industry: string;
+  monthlyBudget: string;
+  // Step 2 — business
+  businessName: string;
+  website: string;
+  advertisingBudget: string;
+  country: string;
+  // Step 3 — goals
+  goals: string[];
+  customGoal: string;
 }
+
+const TOTAL_STEPS = 4;
 
 function OnboardingPageContent() {
   const router = useRouter();
@@ -24,74 +44,119 @@ function OnboardingPageContent() {
   const stepParam = searchParams.get('step');
   const currentStep = stepParam ? Number(stepParam) : 1;
 
-  const modeParam = searchParams.get('mode');
-  const step2Mode = modeParam === 'confirm' ? 'confirm' : 'connect';
-
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  // Form data state
   const [formData, setFormData] = useState<FormDataProps>({
     firstName: '',
     lastName: '',
     organizationName: '',
     organizationSize: 0,
+    industry: '',
+    monthlyBudget: '',
+    businessName: '',
+    website: '',
+    advertisingBudget: '',
+    country: '',
+    goals: [],
+    customGoal: '',
   });
 
-  // Social accounts state
   const [socialAccounts, setSocialAccounts] = useState<SocialAccountSetupProps>({
     meta: { connected: false, needsReauth: false },
     tiktok: { connected: false, needsReauth: false },
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
-  const goToStep = (step: number, extra?: Record<string, string>) => {
-    const params = new URLSearchParams({
-      step: step.toString(),
-      ...extra,
-    });
-
-    router.push(`/onboarding?${params.toString()}`);
+  const toggleGoal = (goal: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      goals: prev.goals.includes(goal)
+        ? prev.goals.filter((g) => g !== goal)
+        : [...prev.goals, goal],
+    }));
   };
 
-  const handleNextStep = async () => {
+  const goToStep = (step: number) => {
+    router.push(`/onboarding?step=${step}`);
+  };
+
+  const handleProfileNext = async () => {
     setError('');
 
-    // Save Step 1 data before proceeding
-    if (currentStep === 1) {
-      if (!formData.firstName || !formData.lastName) {
-        setError('Please fill in your first and last name');
-        return;
-      }
-
-      if (!formData.organizationName || formData.organizationSize === 0) {
-        setError('Please fill in your organization name and size');
-        return;
-      }
-
-      setLoadingAction('step1-submit');
-      const result = await savePersonalInfo(formData);
-      setLoadingAction(null);
-
-      if (!result.success) {
-        setError(result.error || 'Failed to save information');
-        return;
-      }
-      setTimeout(() => {
-        goToStep(2);
-      }, 1500);
+    if (!formData.firstName || !formData.lastName) {
+      setError('Please fill in your first and last name');
+      return;
+    }
+    if (!formData.organizationName) {
+      setError('Please fill in your organization name');
       return;
     }
 
-    if (currentStep < 3) {
-      goToStep(currentStep + 1);
+    setLoadingAction('step1-submit');
+    const result = await savePersonalInfo({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      organizationName: formData.organizationName,
+      organizationSize: formData.organizationSize,
+      industry: formData.industry,
+      monthlyBudget: formData.monthlyBudget,
+    });
+    setLoadingAction(null);
+
+    if (!result.success) {
+      setError(result.error || 'Failed to save information');
+      return;
     }
+
+    goToStep(2);
+  };
+
+  const handleBusinessNext = async () => {
+    setError('');
+
+    setLoadingAction('step2-submit');
+    const result = await saveBusinessInfo({
+      businessName: formData.businessName,
+      website: formData.website,
+      advertisingBudget: formData.advertisingBudget,
+      industry: formData.industry,
+      country: formData.country,
+    });
+    setLoadingAction(null);
+
+    if (!result.success) {
+      setError(result.error || 'Failed to save business information');
+      return;
+    }
+
+    goToStep(3);
+  };
+
+  const handleGoalsNext = async () => {
+    setError('');
+
+    setLoadingAction('step3-submit');
+    const result = await saveMarketingGoals({
+      goals: formData.goals,
+      customGoal: formData.customGoal,
+    });
+    setLoadingAction(null);
+
+    if (!result.success) {
+      setError(result.error || 'Failed to save marketing goals');
+      return;
+    }
+
+    goToStep(4);
   };
 
   const handleConnectSocial = async (platform: SocialPlatform) => {
@@ -106,26 +171,11 @@ function OnboardingPageContent() {
       return;
     }
 
-    goToStep(2, {
-      platform,
-      status: 'connected',
-    });
-  };
-
-  const handleDisconnectSocial = async (platform: SocialPlatform) => {
-    setLoadingAction(`disconnect-${platform}`);
-    const result = await disconnectSocialAccount(platform);
-    setLoadingAction(null);
-
-    if (!result.success) {
-      setError(result.error || `Failed to disconnect ${platform}`);
-      return;
+    if (result.data) {
+      setSocialAccounts(result.data);
+    } else {
+      await refreshSocialAccounts();
     }
-
-    goToStep(2, {
-      platform,
-      status: 'disconnected',
-    });
   };
 
   const handleSetupLater = async () => {
@@ -140,21 +190,17 @@ function OnboardingPageContent() {
     }
   };
 
-  const handleGoToDashboard = async () => {
-    setLoadingAction('dashboard');
+  const handleComplete = async () => {
+    setLoadingAction('complete');
+    const result = await skipOnboarding();
+    setLoadingAction(null);
 
-    router.push('/panel');
+    if (result.success) {
+      router.push('/panel');
+    } else {
+      setError(result.error || 'Failed to complete onboarding');
+    }
   };
-
-  useEffect(() => {
-    if (!error) return;
-
-    const timeout = setTimeout(() => {
-      setError('');
-    }, 3000);
-
-    return () => clearTimeout(timeout);
-  }, [error]);
 
   const refreshSocialAccounts = async () => {
     const res = await hydrateSocialAccounts();
@@ -164,94 +210,105 @@ function OnboardingPageContent() {
   };
 
   useEffect(() => {
+    if (!error) return;
+    const timeout = setTimeout(() => setError(''), 3000);
+    return () => clearTimeout(timeout);
+  }, [error]);
+
+  useEffect(() => {
     const hydrate = async () => {
       const res = await fetchOnboardingStatus();
       if (res.success && res.data) {
-        const personal = res.data.personalInfo;
-        const [first, ...rest] = personal.name.split(' ');
-        setFormData({
+        const { personalInfo, business, goals } = res.data;
+        const [first, ...rest] = personalInfo.name.split(' ');
+        setFormData((prev) => ({
+          ...prev,
           firstName: first || '',
           lastName: rest.join(' ') || '',
-          organizationName: personal.organizationName || '',
-          organizationSize: Number(personal.organizationSize) || 0,
-        });
+          organizationName: personalInfo.organizationName || '',
+          organizationSize: Number(personalInfo.organizationSize) || 0,
+          industry: personalInfo.industry || business?.industry || '',
+          monthlyBudget: personalInfo.monthlyBudget || '',
+          businessName: business?.businessName || '',
+          website: business?.website || '',
+          advertisingBudget: business?.advertisingBudget || '',
+          country: business?.country || '',
+          goals: goals?.selected || [],
+          customGoal: goals?.custom || '',
+        }));
       }
     };
     hydrate();
   }, []);
 
   useEffect(() => {
-    if (currentStep !== 2) return;
+    if (currentStep !== TOTAL_STEPS) return;
     refreshSocialAccounts();
   }, [currentStep, searchParams]);
 
   return (
-    <>
-      {/* Sidebar */}
-      <StepSideOnboarding currentStep={currentStep} />
-
-      {/* Main Content */}
-      <main className="flex-1 p-4 lg:p-12">
-        <div className="max-w-4xl">
-          {/* Header */}
-          <div className="md:hidden flex justify-end mb-12">
-            <button className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-              Menu ☰
-            </button>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-xs md:text-sm px-2 py-1 rounded-lg fade-in">
-              {error}
-            </div>
-          )}
-
-          {/* Step 1: Get Started */}
-          {currentStep === 1 && (
-            <StepOneOnboarding
-              formData={formData}
-              onNext={handleNextStep}
-              inputChange={handleInputChange}
-              isLoading={loadingAction === 'step1-submit'}
-            />
-          )}
-
-          {/* Step 2: Setup Social Accounts */}
-          {currentStep === 2 && (
-            <StepTwoOnboarding
-              mode={step2Mode}
-              socialAccounts={socialAccounts}
-              loadingAction={loadingAction}
-              handleConnectSocial={handleConnectSocial}
-              handleDisconnectSocial={handleDisconnectSocial}
-              onNext={() => goToStep(2, { mode: 'confirm' })}
-              onConfirm={() => goToStep(3)}
-              handleSetupLater={handleSetupLater}
-              refreshSocialAccounts={refreshSocialAccounts}
-            />
-          )}
-
-          {/* Step 3: Launch Growdex */}
-          {currentStep === 3 && (
-            <StepThreeOnboarding
-              isLoading={loadingAction === 'dashboard'}
-              handleGoToDashboard={handleGoToDashboard}
-            />
-          )}
+    <OnboardingLayout>
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          {error}
         </div>
-      </main>
-    </>
+      )}
+
+      {currentStep === 1 && (
+        <StepOneOnboarding
+          formData={formData}
+          inputChange={handleChange}
+          onNext={handleProfileNext}
+          onSkip={handleSetupLater}
+          isLoading={loadingAction === 'step1-submit'}
+        />
+      )}
+
+      {currentStep === 2 && (
+        <StepTwoOnboarding
+          formData={formData}
+          change={handleChange}
+          onNext={handleBusinessNext}
+          onSkip={handleSetupLater}
+          isLoading={loadingAction === 'step2-submit'}
+        />
+      )}
+
+      {currentStep === 3 && (
+        <StepThreeOnboarding
+          formData={formData}
+          toggleGoal={toggleGoal}
+          change={handleChange}
+          onNext={handleGoalsNext}
+          onSkip={handleSetupLater}
+          isLoading={loadingAction === 'step3-submit'}
+        />
+      )}
+
+      {currentStep === 4 && (
+        <StepConnectOnboarding
+          socialAccounts={socialAccounts}
+          loadingAction={loadingAction}
+          handleConnectSocial={handleConnectSocial}
+          onSkip={handleSetupLater}
+          onComplete={handleComplete}
+          isCompleting={loadingAction === 'complete' || loadingAction === 'setup-later'}
+        />
+      )}
+    </OnboardingLayout>
   );
 }
 
 export default function OnboardingPage() {
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <Suspense fallback={<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>}>
-        <OnboardingPageContent />
-      </Suspense>
-
-    </div>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#f8f8f8]">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900" />
+        </div>
+      }
+    >
+      <OnboardingPageContent />
+    </Suspense>
   );
 }
