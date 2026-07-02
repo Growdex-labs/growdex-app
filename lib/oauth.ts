@@ -1,18 +1,17 @@
 import { SocialAccountSetupProps } from '@/types/social';
+import { hydrateSocialAccounts } from './social';
 import { API_BASE_URL, apiFetch } from './auth';
 
 export type SocialPlatform = 'meta' | 'tiktok';
 
 /**
- * Open the OAuth popup and resolve with the authorization code returned by the
- * provider. The popup navigates to the backend's `/auth/:platform` initiator
- * (which builds the provider URL + state and carries the session cookie); the
- * provider then redirects to the frontend `/oauth/:platform` callback, which
- * relays the code back here via postMessage.
+ * Open the OAuth popup and resolve once the backend OAuth flow redirects to the
+ * frontend callback. The backend owns the provider code exchange and connection;
+ * the frontend refreshes onboarding status after the callback confirms success.
  */
 export const openOAuthPopup = (
   platform: SocialPlatform,
-  onSuccess: (code: string) => void,
+  onSuccess: () => void,
   onError: (error: string) => void
 ): Window | null => {
   const width = 600;
@@ -43,11 +42,11 @@ export const openOAuthPopup = (
     if (!allowedOrigins.has(event.origin)) return;
     if (event.data?.platform !== platform) return;
 
-    if (event.data?.type === 'oauth_success' && event.data.code) {
+    if (event.data?.type === 'oauth_success') {
       isCompleted = true;
       window.removeEventListener('message', messageHandler);
       popup.close();
-      onSuccess(event.data.code as string);
+      onSuccess();
     }
 
     if (event.data?.type === 'oauth_error') {
@@ -74,52 +73,25 @@ export const openOAuthPopup = (
 };
 
 /**
- * Exchange an authorization code for a platform connection via the unified
- * onboarding endpoint. Returns the refreshed social setup on success.
- */
-const exchangeCode = async (
-  platform: SocialPlatform,
-  code: string
-): Promise<{ success: boolean; data?: SocialAccountSetupProps; error?: string }> => {
-  try {
-    const res = await apiFetch(`/users/onboarding/connect/${platform}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
-    });
-
-    if (!res.ok) throw new Error(`Failed to connect ${platform}`);
-
-    const data: SocialAccountSetupProps = await res.json();
-    return { success: true, data };
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : `Failed to connect ${platform}`,
-    };
-  }
-};
-
-/**
- * Connect a social account: run the OAuth popup to obtain a code, then exchange
- * it for a connection through the backend.
+ * Connect a social account: run the OAuth popup, then refresh the backend social
+ * setup once the callback reports success.
  */
 export const connectSocialAccount = async (
   platform: SocialPlatform
 ): Promise<{ success: boolean; data?: SocialAccountSetupProps; error?: string }> => {
-  const code = await new Promise<{ code?: string; error?: string }>((resolve) => {
+  const popupResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
     openOAuthPopup(
       platform,
-      (code) => resolve({ code }),
-      (error) => resolve({ error })
+      () => resolve({ success: true }),
+      (error) => resolve({ success: false, error })
     );
   });
 
-  if (!code.code) {
-    return { success: false, error: code.error || `Failed to connect ${platform}` };
+  if (!popupResult.success) {
+    return { success: false, error: popupResult.error || `Failed to connect ${platform}` };
   }
 
-  return exchangeCode(platform, code.code);
+  return hydrateSocialAccounts();
 };
 
 /**
