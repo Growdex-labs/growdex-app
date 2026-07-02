@@ -4,24 +4,24 @@ import { Suspense, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 
 type OAuthMessage =
-  | { type: 'oauth_success'; platform: string; code: string }
+  | { type: 'oauth_success'; platform: string }
   | { type: 'oauth_error'; platform: string; error: string };
 
 function OAuthCallbackContent() {
   const params = useParams<{ platform: string }>();
   const searchParams = useSearchParams();
   const platform = params.platform;
-  const code = searchParams.get('code') || searchParams.get('auth_code');
   const error = searchParams.get('error') || searchParams.get('error_description');
+  const success = searchParams.get('success') !== 'false';
 
   const payload: OAuthMessage = useMemo(
     () =>
       error
         ? { type: 'oauth_error', platform, error }
-        : code
-          ? { type: 'oauth_success', platform, code }
-          : { type: 'oauth_error', platform, error: 'Missing authorization code' },
-    [code, error, platform]
+        : success
+          ? { type: 'oauth_success', platform }
+          : { type: 'oauth_error', platform, error: 'Connection was not completed' },
+    [error, platform, success]
   );
 
   const message =
