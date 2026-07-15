@@ -260,32 +260,32 @@ export const saveMarketingGoals = async (data: {
 };
 
 /**
- * Complete onboarding and save to backend
+ * Complete onboarding and persist the flag to the backend.
  */
-// export const completeOnboarding = async (data?: {
-//   skipSocialAccounts?: boolean;
-// }): Promise<{ success: boolean; error?: string }> => {
-//   try {
-//     const response = await apiFetch('/onboarding/complete', {
-//       method: 'POST',
-//       body: JSON.stringify(data || {}),
-//     });
+export const completeOnboarding = async (): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await apiFetch('/users/onboarding/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
 
-//     if (!response.ok) {
-//       throw new Error('Failed to complete onboarding');
-//     }
+    if (!response.ok) {
+      throw new Error(await readApiError(response, 'Failed to complete onboarding'));
+    }
 
-//     // Mark as complete locally
-//     markOnboardingComplete();
+    markOnboardingComplete();
 
-//     return { success: true };
-//   } catch (error) {
-//     return {
-//       success: false,
-//       error: error instanceof Error ? error.message : 'Failed to complete onboarding',
-//     };
-//   }
-// };
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to complete onboarding',
+    };
+  }
+};
 
 /**
  * Skip onboarding (mark as incomplete but allow dashboard access)

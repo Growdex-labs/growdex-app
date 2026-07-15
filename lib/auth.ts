@@ -42,6 +42,7 @@ const isMockableDevUrl = (url: string) =>
   url === "/users/onboarding" ||
   url === "/users/onboarding/business" ||
   url === "/users/onboarding/goals" ||
+  url === "/users/onboarding/complete" ||
   url === "/users/onboarding/status" ||
   url === "/notifications/history" ||
   url === "/media/signature-stamp" ||
@@ -354,6 +355,13 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
   });
 };
 
+export const clearDevSession = (): void => {
+  if (typeof document === 'undefined') return;
+  const expire = 'Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = `dev_session=; path=/; expires=${expire}`;
+  document.cookie = `access_token=; path=/; expires=${expire}`;
+};
+
 /**
  * Wrapper around fetch that automatically includes cookies
  * and attempts refresh if 401 is returned
@@ -449,6 +457,7 @@ export const apiFetch = async (
  * Returns onboardingCompleted and other metadata from backend
  */
 export const login = async (email: string, password: string) => {
+  clearDevSession();
   const res = await apiFetch("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -470,6 +479,7 @@ export const login = async (email: string, password: string) => {
  * Returns onboardingCompleted and other metadata from backend
  */
 export const register = async (email: string, password: string) => {
+  clearDevSession();
   const res = await apiFetch("/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -550,6 +560,7 @@ export const resetPassword = async (
  */
 export const logout = async () => {
   await apiFetch("/auth/logout", { method: "POST", body: JSON.stringify({}) });
+  clearDevSession();
   window.location.href = "/login";
 };
 
