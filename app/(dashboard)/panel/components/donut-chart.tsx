@@ -1,93 +1,92 @@
 "use client";
 
+import { MetaIcon, InstagramIcon, TikTokIcon } from "./platform-icons";
+
 interface DonutChartProps {
   meta: number;
+  instagram?: number;
   tiktok: number;
 }
 
-export function DonutChart({ meta, tiktok }: DonutChartProps) {
-  const total = meta + tiktok;
+const COLORS = {
+  meta: "#332c00",
+  instagram: "#d6c34a",
+  tiktok: "#fff8ce",
+};
 
-  // Calculate percentages and angles
-  const metaPercent = total > 0 ? (meta / total) * 100 : 0;
-  const tiktokPercent = total > 0 ? (tiktok / total) * 100 : 0;
+export function DonutChart({ meta, instagram = 0, tiktok }: DonutChartProps) {
+  const total = meta + instagram + tiktok;
 
-  // Calculate cumulative angles for SVG arc
   const radius = 80;
   const strokeWidth = 24;
   const circumference = 2 * Math.PI * radius;
 
-  const metaDashArray = `${(metaPercent / 100) * circumference} ${circumference}`;
-  const tiktokDashArray = `${(tiktokPercent / 100) * circumference} ${circumference}`;
+  const segments = [
+    { key: "meta", value: meta, color: COLORS.meta },
+    { key: "instagram", value: instagram, color: COLORS.instagram },
+    { key: "tiktok", value: tiktok, color: COLORS.tiktok },
+  ];
 
-  const metaRotation = -90;
-  const tiktokRotation = metaRotation + (metaPercent / 100) * 360;
+  let cumulative = 0;
+  const arcs = segments.map((seg) => {
+    const fraction = total > 0 ? seg.value / total : 0;
+    const dash = `${fraction * circumference} ${circumference}`;
+    const rotation = -90 + cumulative * 360;
+    cumulative += fraction;
+    return { ...seg, dash, rotation };
+  });
 
   const formatNumber = (num: number) => num.toLocaleString();
 
   return (
     <div className="flex flex-col items-center">
       {/* Donut Chart */}
-      <div className="relative w-48 h-48 mb-6">
+      <div className="relative w-44 h-44 mb-4">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
-          {/* TikTok segment (light gray/blue) */}
-          <circle
-            cx="100"
-            cy="100"
-            r={radius}
-            fill="none"
-            stroke="#C4B5A0"
-            strokeWidth={strokeWidth}
-            strokeDasharray={tiktokDashArray}
-            strokeLinecap="round"
-            style={{
-              transform: `rotate(${tiktokRotation}deg)`,
-              transformOrigin: "center",
-            }}
-          />
-
-          {/* Facebook segment (dark olive) */}
-          <circle
-            cx="100"
-            cy="100"
-            r={radius}
-            fill="none"
-            stroke="#4A5D23"
-            strokeWidth={strokeWidth}
-            strokeDasharray={metaDashArray}
-            strokeLinecap="round"
-            style={{
-              transform: `rotate(${metaRotation}deg)`,
-              transformOrigin: "center",
-            }}
-          />
+          {arcs.map((arc) => (
+            <circle
+              key={arc.key}
+              cx="100"
+              cy="100"
+              r={radius}
+              fill="none"
+              stroke={arc.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={arc.dash}
+              strokeLinecap="round"
+              style={{
+                transform: `rotate(${arc.rotation}deg)`,
+                transformOrigin: "center",
+              }}
+            />
+          ))}
         </svg>
       </div>
 
       {/* Legend */}
-      <div className="flex gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#4A5D23]"></div>
-          <div className="flex items-center gap-1">
-            <svg
-              className="w-4 h-4 text-blue-600"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-            <span className="text-gray-600">{formatNumber(meta)}</span>
-          </div>
+      <div className="flex flex-wrap gap-4 justify-center text-sm">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.meta }} />
+          <MetaIcon className="w-4 h-4" />
+          <span className="text-[#9095a7] font-gilroy-light text-xs">
+            {formatNumber(meta)}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#C4B5A0]"></div>
-          <div className="flex items-center gap-1">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-            </svg>
-            <span className="text-gray-600">{formatNumber(tiktok)}</span>
-          </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.instagram }} />
+          <InstagramIcon className="w-4 h-4" />
+          <span className="text-[#9095a7] font-gilroy-light text-xs">
+            {formatNumber(instagram)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.tiktok }} />
+          <TikTokIcon className="w-4 h-4" />
+          <span className="text-[#9095a7] font-gilroy-light text-xs">
+            {formatNumber(tiktok)}
+          </span>
         </div>
       </div>
     </div>
