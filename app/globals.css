@@ -255,6 +255,31 @@ body {
   animation: spin-slow 3s linear infinite;
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* A highlight band that sweeps left-to-right across a skeleton. */
+@keyframes shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer-sweep {
+  animation: shimmer-sweep 1.4s ease-in-out infinite;
+}
+
 /* From Uiverse.io by MikeAndrewDesigner */
 .auth-container {
   width: 50%;

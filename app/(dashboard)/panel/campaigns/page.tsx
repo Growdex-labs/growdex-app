@@ -4,13 +4,46 @@ import { useEffect, useMemo, useState } from "react";
 import { PanelLayout } from "../components/panel-layout";
 import { CampaignsSidebar } from "../components/campaigns-sidebar";
 import { CampaignsMobileHeader } from "../components/campaigns-mobile-header";
-import { CampaignsTable } from "../components/campaigns-table";
 import { ScheduledCampaignsCard } from "../components/scheduled-campaigns-card";
 import { SuspendedCampaignsTable } from "../components/suspended-campaigns-table";
 import { Campaign } from "@/lib/mock-data";
 import { fetchCampaigns, fetchCampaignMetrics } from "@/lib/campaigns";
-import { Search, Plus, FilePlus, SlidersHorizontal, Wallet } from "lucide-react";
+import {
+  Search,
+  Plus,
+  SlidersHorizontal,
+  List,
+  ChevronDown,
+} from "lucide-react";
+import {
+  CampaignCard,
+  type CampaignCardData,
+} from "../components/campaign-card";
 import Link from "next/link";
+
+const MOCK_METRICS = {
+  amount: "N12,350,987.67",
+  ctr: "35.7%",
+  cpc: "N350.89",
+  cost: "N1,300.80",
+  priority: "High priority",
+};
+
+const TOP_PERFORMING: CampaignCardData[] = Array.from({ length: 3 }, (_, i) => ({
+  id: `top-${i}`,
+  name: "Growdex One Up",
+  status: "Fabulous run!",
+  variant: "top",
+  ...MOCK_METRICS,
+}));
+
+const ALL_CAMPAIGNS: CampaignCardData[] = Array.from({ length: 6 }, (_, i) => ({
+  id: `all-${i}`,
+  name: "Growdex One Up",
+  status: "Budget Burn",
+  variant: "burn",
+  ...MOCK_METRICS,
+}));
 
 const utcDateFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
@@ -35,12 +68,6 @@ export default function CampaignsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [totalSpend, setTotalSpend] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isMetricMenuOpen, setIsMetricMenuOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [platformFilter, setPlatformFilter] = useState<"all" | "meta" | "tiktok">(
-    "all",
-  );
 
   useEffect(() => {
     let isMounted = true;
@@ -125,21 +152,12 @@ export default function CampaignsPage() {
     [campaigns],
   );
 
-  const displayedCampaigns = (
+  const displayedCampaigns =
     activeTab === "active"
       ? activeCampaigns
       : activeTab === "suspended"
         ? suspendedCampaigns
-        : scheduledCampaigns
-  ).filter((campaign) => {
-    const matchesSearch = campaign.name
-      .toLowerCase()
-      .includes(searchTerm.trim().toLowerCase());
-    const matchesPlatform =
-      platformFilter === "all" || campaign.platforms.includes(platformFilter);
-
-    return matchesSearch && matchesPlatform;
-  });
+        : scheduledCampaigns;
 
   return (
     <PanelLayout>
@@ -221,34 +239,41 @@ export default function CampaignsPage() {
               </button>
             </div>
 
-            {/* Summary Cards */}
-            {activeTab === "active" && <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-              {/* Total Amount Spent */}
-              <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <Wallet className="w-12 h-12 text-khaki-300" />
-                  <div>
-                    <div className="text-sm text-gray-400">
-                      Total Amount Spent
+            {/* Summary header */}
+            {activeTab === "active" && (
+              <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-lg border border-khaki-200 bg-yellow-50 flex items-center justify-center">
+                      <img src="/cash.png" alt="" className="w-5 h-5" />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(totalSpend)}
+                    <div>
+                      <div className="text-xs text-gray-400">
+                        Total Amount Spent
+                      </div>
+                      <div className="text-xl font-bold text-gray-900">
+                        {totalSpend ? formatCurrency(totalSpend) : MOCK_METRICS.amount}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Campaign Health */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <div className="text-sm text-gray-600 mb-3">
-                  Campaign Health
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">
+                      Campaign Health
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-bisque-50 px-3 py-1.5 text-sm font-medium text-firebrick-500">
+                      <img src="/mdi_fire.png" alt="" className="w-4 h-4" />
+                      Budget Burn
+                    </span>
+                  </div>
                 </div>
-                <button className="px-6 py-2 bg-bisque-50 text-firebrick-500 rounded-xl font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors font-gilroy-bold">
-                  <img src="/mdi_fire.png" alt="fire-alt" />
-                  Budget Burn
+
+                <button className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800">
+                  <List className="w-4 h-4" />
+                  Switch to list view
                 </button>
               </div>
-            </div>}
+            )}
 
             {loadError && (
               <div className="mb-4 text-sm text-red-600">{loadError}</div>
@@ -261,98 +286,40 @@ export default function CampaignsPage() {
             )}
 
             {/* Action Bar */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between">
-                {/* Search */}
-                <div className="relative hidden sm:flex flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                    className="w-full rounded-full bg-gray-50 pl-9 pr-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-khaki-200"
                   />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-3 justify-between sm:justify-end flex-1">
-                  {/* New Campaign */}
-                  <Link
-                    href="/panel/campaigns/new"
-                    className="flex items-center gap-2 h-11 px-5 bg-khaki-200 hover:bg-khaki-300 text-gray-900 rounded-lg font-medium transition-colors"
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span className="hidden sm:inline text-sm">New campaign</span>
-                  </Link>
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                  <input type="checkbox" className="accent-khaki-300" />
+                  Select all
+                </label>
 
-                  {/* Add Metric */}
-                  <button
-                    type="button"
-                    onClick={() => setIsMetricMenuOpen((value) => !value)}
-                    className="hidden sm:flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
-                  >
-                    <FilePlus className="w-5 h-5" />
-                    <span className="hidden sm:inline text-sm">Add metric</span>
-                  </button>
-
-                  {/* Filter */}
-                  <button
-                    type="button"
-                    onClick={() => setIsFilterOpen((value) => !value)}
-                    className="flex items-center gap-2 h-11 px-5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
-                  >
-                    <SlidersHorizontal className="w-5 h-5 text-peru-200" />
-                    Filter
-                  </button>
-                </div>
+                <button className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+                  Bulk action
+                  <ChevronDown className="w-4 h-4" />
+                </button>
               </div>
 
-              {isMetricMenuOpen && (
-                <div className="mt-3 flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700">
-                  {["CTR", "CPC", "CPA", "Reach", "Impressions"].map(
-                    (metric) => (
-                      <button
-                        key={metric}
-                        type="button"
-                        className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50"
-                      >
-                        {metric}
-                      </button>
-                    ),
-                  )}
-                </div>
-              )}
-
-              {isFilterOpen && (
-                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 text-sm">
-                  <span className="font-medium text-gray-700">Platform</span>
-                  {(["all", "meta", "tiktok"] as const).map((platform) => (
-                    <button
-                      key={platform}
-                      type="button"
-                      onClick={() => setPlatformFilter(platform)}
-                      className={`rounded-full px-3 py-1 capitalize ${
-                        platformFilter === platform
-                          ? "bg-khaki-200 text-gray-900"
-                          : "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      {platform}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="relative flex-1 max-w-md mt-4 sm:hidden">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                />
+              <div className="flex items-center gap-3">
+                <button className="inline-flex items-center gap-2 text-sm font-medium text-peru-200 hover:text-peru-200/80">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  Filter
+                </button>
+                <Link
+                  href="/panel/campaigns/new"
+                  className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 hover:bg-khaki-300 px-4 py-2.5 text-sm font-medium text-gray-900 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create campaign
+                </Link>
               </div>
             </div>
 
@@ -362,7 +329,31 @@ export default function CampaignsPage() {
             ) : activeTab === "suspended" ? (
               <SuspendedCampaignsTable campaigns={displayedCampaigns} />
             ) : (
-              <CampaignsTable campaigns={displayedCampaigns} />
+              <div className="space-y-8">
+                {/* Top Performing */}
+                <section>
+                  <h2 className="text-sm font-semibold text-green-600 mb-3">
+                    Top Performing
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {TOP_PERFORMING.map((c) => (
+                      <CampaignCard key={c.id} data={c} />
+                    ))}
+                  </div>
+                </section>
+
+                {/* All Campaigns */}
+                <section>
+                  <h2 className="text-sm font-semibold text-gray-500 mb-3">
+                    All Campaigns
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {ALL_CAMPAIGNS.map((c) => (
+                      <CampaignCard key={c.id} data={c} />
+                    ))}
+                  </div>
+                </section>
+              </div>
             )}
           </div>
         </div>

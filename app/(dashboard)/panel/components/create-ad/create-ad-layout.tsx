@@ -3,7 +3,11 @@ import AdFormSection from "./ad-form";
 import AdPreviewSection from "./ad-preview-section";
 import { FacebookIcon } from "lucide-react";
 
-export default function CreateAdLayout() {
+export default function CreateAdLayout({
+  onSave,
+}: {
+  onSave?: () => void;
+} = {}) {
   const [activePlatform, setActivePlatform] = useState<"meta" | "tiktok">(
     "meta"
   );
@@ -88,10 +92,11 @@ export default function CreateAdLayout() {
       </div>
 
       {/* Ad form and preview */}
-      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6 lg:h-[calc(100vh-280px)]">
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6 lg:h-[640px]">
         {/* Ad Form Section */}
-        <div className="lg:overflow-y-auto relative flex flex-col lg:hide-scrollbar order-2 lg:order-1">
-          <div className="flex-1">
+        <div className="flex flex-col min-h-0 order-2 lg:order-1">
+          {/* Scrollable form area (scrollbar hidden) */}
+          <div className="flex-1 min-h-0 lg:overflow-y-auto hide-scrollbar pr-1">
             <AdFormSection
               platform={activePlatform}
               headline={headline}
@@ -106,23 +111,29 @@ export default function CreateAdLayout() {
             />
           </div>
 
-          {/* Save Button */}
-          <div className="lg:sticky bottom-0 bg-white p-3 md:p-4 mt-4 lg:mt-auto">
-            <button className="w-full lg:w-auto px-6 py-2.5 md:py-3 bg-khaki-200 text-gray-900 font-semibold rounded-lg hover:bg-khaki-300 transition">
+          {/* Save Button — sits outside the scroll area, never scrolls */}
+          <div className="shrink-0 pt-4 bg-white">
+            <button
+              onClick={onSave}
+              className="w-full lg:w-auto px-6 py-2.5 md:py-3 bg-khaki-200 text-gray-900 font-semibold rounded-lg hover:bg-khaki-300 transition"
+            >
               Save Changes
             </button>
           </div>
         </div>
 
         {/* Ad Preview Section */}
-        <div className="lg:sticky top-0 h-fit order-1 lg:order-2">
-          <AdPreviewSection
-            activePlatform={activePlatform}
-            headline={headline}
-            caption={caption}
-            creative={creative}
-            callToAction={callToAction}
-          />
+        <div className="order-1 lg:order-2 lg:overflow-y-auto hide-scrollbar">
+          {/* Fixed max width so the 9:16 preview resolves its ratio */}
+          <div className="mx-auto lg:mx-0 w-full max-w-[340px]">
+            <AdPreviewSection
+              activePlatform={activePlatform}
+              headline={headline}
+              caption={caption}
+              creative={creative}
+              callToAction={callToAction}
+            />
+          </div>
         </div>
       </div>
     </div>
