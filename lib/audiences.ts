@@ -57,7 +57,14 @@ export const fetchAudiences = async (): Promise<Audience[]> => {
     throw new Error(`Fetch audiences failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const data = await res.json().catch(() => null);
+
+  // The API may return a bare array or wrap it (e.g. { data: [...] }).
+  // Always resolve to an array so callers can safely .map over the result.
+  if (Array.isArray(data)) return data;
+  const wrapped =
+    data?.data ?? data?.audiences ?? data?.items ?? data?.results;
+  return Array.isArray(wrapped) ? wrapped : [];
 };
 
 export const fetchAudienceById = async (id: string): Promise<Audience> => {
