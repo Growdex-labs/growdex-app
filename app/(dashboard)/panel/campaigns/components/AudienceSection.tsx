@@ -291,7 +291,8 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                         <div className="px-2 py-1 text-xs text-gray-500">
                           Loading...
                         </div>
-                      ) : props.savedAudiences.length === 0 ? (
+                      ) : !Array.isArray(props.savedAudiences) ||
+                        props.savedAudiences.length === 0 ? (
                         <div className="px-2 py-1 text-xs text-gray-500">
                           No saved audiences
                         </div>
@@ -573,7 +574,8 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                         <div className="px-2 py-1 text-xs text-gray-500">
                           Loading...
                         </div>
-                      ) : props.savedAudiences.length === 0 ? (
+                      ) : !Array.isArray(props.savedAudiences) ||
+                        props.savedAudiences.length === 0 ? (
                         <div className="px-2 py-1 text-xs text-gray-500">
                           No saved audiences
                         </div>

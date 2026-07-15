@@ -3,9 +3,10 @@
 import { useState, useRef } from "react";
 import { useEffect } from "react";
 import { PanelLayout } from "../../components/panel-layout";
-import { CampaignsSidebar } from "../../components/campaigns-sidebar";
+import { CampaignTreeSidebar } from "../components/CampaignTreeSidebar";
 import {
   ChevronDown,
+  ChevronLeft,
   CircleArrowRight,
   Facebook,
   InstagramIcon,
@@ -52,15 +53,42 @@ import {
 } from "@/lib/campaign-shared";
 import { GoalSection } from "../components/GoalSection";
 import { PlatformSection } from "../components/PlatformSection";
+import DottedBackground from "@/components/dotted-background";
+import {
+  CreateMethodBox,
+  type CreationMethod,
+} from "../components/CreateMethodBox";
+import { CampaignStepper } from "../components/CampaignStepper";
+import { CampaignNameCard } from "../components/CampaignNameCard";
+import { ManualGoalScreen } from "../components/ManualGoalScreen";
+import { ManualPlatformScreen } from "../components/ManualPlatformScreen";
+import { ManualEventScreen } from "../components/ManualEventScreen";
+import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
+import { AiCampaignChat } from "../components/AiCampaignChat";
+import { AiWorkingView } from "../components/AiWorkingView";
+import { CreativeSetupScreen } from "../components/CreativeSetupScreen";
+import CreateAdLayout from "../../components/create-ad/create-ad-layout";
+import { ReviewPublishScreen } from "../components/ReviewPublishScreen";
 import { AudienceSection } from "../components/AudienceSection";
 import { BudgetSection } from "../components/BudgetSection";
 import { CreativeSection } from "../components/CreativeSection";
 import { hashFolderName } from "@/lib/encrypt";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 
+const WIZARD_STEPS = [
+  "Setup campaign",
+  "Choose platform",
+  "Set campaign goals",
+  "Event management",
+  "Budget and schedule",
+  "Creative setup",
+  "Review and publish",
+];
+
 export default function NewCampaignPage() {
   const { me } = useMe();
   const brandName = me?.brand?.name ?? "Your Brand";
+  const firstName = me?.profile?.firstName ?? "";
   const instagramAccountName = (() => {
     const url = me?.brand?.instagramUrl;
     if (!url) return brandName.replace(/\s+/g, "_");
@@ -71,6 +99,47 @@ export default function NewCampaignPage() {
 
   const [progressTab, setProgressTab] = useState<number>(0);
   const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("ENGAGEMENT");
+  const [campaignName, setCampaignName] = useState("");
+  const [creationMethod, setCreationMethod] = useState<CreationMethod | null>(
+    null,
+  );
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiStarted, setAiStarted] = useState(false);
+  const [manualStep, setManualStep] = useState(0);
+  const [selectedGoalLabel, setSelectedGoalLabel] = useState("Lead Generation");
+  const [selectedDestinationLabel, setSelectedDestinationLabel] =
+    useState("Website");
+  const [chosenPlatforms, setChosenPlatforms] = useState<
+    ("meta" | "tiktok")[]
+  >(["meta", "tiktok"]);
+  const [showCreativeSetup, setShowCreativeSetup] = useState(false);
+  const [showAdCreative, setShowAdCreative] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const hasAiPrompt = aiPrompt.trim().length > 0;
+
+  const resetToSetup = () => {
+    setCreationMethod(null);
+    setAiStarted(false);
+    setManualStep(0);
+    setSelectedGoalLabel("Lead Generation");
+    setSelectedDestinationLabel("Website");
+    setAiPrompt("");
+    setShowCreativeSetup(false);
+    setShowAdCreative(false);
+    setShowReview(false);
+  };
+
+  const handleGenerateCampaignName = () => {
+    const suggestions = [
+      `${brandName} Launch`,
+      `${brandName} Growth Push`,
+      `${brandName} Awareness Drive`,
+      `${brandName} Spotlight`,
+    ];
+    setCampaignName(
+      suggestions[Math.floor(Math.random() * suggestions.length)],
+    );
+  };
 
   const COUNTRY_OPTIONS = (
     Object.entries(metaSpecialAdLocations) as Array<
@@ -376,8 +445,6 @@ export default function NewCampaignPage() {
     }
   };
 
-
-
   const combineLocalDateAndTimeToIso = (
     dateValue: string,
     timeValue?: string,
@@ -463,7 +530,9 @@ export default function NewCampaignPage() {
       : unifiedBudgetFrequency;
 
     // Add a 15-minute buffer to ensure "now" is always in the future for the backend
-    const defaultStartDate = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    const defaultStartDate = new Date(
+      Date.now() + 15 * 60 * 1000,
+    ).toISOString();
     // const defaultEndDate = addDaysUtcIso(defaultStartDate, 7);
 
     let startDate = defaultStartDate;
@@ -492,7 +561,9 @@ export default function NewCampaignPage() {
         if (
           new Date(scheduledEnd).getTime() < new Date(scheduledStart).getTime()
         ) {
-          setSubmissionError("End date must be the same as or after start date.");
+          setSubmissionError(
+            "End date must be the same as or after start date.",
+          );
           return;
         }
         endDate = scheduledEnd;
@@ -554,11 +625,19 @@ export default function NewCampaignPage() {
         interests: uniqueInterests,
       },
       landingPageUrl:
-        (campaignGoal.toLowerCase() === "traffic" || campaignGoal.toLowerCase() === "sales") && landingPageUrl
+        (campaignGoal.toLowerCase() === "traffic" ||
+          campaignGoal.toLowerCase() === "sales") &&
+        landingPageUrl
           ? landingPageUrl
           : undefined,
-      appId: campaignGoal.toLowerCase() === "app_promotion" && appId ? appId : undefined,
-      leadFormId: campaignGoal.toLowerCase() === "leads" && leadFormId ? leadFormId : undefined,
+      appId:
+        campaignGoal.toLowerCase() === "app_promotion" && appId
+          ? appId
+          : undefined,
+      leadFormId:
+        campaignGoal.toLowerCase() === "leads" && leadFormId
+          ? leadFormId
+          : undefined,
       budget: {
         amount: budgetAmount,
         currency,
@@ -878,367 +957,558 @@ export default function NewCampaignPage() {
     "Creative setup",
   ];
 
+  const onCreativeStep = showCreativeSetup || showAdCreative;
+  // Manual wizard screens map onto stepper indices (both event-mgmt screens
+  // sit under "Event management" = index 3).
+  const MANUAL_STEP_TO_STEPPER = [1, 2, 3, 3];
+  const onManualWizard =
+    creationMethod === "manual" && manualStep < MANUAL_STEP_TO_STEPPER.length;
+  const isAiWorking =
+    creationMethod === "ai" && aiStarted && !onCreativeStep && !showReview;
+
+  const stepperCurrent = showReview
+    ? WIZARD_STEPS.indexOf("Review and publish")
+    : onCreativeStep
+      ? WIZARD_STEPS.indexOf("Creative setup")
+      : onManualWizard
+        ? MANUAL_STEP_TO_STEPPER[manualStep]
+        : 0;
+
+  const stepperNode = (
+    <CampaignStepper
+      steps={WIZARD_STEPS}
+      current={stepperCurrent}
+      activeGradient={
+        onCreativeStep ||
+        (creationMethod === "ai" && (hasAiPrompt || aiStarted))
+      }
+      onStepClick={(index) => {
+        if (index === 0) resetToSetup();
+      }}
+    />
+  );
+
   return (
     <PanelLayout>
-      <div className="flex h-full">
-        {/* Secondary Sidebar */}
-        <CampaignsSidebar />
+      <div className="relative flex h-full">
+        <DottedBackground fade />
 
-        {/* Main Content */}
-        <div className="h-full flex-1 overflow-y-auto">
-          <div className="p-8">
-            {/* Page Header */}
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
-              New Campaign
-            </h1>
+        <div className="relative z-10 flex h-full w-full">
+          {/* Secondary Sidebar */}
+          <CampaignTreeSidebar campaignName={campaignName || brandName} />
 
-            {/* Progress Tabs */}
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 mt-1 p-4">
-              {progressTitles.map((title, index) => (
-                <button
-                  key={index}
-                  onClick={() => setProgressTab(index)}
-                  className={`px-2 py-3 rounded-lg font-medium transition-colors ${
-                    progressTab === index
-                      ? "bg-khaki-200 text-gray-900 shadow-lg"
-                      : "bg-transparent text-gray-600"
-                  } whitespace-nowrap`}
-                >
-                  {title}
-                </button>
-              ))}
-            </div>
-
-            {/* New Campaign Form */}
-            <form className="space-y-6" onSubmit={handleCreateCampaignSubmit}>
-              {/* Campaign Name */}
-              <div className="bg-white rounded-xl p-4">
-                <div className="flex gap-3 items-center">
-                  <img src="/megaphone.png" alt="megaphone-icon" />
-                  <div className="flex-1">
-                    <label
-                      htmlFor="campaignName"
-                      className="block text-sm font-medium text-gray-500"
-                    >
-                      Campaign Name
-                    </label>
-                    <input
-                      type="text"
-                      id="campaignName"
-                      name="campaignName"
-                      required
-                      maxLength={100}
-                      placeholder="Untitled Campaign"
-                      className="mt-1 block w-full focus:border-b focus:border-khaki-200 focus:outline-none md:text-lg lg:text-2xl"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Set Campaign goal */}
-              <GoalSection
-                progressTab={progressTab}
-                setProgressTab={setProgressTab}
-                campaignGoal={campaignGoal}
-                setCampaignGoal={setCampaignGoal}
-              />
-
-              {/* Choose Platform */}
-              <PlatformSection
-                progressTab={progressTab}
-                setProgressTab={setProgressTab}
-                selectedPlatforms={selectedPlatforms}
-                setSelectedPlatforms={setSelectedPlatforms}
-                brandName={brandName}
-                instagramAccountName={instagramAccountName}
-              />
-
-              {/* Target audience */}
-              <AudienceSection
-                progressTab={progressTab}
-                setProgressTab={setProgressTab}
-                brandName={brandName}
-                selectedPlatforms={selectedPlatforms}
-                instagramAccountName={instagramAccountName}
-                loadingAudiences={loadingAudiences}
-                savedAudiences={savedAudiences}
-                applyAudienceToForm={applyAudienceToForm}
-                formatCountriesSummary={formatCountriesSummary}
-                COUNTRY_OPTIONS={COUNTRY_OPTIONS}
-                metaCountries={metaCountries}
-                tiktokCountries={tiktokCountries}
-                toggleCountry={toggleCountry}
-                metaLocationQuery={metaLocationQuery}
-                setMetaLocationQuery={setMetaLocationQuery}
-                tiktokLocationQuery={tiktokLocationQuery}
-                setTiktokLocationQuery={setTiktokLocationQuery}
-                addLocationTag={addLocationTag}
-                metaLocations={metaLocations}
-                removeLocationTag={removeLocationTag}
-                tiktokLocations={tiktokLocations}
-                metaAgeMin={metaAgeMin}
-                setMetaAgeMin={setMetaAgeMin}
-                metaAgeMax={metaAgeMax}
-                setMetaAgeMax={setMetaAgeMax}
-                metaInterestQuery={metaInterestQuery}
-                setMetaInterestQuery={setMetaInterestQuery}
-                addInterestTag={addInterestTag}
-                metaInterests={metaInterests}
-                removeInterestTag={removeInterestTag}
-                tiktokInterestQuery={tiktokInterestQuery}
-                setTiktokInterestQuery={setTiktokInterestQuery}
-                tiktokInterests={tiktokInterests}
-                bothPlatformsConnected={bothPlatformsConnected}
-                saveAudienceForPlatform={saveAudienceForPlatform}
-                saveAudienceCombined={saveAudienceCombined}
-                lowerReach={lowerReach}
-                upperReach={upperReach}
-                setLowerReach={setLowerReach}
-                setUpperReach={setUpperReach}
-              />
-
-              {/* Budget & Schedule */}
-              <BudgetSection
-                progressTab={progressTab}
-                setProgressTab={setProgressTab}
-                currency={currency}
-                setCurrency={setCurrency}
-                CURRENCY_OPTIONS={CURRENCY_OPTIONS}
-                brandName={brandName}
-                useSeparateBudgets={useSeparateBudgets}
-                setUseSeparateBudgets={setUseSeparateBudgets}
-                unifiedBudgetAmount={unifiedBudgetAmount}
-                setUnifiedBudgetAmount={setUnifiedBudgetAmount}
-                unifiedBudgetFrequency={unifiedBudgetFrequency}
-                setUnifiedBudgetFrequency={setUnifiedBudgetFrequency}
-                metaBudgetAmount={metaBudgetAmount}
-                setMetaBudgetAmount={setMetaBudgetAmount}
-                metaBudgetFrequency={metaBudgetFrequency}
-                setMetaBudgetFrequency={setMetaBudgetFrequency}
-                tiktokBudgetAmount={tiktokBudgetAmount}
-                setTiktokBudgetAmount={setTiktokBudgetAmount}
-                tiktokBudgetFrequency={tiktokBudgetFrequency}
-                setTiktokBudgetFrequency={setTiktokBudgetFrequency}
-                selectedPlatforms={selectedPlatforms}
-                useSchedule={useSchedule}
-                setUseSchedule={setUseSchedule}
-                scheduleStartDate={scheduleStartDate}
-                setScheduleStartDate={setScheduleStartDate}
-                scheduleEndDate={scheduleEndDate}
-                setScheduleEndDate={setScheduleEndDate}
-                scheduleTime={scheduleTime}
-                setScheduleTime={setScheduleTime}
-              />
-
-              {/* Goal Specific Details (Conditional Box) */}
-              {(campaignGoal.toLowerCase() === "traffic"
-              || campaignGoal.toLowerCase() === "sales"
-              || campaignGoal.toLowerCase() === "leads"
-              || campaignGoal.toLowerCase() === "app_promotion") && (
-                <div className="bg-white rounded-xl p-4 border border-transparent">
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                      <div className="w-0 h-full border border-peru-200" />
-                    </div>
-                    <div className="w-full">
-                      <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                        Additional details
-                      </label>
-                      <div className="mt-4 flex flex-col gap-4 max-w-md">
-                        {(campaignGoal.toLowerCase() === "traffic" || campaignGoal.toLowerCase() === "sales") && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Landing Page URL (Website) *
-                            </label>
-                            <Input
-                              name="landingPageUrl"
-                              value={landingPageUrl}
-                              onChange={(e) => setLandingPageUrl(e.target.value)}
-                              placeholder="https://example.com"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Required for Traffic & Sales goals.</p>
-                          </div>
-                        )}
-
-                        {campaignGoal.toLowerCase() === "leads" && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Lead Form ID *
-                            </label>
-                            <Input
-                              name="leadFormId"
-                              value={leadFormId}
-                              onChange={(e) => setLeadFormId(e.target.value)}
-                              placeholder="e.g. 1234567890"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Required for Lead Generation.</p>
-                          </div>
-                        )}
-
-                        {campaignGoal.toLowerCase() === "app_promotion" && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              App ID *
-                            </label>
-                            <Input
-                              name="appId"
-                              value={appId}
-                              onChange={(e) => setAppId(e.target.value)}
-                              placeholder="e.g. com.growdex.app or Apple App ID"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Required for App Promotion.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {/* Main Content */}
+          <div className="h-full flex-1 overflow-y-auto">
+            <div className="p-8 max-w-5xl mx-auto">
+              {/* Stepper is rendered inside the AI working / creative / review views */}
+              {!isAiWorking && !onCreativeStep && !showReview && (
+                <div className="mb-8">{stepperNode}</div>
               )}
 
-              {/* Setup Creative */}
-              <CreativeSection
-                progressTab={progressTab}
-                setProgressTab={setProgressTab}
-                selectedPlatforms={selectedPlatforms}
-                creativesByPlatform={creativesByPlatform}
-                openCreativeModal={openCreativeModal}
-              />
+              {showReview ? (
+                /* Review and publish */
+                <ReviewPublishScreen
+                  stepper={stepperNode}
+                  campaignName={campaignName || brandName}
+                  goal={selectedGoalLabel}
+                  destination={selectedDestinationLabel}
+                />
+              ) : showAdCreative ? (
+                /* Ad creative editor (reuses the existing create-ad components) */
+                <>
+                  <div className="mb-8">{stepperNode}</div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdCreative(false)}
+                    className="mb-6 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back Asset Library
+                  </button>
+                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 md:p-6">
+                    <CreateAdLayout onSave={() => setShowReview(true)} />
+                  </div>
+                </>
+              ) : showCreativeSetup ? (
+                /* Shared creative setup screen (AI and manual) */
+                <CreativeSetupScreen
+                  stepper={stepperNode}
+                  onSetupAd={() => setShowAdCreative(true)}
+                />
+              ) : creationMethod === null ? (
+                /* Setup: name + choose how to create */
+                <div className="space-y-6">
+                  <CampaignNameCard
+                    value={campaignName}
+                    onChange={setCampaignName}
+                    onGenerate={handleGenerateCampaignName}
+                  />
 
-              {submissionError && (
-                <p className="text-red-500 text-sm font-medium text-center">
-                  {submissionError}
-                </p>
-              )}
+                  <CreateMethodBox
+                    value={creationMethod}
+                    onSelect={setCreationMethod}
+                  />
+                </div>
+              ) : creationMethod === "ai" && !aiStarted ? (
+                /* AI-assisted: landing */
+                <div className="space-y-6">
+                  <CampaignNameCard
+                    value={campaignName}
+                    onChange={setCampaignName}
+                    onGenerate={handleGenerateCampaignName}
+                  />
 
-              {/* create draft campaign btn */}
-              <Button
-                type="submit"
-                disabled={isCreatingCampaign}
-                className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer"
-              >
-                <CircleArrowRight />
-                {isCreatingCampaign ? "Saving..." : "Save + Review"}
-              </Button>
-            </form>
+                  <AiCampaignChat
+                    firstName={firstName}
+                    onPromptChange={setAiPrompt}
+                    onSubmit={() => setAiStarted(true)}
+                  />
+                </div>
+              ) : creationMethod === "ai" ? (
+                /* AI-assisted: working on the request */
+                <AiWorkingView
+                  campaignName={campaignName}
+                  onCampaignNameChange={setCampaignName}
+                  stepper={stepperNode}
+                  onSetupCreative={() => setShowCreativeSetup(true)}
+                  onGoalSelected={setSelectedGoalLabel}
+                />
+              ) : creationMethod === "manual" && manualStep === 0 ? (
+                /* Manual step 1: choose platform */
+                <div className="space-y-6">
+                  <CampaignNameCard
+                    value={campaignName}
+                    onChange={setCampaignName}
+                    onGenerate={handleGenerateCampaignName}
+                  />
 
-            {/* Creative Modal */}
-            {isCreativeModalOpen && (
-              <div className="fixed inset-0 bg-slate-800/40 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[600px] overflow-y-auto hide-scrollbar">
-                  <form onSubmit={handleCreativeSubmit}>
-                    <div className="p-4 border-b">
-                      <h2 className="text-lg font-bold text-center">
-                        {creativeType === "meta"
-                          ? "Meta Creative"
-                          : "TikTok Creative"}
-                      </h2>
-                    </div>
+                  <ManualPlatformScreen
+                    onConfirm={(platforms) => {
+                      setChosenPlatforms(platforms);
+                      setManualStep(1);
+                    }}
+                  />
+                </div>
+              ) : creationMethod === "manual" && manualStep === 1 ? (
+                /* Manual step 2: set campaign goals */
+                <div className="space-y-6">
+                  <CampaignNameCard
+                    value={campaignName}
+                    onChange={setCampaignName}
+                    onGenerate={handleGenerateCampaignName}
+                  />
 
-                    <div className="p-4 space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Heading
-                        </label>
-                        <Input
-                          value={creativeHeading}
-                          onChange={(e) =>
-                            setCreativeHeading(
-                              (e.target as HTMLInputElement).value,
-                            )
-                          }
-                        />
-                      </div>
+                  <ManualGoalScreen
+                    platforms={chosenPlatforms}
+                    onConfirm={(goalLabel, destinationLabel) => {
+                      setSelectedGoalLabel(goalLabel);
+                      setSelectedDestinationLabel(destinationLabel);
+                      setManualStep(2);
+                    }}
+                  />
+                </div>
+              ) : creationMethod === "manual" && manualStep === 2 ? (
+                /* Manual step 3: event management */
+                <div className="space-y-6">
+                  <CampaignNameCard
+                    value={campaignName}
+                    onChange={setCampaignName}
+                    onGenerate={handleGenerateCampaignName}
+                  />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Sub heading
-                        </label>
-                        <Input
-                          value={creativeSubheading}
-                          onChange={(e) =>
-                            setCreativeSubheading(
-                              (e.target as HTMLInputElement).value,
-                            )
-                          }
-                        />
-                      </div>
+                  <ManualEventScreen onConfirm={() => setManualStep(3)} />
+                </div>
+              ) : creationMethod === "manual" && manualStep === 3 ? (
+                /* Event management: find your audience */
+                <div className="space-y-6">
+                  <CampaignNameCard
+                    value={campaignName}
+                    onChange={setCampaignName}
+                    onGenerate={handleGenerateCampaignName}
+                  />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Image
-                        </label>
-                        <div
-                          onDragOver={handleDragOver}
-                          onDrop={handleDrop}
-                          onClick={handleBrowseClick}
-                          className="mt-2 border-2 border-dashed border-[#B8A247] rounded-md p-6 flex flex-col items-center justify-center cursor-pointer"
-                        >
-                          <UploadCloud className="w-10 h-10 text-[#B8A247]" />
-                          <p className="text-sm text-gray-600 mt-2">
-                            Browse or drag and drop an image or video here
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            Supported: JPG, PNG (max 10MB); MP4 (max 10MB)
-                          </p>
+                  <AudienceTargetingScreen
+                    onConfirm={() => setShowCreativeSetup(true)}
+                  />
+                </div>
+              ) : (
+                <>
+                  {/* Manual: full campaign form */}
+                  <button
+                    type="button"
+                    onClick={() => setCreationMethod(null)}
+                    className="mb-6 text-sm text-gray-500 hover:text-gray-800"
+                  >
+                    &larr; Back to setup
+                  </button>
+
+                  {/* Progress Tabs */}
+                  <div className="sticky top-0 z-10 bg-white border-b border-gray-200 grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 mt-1 p-4">
+                    {progressTitles.map((title, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setProgressTab(index)}
+                        className={`px-2 py-3 rounded-lg font-medium transition-colors ${
+                          progressTab === index
+                            ? "bg-khaki-200 text-gray-900 shadow-lg"
+                            : "bg-transparent text-gray-600"
+                        } whitespace-nowrap`}
+                      >
+                        {title}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* New Campaign Form */}
+                  <form
+                    className="space-y-6"
+                    onSubmit={handleCreateCampaignSubmit}
+                  >
+                    {/* Campaign Name */}
+                    <div className="bg-white rounded-xl p-4">
+                      <div className="flex gap-3 items-center">
+                        <img src="/megaphone.png" alt="megaphone-icon" />
+                        <div className="flex-1">
+                          <label
+                            htmlFor="campaignName"
+                            className="block text-sm font-medium text-gray-500"
+                          >
+                            Campaign Name
+                          </label>
                           <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*,video/*"
-                            onChange={handleImageChange}
-                            className="hidden"
+                            type="text"
+                            id="campaignName"
+                            name="campaignName"
+                            required
+                            maxLength={100}
+                            value={campaignName}
+                            onChange={(e) => setCampaignName(e.target.value)}
+                            placeholder="Untitled Campaign"
+                            className="mt-1 block w-full focus:border-b focus:border-khaki-200 focus:outline-none md:text-lg lg:text-2xl"
                           />
-
-                          {uploadError && (
-                            <div className="mt-2 text-xs text-red-600">
-                              {uploadError}
-                            </div>
-                          )}
                         </div>
-
-                        {creativePreview && (
-                          <div className="mt-2">
-                            {creativeImage?.type.startsWith("video/") ? (
-                              <video
-                                src={creativePreview}
-                                controls
-                                className="max-h-40 rounded-md"
-                              />
-                            ) : (
-                              <img
-                                src={creativePreview}
-                                alt="preview"
-                                className="max-h-40 rounded-md"
-                              />
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    <div className="p-4 border-t flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsCreativeModalOpen(false)}
-                        disabled={isUploading}
-                        className="px-4 py-2 border rounded-lg"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isUploading}
-                        className="px-4 py-2 bg-khaki-200 rounded-lg"
-                      >
-                        {isUploading
-                          ? `Uploading ${uploadProgress}%`
-                          : "Save creative"}
-                      </button>
-                    </div>
+                    {/* Set Campaign goal */}
+                    <GoalSection
+                      progressTab={progressTab}
+                      setProgressTab={setProgressTab}
+                      campaignGoal={campaignGoal}
+                      setCampaignGoal={setCampaignGoal}
+                    />
+
+                    {/* Choose Platform */}
+                    <PlatformSection
+                      progressTab={progressTab}
+                      setProgressTab={setProgressTab}
+                      selectedPlatforms={selectedPlatforms}
+                      setSelectedPlatforms={setSelectedPlatforms}
+                      brandName={brandName}
+                      instagramAccountName={instagramAccountName}
+                    />
+
+                    {/* Target audience */}
+                    <AudienceSection
+                      progressTab={progressTab}
+                      setProgressTab={setProgressTab}
+                      brandName={brandName}
+                      selectedPlatforms={selectedPlatforms}
+                      instagramAccountName={instagramAccountName}
+                      loadingAudiences={loadingAudiences}
+                      savedAudiences={savedAudiences}
+                      applyAudienceToForm={applyAudienceToForm}
+                      formatCountriesSummary={formatCountriesSummary}
+                      COUNTRY_OPTIONS={COUNTRY_OPTIONS}
+                      metaCountries={metaCountries}
+                      tiktokCountries={tiktokCountries}
+                      toggleCountry={toggleCountry}
+                      metaLocationQuery={metaLocationQuery}
+                      setMetaLocationQuery={setMetaLocationQuery}
+                      tiktokLocationQuery={tiktokLocationQuery}
+                      setTiktokLocationQuery={setTiktokLocationQuery}
+                      addLocationTag={addLocationTag}
+                      metaLocations={metaLocations}
+                      removeLocationTag={removeLocationTag}
+                      tiktokLocations={tiktokLocations}
+                      metaAgeMin={metaAgeMin}
+                      setMetaAgeMin={setMetaAgeMin}
+                      metaAgeMax={metaAgeMax}
+                      setMetaAgeMax={setMetaAgeMax}
+                      metaInterestQuery={metaInterestQuery}
+                      setMetaInterestQuery={setMetaInterestQuery}
+                      addInterestTag={addInterestTag}
+                      metaInterests={metaInterests}
+                      removeInterestTag={removeInterestTag}
+                      tiktokInterestQuery={tiktokInterestQuery}
+                      setTiktokInterestQuery={setTiktokInterestQuery}
+                      tiktokInterests={tiktokInterests}
+                      bothPlatformsConnected={bothPlatformsConnected}
+                      saveAudienceForPlatform={saveAudienceForPlatform}
+                      saveAudienceCombined={saveAudienceCombined}
+                      lowerReach={lowerReach}
+                      upperReach={upperReach}
+                      setLowerReach={setLowerReach}
+                      setUpperReach={setUpperReach}
+                    />
+
+                    {/* Budget & Schedule */}
+                    <BudgetSection
+                      progressTab={progressTab}
+                      setProgressTab={setProgressTab}
+                      currency={currency}
+                      setCurrency={setCurrency}
+                      CURRENCY_OPTIONS={CURRENCY_OPTIONS}
+                      brandName={brandName}
+                      useSeparateBudgets={useSeparateBudgets}
+                      setUseSeparateBudgets={setUseSeparateBudgets}
+                      unifiedBudgetAmount={unifiedBudgetAmount}
+                      setUnifiedBudgetAmount={setUnifiedBudgetAmount}
+                      unifiedBudgetFrequency={unifiedBudgetFrequency}
+                      setUnifiedBudgetFrequency={setUnifiedBudgetFrequency}
+                      metaBudgetAmount={metaBudgetAmount}
+                      setMetaBudgetAmount={setMetaBudgetAmount}
+                      metaBudgetFrequency={metaBudgetFrequency}
+                      setMetaBudgetFrequency={setMetaBudgetFrequency}
+                      tiktokBudgetAmount={tiktokBudgetAmount}
+                      setTiktokBudgetAmount={setTiktokBudgetAmount}
+                      tiktokBudgetFrequency={tiktokBudgetFrequency}
+                      setTiktokBudgetFrequency={setTiktokBudgetFrequency}
+                      selectedPlatforms={selectedPlatforms}
+                      useSchedule={useSchedule}
+                      setUseSchedule={setUseSchedule}
+                      scheduleStartDate={scheduleStartDate}
+                      setScheduleStartDate={setScheduleStartDate}
+                      scheduleEndDate={scheduleEndDate}
+                      setScheduleEndDate={setScheduleEndDate}
+                      scheduleTime={scheduleTime}
+                      setScheduleTime={setScheduleTime}
+                    />
+
+                    {/* Goal Specific Details (Conditional Box) */}
+                    {(campaignGoal.toLowerCase() === "traffic" ||
+                      campaignGoal.toLowerCase() === "sales" ||
+                      campaignGoal.toLowerCase() === "leads" ||
+                      campaignGoal.toLowerCase() === "app_promotion") && (
+                      <div className="bg-white rounded-xl p-4 border border-transparent">
+                        <div className="flex gap-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
+                            <div className="w-0 h-full border border-peru-200" />
+                          </div>
+                          <div className="w-full">
+                            <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
+                              Additional details
+                            </label>
+                            <div className="mt-4 flex flex-col gap-4 max-w-md">
+                              {(campaignGoal.toLowerCase() === "traffic" ||
+                                campaignGoal.toLowerCase() === "sales") && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Landing Page URL (Website) *
+                                  </label>
+                                  <Input
+                                    name="landingPageUrl"
+                                    value={landingPageUrl}
+                                    onChange={(e) =>
+                                      setLandingPageUrl(e.target.value)
+                                    }
+                                    placeholder="https://example.com"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Required for Traffic & Sales goals.
+                                  </p>
+                                </div>
+                              )}
+
+                              {campaignGoal.toLowerCase() === "leads" && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Lead Form ID *
+                                  </label>
+                                  <Input
+                                    name="leadFormId"
+                                    value={leadFormId}
+                                    onChange={(e) =>
+                                      setLeadFormId(e.target.value)
+                                    }
+                                    placeholder="e.g. 1234567890"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Required for Lead Generation.
+                                  </p>
+                                </div>
+                              )}
+
+                              {campaignGoal.toLowerCase() ===
+                                "app_promotion" && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    App ID *
+                                  </label>
+                                  <Input
+                                    name="appId"
+                                    value={appId}
+                                    onChange={(e) => setAppId(e.target.value)}
+                                    placeholder="e.g. com.growdex.app or Apple App ID"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Required for App Promotion.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Setup Creative */}
+                    <CreativeSection
+                      progressTab={progressTab}
+                      setProgressTab={setProgressTab}
+                      selectedPlatforms={selectedPlatforms}
+                      creativesByPlatform={creativesByPlatform}
+                      openCreativeModal={openCreativeModal}
+                    />
+
+                    {submissionError && (
+                      <p className="text-red-500 text-sm font-medium text-center">
+                        {submissionError}
+                      </p>
+                    )}
+
+                    {/* create draft campaign btn */}
+                    <Button
+                      type="submit"
+                      disabled={isCreatingCampaign}
+                      className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer"
+                    >
+                      <CircleArrowRight />
+                      {isCreatingCampaign ? "Saving..." : "Save + Review"}
+                    </Button>
                   </form>
-                </div>
-              </div>
-            )}
+
+                  {/* Creative Modal */}
+                  {isCreativeModalOpen && (
+                    <div className="fixed inset-0 bg-slate-800/40 flex items-center justify-center z-50 p-4">
+                      <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[600px] overflow-y-auto hide-scrollbar">
+                        <form onSubmit={handleCreativeSubmit}>
+                          <div className="p-4 border-b">
+                            <h2 className="text-lg font-bold text-center">
+                              {creativeType === "meta"
+                                ? "Meta Creative"
+                                : "TikTok Creative"}
+                            </h2>
+                          </div>
+
+                          <div className="p-4 space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Heading
+                              </label>
+                              <Input
+                                value={creativeHeading}
+                                onChange={(e) =>
+                                  setCreativeHeading(
+                                    (e.target as HTMLInputElement).value,
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Sub heading
+                              </label>
+                              <Input
+                                value={creativeSubheading}
+                                onChange={(e) =>
+                                  setCreativeSubheading(
+                                    (e.target as HTMLInputElement).value,
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Image
+                              </label>
+                              <div
+                                onDragOver={handleDragOver}
+                                onDrop={handleDrop}
+                                onClick={handleBrowseClick}
+                                className="mt-2 border-2 border-dashed border-[#B8A247] rounded-md p-6 flex flex-col items-center justify-center cursor-pointer"
+                              >
+                                <UploadCloud className="w-10 h-10 text-[#B8A247]" />
+                                <p className="text-sm text-gray-600 mt-2">
+                                  Browse or drag and drop an image or video here
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  Supported: JPG, PNG (max 10MB); MP4 (max 10MB)
+                                </p>
+                                <input
+                                  ref={fileInputRef}
+                                  type="file"
+                                  accept="image/*,video/*"
+                                  onChange={handleImageChange}
+                                  className="hidden"
+                                />
+
+                                {uploadError && (
+                                  <div className="mt-2 text-xs text-red-600">
+                                    {uploadError}
+                                  </div>
+                                )}
+                              </div>
+
+                              {creativePreview && (
+                                <div className="mt-2">
+                                  {creativeImage?.type.startsWith("video/") ? (
+                                    <video
+                                      src={creativePreview}
+                                      controls
+                                      className="max-h-40 rounded-md"
+                                    />
+                                  ) : (
+                                    <img
+                                      src={creativePreview}
+                                      alt="preview"
+                                      className="max-h-40 rounded-md"
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="p-4 border-t flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsCreativeModalOpen(false)}
+                              disabled={isUploading}
+                              className="px-4 py-2 border rounded-lg"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={isUploading}
+                              className="px-4 py-2 bg-khaki-200 rounded-lg"
+                            >
+                              {isUploading
+                                ? `Uploading ${uploadProgress}%`
+                                : "Save creative"}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
