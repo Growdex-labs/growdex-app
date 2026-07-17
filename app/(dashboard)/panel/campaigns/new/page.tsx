@@ -643,7 +643,17 @@ export default function NewCampaignPage() {
                             {campaign.campaign.goal === "LEADS" && <label className="text-sm font-medium text-gray-700 md:col-span-2">Lead form ID<Input className="mt-2" value={creative.leadFormId ?? ""} onChange={(event) => patchCreative(index, { leadFormId: event.target.value })} /></label>}
                             {campaign.campaign.goal === "APP_PROMOTION" && <label className="text-sm font-medium text-gray-700 md:col-span-2">App ID<Input className="mt-2" value={creative.appId ?? ""} onChange={(event) => patchCreative(index, { appId: event.target.value })} /></label>}
                             <div className="md:col-span-2">
-                              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                              <label className="block text-sm font-medium text-gray-700">
+                                Hosted media URL
+                                <Input
+                                  className="mt-2"
+                                  type="url"
+                                  value={creative.mediaUrl}
+                                  onChange={(event) => patchCreative(index, { mediaUrl: event.target.value })}
+                                  placeholder="https://res.cloudinary.com/…"
+                                />
+                              </label>
+                              <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                                 {uploading === index ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
                                 {uploading === index ? "Uploading…" : `Upload ${platform === "meta" ? "image" : "video"}`}
                                 <input className="hidden" type="file" disabled={uploading !== null} accept={platform === "meta" ? "image/*" : "video/*"} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadMedia(index, platform, file); event.target.value = ""; }} />
