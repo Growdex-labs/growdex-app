@@ -19,6 +19,8 @@ export function WalletHeader(): JSX.Element {
 
   const navItems = [
     { label: "Balance", href: "/panel/wallet" },
+    { label: "Transactions", href: "/panel/wallet/transactions" },
+    { label: "Fund wallet", href: "/panel/wallet/fund" },
     { label: "Budget", href: "/panel/wallet/budget" },
   ];
 

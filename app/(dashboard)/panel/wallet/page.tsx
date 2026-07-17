@@ -1,298 +1,252 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  AlertCircle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CreditCard,
+  Loader2,
+  Plus,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
-import { useEffect, useState, useMemo } from "react";
 import { useMe } from "@/context/me-context";
-import { apiFetch } from "@/lib/auth";
-import { Loader2, AlertCircle, Wallet } from "lucide-react";
+import {
+  fetchWalletOverview,
+  formatWalletMoney,
+  type WalletCurrency,
+  type WalletOverview,
+  type WalletTransaction,
+} from "@/lib/wallet";
+import { WalletHeader } from "./components/wallet-header";
 import { WalletSidebar } from "./components/wallet-sidebar";
 
-/* ─── Types ────────────────────────────────────────────────────────────────── */
-type Platform = "meta" | "tiktok";
-
-interface PlatformCfg {
-  name: string;
-  label: string;
-  logo: React.ReactNode;
-  avatarBg: string;
-}
-
-/* ─── Platform Config ─────────────────────────────────────────────────────── */
-const META_LOGO = (
-  <img
-    src="/logos_meta-icon.png"
-    alt="Meta"
-    className="w-20 h-20 object-contain"
-  />
-);
-
-const TIKTOK_LOGO = (
-  <img
-    src="/logos_tiktok-icon.png"
-    alt="TikTok"
-    className="w-20 h-20 object-contain"
-  />
-);
-
-
-const PLATFORM_CONFIG: Record<Platform, PlatformCfg> = {
-  meta: {
-    name: "Meta",
-    label: "Fund your Meta Ad Account",
-    logo: META_LOGO,
-    avatarBg: "bg-blue-600",
-  },
-  tiktok: {
-    name: "TikTok",
-    label: "Fund your TikTok Ad account",
-    logo: TIKTOK_LOGO,
-    avatarBg: "bg-gray-900",
-  },
+const STATUS_STYLES = {
+  success: "bg-emerald-100 text-emerald-700",
+  failed: "bg-red-100 text-red-700",
+  pending: "bg-amber-100 text-amber-700",
 };
 
-/* ─── Sub-components ───────────────────────────────────────────────────────── */
-function AccountAvatar({ bg }: { bg: string }) {
-  return (
-    <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center shrink-0`}>
-      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white" aria-hidden>
-        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-      </svg>
-    </div>
+const transactionLabel = (transaction: WalletTransaction) =>
+  transaction.type === "campaign_spend"
+    ? "Campaign spend"
+    : transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
+
+function SpendingChart({ overview }: { overview: WalletOverview }) {
+  const max = Math.max(
+    1,
+    ...overview.spending.flatMap((point) => [point.meta, point.tiktok]),
   );
-}
-
-function PlatformCard({
-  platform,
-  isLoadingFund,
-  onFund,
-  accountName,
-  error,
-}: {
-  platform: Platform;
-  isLoadingFund: boolean;
-  onFund: () => void;
-  accountName: string;
-  error?: string | null;
-}) {
-  const cfg = PLATFORM_CONFIG[platform];
 
   return (
-    <div className="flex flex-col">
-      <p className="text-xs text-gray-400 mb-2">{cfg.label}</p>
-
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
-        {/* header */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
-          <AccountAvatar bg={cfg.avatarBg} />
-          <span className="text-sm font-semibold text-gray-800">{accountName}</span>
+    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="font-gilroy-semibold text-gray-950">Spending insights</h2>
+          <p className="mt-1 text-xs text-gray-400">Last six months by ad platform</p>
         </div>
-
-        {/* logo area */}
-        <div className="flex items-center justify-center bg-gray-50 py-10 min-h-[190px]">
-          {cfg.logo}
-        </div>
-
-        {/* inline error alert inside the specific wallet card */}
-        {error && (
-          <div className="px-4 py-2 bg-red-50 border-t border-red-100 flex items-start gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-red-600 leading-normal">{error}</p>
-          </div>
-        )}
-
-        {/* footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-          <button
-            type="button"
-            className="text-xs text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            Switch account
-          </button>
-
-          <button
-            type="button"
-            onClick={onFund}
-            disabled={isLoadingFund}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#D6C34A] hover:bg-yellow-400 text-gray-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {isLoadingFund ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Wallet className="w-3.5 h-3.5" />
-            )}
-            {isLoadingFund ? "Opening..." : "Fund account"}
-          </button>
-        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-gilroy-semibold text-emerald-700">
+          <TrendingUp className="size-3.5" /> {overview.spendChangePercent}%
+        </span>
       </div>
-    </div>
+
+      <div className="mt-8 flex h-52 items-end gap-4 border-b border-gray-200 px-2 sm:gap-7">
+        {overview.spending.map((point) => (
+          <div key={point.label} className="flex h-full min-w-0 flex-1 flex-col justify-end">
+            <div className="flex flex-1 items-end justify-center gap-1.5">
+              <span
+                className="w-3 rounded-t-full bg-khaki-200 sm:w-4"
+                style={{ height: `${Math.max(8, (point.meta / max) * 100)}%` }}
+                title={`Meta ${formatWalletMoney(point.meta, "NGN")}`}
+              />
+              <span
+                className="w-3 rounded-t-full bg-[#312f25] sm:w-4"
+                style={{ height: `${Math.max(8, (point.tiktok / max) * 100)}%` }}
+                title={`TikTok ${formatWalletMoney(point.tiktok, "NGN")}`}
+              />
+            </div>
+            <span className="py-3 text-center text-[10px] text-gray-400 sm:text-xs">
+              {point.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center gap-5 text-xs text-gray-500">
+        <span className="inline-flex items-center gap-2">
+          <span className="size-2.5 rounded-full bg-khaki-200" /> Meta
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="size-2.5 rounded-full bg-[#312f25]" /> TikTok
+        </span>
+      </div>
+    </section>
   );
 }
 
-/* ─── Page ─────────────────────────────────────────────────────────────────── */
-export default function WalletPage() {
-  const { me, isLoading: meLoading } = useMe();
-  const [paymentUrls, setPaymentUrls] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
+export default function WalletOverviewPage() {
+  const { me } = useMe();
+  const [overview, setOverview] = useState<WalletOverview | null>(null);
+  const [currency, setCurrency] = useState<WalletCurrency>("NGN");
   const [error, setError] = useState<string | null>(null);
-  const [cardErrors, setCardErrors] = useState<Record<string, string | null>>({});
-  const [loadingPlatform, setLoadingPlatform] = useState<string | null>(null);
 
-  /* Derive connected platforms from me context */
-  const connectedPlatforms = useMemo<Platform[]>(() => {
-    if (!me?.platformConnections) return [];
-    return me.platformConnections
-      .map((c) => c.platform)
-      .filter((p): p is Platform => p === "meta" || p === "tiktok");
-  }, [me?.platformConnections]);
-
-  /* Fetch billing URLs once platforms are known */
   useEffect(() => {
-    let mounted = true;
-
-    async function fetchBilling() {
-      if (!connectedPlatforms.length) {
-        if (mounted) setLoading(false);
-        return;
-      }
-
-      if (mounted) { setLoading(true); setError(null); }
-
-      try {
-        const res = await apiFetch("/users/ad-accounts/billing", { method: "GET" });
-        if (res.ok) {
-          const data: { platform: string; billingUrl: string }[] = await res.json();
-          const map: Record<string, string> = {};
-          data.forEach(({ platform, billingUrl }) => { map[platform] = billingUrl; });
-          if (mounted) setPaymentUrls(map);
+    let active = true;
+    void fetchWalletOverview()
+      .then((result) => {
+        if (active) setOverview(result);
+      })
+      .catch((failure) => {
+        if (active) {
+          setError(
+            failure instanceof Error
+              ? failure.message
+              : "Could not load the wallet overview.",
+          );
         }
-      } catch (err) {
-        console.error("Failed to fetch billing URLs on mount", err);
-        if (mounted) setError("Failed to load billing information.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-    if (!meLoading) fetchBilling();
-    return () => { mounted = false; };
-  }, [connectedPlatforms, meLoading]);
-
-  /* Open payment URL in a popup window */
-  async function handleFund(platform: string) {
-    setLoadingPlatform(platform);
-    setCardErrors((prev) => ({ ...prev, [platform]: null }));
-    try {
-      let billingUrl = paymentUrls[platform];
-
-      // Always hit the billing endpoint first to fetch/refresh the link
-      const res = await apiFetch("/users/ad-accounts/billing", { method: "GET" });
-      if (res.ok) {
-        const data: { platform: string; billingUrl: string }[] = await res.json();
-        const found = data.find((item) => item.platform === platform);
-        if (found?.billingUrl) {
-          billingUrl = found.billingUrl;
-          setPaymentUrls((prev) => ({ ...prev, [platform]: billingUrl }));
-        }
-      }
-
-      if (!billingUrl) {
-        setCardErrors((prev) => ({ ...prev, [platform]: `Could not retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.` }));
-        setLoadingPlatform(null);
-        return;
-      }
-
-      const w = 700, h = 800;
-      const left = window.screenX + (window.outerWidth - w) / 2;
-      const top = window.screenY + (window.outerHeight - h) / 2;
-      const popup = window.open(
-        billingUrl,
-        `${platform}_payment`,
-        `width=${w},height=${h},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,noopener,noreferrer`,
-      );
-      if (!popup) {
-        setCardErrors((prev) => ({ ...prev, [platform]: "Popup blocked. Please allow popups for this site." }));
-        setLoadingPlatform(null);
-        return;
-      }
-      const timer = setInterval(() => {
-        if (popup.closed) { clearInterval(timer); setLoadingPlatform(null); }
-      }, 500);
-    } catch (err) {
-      console.error(`Failed to load billing URL for ${platform}`, err);
-      setCardErrors((prev) => ({ ...prev, [platform]: `Failed to retrieve billing link for ${platform === 'meta' ? 'Meta' : 'TikTok'}.` }));
-      setLoadingPlatform(null);
-    }
-  }
-
-  function getAccountName(platform: string) {
-    const conn = me?.platformConnections?.find((c) => c.platform === platform);
-    return conn?.accountName ?? "Growdex Ad Account";
-  }
-
-  const isPageLoading = meLoading || (loading && process.env.NEXT_PUBLIC_APP_ENV !== 'development');
-  const hasConnected = connectedPlatforms.length > 0;
-
+  const firstName = me?.profile?.firstName ?? "there";
   return (
     <PanelLayout>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
-        {/* Wallet sidebar */}
+      <div className="flex min-h-full bg-[#f5f5f5]">
         <div className="hidden sm:block">
           <WalletSidebar />
         </div>
-
-        {/* Main content */}
-        <div className="flex-1 overflow-auto p-6 sm:p-10">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Fund your ad wallet</h1>
-
-          {isPageLoading && !hasConnected ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3">
-              <Loader2 className="w-10 h-10 text-gray-300 animate-spin" />
-              <p className="text-sm text-gray-400">Loading billing options...</p>
-            </div>
-
-          ) : !hasConnected ? (
-            <div className="flex flex-col items-center justify-center py-24 px-4 gap-4">
-              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-7 h-7 text-gray-400" />
+        <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <WalletHeader />
+          <div className="mx-auto max-w-6xl space-y-5">
+            <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-sm text-gray-400">Wallet</p>
+                <h1 className="mt-1 text-2xl font-gilroy-bold text-gray-950">
+                  Good morning, {firstName}!
+                </h1>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">No connected platforms</h2>
-              <p className="text-sm text-gray-500 text-center max-w-xs">
-                Connect your Meta or TikTok account in settings to manage payments.
-              </p>
-            </div>
-
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-24 px-4 gap-4">
-              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-7 h-7 text-red-500" />
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/panel/wallet/fund"
+                  className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-khaki-300"
+                >
+                  <Plus className="size-4" /> Fund wallet
+                </Link>
+                <Link
+                  href="/panel/wallet/fund?method=card"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-gilroy-semibold text-gray-800 hover:bg-gray-50"
+                >
+                  <CreditCard className="size-4" /> Add card
+                </Link>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">Error loading payments</h2>
-              <p className="text-sm text-gray-500 text-center max-w-xs">{error}</p>
-              <button
-                onClick={() => setError(null)}
-                className="mt-2 text-xs text-blue-600 underline font-medium"
-              >
-                Go back to billing cards
-              </button>
-            </div>
+            </header>
 
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
-              {connectedPlatforms.map((platform) => (
-                <PlatformCard
-                  key={platform}
-                  platform={platform}
-                  isLoadingFund={loadingPlatform === platform}
-                  accountName={getAccountName(platform)}
-                  error={cardErrors[platform]}
-                  onFund={() => {
-                    handleFund(platform);
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+            {error ? (
+              <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 size-5 shrink-0" />
+                <div>
+                  <p className="font-gilroy-semibold">Wallet unavailable</p>
+                  <p className="mt-1">{error}</p>
+                </div>
+              </div>
+            ) : !overview ? (
+              <div className="flex min-h-96 items-center justify-center rounded-2xl border border-gray-200 bg-white">
+                <Loader2 className="size-8 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              <>
+                <section className="grid gap-4 lg:grid-cols-[1.05fr_1fr]">
+                  <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <WalletCards className="size-4" /> Wallet balance
+                      </div>
+                      <div className="flex rounded-lg bg-gray-100 p-1 text-xs">
+                        {(["NGN", "USD"] as const).map((item) => (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => setCurrency(item)}
+                            className={`rounded-md px-3 py-1.5 transition-colors ${
+                              currency === item
+                                ? "bg-khaki-200 font-gilroy-semibold text-gray-900"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="mt-8 text-3xl font-gilroy-bold tracking-tight text-gray-950 sm:text-4xl">
+                      {formatWalletMoney(overview.balances[currency], currency)}
+                    </p>
+                    <div className="mt-5 flex items-center gap-2 text-xs text-emerald-700">
+                      <ArrowUpRight className="size-4" /> Funds available for active campaigns
+                    </div>
+                  </article>
+
+                  <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
+                    <p className="text-sm text-gray-500">Ads breakdown</p>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      {overview.adAccounts.map((account) => (
+                        <div key={account.platform} className="rounded-xl bg-gray-50 p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs uppercase tracking-wide text-gray-400">
+                              {account.platform}
+                            </span>
+                            <span className={`size-2.5 rounded-full ${account.platform === "meta" ? "bg-blue-500" : "bg-gray-900"}`} />
+                          </div>
+                          <p className="mt-4 text-lg font-gilroy-bold text-gray-900">
+                            {formatWalletMoney(account.balance, account.currency)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                </section>
+
+                <SpendingChart overview={overview} />
+
+                <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                  <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4 lg:px-6">
+                    <div>
+                      <h2 className="font-gilroy-semibold text-gray-950">Recent transactions</h2>
+                      <p className="mt-1 text-xs text-gray-400">Latest wallet activity</p>
+                    </div>
+                    <Link href="/panel/wallet/transactions" className="text-xs font-gilroy-semibold text-peru-200 hover:underline">
+                      View all
+                    </Link>
+                  </div>
+
+                  <div className="divide-y divide-gray-100">
+                    {overview.transactions.map((transaction) => (
+                      <div key={transaction.id} className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 text-sm lg:grid-cols-[1.5fr_1fr_1fr_auto] lg:px-6">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className={`flex size-9 shrink-0 items-center justify-center rounded-full ${transaction.type === "deposit" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                            {transaction.type === "deposit" ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-gilroy-semibold text-gray-900">{transactionLabel(transaction)}</p>
+                            <p className="truncate text-xs text-gray-400">{transaction.merchant}</p>
+                          </div>
+                        </div>
+                        <span className="hidden text-gray-500 lg:block">{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(transaction.date))}</span>
+                        <span className="hidden font-gilroy-semibold text-gray-900 lg:block">{formatWalletMoney(transaction.amount, transaction.currency)}</span>
+                        <span className={`rounded-full px-3 py-1 text-xs font-gilroy-semibold capitalize ${STATUS_STYLES[transaction.status]}`}>{transaction.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
+          </div>
+        </main>
       </div>
     </PanelLayout>
   );

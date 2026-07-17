@@ -39,6 +39,7 @@ const isMockableDevUrl = (url: string) =>
   url === "/users/me" ||
   url === "/users/me/user" ||
   url === "/users/ad-accounts/billing" ||
+  url === "/wallet" ||
   url === "/users/onboarding" ||
   url === "/users/onboarding/business" ||
   url === "/users/onboarding/goals" ||
@@ -190,6 +191,27 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
       { platform: "meta", billingUrl: "https://www.facebook.com/ads/manager/billing" },
       { platform: "tiktok", billingUrl: "https://ads.tiktok.com/i18n/dashboard" }
     ];
+  } else if (url === "/wallet") {
+    data = {
+      balances: { NGN: 30000000, USD: 18542.71 },
+      adAccounts: [
+        { platform: "meta", balance: 15900000, currency: "NGN" },
+        { platform: "tiktok", balance: 14100000, currency: "NGN" },
+      ],
+      spending: [
+        { label: "Feb", meta: 2300000, tiktok: 3100000 },
+        { label: "Mar", meta: 1700000, tiktok: 2200000 },
+        { label: "Apr", meta: 2800000, tiktok: 3600000 },
+        { label: "May", meta: 2500000, tiktok: 4100000 },
+        { label: "Jun", meta: 3600000, tiktok: 5400000 },
+      ],
+      spendChangePercent: 42,
+      transactions: [
+        { id: "GDX-ONE-UP-01", date: "2026-06-28", type: "deposit", amount: 1690000, currency: "NGN", status: "failed", merchant: "Paystack" },
+        { id: "GDX-ONE-UP-02", date: "2026-06-28", type: "deposit", amount: 56789, currency: "NGN", status: "success", merchant: "Paystack" },
+        { id: "GDX-CAMPAIGN-03", date: "2026-06-27", type: "campaign_spend", amount: 230000, currency: "NGN", status: "pending", merchant: "Meta Ads" },
+      ],
+    };
   } else if (url === "/users/onboarding/status") {
     data = {
       meta: {

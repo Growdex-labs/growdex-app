@@ -1,303 +1,221 @@
 "use client";
-import { useState } from "react";
-import { Clipboard, Download, InfoIcon } from "lucide-react";
-import { mockWalletTransactions } from "@/lib/mock-data";
-import { EmptyState } from "../../components/empty-state";
-import { DepositIcon } from "@/components/svg";
 
-export default function PaymentHistory() {
-  const [selectedTransaction, setSelectedTransaction] = useState<number | null>(
-    1
+import { useMemo, useState } from "react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Download,
+  FileText,
+  Search,
+} from "lucide-react";
+import {
+  formatWalletMoney,
+  type WalletTransaction,
+  type WalletTransactionStatus,
+} from "@/lib/wallet";
+
+const STATUS_STYLES: Record<WalletTransactionStatus, string> = {
+  success: "bg-emerald-100 text-emerald-700",
+  failed: "bg-red-100 text-red-700",
+  pending: "bg-amber-100 text-amber-700",
+};
+
+const transactionLabel = (transaction: WalletTransaction) =>
+  transaction.type === "campaign_spend"
+    ? "Campaign spend"
+    : transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
+
+export default function PaymentHistory({
+  transactions,
+}: {
+  transactions: WalletTransaction[];
+}) {
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<"all" | WalletTransactionStatus>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(
+    transactions[0]?.id ?? null,
   );
 
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return transactions.filter((transaction) => {
+      if (status !== "all" && transaction.status !== status) return false;
+      return (
+        !normalized ||
+        transaction.id.toLowerCase().includes(normalized) ||
+        transaction.merchant.toLowerCase().includes(normalized) ||
+        transactionLabel(transaction).toLowerCase().includes(normalized)
+      );
+    });
+  }, [query, status, transactions]);
+
+  const selected =
+    filtered.find((transaction) => transaction.id === selectedId) ??
+    filtered[0] ??
+    null;
+
+  const exportCsv = () => {
+    const rows = [
+      ["Transaction ID", "Date", "Type", "Merchant", "Amount", "Currency", "Status"],
+      ...filtered.map((transaction) => [
+        transaction.id,
+        transaction.date,
+        transactionLabel(transaction),
+        transaction.merchant,
+        String(transaction.amount),
+        transaction.currency,
+        transaction.status,
+      ]),
+    ];
+    const csv = rows
+      .map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "growdex-wallet-transactions.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="mt-6 md:mt-8">
-      {/* Payment History */}
-      <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4">
-        Payment History
-      </h2>
-
-      {/* Empty State */}
-      {mockWalletTransactions.length === 0 ? (
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex-1">
-            {/* Table Header - Desktop Only */}
-            <div className="hidden lg:grid grid-cols-10 gap-4 bg-dimYellow border-b border-yellow-200 px-6 py-4 text-sm font-semibold text-gray-900">
-              <div className="col-span-2">Transaction ID</div>
-              <div className="col-span-2">Date</div>
-              <div className="col-span-2">Transaction type</div>
-              <div className="col-span-2">Amount</div>
-              <div className="col-span-2">Status</div>
-            </div>
-
-            {/* Table Rows - Desktop */}
-            <div className="hidden lg:block divide-y my-16 divide-gray-200">
-              <div className="flex flex-col items-center h-auto justify-center">
-                <div className="mb-4 md:mb-6">
-                  <Clipboard className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto" />
-                </div>
-                {/* Message */}
-                <p className="text-sm md:text-base text-gray-500 text-center max-w-md mb-2">
-                  Fund your wallet or pay for a campaign to see history
-                </p>
-                {/* Optional Action Button */}
-                <button className="flex items-center gap-2 bg-khaki-200 text-gray-900 px-6 py-2.5 rounded-lg font-medium hover:bg-khaki-300 transition-colors">
-                  <DepositIcon />
-                  Fund Wallet
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className=" lg:hidden divide-y my-16 divide-gray-200">
-              <div className="flex flex-col items-center h-auto justify-center">
-                <div className="mb-4 md:mb-6">
-                  <Clipboard className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto" />
-                </div>
-                {/* Message */}
-                <p className="text-sm md:text-base text-gray-500 text-center max-w-md mb-2">
-                  Fund your wallet or pay for a campaign to see history
-                </p>
-                {/* Optional Action Button */}
-                <button className="flex items-center gap-2 bg-khaki-200 text-gray-900 px-6 py-2.5 rounded-lg font-medium hover:bg-khaki-300 transition-colors">
-                  <DepositIcon />
-                  Fund Wallet
-                </button>
-              </div>
-            </div>
-
-            {/* Pagination */}
-            <div className="flex items-center justify-center gap-1.5 md:gap-2 py-3 md:py-4 border-t border-gray-200">
-              <small className="text-xs md:text-sm">Page</small>
-              <button className="px-2 md:px-3 py-1 rounded bg-khaki-200 text-gray-900 font-medium text-xs md:text-sm">
-                1
-              </button>
-              <button className="px-2 md:px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs md:text-sm">
-                2
-              </button>
-              <span className="px-1 md:px-2 text-khaki-200 text-xs md:text-sm">
-                ...
-              </span>
-              <button className="px-2 md:px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs md:text-sm">
-                76
-              </button>
-            </div>
+    <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-gray-100 p-4 2xl:flex-row 2xl:items-center lg:p-5">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search transactions, merchants, or categories…"
+              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm outline-none focus:border-khaki-300 focus:ring-2 focus:ring-khaki-200/30"
+            />
           </div>
+          <select
+            value={status}
+            onChange={(event) =>
+              setStatus(event.target.value as "all" | WalletTransactionStatus)
+            }
+            className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-600"
+          >
+            <option value="all">All statuses</option>
+            <option value="success">Success</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={!filtered.length}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-gilroy-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+          >
+            <Download className="size-4" /> Export CSV
+          </button>
+        </div>
 
-          {/* Transaction Details */}
-          <div className="space-y-3 md:space-y-4 lg:w-80 lg:shrink-0">
-            <div>
-              <button className="w-full bg-black-800 text-white px-4 py-4 md:py-5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors">
-                <InfoIcon className="text-peru-200 w-4 h-4" />
-                <span className="text-sm md:text-base text-dimYellow">
-                  Details
+        {filtered.length ? (
+          <div className="divide-y divide-gray-100">
+            <div className="hidden grid-cols-[1.3fr_1fr_1fr_1fr_auto] gap-4 bg-dimYellow px-5 py-3 text-xs font-gilroy-semibold text-gray-700 lg:grid">
+              <span>Transaction</span>
+              <span>Date</span>
+              <span>Type</span>
+              <span>Amount</span>
+              <span>Status</span>
+            </div>
+            {filtered.map((transaction) => (
+              <button
+                key={transaction.id}
+                type="button"
+                onClick={() => setSelectedId(transaction.id)}
+                className={`grid w-full grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 text-left text-sm transition-colors lg:grid-cols-[1.3fr_1fr_1fr_1fr_auto] ${
+                  selected?.id === transaction.id
+                    ? "bg-emerald-50/60"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className={`flex size-9 shrink-0 items-center justify-center rounded-full ${transaction.type === "deposit" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                    {transaction.type === "deposit" ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-gilroy-semibold text-gray-900">
+                      {transaction.id}
+                    </span>
+                    <span className="block truncate text-xs text-gray-400 lg:hidden">
+                      {transaction.merchant}
+                    </span>
+                  </span>
+                </span>
+                <span className="hidden text-gray-500 lg:block">
+                  {new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(
+                    new Date(transaction.date),
+                  )}
+                </span>
+                <span className="hidden text-gray-700 lg:block">
+                  {transactionLabel(transaction)}
+                </span>
+                <span className="hidden font-gilroy-semibold text-gray-900 lg:block">
+                  {formatWalletMoney(transaction.amount, transaction.currency)}
+                </span>
+                <span className={`rounded-full px-3 py-1 text-xs font-gilroy-semibold capitalize ${STATUS_STYLES[transaction.status]}`}>
+                  {transaction.status}
                 </span>
               </button>
-            </div>
-
-            <div className="bg-gray-100 rounded-xl  p-3 md:p-4 space-y-3 md:space-y-4">
-              <div className="my-80" />
-            </div>
+            ))}
           </div>
+        ) : (
+          <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
+            <FileText className="size-10 text-gray-300" />
+            <p className="mt-3 font-gilroy-semibold text-gray-900">No transactions found</p>
+            <p className="mt-1 max-w-sm text-sm text-gray-500">
+              Change the search or status filter to see more wallet activity.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <aside className="h-fit overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="bg-[#332f16] px-5 py-4 text-sm font-gilroy-semibold text-khaki-200">
+          Transaction details
         </div>
-      ) : (
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex-1">
-            {/* Table Header - Desktop Only */}
-            <div className="hidden lg:grid grid-cols-10 gap-4 bg-dimYellow border-b border-yellow-200 px-6 py-4 text-sm font-semibold text-gray-900">
-              <div className="col-span-2">Transaction ID</div>
-              <div className="col-span-2">Date</div>
-              <div className="col-span-2">Transaction type</div>
-              <div className="col-span-2">Amount</div>
-              <div className="col-span-2">Status</div>
-            </div>
-
-            {/* Table Rows - Desktop */}
-            <div className="hidden lg:block divide-y divide-gray-200">
-              {mockWalletTransactions.map((transaction, index) => (
-                <div
-                  key={index}
-                  className={`grid grid-cols-10 gap-4 px-6 py-4 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${
-                    selectedTransaction === index
-                      ? "bg-green-50 border-l-4 border-green-500"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedTransaction(index)}
-                >
-                  <div className="col-span-2 text-gray-900">
-                    {transaction.id}
-                  </div>
-                  <div className="col-span-2 text-gray-600">
-                    {transaction.date}
-                  </div>
-                  <div className="col-span-2 text-gray-900">
-                    {transaction.type}
-                  </div>
-                  <div className="col-span-2 text-gray-900">
-                    {transaction.amount}
-                  </div>
-                  <div className="col-span-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        transaction.status === "Success"
-                          ? "bg-green-100 text-green-700"
-                          : transaction.status === "Failed"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {transaction.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="lg:hidden divide-y divide-gray-200">
-              {mockWalletTransactions.map((transaction, index) => (
-                <div
-                  key={index}
-                  className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                    selectedTransaction === index
-                      ? "bg-green-50 border-l-4 border-green-500"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedTransaction(index)}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="text-xs text-gray-500 mb-1">
-                        Transaction ID
-                      </div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {transaction.id}
-                      </div>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                        transaction.status === "Success"
-                          ? "bg-green-100 text-green-700"
-                          : transaction.status === "Failed"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {transaction.status}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mt-3">
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Date</div>
-                      <div className="text-sm text-gray-900">
-                        {transaction.date}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Type</div>
-                      <div className="text-sm text-gray-900">
-                        {transaction.type}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="text-xs text-gray-500 mb-1">Amount</div>
-                    <div className="text-base font-semibold text-gray-900">
-                      {transaction.amount}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="flex items-center justify-center gap-1.5 md:gap-2 py-3 md:py-4 border-t border-gray-200">
-              <small className="text-xs md:text-sm">Page</small>
-              <button className="px-2 md:px-3 py-1 rounded bg-khaki-200 text-gray-900 font-medium text-xs md:text-sm">
-                1
-              </button>
-              <button className="px-2 md:px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs md:text-sm">
-                2
-              </button>
-              <span className="px-1 md:px-2 text-khaki-200 text-xs md:text-sm">
-                ...
+        {selected ? (
+          <div className="p-5">
+            <div className="rounded-xl bg-mintcream-50 p-4 text-center">
+              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-gilroy-semibold capitalize ${STATUS_STYLES[selected.status]}`}>
+                {selected.status}
               </span>
-              <button className="px-2 md:px-3 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs md:text-sm">
-                76
-              </button>
+              <p className="mt-3 text-2xl font-gilroy-bold text-gray-950">
+                {formatWalletMoney(selected.amount, selected.currency)}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                {new Intl.DateTimeFormat("en-NG", { dateStyle: "long" }).format(
+                  new Date(selected.date),
+                )}
+              </p>
             </div>
-          </div>
-
-          {/* Transaction Details */}
-          {selectedTransaction !== null && (
-            <div className="space-y-3 md:space-y-4 lg:w-80 lg:shrink-0">
+            <dl className="mt-5 space-y-4 text-sm">
               <div>
-                <button className="w-full bg-black-800 text-white px-4 py-4 md:py-5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors">
-                  <InfoIcon className="text-peru-200 w-4 h-4" />
-                  <span className="text-sm md:text-base text-dimYellow">
-                    Details
-                  </span>
-                </button>
+                <dt className="text-xs text-gray-400">Transaction reference</dt>
+                <dd className="mt-1 break-all font-gilroy-semibold text-gray-900">
+                  {selected.id}
+                </dd>
               </div>
-
-              <div className="bg-gray-100 rounded-xl p-3 md:p-4 space-y-3 md:space-y-4">
-                <div className="text-center bg-mintcream-50 px-2 py-3 md:py-4 rounded-xl">
-                  <div className="inline-block px-3 md:px-4 py-1 bg-green-300 text-white rounded-full text-xs md:text-sm font-medium">
-                    Success
-                  </div>
-                  <div className="text-xl md:text-2xl font-bold text-gray-900 mt-2">
-                    ₦20,000.00
-                  </div>
-                  <div className="text-xs md:text-sm text-gray-600 mt-1">
-                    2nd April 2025
-                  </div>
-                </div>
-
-                <div className="space-y-2.5 md:space-y-3 pt-3 md:pt-4 border-t border-gray-200">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">
-                      Transaction Reference
-                    </div>
-                    <div className="text-xs md:text-sm text-gray-900 break-all">
-                      CDS-235488909---0| 2ZE6661990000_debit_0
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Merchant</div>
-                    <div className="text-xs md:text-sm text-gray-900">
-                      WTH| Paystack Titan
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Recipient</div>
-                    <div className="text-xs md:text-sm text-gray-900">
-                      Amina Zubairu
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">
-                      Transaction ID
-                    </div>
-                    <div className="text-xs md:text-sm text-gray-900 break-all">
-                      233445556677 | 7878983VVEE86
-                    </div>
-                  </div>
-                </div>
-
-                <button className="w-full bg-gray-900 hover:bg-gray-800 text-khaki-200 py-2.5 md:py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm md:text-base">
-                  <Download className="w-4 h-4" />
-                  Print invoice
-                </button>
+              <div>
+                <dt className="text-xs text-gray-400">Merchant</dt>
+                <dd className="mt-1 text-gray-900">{selected.merchant}</dd>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+              <div>
+                <dt className="text-xs text-gray-400">Transaction type</dt>
+                <dd className="mt-1 text-gray-900">{transactionLabel(selected)}</dd>
+              </div>
+            </dl>
+          </div>
+        ) : (
+          <p className="p-5 text-sm text-gray-500">
+            Select a transaction to view its details.
+          </p>
+        )}
+      </aside>
     </div>
   );
 }
