@@ -276,31 +276,34 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
       return "End time must be after the start time.";
     }
   }
-  if (payload.adContent.creatives.length !== payload.campaign.platforms.length) {
-    return "Add one creative for every selected platform.";
+  if (payload.adContent.creatives.length > 6) {
+    return "A campaign can contain at most six creatives.";
   }
-  for (let index = 0; index < payload.campaign.platforms.length; index += 1) {
-    const platform = payload.campaign.platforms[index];
-    const creative = payload.adContent.creatives[index];
+  for (const platform of payload.campaign.platforms) {
+    const platformCreatives = payload.adContent.creatives.filter(
+      (creative) => creative.platform === platform,
+    );
     const label = platform === "meta" ? "Meta" : "TikTok";
-    if (creative?.platform !== platform) return `${label} creative is assigned to the wrong platform.`;
-    if (!creative?.primaryText.trim()) return `Enter primary text for ${label}.`;
-    if (!creative.mediaUrl.trim()) return `Upload media for ${label}.`;
-    if (
-      platform === "meta" &&
-      payload.campaign.configuration.destination !== "INSTANT_FORM" &&
-      !creative.landingPageUrl?.trim()
-    ) {
-      return "Enter a landing page URL for Meta.";
-    }
-    if (
-      payload.campaign.configuration.destination === "INSTANT_FORM" &&
-      !creative.leadFormId?.trim()
-    ) {
-      return `Enter a lead form ID for ${label}.`;
-    }
-    if (payload.campaign.goal === "APP_PROMOTION" && !creative.appId?.trim()) {
-      return `Enter an app ID for ${label}.`;
+    if (!platformCreatives.length) return `Add at least one ${label} creative.`;
+    for (const creative of platformCreatives) {
+      if (!creative.primaryText.trim()) return `Enter primary text for ${label}.`;
+      if (!creative.mediaUrl.trim()) return `Upload media for ${label}.`;
+      if (
+        platform === "meta" &&
+        payload.campaign.configuration.destination !== "INSTANT_FORM" &&
+        !creative.landingPageUrl?.trim()
+      ) {
+        return "Enter a landing page URL for Meta.";
+      }
+      if (
+        payload.campaign.configuration.destination === "INSTANT_FORM" &&
+        !creative.leadFormId?.trim()
+      ) {
+        return `Enter a lead form ID for ${label}.`;
+      }
+      if (payload.campaign.goal === "APP_PROMOTION" && !creative.appId?.trim()) {
+        return `Enter an app ID for ${label}.`;
+      }
     }
   }
   return null;

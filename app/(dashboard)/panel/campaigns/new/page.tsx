@@ -123,7 +123,7 @@ export default function NewCampaignPage() {
     Record<string, MetaInterest[]>
   >({});
   const creativeCache = useRef(
-    new Map<CampaignPlatform, CampaignCreativeInput>(),
+    new Map<CampaignPlatform, CampaignCreativeInput[]>(),
   );
 
   useEffect(() => {
@@ -179,9 +179,14 @@ export default function NewCampaignPage() {
     accountAssetIds: Partial<Record<CampaignPlatform, string>>,
   ) => {
     setCampaign((current) => {
-      current.adContent.creatives.forEach((creative) =>
-        creativeCache.current.set(creative.platform, creative),
-      );
+      for (const platform of current.campaign.platforms) {
+        creativeCache.current.set(
+          platform,
+          current.adContent.creatives.filter(
+            (creative) => creative.platform === platform,
+          ),
+        );
+      }
       const tiktokSelected = platforms.includes("tiktok");
       const resetGoal =
         tiktokSelected && current.campaign.goal === "APP_PROMOTION";
@@ -210,10 +215,10 @@ export default function NewCampaignPage() {
         ...current,
         campaign: { ...current.campaign, platforms, goal, configuration },
         adContent: {
-          creatives: platforms.map(
-            (platform) =>
-              creativeCache.current.get(platform) ?? emptyCreative(platform),
-          ),
+          creatives: platforms.flatMap((platform) => {
+            const cached = creativeCache.current.get(platform);
+            return cached?.length ? cached : [emptyCreative(platform)];
+          }),
         },
       };
     });
@@ -305,15 +310,42 @@ export default function NewCampaignPage() {
 
   const patchCreative = (index: number, next: Partial<CampaignCreativeInput>) => {
     setCampaign((current) => {
-      const creatives = [...current.adContent.creatives];
-      const platform = current.campaign.platforms[index];
-      creatives[index] = {
-        ...(creatives[index] ?? emptyCreative(platform)),
-        ...next,
-      };
-      creativeCache.current.set(platform, creatives[index]);
+      const existing = current.adContent.creatives[index];
+      if (!existing) return current;
+      const shared = current.campaign.configuration.sameCreativeForAll;
+      const sharedFields: Partial<CampaignCreativeInput> = {};
+      if (shared && next.primaryText !== undefined) {
+        sharedFields.primaryText = next.primaryText;
+      }
+      if (shared && next.headline !== undefined) {
+        sharedFields.headline = next.headline;
+      }
+      if (shared && next.cta !== undefined) sharedFields.cta = next.cta;
+      const creatives = current.adContent.creatives.map((creative, creativeIndex) => ({
+        ...creative,
+        ...(creativeIndex === index ? next : sharedFields),
+      }));
+      for (const platform of current.campaign.platforms) {
+        creativeCache.current.set(
+          platform,
+          creatives.filter((creative) => creative.platform === platform),
+        );
+      }
       return { ...current, adContent: { creatives } };
     });
+  };
+
+  const replaceCreatives = (creatives: CampaignCreativeInput[]) => {
+    for (const platform of campaign.campaign.platforms) {
+      creativeCache.current.set(
+        platform,
+        creatives.filter((creative) => creative.platform === platform),
+      );
+    }
+    setCampaign((current) => ({
+      ...current,
+      adContent: { creatives },
+    }));
   };
 
   const uploadMedia = async (
@@ -716,7 +748,14 @@ export default function NewCampaignPage() {
                   creatives={campaign.adContent.creatives}
                   ctaOptions={CTA_OPTIONS}
                   uploading={uploading}
+                  sameCreativeForAll={
+                    campaign.campaign.configuration.sameCreativeForAll
+                  }
+                  onSameCreativeForAllChange={(sameCreativeForAll) =>
+                    patchConfiguration({ sameCreativeForAll })
+                  }
                   onChange={patchCreative}
+                  onReplace={replaceCreatives}
                   onUpload={(index, platform, file) => void uploadMedia(index, platform, file)}
                 />
               )}
