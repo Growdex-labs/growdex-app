@@ -12,15 +12,19 @@ interface DashboardAiPanelProps {
   messages: AiMessage[];
   onSend: (text: string) => void;
   onClose: () => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export function DashboardAiPanel({
   messages,
   onSend,
   onClose,
+  loading = false,
+  error,
 }: DashboardAiPanelProps) {
   return (
-    <aside className="w-full lg:w-[360px] shrink-0 self-stretch sticky top-6 h-[calc(100vh-8rem)]">
+    <aside className="h-[calc(100vh-8rem)] w-full shrink-0 self-stretch lg:sticky lg:top-6 lg:w-[360px]">
       <div className="relative h-full">
         <button
           type="button"
@@ -32,7 +36,12 @@ export function DashboardAiPanel({
         </button>
 
         {/* Same chat panel used in the new-campaign flow */}
-        <AiSidePanel messages={messages} onSubmit={onSend} />
+        <AiSidePanel
+          messages={messages}
+          onSubmit={onSend}
+          submitting={loading}
+          error={error}
+        />
       </div>
     </aside>
   );

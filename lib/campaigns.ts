@@ -165,6 +165,10 @@ export interface CampaignMetrics {
   campaigns: CampaignDto[];
 }
 
+export interface CampaignAdviceResponse {
+  answer: string;
+}
+
 export interface MetaInterest {
   id: string;
   name: string;
@@ -324,6 +328,32 @@ export const generateCampaignDraft = async (input: {
     throw new Error(getApiError(data, `Generate campaign failed (${res.status})`));
   }
   return data as GeneratedCampaignDraft;
+};
+
+export const requestCampaignAdvice = async (
+  campaignId: string,
+  prompt: string,
+  messages: Array<{ role: "user" | "assistant"; content: string }> = [],
+): Promise<CampaignAdviceResponse> => {
+  const res = await apiFetch("/ai/campaign-advice", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ campaignId, prompt, messages }),
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      getApiError(data, "The campaign assistant could not answer right now."),
+    );
+  }
+  const answer =
+    data && typeof data === "object" && "answer" in data
+      ? (data as { answer?: unknown }).answer
+      : undefined;
+  if (typeof answer !== "string" || !answer.trim()) {
+    throw new Error("The campaign assistant returned an invalid response.");
+  }
+  return { answer: answer.trim() };
 };
 
 export const searchMetaInterests = async (

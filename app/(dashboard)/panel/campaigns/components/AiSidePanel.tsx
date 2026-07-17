@@ -19,6 +19,8 @@ interface AiSidePanelProps {
   suggestions?: string[];
   onAnswer?: (selected: string[]) => void;
   onSubmit?: (prompt: string) => void;
+  submitting?: boolean;
+  error?: string | null;
 }
 
 export function AiSidePanel({
@@ -28,6 +30,8 @@ export function AiSidePanel({
   suggestions = [],
   onAnswer,
   onSubmit,
+  submitting = false,
+  error,
 }: AiSidePanelProps) {
   const [prompt, setPrompt] = useState("");
   const [selectedOptions, setSelectedOptions] = useState<
@@ -139,6 +143,14 @@ export function AiSidePanel({
 
       {/* Prompt input */}
       <div className="p-3 border-gray-100">
+        {submitting && (
+          <p className="mb-2 text-xs text-violet-600">Thinking…</p>
+        )}
+        {error && (
+          <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+            {error}
+          </p>
+        )}
         {/* Quick-reply suggestion chips */}
         {suggestions.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
@@ -167,13 +179,15 @@ export function AiSidePanel({
               }
             }}
             placeholder="Where are we starting from?"
-            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none"
+            disabled={submitting}
+            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none disabled:opacity-60"
           />
           <button
             type="button"
             onClick={submit}
+            disabled={submitting || !prompt.trim()}
             style={{ background: PURPLE_GRADIENT }}
-            className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-white hover:opacity-90 transition-opacity"
+            className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-white hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Send"
           >
             <SendHorizontal className="w-4 h-4" />
