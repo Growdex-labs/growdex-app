@@ -43,68 +43,17 @@ const isMockableDevUrl = (url: string) =>
   url === "/users/onboarding/business" ||
   url === "/users/onboarding/goals" ||
   url === "/users/onboarding/complete" ||
-  url === "/users/onboarding/status" ||
   url === "/notifications/history" ||
-  url === "/media/signature-stamp" ||
   url === "/auth/mfa/status" ||
   url === "/auth/mfa/enable" ||
   url === "/auth/mfa/disable" ||
   url === "/auth/verify-mfa" ||
-  url === "/campaigns" ||
-  url === "/campaigns/metrics" ||
-  url.startsWith("/campaigns/") ||
   url === "/audiences" ||
   url.startsWith("/audiences/");
 
 const getMockResponse = (url: string, options?: RequestInit): Response => {
   let data: unknown = { success: true };
   let status = 200;
-  const mockCampaigns = [
-    {
-      id: "fe8df890-0917-4cd0-9d41-fb2fd2fbfcc7",
-      name: "Growdex Meta Traffic Test",
-      goal: "TRAFFIC",
-      platforms: ["meta"],
-      targeting: {
-        locations: ["NG"],
-        ageMin: 18,
-        ageMax: 65,
-        gender: "all",
-        interests: ["technology", "business"],
-      },
-      budget: {
-        amount: 500000,
-        currency: "NGN",
-        type: "daily",
-        startDate: "2026-06-09T08:00:00.000Z",
-        endDate: "2026-06-16T08:00:00.000Z",
-      },
-      status: "scheduled",
-      createdAt: "2026-06-09T08:00:00.000Z",
-    },
-    {
-      id: "18f4520f-5424-450d-9e8f-35d9b8450c09",
-      name: "Codex Test Campaign",
-      goal: "AWARENESS",
-      platforms: ["meta", "tiktok"],
-      targeting: {
-        locations: ["NG"],
-        ageMin: 18,
-        ageMax: 65,
-        gender: "all",
-        interests: ["marketing"],
-      },
-      budget: {
-        amount: 500000,
-        currency: "NGN",
-        type: "daily",
-        startDate: "2026-06-09T08:00:00.000Z",
-        endDate: "2026-06-16T08:00:00.000Z",
-      },
-      status: "scheduled",
-      createdAt: "2026-06-09T08:00:00.000Z",
-    },
-  ];
   const mockAudiences = [
     {
       id: "7a6d3fb4-d254-4f8a-b4c3-4dd2dd923733",
@@ -289,36 +238,6 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
     };
   } else if (url === "/auth/mfa/disable" || url === "/auth/verify-mfa") {
     data = { success: true, status: true };
-  } else if (url === "/campaigns" && options?.method === "POST") {
-    data = {
-      ...mockCampaigns[0],
-      id: "3e8d9f6a-820e-4cc8-a6d0-9729ff9d9fb8",
-      status: "scheduled",
-    };
-  } else if (url === "/campaigns") {
-    data = mockCampaigns;
-  } else if (url === "/campaigns/metrics") {
-    data = {
-      summary: {
-        totalSpend: 0,
-        activeCount: 0,
-        suspendedCount: 0,
-        scheduledCount: mockCampaigns.length,
-        completedCount: 0,
-      },
-      campaigns: mockCampaigns,
-    };
-  } else if (url.startsWith("/campaigns/") && url.endsWith("/publish")) {
-    data = { success: true, status: "publishing" };
-  } else if (url.startsWith("/campaigns/")) {
-    const id = decodeURIComponent(url.replace("/campaigns/", ""));
-    const campaign = mockCampaigns.find((item) => item.id === id);
-    if (campaign) {
-      data = campaign;
-    } else {
-      status = 404;
-      data = { message: "Campaign not found" };
-    }
   } else if (url === "/audiences" && options?.method === "POST") {
     try {
       const body = options.body ? JSON.parse(options.body as string) : {};
@@ -341,12 +260,6 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
       status = 404;
       data = { message: "Audience not found" };
     }
-  } else if (url === "/media/signature-stamp") {
-    data = {
-      signature: "mock_signature",
-      timestamp: Math.floor(Date.now() / 1000),
-      api_key: "mock_api_key",
-    };
   }
 
   return new Response(JSON.stringify(data), {
