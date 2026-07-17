@@ -9,7 +9,7 @@ import {
   campaignDtoToPayload,
   fetchCampaignById,
   publishCampaign,
-  type CreateCampaignPayload,
+  type CampaignReviewPayload,
 } from "@/lib/campaigns";
 import { CampaignTreeSidebar } from "../../components/CampaignTreeSidebar";
 import { ReviewPublishScreen } from "../../components/ReviewPublishScreen";
@@ -19,7 +19,7 @@ export default function PublishCampaignPage() {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("id");
   const { me } = useMe();
-  const [campaign, setCampaign] = useState<CreateCampaignPayload | null>(null);
+  const [campaign, setCampaign] = useState<CampaignReviewPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);

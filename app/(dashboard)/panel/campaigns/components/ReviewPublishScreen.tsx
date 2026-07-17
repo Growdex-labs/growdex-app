@@ -4,7 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
-  type CreateCampaignPayload,
+  type CampaignReviewPayload,
   validateCampaignPayload,
 } from "@/lib/campaigns";
 import { isVideoUrl } from "@/lib/campaign-shared";
@@ -12,7 +12,7 @@ import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
 
 interface ReviewPublishScreenProps {
   stepper?: ReactNode;
-  campaign: CreateCampaignPayload;
+  campaign: CampaignReviewPayload;
   brandName?: string;
   onPublish: () => void;
   onSaveDraft?: () => void;
@@ -22,7 +22,7 @@ interface ReviewPublishScreenProps {
   error?: string | null;
 }
 
-const goalLabels: Record<CreateCampaignPayload["campaign"]["goal"], string> = {
+const goalLabels: Record<CampaignReviewPayload["campaign"]["goal"], string> = {
   AWARENESS: "Awareness",
   TRAFFIC: "Traffic",
   ENGAGEMENT: "Engagement",

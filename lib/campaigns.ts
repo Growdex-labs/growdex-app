@@ -9,6 +9,7 @@ export type CampaignGoal =
   | "APP_PROMOTION";
 
 export type CampaignPlatform = "meta" | "tiktok";
+export type CampaignCreationMode = "manual" | "ai";
 export type CampaignGender = "all" | "male" | "female";
 export type BudgetType = "daily" | "lifetime";
 export type CampaignCurrency = "NGN" | "USD";
@@ -36,7 +37,7 @@ export interface CampaignCreativeInput {
 }
 
 export interface CreateCampaignPayload {
-  creationMode: "manual" | "ai";
+  creationMode: CampaignCreationMode;
   campaign: {
     name: string;
     goal: CampaignGoal;
@@ -93,6 +94,7 @@ export interface CampaignCreativeDto extends CampaignCreativeInput {
 export interface CampaignDto {
   id: string;
   name: string;
+  creationMode: CampaignCreationMode | null;
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
   targeting: CreateCampaignPayload["audience"];
@@ -102,6 +104,13 @@ export interface CampaignDto {
   publishError?: string | null;
   createdAt?: string;
 }
+
+export type CampaignReviewPayload = Omit<
+  CreateCampaignPayload,
+  "creationMode"
+> & {
+  creationMode: CampaignCreationMode | "unknown";
+};
 
 export interface CampaignMetrics {
   summary: {
@@ -155,7 +164,7 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
   adContent: { creatives: [] },
 });
 
-export const validateCampaignPayload = (payload: CreateCampaignPayload) => {
+export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name.";
   if (!payload.campaign.platforms.length) return "Select at least one platform.";
   if (!payload.audience.locations.length) return "Select at least one country.";
@@ -360,8 +369,8 @@ export const publishCampaign = async (id: string): Promise<CampaignDto> => {
 
 export const campaignDtoToPayload = (
   campaign: CampaignDto,
-): CreateCampaignPayload => ({
-  creationMode: "manual",
+): CampaignReviewPayload => ({
+  creationMode: campaign.creationMode ?? "unknown",
   campaign: {
     name: campaign.name,
     goal: campaign.goal,
