@@ -235,13 +235,13 @@ export default function NewCampaignPage() {
     setError(null);
     try {
       const generated = await generateCampaignDraft({ prompt, brandName });
-      const start = generated.budget.startDate
-        ? new Date(generated.budget.startDate)
+      const start = generated.budget.startDateLocal
+        ? new Date(generated.budget.startDateLocal)
         : new Date(Date.now() + 30 * 60_000);
-      const end = generated.budget.endDate
-        ? new Date(generated.budget.endDate)
+      const end = generated.budget.endDateLocal
+        ? new Date(generated.budget.endDateLocal)
         : new Date(start);
-      if (!generated.budget.endDate) {
+      if (!generated.budget.endDateLocal) {
         end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
       }
       const requestedName = campaign.campaign.name.trim();
@@ -809,8 +809,8 @@ export default function NewCampaignPage() {
                     <label className="text-sm font-medium text-gray-700">Amount<Input className="mt-2" type="number" min="0.01" step="0.01" value={campaign.budget.amount || ""} onChange={(event) => patchBudget({ amount: Number(event.target.value) })} /></label>
                     <label className="text-sm font-medium text-gray-700">Currency<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.currency} onChange={(event) => patchBudget({ currency: event.target.value as "NGN" | "USD" })}><option value="NGN">NGN</option><option value="USD">USD</option></select></label>
                     <label className="text-sm font-medium text-gray-700">Budget type<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.type} onChange={(event) => patchBudget({ type: event.target.value as "daily" | "lifetime" })}><option value="daily">Daily</option><option value="lifetime">Lifetime</option></select></label>
-                    <label className="text-sm font-medium text-gray-700">Start time<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.startDate)} onChange={(event) => event.target.value && patchBudget({ startDate: new Date(event.target.value).toISOString() })} /></label>
-                    <label className="text-sm font-medium text-gray-700">End time (optional)<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.endDate)} onChange={(event) => patchBudget({ endDate: event.target.value ? new Date(event.target.value).toISOString() : undefined })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Start time<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.startDate)} onInput={(event) => { const value = event.currentTarget.value; if (value) patchBudget({ startDate: new Date(value).toISOString() }); }} /></label>
+                    <label className="text-sm font-medium text-gray-700">End time (optional)<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.endDate)} onInput={(event) => { const value = event.currentTarget.value; patchBudget({ endDate: value ? new Date(value).toISOString() : undefined }); }} /></label>
                   </div>
                 </section>
               )}
