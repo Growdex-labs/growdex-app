@@ -12,6 +12,7 @@ export interface SocialAccountSetupProps {
 }
 
 export interface MetaAssetUI {
+  id: string;
   adAccountId: string;
   adAccountName: string;
   pageName: string;
@@ -20,6 +21,7 @@ export interface MetaAssetUI {
 }
 
 export interface TikTokAssetUI {
+  id: string;
   advertiserId: string;
   name: string;
   isPrimary: boolean;

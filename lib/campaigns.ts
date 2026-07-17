@@ -13,6 +13,34 @@ export type CampaignCreationMode = "manual" | "ai";
 export type CampaignGender = "all" | "male" | "female";
 export type BudgetType = "daily" | "lifetime";
 export type CampaignCurrency = "NGN" | "USD";
+export type CampaignDestination =
+  | "WEBSITE"
+  | "INSTANT_FORM"
+  | "WHATSAPP"
+  | "MESSENGER"
+  | "PROFILE"
+  | "VIDEO"
+  | "APP";
+export type CampaignOptimizationGoal =
+  | "REACH"
+  | "IMPRESSIONS"
+  | "LINK_CLICKS"
+  | "LANDING_PAGE_VIEWS"
+  | "POST_ENGAGEMENT"
+  | "VIDEO_VIEWS"
+  | "LEAD_GENERATION"
+  | "CONVERSIONS"
+  | "APP_INSTALLS"
+  | "APP_EVENTS"
+  | "FOLLOWERS"
+  | "MESSAGES";
+export interface CampaignConfiguration {
+  destination: CampaignDestination;
+  optimizationGoal: CampaignOptimizationGoal;
+  accountAssetIds?: Partial<Record<CampaignPlatform, string>>;
+  eventSourceIds?: Partial<Record<CampaignPlatform, string>>;
+  sameCreativeForAll: boolean;
+}
 export type CampaignCta =
   | "LEARN_MORE"
   | "SHOP_NOW"
@@ -42,6 +70,7 @@ export interface CreateCampaignPayload {
     name: string;
     goal: CampaignGoal;
     platforms: CampaignPlatform[];
+    configuration: CampaignConfiguration;
   };
   audience: {
     locations: string[];
@@ -49,6 +78,10 @@ export interface CreateCampaignPayload {
     ageMax?: number;
     gender?: CampaignGender;
     interests?: string[];
+    includeAudienceIds?: string[];
+    excludeAudienceIds?: string[];
+    languages?: string[];
+    devices?: Array<"mobile" | "desktop">;
   };
   budget: {
     amount: number;
@@ -66,6 +99,10 @@ export interface GeneratedCampaignDraft {
   name: string;
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
+  configuration: Pick<
+    CampaignConfiguration,
+    "destination" | "optimizationGoal"
+  >;
   audience: CreateCampaignPayload["audience"];
   budget: {
     amount: number;
@@ -83,6 +120,10 @@ export interface GeneratedCampaignDraft {
     landingPageUrl?: string | null;
   };
   rationale: string;
+  stepRationales: Record<
+    "setup" | "goal" | "platforms" | "audience" | "budget" | "creative",
+    string
+  >;
 }
 
 export interface CampaignCreativeDto extends CampaignCreativeInput {
@@ -97,6 +138,7 @@ export interface CampaignDto {
   creationMode: CampaignCreationMode | null;
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
+  configuration: CampaignConfiguration;
   targeting: CreateCampaignPayload["audience"];
   budget: CreateCampaignPayload["budget"];
   creatives?: CampaignCreativeDto[];
@@ -136,6 +178,19 @@ export interface AudienceReachForecast {
   source: "meta";
 }
 
+export interface CampaignEventSource {
+  id: string;
+  name: string;
+  platform: CampaignPlatform;
+  lastActiveAt: string | null;
+  available: boolean;
+}
+
+export interface ProviderLanguage {
+  id: string;
+  name: string;
+}
+
 const readJson = async (res: Response) => res.json().catch(() => ({}));
 
 const getApiError = (data: unknown, fallback: string) => {
@@ -154,13 +209,28 @@ const futureIso = (minutes: number) =>
 
 export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
   creationMode: "manual",
-  campaign: { name: "", goal: "AWARENESS", platforms: [] },
+  campaign: {
+    name: "",
+    goal: "AWARENESS",
+    platforms: [],
+    configuration: {
+      destination: "WEBSITE",
+      optimizationGoal: "REACH",
+      accountAssetIds: {},
+      eventSourceIds: {},
+      sameCreativeForAll: true,
+    },
+  },
   audience: {
     locations: ["NG"],
     ageMin: 18,
     ageMax: 65,
     gender: "all",
     interests: [],
+    includeAudienceIds: [],
+    excludeAudienceIds: [],
+    languages: [],
+    devices: ["mobile"],
   },
   budget: {
     amount: 0,
@@ -174,6 +244,19 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
 export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name.";
   if (!payload.campaign.platforms.length) return "Select at least one platform.";
+  for (const platform of payload.campaign.platforms) {
+    if (!payload.campaign.configuration.accountAssetIds?.[platform]) {
+      return `Select a ${platform === "meta" ? "Meta" : "TikTok"} ad account.`;
+    }
+  }
+  if (
+    payload.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
+    payload.campaign.platforms.some(
+      (platform) => !payload.campaign.configuration.eventSourceIds?.[platform],
+    )
+  ) {
+    return "Select an event source for every conversion platform.";
+  }
   if (!payload.audience.locations.length) return "Select at least one country.";
   const ageMin = payload.audience.ageMin ?? 18;
   const ageMax = payload.audience.ageMax ?? 65;
@@ -203,10 +286,17 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
     if (creative?.platform !== platform) return `${label} creative is assigned to the wrong platform.`;
     if (!creative?.primaryText.trim()) return `Enter primary text for ${label}.`;
     if (!creative.mediaUrl.trim()) return `Upload media for ${label}.`;
-    if (platform === "meta" && !creative.landingPageUrl?.trim()) {
+    if (
+      platform === "meta" &&
+      payload.campaign.configuration.destination !== "INSTANT_FORM" &&
+      !creative.landingPageUrl?.trim()
+    ) {
       return "Enter a landing page URL for Meta.";
     }
-    if (payload.campaign.goal === "LEADS" && !creative.leadFormId?.trim()) {
+    if (
+      payload.campaign.configuration.destination === "INSTANT_FORM" &&
+      !creative.leadFormId?.trim()
+    ) {
       return `Enter a lead form ID for ${label}.`;
     }
     if (payload.campaign.goal === "APP_PROMOTION" && !creative.appId?.trim()) {
@@ -252,6 +342,7 @@ export const searchMetaInterests = async (
 
 export const forecastCampaignReach = async (input: {
   goal: CampaignGoal;
+  accountAssetId?: string;
   audience: CreateCampaignPayload["audience"];
 }): Promise<AudienceReachForecast> => {
   const res = await apiFetch("/campaigns/reach-forecast", {
@@ -275,6 +366,47 @@ export const forecastCampaignReach = async (input: {
   return forecast as AudienceReachForecast;
 };
 
+export const fetchCampaignEventSources = async (
+  platform: CampaignPlatform,
+  assetId: string,
+): Promise<CampaignEventSource[]> => {
+  const res = await apiFetch(
+    `/campaigns/event-sources?platform=${platform}&assetId=${encodeURIComponent(assetId)}`,
+    { method: "GET" },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      getApiError(data, `Load ${platform} event sources failed (${res.status})`),
+    );
+  }
+  if (!Array.isArray(data)) {
+    throw new Error("Event sources returned an invalid response shape");
+  }
+  return data as CampaignEventSource[];
+};
+
+export const searchProviderLanguages = async (
+  platform: CampaignPlatform,
+  assetId: string,
+  query: string,
+): Promise<ProviderLanguage[]> => {
+  const params = new URLSearchParams({ platform, assetId, query });
+  const res = await apiFetch(`/campaigns/languages?${params.toString()}`, {
+    method: "GET",
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      getApiError(data, `Load ${platform} languages failed (${res.status})`),
+    );
+  }
+  if (!Array.isArray(data)) {
+    throw new Error("Languages returned an invalid response shape");
+  }
+  return data as ProviderLanguage[];
+};
+
 const serializeCampaignPayload = (
   payload: CreateCampaignPayload,
 ): CreateCampaignPayload => ({
@@ -287,6 +419,7 @@ const serializeCampaignPayload = (
     ...payload.audience,
     locations: [...new Set(payload.audience.locations.map((item) => item.trim()))].filter(Boolean),
     interests: [...new Set((payload.audience.interests ?? []).map((item) => item.trim()))].filter(Boolean),
+    languages: [...new Set((payload.audience.languages ?? []).map((item) => item.trim()))].filter(Boolean),
   },
   budget: {
     ...payload.budget,
@@ -407,6 +540,7 @@ export const campaignDtoToPayload = (
     name: campaign.name,
     goal: campaign.goal,
     platforms: campaign.platforms,
+    configuration: campaign.configuration,
   },
   audience: campaign.targeting,
   budget: campaign.budget,

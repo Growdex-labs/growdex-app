@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
   Sparkles,
 } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
@@ -21,8 +20,8 @@ import {
   searchMetaInterests,
   validateCampaignPayload,
   type CampaignCreativeInput,
+  type CampaignConfiguration,
   type CampaignCta,
-  type CampaignGoal,
   type CampaignPlatform,
   type CreateCampaignPayload,
   type MetaInterest,
@@ -38,10 +37,11 @@ import { AdCreatedModal } from "../components/AdCreatedModal";
 import { AiWorkingView } from "../components/AiWorkingView";
 import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
 import { CampaignNameCard } from "../components/CampaignNameCard";
-import { CampaignSkeleton } from "../components/CampaignSkeleton";
 import { CampaignStepper } from "../components/CampaignStepper";
 import { CampaignTreeSidebar } from "../components/CampaignTreeSidebar";
 import { CreativeSetupScreen } from "../components/CreativeSetupScreen";
+import { ManualGoalScreen } from "../components/ManualGoalScreen";
+import { ManualPlatformScreen } from "../components/ManualPlatformScreen";
 import {
   CreateMethodBox,
   type CreationMethod,
@@ -56,15 +56,6 @@ const STEPS = [
   "Budget and schedule",
   "Creative setup",
   "Review and publish",
-];
-
-const GOALS: Array<{ value: CampaignGoal; label: string; description: string }> = [
-  { value: "AWARENESS", label: "Awareness", description: "Show your brand to more people." },
-  { value: "TRAFFIC", label: "Traffic", description: "Send people to a website or landing page." },
-  { value: "ENGAGEMENT", label: "Engagement", description: "Grow reactions, comments, shares, or views." },
-  { value: "SALES", label: "Sales", description: "Drive purchases or other valuable actions." },
-  { value: "LEADS", label: "Lead generation", description: "Collect contact details from potential customers." },
-  { value: "APP_PROMOTION", label: "App promotion", description: "Drive app installs or in-app actions." },
 ];
 
 const CTA_OPTIONS: Array<{ value: CampaignCta; label: string }> = [
@@ -101,16 +92,6 @@ const connected = (
   accounts: SocialAccountSetupProps | null,
   platform: CampaignPlatform,
 ) => Boolean(accounts?.[platform]?.connected && !accounts[platform]?.needsReauth);
-
-function SelectionMark({ checked }: { checked: boolean }) {
-  return (
-    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-      checked ? "border-khaki-300 bg-khaki-200" : "border-gray-300 bg-white"
-    }`}>
-      {checked && <Check className="h-3 w-3" />}
-    </span>
-  );
-}
 
 export default function NewCampaignPage() {
   const router = useRouter();
@@ -170,6 +151,15 @@ export default function NewCampaignPage() {
       campaign: { ...current.campaign, ...next },
     }));
 
+  const patchConfiguration = (next: Partial<CampaignConfiguration>) =>
+    setCampaign((current) => ({
+      ...current,
+      campaign: {
+        ...current.campaign,
+        configuration: { ...current.campaign.configuration, ...next },
+      },
+    }));
+
   const patchAudience = (
     next: Partial<CreateCampaignPayload["audience"]>,
   ) =>
@@ -184,14 +174,41 @@ export default function NewCampaignPage() {
       budget: { ...current.budget, ...next },
     }));
 
-  const setPlatforms = (platforms: CampaignPlatform[]) => {
+  const setPlatformAccounts = (
+    platforms: CampaignPlatform[],
+    accountAssetIds: Partial<Record<CampaignPlatform, string>>,
+  ) => {
     setCampaign((current) => {
       current.adContent.creatives.forEach((creative) =>
         creativeCache.current.set(creative.platform, creative),
       );
+      const tiktokSelected = platforms.includes("tiktok");
+      const resetGoal =
+        tiktokSelected && current.campaign.goal === "APP_PROMOTION";
+      const resetDestination =
+        tiktokSelected &&
+        current.campaign.configuration.destination === "INSTANT_FORM";
+      const goal = resetGoal ? "AWARENESS" : current.campaign.goal;
+      const configuration = {
+        ...current.campaign.configuration,
+        accountAssetIds,
+        eventSourceIds: Object.fromEntries(
+          Object.entries(
+            current.campaign.configuration.eventSourceIds ?? {},
+          ).filter(([platform]) =>
+            platforms.includes(platform as CampaignPlatform),
+          ),
+        ),
+        ...(resetGoal || resetDestination
+          ? {
+              destination: "WEBSITE" as const,
+              optimizationGoal: "REACH" as const,
+            }
+          : {}),
+      };
       return {
         ...current,
-        campaign: { ...current.campaign, platforms },
+        campaign: { ...current.campaign, platforms, goal, configuration },
         adContent: {
           creatives: platforms.map(
             (platform) =>
@@ -200,15 +217,6 @@ export default function NewCampaignPage() {
         },
       };
     });
-  };
-
-  const togglePlatform = (platform: CampaignPlatform) => {
-    const selected = campaign.campaign.platforms.includes(platform);
-    setPlatforms(
-      selected
-        ? campaign.campaign.platforms.filter((item) => item !== platform)
-        : [...campaign.campaign.platforms, platform],
-    );
   };
 
   const connect = async (platform: CampaignPlatform) => {
@@ -244,12 +252,27 @@ export default function NewCampaignPage() {
         end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
       }
       const requestedName = campaign.campaign.name.trim();
+      const accountAssetIds = Object.fromEntries(
+        generated.platforms.flatMap((platform) => {
+          const selected = campaign.campaign.configuration.accountAssetIds?.[platform];
+          const primary = accounts?.[platform]?.assets?.find((asset) => asset.isPrimary)?.id;
+          const first = accounts?.[platform]?.assets?.[0]?.id;
+          const assetId = selected ?? primary ?? first;
+          return assetId ? [[platform, assetId]] : [];
+        }),
+      ) as Partial<Record<CampaignPlatform, string>>;
       setCampaign({
         creationMode: "ai",
         campaign: {
           name: requestedName || generated.name,
           goal: generated.goal,
           platforms: generated.platforms,
+          configuration: {
+            ...generated.configuration,
+            accountAssetIds,
+            eventSourceIds: {},
+            sameCreativeForAll: true,
+          },
         },
         audience: generated.audience,
         budget: {
@@ -435,8 +458,15 @@ export default function NewCampaignPage() {
       setError("Enter a campaign name.");
       return;
     }
-    if (step === 1 && !campaign.campaign.platforms.length) {
-      setError("Choose at least one advertising platform.");
+    if (
+      step === 1 &&
+      (!campaign.campaign.platforms.length ||
+        campaign.campaign.platforms.some(
+          (platform) =>
+            !campaign.campaign.configuration.accountAssetIds?.[platform],
+        ))
+    ) {
+      setError("Choose an ad account for every selected platform.");
       return;
     }
     if (step === 2 && !goalConfirmed) {
@@ -609,79 +639,43 @@ export default function NewCampaignPage() {
               )}
 
               {step === 1 && (
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-                  <h2 className="text-xl font-bold text-gray-900">What platforms are you running this ad on?</h2>
-                  <p className="mt-2 text-sm text-gray-500">You can build a draft before connecting an account. A live connection is required to publish.</p>
-                  {accountsLoading ? (
-                    <div className="mt-6 grid gap-4 md:grid-cols-2">
-                      <CampaignSkeleton className="h-32 w-full" />
-                      <CampaignSkeleton className="h-32 w-full" />
-                    </div>
-                  ) : <div className="mt-6 grid gap-4 md:grid-cols-2">
-                    {(["meta", "tiktok"] as CampaignPlatform[]).map((platform) => {
-                      const isSelected = campaign.campaign.platforms.includes(platform);
-                      const isConnected = connected(accounts, platform);
-                      const accountName = platform === "meta"
-                        ? accounts?.meta?.assets?.[0]?.adAccountName
-                        : accounts?.tiktok?.assets?.[0]?.name;
-                      return (
-                        <div key={platform} className={`rounded-xl border p-4 ${isSelected ? "border-khaki-300" : "border-gray-200"}`}>
-                          <button type="button" onClick={() => togglePlatform(platform)} className="flex w-full items-center gap-3 text-left">
-                            <SelectionMark checked={isSelected} />
-                            <div className="flex-1">
-                              <p className="font-semibold capitalize text-gray-900">{platform === "meta" ? "Meta" : "TikTok"}</p>
-                              <p className="mt-0.5 text-xs text-gray-400">{accountName || (isConnected ? "Connected account" : "No account connected")}</p>
-                            </div>
-                            <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? "bg-green-500" : "bg-gray-300"}`} />
-                          </button>
-                          {!isConnected && (
-                            <button
-                              type="button"
-                              onClick={() => void connect(platform)}
-                              disabled={connecting !== null}
-                              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              {connecting === platform ? "Connecting…" : `Connect ${platform === "meta" ? "Meta" : "TikTok"}`}
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>}
-                  {accountError && <p className="mt-4 text-sm text-red-600">{accountError}</p>}
-                </section>
+                <div>
+                  <ManualPlatformScreen
+                    accounts={accounts}
+                    loading={accountsLoading}
+                    connecting={connecting}
+                    platforms={campaign.campaign.platforms}
+                    accountAssetIds={
+                      campaign.campaign.configuration.accountAssetIds ?? {}
+                    }
+                    onChange={setPlatformAccounts}
+                    onConnect={(platform) => void connect(platform)}
+                  />
+                  {accountError && (
+                    <p className="mt-4 text-sm text-red-600">{accountError}</p>
+                  )}
+                </div>
               )}
 
               {step === 2 && (
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-                  <h2 className="text-xl font-bold text-gray-900">What is the goal for your campaign?</h2>
-                  <div className="mt-6 space-y-3">
-                    {GOALS.map((goal) => {
-                      const selected =
-                        goalConfirmed && campaign.campaign.goal === goal.value;
-                      return (
-                        <button
-                          key={goal.value}
-                          type="button"
-                          onClick={() => {
-                            patchCampaign({ goal: goal.value });
-                            setGoalConfirmed(true);
-                            setError(null);
-                          }}
-                          className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left ${selected ? "border-khaki-300" : "border-gray-200 hover:border-gray-300"}`}
-                        >
-                          <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? "border-gray-800" : "border-gray-300"}`}>
-                            {selected && <span className="h-2.5 w-2.5 rounded-full bg-gray-800" />}
-                          </span>
-                          <span>
-                            <span className="block text-sm font-medium text-gray-900">{goal.label}</span>
-                            <span className="block text-xs text-gray-400">{goal.description}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
+                <ManualGoalScreen
+                  goal={campaign.campaign.goal}
+                  configuration={campaign.campaign.configuration}
+                  platforms={campaign.campaign.platforms}
+                  confirmed={goalConfirmed}
+                  onChange={(goal, next) => {
+                    patchCampaign({
+                      goal,
+                      configuration: {
+                        ...campaign.campaign.configuration,
+                        ...next,
+                        eventSourceIds: {},
+                      },
+                    });
+                    setError(null);
+                  }}
+                  onConfirmedChange={setGoalConfirmed}
+                />
               )}
 
               {step === 3 && (
@@ -689,12 +683,12 @@ export default function NewCampaignPage() {
                   <AudienceTargetingScreen
                     goal={campaign.campaign.goal}
                     platforms={campaign.campaign.platforms}
+                    configuration={campaign.campaign.configuration}
                     audience={campaign.audience}
                     accounts={accounts}
-                    connecting={connecting}
                     unavailableInterests={unavailableInterests}
                     onChange={patchAudience}
-                    onConnect={(platform) => void connect(platform)}
+                    onConfigurationChange={patchConfiguration}
                     onReplaceInterest={replaceUnavailableInterest}
                     onClearUnavailableInterests={() => setUnavailableInterests({})}
                   />
