@@ -22,22 +22,9 @@ interface CampaignTreeSidebarProps {
   adGroups?: AdGroup[];
 }
 
-// Static/mock structure matching the design. Swap for real data later.
-const DEFAULT_AD_GROUPS: AdGroup[] = [
-  {
-    id: "ad-group-1",
-    name: "Ad group",
-    warning: true,
-    adSets: [
-      { id: "ad-set-1", name: "Ad set", warning: true },
-      { id: "ad-set-2", name: "Ad set" },
-    ],
-  },
-];
-
 export function CampaignTreeSidebar({
   campaignName = "Untitled Campaign",
-  adGroups = DEFAULT_AD_GROUPS,
+  adGroups = [],
 }: CampaignTreeSidebarProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(adGroups.map((g) => [g.id, true])),

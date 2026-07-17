@@ -34,14 +34,16 @@ export function CampaignNameCard({
         placeholder="Untitled Campaign"
         className="block w-full text-lg font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none"
       />
-      <button
-        type="button"
-        onClick={onGenerate}
-        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-violet-500 hover:text-violet-600"
-      >
-        <Sparkles className="w-3.5 h-3.5" />
-        Generate campaign name
-      </button>
+      {onGenerate && (
+        <button
+          type="button"
+          onClick={onGenerate}
+          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-violet-500 hover:text-violet-600"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          Generate campaign name
+        </button>
+      )}
     </div>
   );
 }

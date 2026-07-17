@@ -1,243 +1,216 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Sparkles } from "lucide-react";
-import { PURPLE_GRADIENT } from "./AiCampaignChat";
-import { DemographicsForm } from "./DemographicsForm";
-import { AudienceReachCard } from "./AudienceReachCard";
+import Image from "next/image";
+import type { ReactNode } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import {
+  type CreateCampaignPayload,
+  validateCampaignPayload,
+} from "@/lib/campaigns";
+import { isVideoUrl } from "@/lib/campaign-shared";
+import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
 
 interface ReviewPublishScreenProps {
-  stepper: ReactNode;
-  campaignName: string;
-  goal?: string;
-  destination?: string;
-  onPublish?: () => void;
-  onSchedule?: () => void;
+  stepper?: ReactNode;
+  campaign: CreateCampaignPayload;
+  brandName?: string;
+  onPublish: () => void;
+  onSaveDraft?: () => void;
+  onBack?: () => void;
+  publishing?: boolean;
+  saving?: boolean;
+  error?: string | null;
 }
 
-const FIXES = [
-  "Your caption is not optimized for your audience. Key words are missing.",
-  "Your caption is not optimized for your audience. Key words are missing.",
-  "Your caption is not optimized for your audience. Key words are missing.",
-];
+const goalLabels: Record<CreateCampaignPayload["campaign"]["goal"], string> = {
+  AWARENESS: "Awareness",
+  TRAFFIC: "Traffic",
+  ENGAGEMENT: "Engagement",
+  SALES: "Sales",
+  LEADS: "Lead generation",
+  APP_PROMOTION: "App promotion",
+};
 
-function ReadinessMeter({ value }: { value: number }) {
-  const r = 42;
-  const c = 2 * Math.PI * r;
-  const strokeW = 8;
-  const gap = 0.04 * c; // gap between the fill and the dark segment
-
-  // Animate from 0 to `value` on mount so the meter fills like a loader.
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    let raf: number;
-    const duration = 1600;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      setProgress(value * eased);
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value]);
-
-  // A rounded arc from startFrac..endFrac (fractions of the circle), inset by
-  // half a gap on each side so both ends show their own rounded cap.
-  const arc = (startFrac: number, endFrac: number) => {
-    const len = Math.max((endFrac - startFrac) * c - gap, 0);
-    return {
-      strokeDasharray: `${len} ${c - len}`,
-      strokeDashoffset: -(startFrac * c + gap / 2),
-    };
-  };
-
-  const fill = arc(0, progress / 100); // filled percentage
-  const dark = arc(value / 100, 1); // unselected remainder
-
-  return (
-    <div className="relative w-32 h-32">
-      <svg viewBox="0 0 100 100" className="w-32 h-32">
-        <g transform="rotate(-90 50 50)">
-          {/* Light green base track */}
-          <circle
-            cx="50"
-            cy="50"
-            r={r}
-            fill="none"
-            stroke="#C9EFD9"
-            strokeWidth={strokeW}
-          />
-          {/* Dark green = unselected part (own rounded edges) */}
-          <circle
-            cx="50"
-            cy="50"
-            r={r}
-            fill="none"
-            stroke="#2E9E63"
-            strokeWidth={strokeW}
-            strokeLinecap="round"
-            {...dark}
-          />
-          {/* Normal green = the filled percentage (own rounded edges) */}
-          <circle
-            cx="50"
-            cy="50"
-            r={r}
-            fill="none"
-            stroke="#6FC593"
-            strokeWidth={strokeW}
-            strokeLinecap="round"
-            {...fill}
-          />
-        </g>
-      </svg>
-      <span
-        className="absolute inset-0 flex items-center justify-center text-2xl font-bold"
-        style={{ color: "#15803D" }}
-      >
-        {Math.round(progress)}%
-      </span>
-    </div>
-  );
-}
+const formatDate = (value?: string) =>
+  value
+    ? new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(value))
+    : "No end date";
 
 export function ReviewPublishScreen({
   stepper,
-  campaignName,
-  goal = "Lead Generation",
-  destination = "Website",
+  campaign,
+  brandName = "Your brand",
   onPublish,
-  onSchedule,
+  onSaveDraft,
+  onBack,
+  publishing = false,
+  saving = false,
+  error,
 }: ReviewPublishScreenProps) {
+  const validationError = validateCampaignPayload(campaign);
+  const busy = publishing || saving;
+
   return (
     <>
-      <div className="mb-8">{stepper}</div>
+      {stepper && <div className="mb-8">{stepper}</div>}
 
-      {/* Top actions */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          type="button"
-          onClick={onPublish}
-          className="rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 transition-colors"
-        >
-          Publish Ad
-        </button>
-        <button
-          type="button"
-          onClick={onSchedule}
-          className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-        >
-          Schedule
-        </button>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Review and publish</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            This is the exact campaign Growdex will save and send to your ad platforms.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={busy}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              <ArrowLeft className="h-4 w-4" /> Edit campaign
+            </button>
+          )}
+          {onSaveDraft && (
+            <button
+              type="button"
+              onClick={onSaveDraft}
+              disabled={busy}
+              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save draft"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onPublish}
+            disabled={busy || Boolean(validationError)}
+            className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {publishing && <Loader2 className="h-4 w-4 animate-spin" />}
+            {publishing ? "Publishing…" : "Publish ad"}
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left: campaign details + previews */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <h2 className="text-xl font-bold text-gray-900">{campaignName}</h2>
-            <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
-              Goal: {goal}
-              <span className="rounded-md bg-khaki-200 opacity-50 px-2 py-0.5 text-xs font-bold text-gray-900">
-                {destination}
-              </span>
-            </div>
+      {(error || validationError) && (
+        <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+          {error ?? validationError}
+        </p>
+      )}
 
-            <div className="mt-5">
-              <DemographicsForm ageOptions={["35-44", "45-54"]} />
-            </div>
-          </div>
-
-          {/* Ad previews */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[0, 1].map((i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                    G
-                  </div>
-                  <div className="leading-tight">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Growdex Limited
-                    </p>
-                    <p className="text-xs text-gray-400">Sponsored</p>
-                  </div>
-                </div>
-                <p className="mt-3 text-sm text-gray-700">
-                  We&apos;d love to hear from you. Whether you have questions
-                  about upcoming events, …
-                </p>
-                <div className="mt-3 h-40 rounded-lg bg-gray-100" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: reach + readiness + fixes */}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <div className="space-y-6">
-          {/* Ad reach */}
-          <AudienceReachCard />
-
-          {/* Ad readiness metric */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 ">
-            <div className="text-center">
-              <p className="text-sm text-gray-500 mb-3">Ad readiness metric</p>
-              <div className="flex justify-center">
-                <ReadinessMeter value={94} />
-              </div>
-              <span className="mt-3 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                Ad is great!
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 className="text-xl font-bold text-gray-900">
+              {campaign.campaign.name}
+            </h2>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-khaki-200 px-3 py-1 font-medium text-gray-800">
+                {goalLabels[campaign.campaign.goal]}
+              </span>
+              {campaign.campaign.platforms.map((platform) => (
+                <span key={platform} className="rounded-full bg-gray-100 px-3 py-1 capitalize text-gray-700">
+                  {platform}
+                </span>
+              ))}
+              <span className="rounded-full bg-violet-50 px-3 py-1 capitalize text-violet-700">
+                {campaign.creationMode} setup
               </span>
             </div>
+          </section>
 
-            <hr className="my-4 border-gray-200 w-full mx-auto" />
-            {/* Fixes */}
-            <div className="mt-4">
-              <div className="flex items-center mb-3 gap-1.5">
-                <p className="text-sm font-medium text-gray-800">
-                  12 fixes located
-                </p>
-                <span className="rounded-full bg-khaki-200 px-2 py-0.5 text-[11px] font-medium text-gray-900">
-                  Low priority
-                </span>
-              </div>
-
-              <p className="text-xs font-medium text-gray-700 flex items-center gap-2 mb-2">
-                <span className="flex items-center justify-center w-4 h-4 rounded-full border-2 border-green-400 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
-                </span>
-                Campaign
-              </p>
-              <ul className="space-y-2">
-                {FIXES.map((fix, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-xs text-gray-600 leading-relaxed"
-                  >
-                    <span className="mt-0.5 flex items-center justify-center w-4 h-4 rounded-full border-2 border-green-400 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {campaign.campaign.platforms.map((platform, index) => {
+              const creative = campaign.adContent.creatives[index];
+              return (
+                <article key={platform} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                  <div className="p-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
+                        {brandName.slice(0, 1).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{brandName}</p>
+                        <p className="text-xs text-gray-400 capitalize">Sponsored on {platform}</p>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm text-gray-700">{creative?.primaryText}</p>
+                  </div>
+                  {creative?.mediaUrl && (
+                    isVideoUrl(creative.mediaUrl) ? (
+                      <video className="aspect-video w-full bg-gray-100 object-cover" src={creative.mediaUrl} controls />
+                    ) : (
+                      <Image
+                        className="aspect-video w-full bg-gray-100 object-cover"
+                        src={creative.mediaUrl}
+                        alt={`${platform} creative preview`}
+                        width={720}
+                        height={405}
+                        unoptimized
+                      />
+                    )
+                  )}
+                  <div className="flex items-center justify-between gap-3 border-t border-gray-100 p-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-900">{creative?.headline}</p>
+                      <p className="truncate text-xs text-gray-400">{creative?.landingPageUrl}</p>
+                    </div>
+                    <span className="shrink-0 rounded-md border px-3 py-1 text-xs font-medium text-gray-700">
+                      {(creative?.cta ?? "LEARN_MORE").replaceAll("_", " ")}
                     </span>
-                    {fix}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                type="button"
-                style={{ background: PURPLE_GRADIENT }}
-                className="mt-4 w-full inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-white hover:opacity-90"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                Fix all with AI
-              </button>
-            </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
+
+        <aside className="space-y-4">
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="font-semibold text-gray-900">Audience</h3>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div>
+                <dt className="text-gray-400">Locations</dt>
+                <dd className="mt-1 text-gray-700">
+                  {campaign.audience.locations.map((code) =>
+                    metaSpecialAdLocations[code as keyof typeof metaSpecialAdLocations] ?? code,
+                  ).join(", ")}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-400">Age and gender</dt>
+                <dd className="mt-1 capitalize text-gray-700">
+                  {campaign.audience.ageMin}–{campaign.audience.ageMax}, {campaign.audience.gender}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-400">Interests</dt>
+                <dd className="mt-1 text-gray-700">
+                  {campaign.audience.interests?.filter(Boolean).join(", ") || "Broad audience"}
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="font-semibold text-gray-900">Budget and schedule</h3>
+            <p className="mt-3 text-2xl font-bold text-gray-900">
+              {new Intl.NumberFormat(undefined, {
+                style: "currency",
+                currency: campaign.budget.currency,
+                maximumFractionDigits: 2,
+              }).format(campaign.budget.amount)}
+              <span className="ml-1 text-sm font-normal text-gray-400">/{campaign.budget.type}</span>
+            </p>
+            <p className="mt-3 text-sm text-gray-600">Starts {formatDate(campaign.budget.startDate)}</p>
+            <p className="mt-1 text-sm text-gray-600">Ends {formatDate(campaign.budget.endDate)}</p>
+          </section>
+        </aside>
       </div>
     </>
   );

@@ -1,1515 +1,683 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useEffect } from "react";
-import { PanelLayout } from "../../components/panel-layout";
-import { CampaignTreeSidebar } from "../components/CampaignTreeSidebar";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  ChevronDown,
-  ChevronLeft,
-  CircleArrowRight,
-  Facebook,
-  InstagramIcon,
-  MoreVerticalIcon,
-  Search,
-  SparklesIcon,
-  Users,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Loader2,
+  Sparkles,
   UploadCloud,
 } from "lucide-react";
-import { PluggedIcon, PluggedOutIcon } from "@/components/svg";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { PanelLayout } from "../../components/panel-layout";
+import DottedBackground from "@/components/dotted-background";
 import { Input } from "@/components/ui/input";
+import { useMe } from "@/context/me-context";
 import { apiFetch } from "@/lib/auth";
 import {
   createCampaign,
-  type BudgetType,
+  createInitialCampaignPayload,
+  generateCampaignDraft,
+  publishCampaign,
+  validateCampaignPayload,
+  type CampaignCreativeInput,
+  type CampaignCta,
   type CampaignGoal,
+  type CampaignPlatform,
   type CreateCampaignPayload,
 } from "@/lib/campaigns";
-import { createAudience, fetchAudiences, type Audience } from "@/lib/audiences";
+import { validateFile, isVideoUrl } from "@/lib/campaign-shared";
+import { CLOUDINARY_FOLDER } from "@/lib/constants";
+import { hashFolderName } from "@/lib/encrypt";
+import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
+import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts } from "@/lib/social";
-import {
-  metaSpecialAdLocations,
-  type MetaSpecialAdLocationCode,
-} from "@/lib/meta-special-ad-locations";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useMe } from "@/context/me-context";
-import {
-  CreativeDraft,
-  FormObject,
-  isVideoUrl,
-  toDateInputValue,
-  validateFile,
-} from "@/lib/campaign-shared";
-import { GoalSection } from "../components/GoalSection";
-import { PlatformSection } from "../components/PlatformSection";
-import DottedBackground from "@/components/dotted-background";
+import type { SocialAccountSetupProps } from "@/types/social";
+import { AiCampaignChat } from "../components/AiCampaignChat";
+import { CampaignNameCard } from "../components/CampaignNameCard";
+import { CampaignStepper } from "../components/CampaignStepper";
+import { CampaignTreeSidebar } from "../components/CampaignTreeSidebar";
 import {
   CreateMethodBox,
   type CreationMethod,
 } from "../components/CreateMethodBox";
-import { CampaignStepper } from "../components/CampaignStepper";
-import { CampaignNameCard } from "../components/CampaignNameCard";
-import { ManualGoalScreen } from "../components/ManualGoalScreen";
-import { ManualPlatformScreen } from "../components/ManualPlatformScreen";
-import { ManualEventScreen } from "../components/ManualEventScreen";
-import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
-import { AiCampaignChat } from "../components/AiCampaignChat";
-import { AiWorkingView } from "../components/AiWorkingView";
-import { CreativeSetupScreen } from "../components/CreativeSetupScreen";
-import CreateAdLayout from "../../components/create-ad/create-ad-layout";
 import { ReviewPublishScreen } from "../components/ReviewPublishScreen";
-import { AudienceSection } from "../components/AudienceSection";
-import { BudgetSection } from "../components/BudgetSection";
-import { CreativeSection } from "../components/CreativeSection";
-import { hashFolderName } from "@/lib/encrypt";
-import { CLOUDINARY_FOLDER } from "@/lib/constants";
 
-const WIZARD_STEPS = [
+const STEPS = [
   "Setup campaign",
   "Choose platform",
   "Set campaign goals",
-  "Event management",
+  "Target audience",
   "Budget and schedule",
   "Creative setup",
   "Review and publish",
 ];
 
-export default function NewCampaignPage() {
-  const { me } = useMe();
-  const brandName = me?.brand?.name ?? "Your Brand";
-  const firstName = me?.profile?.firstName ?? "";
-  const instagramAccountName = (() => {
-    const url = me?.brand?.instagramUrl;
-    if (!url) return brandName.replace(/\s+/g, "_");
-    const last = url.split("/").filter(Boolean).pop();
-    if (!last) return brandName.replace(/\s+/g, "_");
-    return last.startsWith("@") ? last.slice(1) : last;
-  })();
+const GOALS: Array<{ value: CampaignGoal; label: string; description: string }> = [
+  { value: "AWARENESS", label: "Awareness", description: "Show your brand to more people." },
+  { value: "TRAFFIC", label: "Traffic", description: "Send people to a website or landing page." },
+  { value: "ENGAGEMENT", label: "Engagement", description: "Grow reactions, comments, shares, or views." },
+  { value: "SALES", label: "Sales", description: "Drive purchases or other valuable actions." },
+  { value: "LEADS", label: "Lead generation", description: "Collect contact details from potential customers." },
+  { value: "APP_PROMOTION", label: "App promotion", description: "Drive app installs or in-app actions." },
+];
 
-  const [progressTab, setProgressTab] = useState<number>(0);
-  const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("ENGAGEMENT");
-  const [campaignName, setCampaignName] = useState("");
-  const [creationMethod, setCreationMethod] = useState<CreationMethod | null>(
-    null,
+const CTA_OPTIONS: Array<{ value: CampaignCta; label: string }> = [
+  { value: "LEARN_MORE", label: "Learn more" },
+  { value: "SHOP_NOW", label: "Shop now" },
+  { value: "SIGN_UP", label: "Sign up" },
+  { value: "DOWNLOAD", label: "Download" },
+  { value: "BOOK_NOW", label: "Book now" },
+  { value: "CONTACT_US", label: "Contact us" },
+  { value: "GET_QUOTE", label: "Get quote" },
+  { value: "SUBSCRIBE", label: "Subscribe" },
+  { value: "APPLY_NOW", label: "Apply now" },
+  { value: "NO_BUTTON", label: "No button" },
+];
+
+const COUNTRIES = Object.entries(metaSpecialAdLocations).sort(([, a], [, b]) =>
+  a.localeCompare(b),
+);
+
+const emptyCreative = (platform: CampaignPlatform): CampaignCreativeInput => ({
+  platform,
+  primaryText: "",
+  headline: "",
+  cta: "LEARN_MORE",
+  mediaUrl: "",
+  landingPageUrl: "",
+});
+
+const toDateTimeLocal = (iso?: string) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+};
+
+const connected = (
+  accounts: SocialAccountSetupProps | null,
+  platform: CampaignPlatform,
+) => Boolean(accounts?.[platform]?.connected && !accounts[platform]?.needsReauth);
+
+function SelectionMark({ checked }: { checked: boolean }) {
+  return (
+    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+      checked ? "border-khaki-300 bg-khaki-200" : "border-gray-300 bg-white"
+    }`}>
+      {checked && <Check className="h-3 w-3" />}
+    </span>
   );
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [aiStarted, setAiStarted] = useState(false);
-  const [manualStep, setManualStep] = useState(0);
-  const [selectedGoalLabel, setSelectedGoalLabel] = useState("Lead Generation");
-  const [selectedDestinationLabel, setSelectedDestinationLabel] =
-    useState("Website");
-  const [chosenPlatforms, setChosenPlatforms] = useState<
-    ("meta" | "tiktok")[]
-  >(["meta", "tiktok"]);
-  const [showCreativeSetup, setShowCreativeSetup] = useState(false);
-  const [showAdCreative, setShowAdCreative] = useState(false);
-  const [showReview, setShowReview] = useState(false);
-  const hasAiPrompt = aiPrompt.trim().length > 0;
+}
 
-  const resetToSetup = () => {
-    setCreationMethod(null);
-    setAiStarted(false);
-    setManualStep(0);
-    setSelectedGoalLabel("Lead Generation");
-    setSelectedDestinationLabel("Website");
-    setAiPrompt("");
-    setShowCreativeSetup(false);
-    setShowAdCreative(false);
-    setShowReview(false);
+export default function NewCampaignPage() {
+  const router = useRouter();
+  const { me } = useMe();
+  const brandName = me?.brand?.name ?? "Your brand";
+  const firstName = me?.profile?.firstName ?? "";
+  const [campaign, setCampaign] = useState<CreateCampaignPayload>(() =>
+    createInitialCampaignPayload(),
+  );
+  const [method, setMethod] = useState<CreationMethod | null>(null);
+  const [step, setStep] = useState(0);
+  const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState<CampaignPlatform | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiRationale, setAiRationale] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void hydrateSocialAccounts().then((result) => {
+      if (!active) return;
+      if (result.success) setAccounts(result.data ?? {});
+      else setAccountError(result.error ?? "Could not load connected accounts.");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const selectedCountries = useMemo(
+    () => new Set(campaign.audience.locations),
+    [campaign.audience.locations],
+  );
+
+  const patch = (next: Partial<CreateCampaignPayload>) =>
+    setCampaign((current) => ({ ...current, ...next }));
+
+  const setPlatforms = (platforms: CampaignPlatform[]) => {
+    setCampaign((current) => {
+      const byPlatform = new Map(
+        current.campaign.platforms.map((platform, index) => [
+          platform,
+          current.adContent.creatives[index],
+        ]),
+      );
+      return {
+        ...current,
+        campaign: { ...current.campaign, platforms },
+        adContent: {
+          creatives: platforms.map((platform) => byPlatform.get(platform) ?? emptyCreative(platform)),
+        },
+      };
+    });
   };
 
-  const handleGenerateCampaignName = () => {
-    const suggestions = [
-      `${brandName} Launch`,
-      `${brandName} Growth Push`,
-      `${brandName} Awareness Drive`,
-      `${brandName} Spotlight`,
-    ];
-    setCampaignName(
-      suggestions[Math.floor(Math.random() * suggestions.length)],
+  const togglePlatform = (platform: CampaignPlatform) => {
+    const selected = campaign.campaign.platforms.includes(platform);
+    setPlatforms(
+      selected
+        ? campaign.campaign.platforms.filter((item) => item !== platform)
+        : [...campaign.campaign.platforms, platform],
     );
   };
 
-  const COUNTRY_OPTIONS = (
-    Object.entries(metaSpecialAdLocations) as Array<
-      [MetaSpecialAdLocationCode, string]
-    >
-  )
-    .map(([code, name]) => ({ code, name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
-
-  const [selectedPlatforms, setSelectedPlatforms] = useState({
-    meta: true,
-    tiktok: false,
-  });
-
-  const [metaCountries, setMetaCountries] = useState<
-    MetaSpecialAdLocationCode[]
-  >(["NG"]);
-  const [tiktokCountries, setTiktokCountries] = useState<
-    MetaSpecialAdLocationCode[]
-  >(["NG"]);
-
-  const [metaLocationQuery, setMetaLocationQuery] = useState("");
-  const [tiktokLocationQuery, setTiktokLocationQuery] = useState("");
-  const [metaLocations, setMetaLocations] = useState<string[]>([]);
-  const [tiktokLocations, setTiktokLocations] = useState<string[]>([]);
-
-  const [metaInterestQuery, setMetaInterestQuery] = useState("");
-  const [tiktokInterestQuery, setTiktokInterestQuery] = useState("");
-  const [metaInterests, setMetaInterests] = useState<string[]>([]);
-  const [tiktokInterests, setTiktokInterests] = useState<string[]>([]);
-  const [lowerReach, setLowerReach] = useState<number>(0);
-  const [upperReach, setUpperReach] = useState<number>(0);
-
-  const [metaAgeMin, setMetaAgeMin] = useState("18");
-  const [metaAgeMax, setMetaAgeMax] = useState("65");
-
-  const [currency, setCurrency] = useState("NGN");
-
-  const [unifiedBudgetAmount, setUnifiedBudgetAmount] = useState("");
-  const [unifiedBudgetFrequency, setUnifiedBudgetFrequency] = useState<
-    "daily" | "lifetime"
-  >("daily");
-  const [useSeparateBudgets, setUseSeparateBudgets] = useState(false);
-
-  const [useSchedule, setUseSchedule] = useState(true);
-  const [scheduleStartDate, setScheduleStartDate] = useState("");
-  const [scheduleEndDate, setScheduleEndDate] = useState("");
-  const [scheduleTime, setScheduleTime] = useState("09:00");
-
-  const [metaBudgetAmount, setMetaBudgetAmount] = useState("");
-  const [tiktokBudgetAmount, setTiktokBudgetAmount] = useState("");
-  const [metaBudgetFrequency, setMetaBudgetFrequency] = useState<
-    "daily" | "lifetime"
-  >("daily");
-  const [tiktokBudgetFrequency, setTiktokBudgetFrequency] = useState<
-    "daily" | "lifetime"
-  >("daily");
-
-  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
-
-  const [landingPageUrl, setLandingPageUrl] = useState("");
-  const [appId, setAppId] = useState("");
-  const [leadFormId, setLeadFormId] = useState("");
-
-  const [creativesByPlatform, setCreativesByPlatform] = useState<
-    Partial<Record<"meta" | "tiktok", CreativeDraft>>
-  >({});
-
-  // Saved audiences
-  const [savedAudiences, setSavedAudiences] = useState<Audience[]>([]);
-  const [loadingAudiences, setLoadingAudiences] = useState(false);
-
-  // Creative modal state
-  const [isCreativeModalOpen, setIsCreativeModalOpen] = useState(false);
-  const [creativeType, setCreativeType] = useState<"meta" | "tiktok" | null>(
-    null,
-  );
-  const [creativeHeading, setCreativeHeading] = useState("");
-  const [creativeSubheading, setCreativeSubheading] = useState("");
-  const [creativeImage, setCreativeImage] = useState<File | null>(null);
-  const [creativePreview, setCreativePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  const openCreativeModal = (type: "meta" | "tiktok") => {
-    setCreativeType(type);
-    setCreativeHeading("");
-    setCreativeSubheading("");
-    setCreativeImage(null);
-    setCreativePreview(null);
-    setIsCreativeModalOpen(true);
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    if (!file) return;
-
-    const validation = validateFile(file);
-    if (!validation.ok) {
-      setUploadError(validation.error ?? "Unsupported file");
-      setCreativeImage(null);
-      setCreativePreview(null);
-      return;
-    }
-
-    setUploadError(null);
-    setCreativeImage(file);
-    setCreativePreview(URL.createObjectURL(file));
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const file = e.dataTransfer.files?.[0] ?? null;
-    if (!file) return;
-
-    const validation = validateFile(file);
-    if (!validation.ok) {
-      setUploadError(validation.error ?? "Unsupported file");
-      setCreativeImage(null);
-      setCreativePreview(null);
-      return;
-    }
-
-    setUploadError(null);
-    setCreativeImage(file);
-    setCreativePreview(URL.createObjectURL(file));
-  };
-
-  const handleBrowseClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const fetchReachEstimate = async (
-    platform: "meta" | "tiktok",
-    type: "interest" | "location" | "country",
-    value: string,
-  ) => {
+  const connect = async (platform: CampaignPlatform) => {
+    setConnecting(platform);
+    setAccountError(null);
     try {
-      // Placeholder endpoint
-      const res = await apiFetch("/campaigns/reach-estimate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform, type, value }),
+      const result = await connectSocialAccount(platform);
+      if (!result.success || !result.data) {
+        throw new Error(result.error ?? `Could not connect ${platform}.`);
+      }
+      setAccounts(result.data);
+    } catch (failure) {
+      setAccountError(
+        failure instanceof Error ? failure.message : `Could not connect ${platform}.`,
+      );
+    } finally {
+      setConnecting(null);
+    }
+  };
+
+  const generateWithAi = async (prompt: string) => {
+    setAiLoading(true);
+    setError(null);
+    try {
+      const generated = await generateCampaignDraft({ prompt, brandName });
+      const start = new Date(Date.now() + 30 * 60_000);
+      const end = new Date(start);
+      end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
+      setCampaign({
+        creationMode: "ai",
+        campaign: {
+          name: generated.name,
+          goal: generated.goal,
+          platforms: generated.platforms,
+        },
+        audience: generated.audience,
+        budget: {
+          amount: generated.budget.amount,
+          currency: generated.budget.currency,
+          type: generated.budget.type,
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+        },
+        adContent: {
+          creatives: generated.platforms.map((platform) => ({
+            ...generated.creative,
+            platform,
+            mediaUrl: "",
+            landingPageUrl: "",
+          })),
+        },
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        console.log("Reach estimate response:", data);
-        const reach = Number(data.reach) || 10000;
-        // setTotalReach((prev) => prev + reach);
-      } else {
-        // Fallback mock increment
-        // setTotalReach((prev) => prev + 10000);
-      }
-    } catch (err) {
-      console.error("Failed to fetch reach estimate:", err);
-      // Fallback mock increment
-      // setTotalReach((prev) => prev + 10000);
-    }
-  };
-
-  const normalizeTag = (value: string) => value.trim().replace(/\s+/g, " ");
-
-  const addLocationTag = (platform: "meta" | "tiktok", value: string) => {
-    const next = normalizeTag(value);
-    if (!next) return;
-
-    if (platform === "meta") {
-      const lower = next.toLowerCase();
-      if (metaLocations.some((x) => x.toLowerCase() === lower)) {
-        setMetaLocationQuery("");
-        return;
-      }
-      setMetaLocations((prev) => [...prev, next]);
-      fetchReachEstimate("meta", "location", next);
-      setMetaLocationQuery("");
-      return;
-    }
-
-    const lower = next.toLowerCase();
-    if (tiktokLocations.some((x) => x.toLowerCase() === lower)) {
-      setTiktokLocationQuery("");
-      return;
-    }
-    setTiktokLocations((prev) => [...prev, next]);
-    fetchReachEstimate("tiktok", "location", next);
-    setTiktokLocationQuery("");
-  };
-
-  const removeLocationTag = (platform: "meta" | "tiktok", value: string) => {
-    if (platform === "meta") {
-      setMetaLocations((prev) => prev.filter((x) => x !== value));
-      return;
-    }
-    setTiktokLocations((prev) => prev.filter((x) => x !== value));
-  };
-
-  const addInterestTag = (platform: "meta" | "tiktok", value: string) => {
-    const next = normalizeTag(value);
-    if (!next) return;
-
-    if (platform === "meta") {
-      const lower = next.toLowerCase();
-      if (metaInterests.some((x) => x.toLowerCase() === lower)) {
-        setMetaInterestQuery("");
-        return;
-      }
-
-      setMetaInterests((prev) => [...prev, next]);
-      fetchReachEstimate("meta", "interest", next);
-      setMetaInterestQuery("");
-      return;
-    }
-
-    const lower = next.toLowerCase();
-    if (tiktokInterests.some((x) => x.toLowerCase() === lower)) {
-      setTiktokInterestQuery("");
-      return;
-    }
-
-    setTiktokInterests((prev) => [...prev, next]);
-    fetchReachEstimate("tiktok", "interest", next);
-    setTiktokInterestQuery("");
-  };
-
-  const removeInterestTag = (platform: "meta" | "tiktok", value: string) => {
-    if (platform === "meta") {
-      setMetaInterests((prev) => prev.filter((x) => x !== value));
-      return;
-    }
-    setTiktokInterests((prev) => prev.filter((x) => x !== value));
-  };
-
-  const toggleCountry = (
-    platform: "meta" | "tiktok",
-    code: MetaSpecialAdLocationCode,
-    checked: boolean,
-  ) => {
-    const setter = platform === "meta" ? setMetaCountries : setTiktokCountries;
-    const currentList = platform === "meta" ? metaCountries : tiktokCountries;
-
-    if (checked) {
-      if (currentList.includes(code)) return;
-      setter((prev) => [...prev, code]);
-      fetchReachEstimate(platform, "country", code);
-      return;
-    }
-
-    if (currentList.length <= 1) return;
-    setter((prev) => prev.filter((c) => c !== code));
-  };
-
-  const formatCountriesSummary = (codes: MetaSpecialAdLocationCode[]) => {
-    if (!codes?.length) return "Select countries";
-    const names = codes.map((c) => metaSpecialAdLocations[c]).filter(Boolean);
-    if (names.length <= 2) return names.join(", ");
-    return `${names[0]}, ${names[1]} +${names.length - 2}`;
-  };
-
-  const formDataToObject = (fd: FormData) => {
-    const obj: FormObject = {};
-    for (const [key, value] of fd.entries()) {
-      const existing = obj[key];
-      if (existing !== undefined) {
-        obj[key] = Array.isArray(existing)
-          ? [...existing, value]
-          : [existing, value];
-        continue;
-      }
-
-      obj[key] = value;
-    }
-    return obj;
-  };
-
-  const normalizeGoal = (goal: unknown): CampaignGoal => {
-    const g = String(goal ?? "").toLowerCase();
-    switch (g) {
-      case "awareness":
-        return "AWARENESS";
-      case "traffic":
-        return "TRAFFIC";
-      case "conversions":
-        return "ENGAGEMENT";
-      case "sales":
-        return "SALES";
-      case "leads":
-        return "LEADS";
-      case "app_promotion":
-        return "APP_PROMOTION";
-      default:
-        return "AWARENESS";
-    }
-  };
-
-  const combineLocalDateAndTimeToIso = (
-    dateValue: string,
-    timeValue?: string,
-  ) => {
-    const time =
-      typeof timeValue === "string" && /^\d{2}:\d{2}$/.test(timeValue)
-        ? timeValue
-        : "00:00";
-    const dt = new Date(`${dateValue}T${time}:00`);
-    return dt.toISOString();
-  };
-
-  const addDaysUtcIso = (iso: string, days: number) => {
-    const base = new Date(iso);
-    base.setUTCDate(base.getUTCDate() + days);
-    return base.toISOString();
-  };
-
-  const handleCreateCampaignSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
-    e.preventDefault();
-    setSubmissionError(null);
-
-    const fd = new FormData(e.currentTarget);
-    const raw = formDataToObject(fd);
-
-    const platforms = Object.entries(selectedPlatforms)
-      .filter(([, enabled]) => Boolean(enabled))
-      .map(([platform]) => platform);
-
-    if (platforms.length === 0) {
-      setSubmissionError("Please choose at least one platform.");
-      return;
-    }
-
-    const selectedLocations = [
-      ...(selectedPlatforms.meta ? metaCountries : []),
-      ...(selectedPlatforms.tiktok ? tiktokCountries : []),
-    ];
-    const uniqueLocations = Array.from(new Set<string>(selectedLocations));
-
-    const selectedInterests = [
-      ...(selectedPlatforms.meta ? metaInterests : []),
-      ...(selectedPlatforms.tiktok ? tiktokInterests : []),
-    ]
-      .map((x) => normalizeTag(String(x ?? "")))
-      .filter(Boolean);
-    const uniqueInterests = Array.from(new Set<string>(selectedInterests));
-
-    const budgetAmountMeta = selectedPlatforms.meta
-      ? Number(metaBudgetAmount || 0)
-      : 0;
-    const budgetAmountTiktok = selectedPlatforms.tiktok
-      ? Number(tiktokBudgetAmount || 0)
-      : 0;
-    const splitBudgetAmount =
-      (Number.isFinite(budgetAmountMeta) ? budgetAmountMeta : 0) +
-      (Number.isFinite(budgetAmountTiktok) ? budgetAmountTiktok : 0);
-
-    const unifiedBudgetAmountNumber = Number(unifiedBudgetAmount || 0);
-    const normalizedUnifiedBudgetAmount = Number.isFinite(
-      unifiedBudgetAmountNumber,
-    )
-      ? unifiedBudgetAmountNumber
-      : 0;
-
-    const splitBudgetType: BudgetType = (() => {
-      const types: BudgetType[] = [];
-      if (selectedPlatforms.meta) types.push(metaBudgetFrequency);
-      if (selectedPlatforms.tiktok) types.push(tiktokBudgetFrequency);
-
-      if (types.includes("lifetime")) return "lifetime";
-      return "daily";
-    })();
-
-    const budgetAmount = useSeparateBudgets
-      ? splitBudgetAmount
-      : normalizedUnifiedBudgetAmount;
-
-    const budgetType: BudgetType = useSeparateBudgets
-      ? splitBudgetType
-      : unifiedBudgetFrequency;
-
-    // Add a 15-minute buffer to ensure "now" is always in the future for the backend
-    const defaultStartDate = new Date(
-      Date.now() + 15 * 60 * 1000,
-    ).toISOString();
-    // const defaultEndDate = addDaysUtcIso(defaultStartDate, 7);
-
-    let startDate = defaultStartDate;
-    let endDate; // open-ended by default
-    if (useSchedule) {
-      if (!scheduleStartDate) {
-        setSubmissionError("Please select a start date.");
-        return;
-      }
-      // if (!scheduleEndDate) {
-      //   setSubmissionError("Please select an end date.");
-      //   return;
-      // }
-
-      const scheduledStart = combineLocalDateAndTimeToIso(
-        scheduleStartDate,
-        scheduleTime,
+      setAiRationale(generated.rationale);
+      setStep(1);
+    } catch (failure) {
+      setError(
+        failure instanceof Error ? failure.message : "Could not generate the campaign draft.",
       );
-      // Clean up empty optional fields
-      if (scheduleEndDate) {
-        const scheduledEnd = combineLocalDateAndTimeToIso(
-          scheduleEndDate,
-          scheduleTime,
-        );
-
-        if (
-          new Date(scheduledEnd).getTime() < new Date(scheduledStart).getTime()
-        ) {
-          setSubmissionError(
-            "End date must be the same as or after start date.",
-          );
-          return;
-        }
-        endDate = scheduledEnd;
-      } else {
-        endDate = undefined;
-      }
-
-      startDate = scheduledStart;
+    } finally {
+      setAiLoading(false);
     }
+  };
 
-    const minBuffer = 5 * 60 * 1000;
-    if (new Date(startDate).getTime() < Date.now() + minBuffer) {
-      // If the provided start date is in the past or too close to now,
-      // auto-correct it to 15 minutes in the future.
-      startDate = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    }
-
-    const fallbackAgeMin = 18;
-    const fallbackAgeMax = 45;
-    const parsedMetaAgeMin = Number(metaAgeMin);
-    const parsedMetaAgeMax = Number(metaAgeMax);
-    const metaAgeMinValue = Number.isFinite(parsedMetaAgeMin)
-      ? parsedMetaAgeMin
-      : fallbackAgeMin;
-    const metaAgeMaxValue = Number.isFinite(parsedMetaAgeMax)
-      ? parsedMetaAgeMax
-      : fallbackAgeMax;
-    const ageMin = selectedPlatforms.meta ? metaAgeMinValue : fallbackAgeMin;
-    const ageMax = selectedPlatforms.meta ? metaAgeMaxValue : fallbackAgeMax;
-    const normalizedAgeMin = Math.max(13, Math.min(ageMin, ageMax));
-    const normalizedAgeMax = Math.max(13, Math.max(ageMin, ageMax));
-
-    const creatives = (
-      Object.entries(creativesByPlatform) as Array<
-        ["meta" | "tiktok", CreativeDraft]
-      >
-    )
-      .filter(
-        ([platform, value]) => Boolean(value) && selectedPlatforms[platform],
-      )
-      .map(([, c]) => c)
-      .map((c) => ({
-        primaryText: String(c?.primaryText ?? c?.subheading ?? ""),
-        headline: String(c?.headline ?? c?.heading ?? ""),
-        cta: String(c?.cta ?? "LEARN_MORE"),
-        mediaUrl: String(c?.mediaUrl ?? c?.imageUrl ?? ""),
-      }))
-      .filter((c) => Boolean(c.mediaUrl));
-
-    const payload: CreateCampaignPayload = {
-      name: String(raw.campaignName ?? ""),
-      goal: normalizeGoal(raw.campaignGoal),
-      platforms: platforms as Array<"meta" | "tiktok">,
-      targeting: {
-        locations: uniqueLocations,
-        ageMin: normalizedAgeMin,
-        ageMax: normalizedAgeMax,
-        gender: "all" as const,
-        interests: uniqueInterests,
-      },
-      landingPageUrl:
-        (campaignGoal.toLowerCase() === "traffic" ||
-          campaignGoal.toLowerCase() === "sales") &&
-        landingPageUrl
-          ? landingPageUrl
-          : undefined,
-      appId:
-        campaignGoal.toLowerCase() === "app_promotion" && appId
-          ? appId
-          : undefined,
-      leadFormId:
-        campaignGoal.toLowerCase() === "leads" && leadFormId
-          ? leadFormId
-          : undefined,
-      budget: {
-        amount: budgetAmount,
-        currency,
-        type: budgetType,
-        startDate,
-        endDate,
-      },
-      creatives,
+  const patchCreative = (index: number, next: Partial<CampaignCreativeInput>) => {
+    const creatives = [...campaign.adContent.creatives];
+    creatives[index] = {
+      ...(creatives[index] ?? emptyCreative(campaign.campaign.platforms[index])),
+      ...next,
     };
-
-    console.log("Create Campaign payload:", payload);
-
-    try {
-      setIsCreatingCampaign(true);
-
-      const created = await createCampaign(payload);
-      if (!created.id) {
-        throw new Error("Created campaign did not return an ID");
-      }
-
-      sessionStorage.setItem(
-        "pendingCampaign",
-        JSON.stringify({
-          id: created.id,
-          name: payload.name,
-          goal: payload.goal,
-          platforms: payload.platforms,
-          budget: payload.budget,
-          targeting: payload.targeting,
-          landingPageUrl: payload.landingPageUrl,
-          appId: payload.appId,
-          leadFormId: payload.leadFormId,
-          creatives: creativesByPlatform,
-          lowerReach,
-          upperReach,
-        }),
-      );
-
-      // Redirect to publish page
-      window.location.href = "/panel/campaigns/new/publish";
-    } catch (err) {
-      console.error("Error creating campaign:", err);
-      setSubmissionError(
-        err instanceof Error ? err.message : "Failed to create campaign",
-      );
-      setIsCreatingCampaign(false);
-    }
+    patch({ adContent: { creatives } });
   };
 
-  const handleCreativeSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!creativeType) return;
+  const uploadMedia = async (
+    index: number,
+    platform: CampaignPlatform,
+    file: File,
+  ) => {
+    const validation = validateFile(file);
+    if (!validation.ok) {
+      setError(validation.error ?? "Unsupported media file.");
+      return;
+    }
+    if (platform === "meta" && !file.type.startsWith("image/")) {
+      setError("Meta creative must be an image.");
+      return;
+    }
+    if (platform === "tiktok" && !file.type.startsWith("video/")) {
+      setError("TikTok creative must be a video.");
+      return;
+    }
 
+    setUploading(index);
+    setError(null);
     try {
-      setUploadError(null);
-
-      if (!creativeImage) {
-        setUploadError("Please select an image or video.");
-        return;
-      }
-
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      if (!cloudName) throw new Error("Cloudinary is not configured.");
       const encryptedFolder = await hashFolderName();
-      const safeName = creativeImage.name
-        .replace(/\.[^/.]+$/, "") // strip extension
-        .replace(/[^a-zA-Z0-9_-]/g, "_"); // replace unsafe chars
+      const safeName = file.name
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
       const publicId = `${encryptedFolder.slice(0, 20)}/${safeName}_${Date.now()}`;
-
-      const confirmed = window.confirm(
-        "Once you upload this creative, it will be saved to Cloudinary and you won't be able to edit it. To make changes later, you'll need to upload a new creative.\n\nDo you want to continue?",
-      );
-
-      if (!confirmed) return;
-
-      setIsUploading(true);
-      setUploadProgress(0);
-
-      // Get signature stamp from backend
       const signRes = await apiFetch("/media/signature-stamp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          public_id: publicId,
-          folder: CLOUDINARY_FOLDER,
-        }),
+        body: JSON.stringify({ public_id: publicId, folder: CLOUDINARY_FOLDER }),
       });
-
-      if (!signRes.ok) {
-        const errText = await signRes.text().catch(() => "");
-        throw new Error(
-          `Failed to get signature stamp (${signRes.status}): ${errText}`,
-        );
-      }
-
-      const signPayload = await signRes.json();
-      console.log(signPayload);
-
-      const signature = signPayload.signature;
-      const timestamp = signPayload.timestamp;
-      const api_key = signPayload.api_key;
-      const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-
-      // Build FormData for Cloudinary
-      const formData = new FormData();
-      formData.append("file", creativeImage);
-      formData.append("api_key", api_key);
-      formData.append("timestamp", String(timestamp));
-      formData.append("signature", String(signature));
-      formData.append("public_id", publicId);
-      formData.append("folder", CLOUDINARY_FOLDER);
-
-      const resourceType = creativeImage.type.startsWith("video/")
-        ? "video"
-        : "image";
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/${resourceType}/upload`;
-
-      // Upload with progress using XHR
-      const uploadResult: any = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", uploadUrl);
-
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            setUploadProgress(percent);
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const resp = JSON.parse(xhr.responseText);
-              resolve(resp);
-            } catch (err) {
-              reject(err);
-            }
-          } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
-          }
-        };
-
-        xhr.onerror = () => reject(new Error("Upload error"));
-        xhr.send(formData);
-      });
-
-      const secureUrl = uploadResult.secure_url;
-      console.log("Cloudinary upload result", uploadResult);
-
-      setCreativesByPlatform((prev) => ({
-        ...prev,
-        [creativeType]: {
-          primaryText: creativeSubheading,
-          headline: creativeHeading,
-          cta: "LEARN_MORE",
-          mediaUrl: secureUrl,
-          publicId,
-          folder: CLOUDINARY_FOLDER,
-          platform: creativeType,
-        },
-      }));
-
-      setIsCreativeModalOpen(false);
-    } catch (err) {
-      console.error("Creative upload error:", err);
-      setUploadError(
-        err instanceof Error ? err.message : "Failed to upload creative",
-      );
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const saveAudienceForPlatform = async (platform: "meta" | "tiktok") => {
-    try {
-      const name = window.prompt("Enter a name for this audience:");
-      if (!name) return;
-
-      const payload: any = {
-        name,
-        country: platform === "meta" ? metaCountries : tiktokCountries,
-        locations: platform === "meta" ? metaLocations : tiktokLocations,
-        interests: platform === "meta" ? metaInterests : tiktokInterests,
-        platforms: [platform],
+      const signature = (await signRes.json().catch(() => ({}))) as {
+        message?: string;
+        api_key?: string;
+        timestamp?: number;
+        signature?: string;
       };
-
-      if (platform === "meta") {
-        payload.metaConfig = {
-          ageMin: Number(metaAgeMin) || 18,
-          ageMax: Number(metaAgeMax) || 65,
-          gender: "ALL",
-        };
+      if (!signRes.ok) {
+        throw new Error(signature.message ?? "Could not authorize the upload.");
       }
-
-      if (platform === "tiktok") {
-        payload.tiktokConfig = {
-          ageRanges: ["AGE_18_24", "AGE_25_34"],
-          gender: "GENDER_UNLIMITED",
-        };
-      }
-
-      const res = await createAudience(payload);
-      console.log("Create audience response:", res);
-      window.alert("Audience saved successfully.");
-    } catch (err) {
-      console.error("Save audience error:", err);
-      window.alert(
-        err instanceof Error ? err.message : "Failed to save audience",
+      const body = new FormData();
+      body.append("file", file);
+      body.append("api_key", String(signature.api_key));
+      body.append("timestamp", String(signature.timestamp));
+      body.append("signature", String(signature.signature));
+      body.append("public_id", publicId);
+      body.append("folder", CLOUDINARY_FOLDER);
+      const resourceType = file.type.startsWith("video/") ? "video" : "image";
+      const uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+        { method: "POST", body },
       );
+      const uploaded = (await uploadRes.json().catch(() => ({}))) as {
+        secure_url?: string;
+        error?: { message?: string };
+      };
+      if (!uploadRes.ok || !uploaded.secure_url) {
+        throw new Error(uploaded.error?.message ?? "Media upload failed.");
+      }
+      patchCreative(index, { mediaUrl: uploaded.secure_url });
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Media upload failed.");
+    } finally {
+      setUploading(null);
     }
   };
 
-  const [socialAccounts, setSocialAccounts] = useState<any>({});
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await hydrateSocialAccounts();
-        if (!mounted) return;
-        if (res.success) setSocialAccounts(res.data ?? {});
-      } catch (err) {
-        // ignore
+  const next = () => {
+    setError(null);
+    if (step === 0 && !campaign.campaign.name.trim()) {
+      setError("Enter a campaign name.");
+      return;
+    }
+    if (step === 1 && !campaign.campaign.platforms.length) {
+      setError("Choose at least one advertising platform.");
+      return;
+    }
+    if (step === 3 && !campaign.audience.locations.length) {
+      setError("Choose at least one audience location.");
+      return;
+    }
+    if (step === 4 && campaign.budget.amount <= 0) {
+      setError("Enter a budget greater than zero.");
+      return;
+    }
+    if (step === 5) {
+      const validation = validateCampaignPayload(campaign);
+      if (validation) {
+        setError(validation);
+        return;
       }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    }
+    setStep((current) => Math.min(current + 1, STEPS.length - 1));
+  };
 
-  const bothPlatformsConnected = Boolean(
-    socialAccounts?.meta?.connected && socialAccounts?.tiktok?.connected,
+  const createDraft = async () => {
+    const validation = validateCampaignPayload(campaign);
+    if (validation) {
+      setError(validation);
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const created = await createCampaign(campaign);
+      router.push(`/panel/campaigns/new/publish?id=${encodeURIComponent(created.id)}`);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Could not save the campaign.");
+      setSaving(false);
+    }
+  };
+
+  const createAndPublish = async () => {
+    const validation = validateCampaignPayload(campaign);
+    if (validation) {
+      setError(validation);
+      return;
+    }
+    const missingConnection = campaign.campaign.platforms.find(
+      (platform) => !connected(accounts, platform),
+    );
+    if (missingConnection) {
+      setError(
+        `Connect ${missingConnection === "meta" ? "Meta" : "TikTok"} before publishing. You can still save this campaign as a draft.`,
+      );
+      return;
+    }
+    setPublishing(true);
+    setError(null);
+    try {
+      const created = await createCampaign(campaign);
+      await publishCampaign(created.id);
+      router.push("/panel/campaigns");
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Could not publish the campaign.");
+      setPublishing(false);
+    }
+  };
+
+  const stepper = (
+    <CampaignStepper
+      steps={STEPS}
+      current={step}
+      activeGradient={campaign.creationMode === "ai"}
+      onStepClick={(index) => index <= step && setStep(index)}
+    />
   );
 
-  const saveAudienceCombined = async () => {
-    try {
-      const name = window.prompt("Enter a name for this audience:");
-      if (!name) return;
-
-      const payload: any = {
-        name,
-        country: Array.from(new Set([...metaCountries, ...tiktokCountries])),
-        locations: Array.from(new Set([...metaLocations, ...tiktokLocations])),
-        interests: Array.from(new Set([...metaInterests, ...tiktokInterests])),
-        platforms: ["meta", "tiktok"],
-        metaConfig: {
-          ageMin: Number(metaAgeMin) || 18,
-          ageMax: Number(metaAgeMax) || 65,
-          gender: "ALL",
-        },
-        tiktokConfig: {
-          ageRanges: ["AGE_18_24", "AGE_25_34"],
-          gender: "GENDER_UNLIMITED",
-        },
-      };
-
-      const res = await createAudience(payload);
-      console.log("Create combined audience response:", res);
-      window.alert("Audience saved successfully.");
-    } catch (err) {
-      console.error("Save combined audience error:", err);
-      window.alert(
-        err instanceof Error ? err.message : "Failed to save audience",
-      );
-    }
-  };
-
-  const loadSavedAudiences = async () => {
-    try {
-      setLoadingAudiences(true);
-      const audiences = await fetchAudiences();
-      setSavedAudiences(audiences);
-    } catch (err) {
-      console.error("Failed to load audiences:", err);
-    } finally {
-      setLoadingAudiences(false);
-    }
-  };
-
-  const applyAudienceToForm = (audience: Audience) => {
-    // Apply countries
-    if (audience.country && audience.country.length > 0) {
-      const firstCountry = audience.country[0] as MetaSpecialAdLocationCode;
-      setMetaCountries(audience.country as MetaSpecialAdLocationCode[]);
-      setTiktokCountries(audience.country as MetaSpecialAdLocationCode[]);
-    }
-
-    // Apply locations
-    if (audience.locations && audience.locations.length > 0) {
-      setMetaLocations(audience.locations);
-      setTiktokLocations(audience.locations);
-    }
-
-    // Apply interests
-    if (audience.interests && audience.interests.length > 0) {
-      setMetaInterests(audience.interests);
-      setTiktokInterests(audience.interests);
-    }
-
-    // Apply Meta config
-    if (audience.metaConfig) {
-      if (audience.metaConfig.ageMin)
-        setMetaAgeMin(String(audience.metaConfig.ageMin));
-      if (audience.metaConfig.ageMax)
-        setMetaAgeMax(String(audience.metaConfig.ageMax));
-    }
-  };
-
-  useEffect(() => {
-    loadSavedAudiences();
-  }, []);
-
-  const progressTitles = [
-    "Set campaign goal",
-    "Choose platform",
-    "Target audience",
-    "Budget and schedule",
-    "Creative setup",
-  ];
-
-  const onCreativeStep = showCreativeSetup || showAdCreative;
-  // Manual wizard screens map onto stepper indices (both event-mgmt screens
-  // sit under "Event management" = index 3).
-  const MANUAL_STEP_TO_STEPPER = [1, 2, 3, 3];
-  const onManualWizard =
-    creationMethod === "manual" && manualStep < MANUAL_STEP_TO_STEPPER.length;
-  const isAiWorking =
-    creationMethod === "ai" && aiStarted && !onCreativeStep && !showReview;
-
-  const stepperCurrent = showReview
-    ? WIZARD_STEPS.indexOf("Review and publish")
-    : onCreativeStep
-      ? WIZARD_STEPS.indexOf("Creative setup")
-      : onManualWizard
-        ? MANUAL_STEP_TO_STEPPER[manualStep]
-        : 0;
-
-  const stepperNode = (
-    <CampaignStepper
-      steps={WIZARD_STEPS}
-      current={stepperCurrent}
-      activeGradient={
-        onCreativeStep ||
-        (creationMethod === "ai" && (hasAiPrompt || aiStarted))
-      }
-      onStepClick={(index) => {
-        if (index === 0) resetToSetup();
-      }}
-    />
+  const nav = step < STEPS.length - 1 && (
+    <div className="mt-6 flex items-center justify-between gap-3">
+      <button
+        type="button"
+        onClick={() => setStep((current) => Math.max(0, current - 1))}
+        disabled={step === 0}
+        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:invisible"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+      <button
+        type="button"
+        onClick={next}
+        disabled={uploading !== null}
+        className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 disabled:opacity-50"
+      >
+        Continue <ArrowRight className="h-4 w-4" />
+      </button>
+    </div>
   );
 
   return (
     <PanelLayout>
       <div className="relative flex h-full">
         <DottedBackground fade />
-
         <div className="relative z-10 flex h-full w-full">
-          {/* Secondary Sidebar */}
-          <CampaignTreeSidebar campaignName={campaignName || brandName} />
+          <CampaignTreeSidebar
+            campaignName={campaign.campaign.name || "Untitled campaign"}
+            adGroups={[]}
+          />
+          <main className="h-full flex-1 overflow-y-auto">
+            <div className="mx-auto max-w-5xl p-4 md:p-8">
+              <div className="mb-8">{stepper}</div>
 
-          {/* Main Content */}
-          <div className="h-full flex-1 overflow-y-auto">
-            <div className="p-8 max-w-5xl mx-auto">
-              {/* Stepper is rendered inside the AI working / creative / review views */}
-              {!isAiWorking && !onCreativeStep && !showReview && (
-                <div className="mb-8">{stepperNode}</div>
+              {aiRationale && step > 0 && step < 6 && (
+                <div className="mb-6 flex items-start gap-3 rounded-2xl bg-violet-50 p-4 text-sm text-violet-800">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p><span className="font-semibold">AI draft:</span> {aiRationale} Review every choice before publishing.</p>
+                </div>
               )}
 
-              {showReview ? (
-                /* Review and publish */
-                <ReviewPublishScreen
-                  stepper={stepperNode}
-                  campaignName={campaignName || brandName}
-                  goal={selectedGoalLabel}
-                  destination={selectedDestinationLabel}
-                />
-              ) : showAdCreative ? (
-                /* Ad creative editor (reuses the existing create-ad components) */
-                <>
-                  <div className="mb-8">{stepperNode}</div>
-                  <button
-                    type="button"
-                    onClick={() => setShowAdCreative(false)}
-                    className="mb-6 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Back Asset Library
-                  </button>
-                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 md:p-6">
-                    <CreateAdLayout onSave={() => setShowReview(true)} />
-                  </div>
-                </>
-              ) : showCreativeSetup ? (
-                /* Shared creative setup screen (AI and manual) */
-                <CreativeSetupScreen
-                  stepper={stepperNode}
-                  onSetupAd={() => setShowAdCreative(true)}
-                />
-              ) : creationMethod === null ? (
-                /* Setup: name + choose how to create */
+              {error && step < 6 && (
+                <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>
+              )}
+
+              {step === 0 && (
                 <div className="space-y-6">
                   <CampaignNameCard
-                    value={campaignName}
-                    onChange={setCampaignName}
-                    onGenerate={handleGenerateCampaignName}
+                    value={campaign.campaign.name}
+                    onChange={(name) =>
+                      patch({ campaign: { ...campaign.campaign, name } })
+                    }
                   />
-
-                  <CreateMethodBox
-                    value={creationMethod}
-                    onSelect={setCreationMethod}
-                  />
-                </div>
-              ) : creationMethod === "ai" && !aiStarted ? (
-                /* AI-assisted: landing */
-                <div className="space-y-6">
-                  <CampaignNameCard
-                    value={campaignName}
-                    onChange={setCampaignName}
-                    onGenerate={handleGenerateCampaignName}
-                  />
-
-                  <AiCampaignChat
-                    firstName={firstName}
-                    onPromptChange={setAiPrompt}
-                    onSubmit={() => setAiStarted(true)}
-                  />
-                </div>
-              ) : creationMethod === "ai" ? (
-                /* AI-assisted: working on the request */
-                <AiWorkingView
-                  campaignName={campaignName}
-                  onCampaignNameChange={setCampaignName}
-                  stepper={stepperNode}
-                  onSetupCreative={() => setShowCreativeSetup(true)}
-                  onGoalSelected={setSelectedGoalLabel}
-                />
-              ) : creationMethod === "manual" && manualStep === 0 ? (
-                /* Manual step 1: choose platform */
-                <div className="space-y-6">
-                  <CampaignNameCard
-                    value={campaignName}
-                    onChange={setCampaignName}
-                    onGenerate={handleGenerateCampaignName}
-                  />
-
-                  <ManualPlatformScreen
-                    onConfirm={(platforms) => {
-                      setChosenPlatforms(platforms);
-                      setManualStep(1);
-                    }}
-                  />
-                </div>
-              ) : creationMethod === "manual" && manualStep === 1 ? (
-                /* Manual step 2: set campaign goals */
-                <div className="space-y-6">
-                  <CampaignNameCard
-                    value={campaignName}
-                    onChange={setCampaignName}
-                    onGenerate={handleGenerateCampaignName}
-                  />
-
-                  <ManualGoalScreen
-                    platforms={chosenPlatforms}
-                    onConfirm={(goalLabel, destinationLabel) => {
-                      setSelectedGoalLabel(goalLabel);
-                      setSelectedDestinationLabel(destinationLabel);
-                      setManualStep(2);
-                    }}
-                  />
-                </div>
-              ) : creationMethod === "manual" && manualStep === 2 ? (
-                /* Manual step 3: event management */
-                <div className="space-y-6">
-                  <CampaignNameCard
-                    value={campaignName}
-                    onChange={setCampaignName}
-                    onGenerate={handleGenerateCampaignName}
-                  />
-
-                  <ManualEventScreen onConfirm={() => setManualStep(3)} />
-                </div>
-              ) : creationMethod === "manual" && manualStep === 3 ? (
-                /* Event management: find your audience */
-                <div className="space-y-6">
-                  <CampaignNameCard
-                    value={campaignName}
-                    onChange={setCampaignName}
-                    onGenerate={handleGenerateCampaignName}
-                  />
-
-                  <AudienceTargetingScreen
-                    onConfirm={() => setShowCreativeSetup(true)}
-                  />
-                </div>
-              ) : (
-                <>
-                  {/* Manual: full campaign form */}
-                  <button
-                    type="button"
-                    onClick={() => setCreationMethod(null)}
-                    className="mb-6 text-sm text-gray-500 hover:text-gray-800"
-                  >
-                    &larr; Back to setup
-                  </button>
-
-                  {/* Progress Tabs */}
-                  <div className="sticky top-0 z-10 bg-white border-b border-gray-200 grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 mt-1 p-4">
-                    {progressTitles.map((title, index) => (
+                  {method !== "ai" ? (
+                    <CreateMethodBox
+                      value={method}
+                      onSelect={(nextMethod) => {
+                        setMethod(nextMethod);
+                        patch({ creationMode: nextMethod });
+                        setError(null);
+                        if (nextMethod === "manual") setStep(1);
+                      }}
+                    />
+                  ) : aiLoading ? (
+                    <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-violet-100 bg-white p-8 text-center shadow-sm">
+                      <Loader2 className="h-9 w-9 animate-spin text-violet-500" />
+                      <h2 className="mt-5 text-xl font-semibold text-gray-900">Creating an editable campaign draft</h2>
+                      <p className="mt-2 max-w-md text-sm text-gray-500">Growdex is choosing a goal, platforms, audience, budget, and ad copy from your request.</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
                       <button
-                        key={index}
-                        onClick={() => setProgressTab(index)}
-                        className={`px-2 py-3 rounded-lg font-medium transition-colors ${
-                          progressTab === index
-                            ? "bg-khaki-200 text-gray-900 shadow-lg"
-                            : "bg-transparent text-gray-600"
-                        } whitespace-nowrap`}
+                        type="button"
+                        onClick={() => setMethod(null)}
+                        className="ml-6 mt-5 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
                       >
-                        {title}
+                        <ArrowLeft className="h-4 w-4" /> Change creation method
+                      </button>
+                      <AiCampaignChat
+                        firstName={firstName}
+                        onSubmit={(prompt) => void generateWithAi(prompt)}
+                        suggestions={[
+                          "Launch a lead campaign for my business in Nigeria",
+                          "Promote a new product to young adults",
+                          "Drive qualified visitors to my website",
+                        ]}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {step === 1 && (
+                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                  <h2 className="text-xl font-bold text-gray-900">What platforms are you running this ad on?</h2>
+                  <p className="mt-2 text-sm text-gray-500">You can build a draft before connecting an account. A live connection is required to publish.</p>
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    {(["meta", "tiktok"] as CampaignPlatform[]).map((platform) => {
+                      const isSelected = campaign.campaign.platforms.includes(platform);
+                      const isConnected = connected(accounts, platform);
+                      const accountName = platform === "meta"
+                        ? accounts?.meta?.assets?.[0]?.adAccountName
+                        : accounts?.tiktok?.assets?.[0]?.name;
+                      return (
+                        <div key={platform} className={`rounded-xl border p-4 ${isSelected ? "border-khaki-300" : "border-gray-200"}`}>
+                          <button type="button" onClick={() => togglePlatform(platform)} className="flex w-full items-center gap-3 text-left">
+                            <SelectionMark checked={isSelected} />
+                            <div className="flex-1">
+                              <p className="font-semibold capitalize text-gray-900">{platform === "meta" ? "Meta" : "TikTok"}</p>
+                              <p className="mt-0.5 text-xs text-gray-400">{accountName || (isConnected ? "Connected account" : "No account connected")}</p>
+                            </div>
+                            <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? "bg-green-500" : "bg-gray-300"}`} />
+                          </button>
+                          {!isConnected && (
+                            <button
+                              type="button"
+                              onClick={() => void connect(platform)}
+                              disabled={connecting !== null}
+                              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              {connecting === platform ? "Connecting…" : `Connect ${platform === "meta" ? "Meta" : "TikTok"}`}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {accountError && <p className="mt-4 text-sm text-red-600">{accountError}</p>}
+                </section>
+              )}
+
+              {step === 2 && (
+                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                  <h2 className="text-xl font-bold text-gray-900">What is the goal for your campaign?</h2>
+                  <div className="mt-6 space-y-3">
+                    {GOALS.map((goal) => {
+                      const selected = campaign.campaign.goal === goal.value;
+                      return (
+                        <button
+                          key={goal.value}
+                          type="button"
+                          onClick={() => patch({ campaign: { ...campaign.campaign, goal: goal.value } })}
+                          className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left ${selected ? "border-khaki-300" : "border-gray-200 hover:border-gray-300"}`}
+                        >
+                          <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? "border-gray-800" : "border-gray-300"}`}>
+                            {selected && <span className="h-2.5 w-2.5 rounded-full bg-gray-800" />}
+                          </span>
+                          <span>
+                            <span className="block text-sm font-medium text-gray-900">{goal.label}</span>
+                            <span className="block text-xs text-gray-400">{goal.description}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {step === 3 && (
+                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                  <h2 className="text-xl font-bold text-gray-900">Find the people you want to reach</h2>
+                  <div className="mt-6 grid gap-5 md:grid-cols-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Add a country
+                      <select
+                        className="mt-2 h-11 w-full rounded-lg border bg-white px-3"
+                        value=""
+                        onChange={(event) => {
+                          const code = event.target.value;
+                          if (code && !selectedCountries.has(code)) {
+                            patch({ audience: { ...campaign.audience, locations: [...campaign.audience.locations, code] } });
+                          }
+                        }}
+                      >
+                        <option value="">Choose a country</option>
+                        {COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Gender
+                      <select
+                        className="mt-2 h-11 w-full rounded-lg border bg-white px-3"
+                        value={campaign.audience.gender ?? "all"}
+                        onChange={(event) => patch({ audience: { ...campaign.audience, gender: event.target.value as "all" | "male" | "female" } })}
+                      >
+                        <option value="all">All</option>
+                        <option value="female">Women</option>
+                        <option value="male">Men</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {campaign.audience.locations.map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => campaign.audience.locations.length > 1 && patch({ audience: { ...campaign.audience, locations: campaign.audience.locations.filter((item) => item !== code) } })}
+                        className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+                      >
+                        {metaSpecialAdLocations[code as keyof typeof metaSpecialAdLocations] ?? code} ×
                       </button>
                     ))}
                   </div>
-
-                  {/* New Campaign Form */}
-                  <form
-                    className="space-y-6"
-                    onSubmit={handleCreateCampaignSubmit}
-                  >
-                    {/* Campaign Name */}
-                    <div className="bg-white rounded-xl p-4">
-                      <div className="flex gap-3 items-center">
-                        <img src="/megaphone.png" alt="megaphone-icon" />
-                        <div className="flex-1">
-                          <label
-                            htmlFor="campaignName"
-                            className="block text-sm font-medium text-gray-500"
-                          >
-                            Campaign Name
-                          </label>
-                          <input
-                            type="text"
-                            id="campaignName"
-                            name="campaignName"
-                            required
-                            maxLength={100}
-                            value={campaignName}
-                            onChange={(e) => setCampaignName(e.target.value)}
-                            placeholder="Untitled Campaign"
-                            className="mt-1 block w-full focus:border-b focus:border-khaki-200 focus:outline-none md:text-lg lg:text-2xl"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Set Campaign goal */}
-                    <GoalSection
-                      progressTab={progressTab}
-                      setProgressTab={setProgressTab}
-                      campaignGoal={campaignGoal}
-                      setCampaignGoal={setCampaignGoal}
-                    />
-
-                    {/* Choose Platform */}
-                    <PlatformSection
-                      progressTab={progressTab}
-                      setProgressTab={setProgressTab}
-                      selectedPlatforms={selectedPlatforms}
-                      setSelectedPlatforms={setSelectedPlatforms}
-                      brandName={brandName}
-                      instagramAccountName={instagramAccountName}
-                    />
-
-                    {/* Target audience */}
-                    <AudienceSection
-                      progressTab={progressTab}
-                      setProgressTab={setProgressTab}
-                      brandName={brandName}
-                      selectedPlatforms={selectedPlatforms}
-                      instagramAccountName={instagramAccountName}
-                      loadingAudiences={loadingAudiences}
-                      savedAudiences={savedAudiences}
-                      applyAudienceToForm={applyAudienceToForm}
-                      formatCountriesSummary={formatCountriesSummary}
-                      COUNTRY_OPTIONS={COUNTRY_OPTIONS}
-                      metaCountries={metaCountries}
-                      tiktokCountries={tiktokCountries}
-                      toggleCountry={toggleCountry}
-                      metaLocationQuery={metaLocationQuery}
-                      setMetaLocationQuery={setMetaLocationQuery}
-                      tiktokLocationQuery={tiktokLocationQuery}
-                      setTiktokLocationQuery={setTiktokLocationQuery}
-                      addLocationTag={addLocationTag}
-                      metaLocations={metaLocations}
-                      removeLocationTag={removeLocationTag}
-                      tiktokLocations={tiktokLocations}
-                      metaAgeMin={metaAgeMin}
-                      setMetaAgeMin={setMetaAgeMin}
-                      metaAgeMax={metaAgeMax}
-                      setMetaAgeMax={setMetaAgeMax}
-                      metaInterestQuery={metaInterestQuery}
-                      setMetaInterestQuery={setMetaInterestQuery}
-                      addInterestTag={addInterestTag}
-                      metaInterests={metaInterests}
-                      removeInterestTag={removeInterestTag}
-                      tiktokInterestQuery={tiktokInterestQuery}
-                      setTiktokInterestQuery={setTiktokInterestQuery}
-                      tiktokInterests={tiktokInterests}
-                      bothPlatformsConnected={bothPlatformsConnected}
-                      saveAudienceForPlatform={saveAudienceForPlatform}
-                      saveAudienceCombined={saveAudienceCombined}
-                      lowerReach={lowerReach}
-                      upperReach={upperReach}
-                      setLowerReach={setLowerReach}
-                      setUpperReach={setUpperReach}
-                    />
-
-                    {/* Budget & Schedule */}
-                    <BudgetSection
-                      progressTab={progressTab}
-                      setProgressTab={setProgressTab}
-                      currency={currency}
-                      setCurrency={setCurrency}
-                      CURRENCY_OPTIONS={CURRENCY_OPTIONS}
-                      brandName={brandName}
-                      useSeparateBudgets={useSeparateBudgets}
-                      setUseSeparateBudgets={setUseSeparateBudgets}
-                      unifiedBudgetAmount={unifiedBudgetAmount}
-                      setUnifiedBudgetAmount={setUnifiedBudgetAmount}
-                      unifiedBudgetFrequency={unifiedBudgetFrequency}
-                      setUnifiedBudgetFrequency={setUnifiedBudgetFrequency}
-                      metaBudgetAmount={metaBudgetAmount}
-                      setMetaBudgetAmount={setMetaBudgetAmount}
-                      metaBudgetFrequency={metaBudgetFrequency}
-                      setMetaBudgetFrequency={setMetaBudgetFrequency}
-                      tiktokBudgetAmount={tiktokBudgetAmount}
-                      setTiktokBudgetAmount={setTiktokBudgetAmount}
-                      tiktokBudgetFrequency={tiktokBudgetFrequency}
-                      setTiktokBudgetFrequency={setTiktokBudgetFrequency}
-                      selectedPlatforms={selectedPlatforms}
-                      useSchedule={useSchedule}
-                      setUseSchedule={setUseSchedule}
-                      scheduleStartDate={scheduleStartDate}
-                      setScheduleStartDate={setScheduleStartDate}
-                      scheduleEndDate={scheduleEndDate}
-                      setScheduleEndDate={setScheduleEndDate}
-                      scheduleTime={scheduleTime}
-                      setScheduleTime={setScheduleTime}
-                    />
-
-                    {/* Goal Specific Details (Conditional Box) */}
-                    {(campaignGoal.toLowerCase() === "traffic" ||
-                      campaignGoal.toLowerCase() === "sales" ||
-                      campaignGoal.toLowerCase() === "leads" ||
-                      campaignGoal.toLowerCase() === "app_promotion") && (
-                      <div className="bg-white rounded-xl p-4 border border-transparent">
-                        <div className="flex gap-3">
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="w-6 h-6 rounded-full bg-dimYellow border border-peru-200" />
-                            <div className="w-0 h-full border border-peru-200" />
-                          </div>
-                          <div className="w-full">
-                            <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
-                              Additional details
-                            </label>
-                            <div className="mt-4 flex flex-col gap-4 max-w-md">
-                              {(campaignGoal.toLowerCase() === "traffic" ||
-                                campaignGoal.toLowerCase() === "sales") && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Landing Page URL (Website) *
-                                  </label>
-                                  <Input
-                                    name="landingPageUrl"
-                                    value={landingPageUrl}
-                                    onChange={(e) =>
-                                      setLandingPageUrl(e.target.value)
-                                    }
-                                    placeholder="https://example.com"
-                                  />
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Required for Traffic & Sales goals.
-                                  </p>
-                                </div>
-                              )}
-
-                              {campaignGoal.toLowerCase() === "leads" && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Lead Form ID *
-                                  </label>
-                                  <Input
-                                    name="leadFormId"
-                                    value={leadFormId}
-                                    onChange={(e) =>
-                                      setLeadFormId(e.target.value)
-                                    }
-                                    placeholder="e.g. 1234567890"
-                                  />
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Required for Lead Generation.
-                                  </p>
-                                </div>
-                              )}
-
-                              {campaignGoal.toLowerCase() ===
-                                "app_promotion" && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    App ID *
-                                  </label>
-                                  <Input
-                                    name="appId"
-                                    value={appId}
-                                    onChange={(e) => setAppId(e.target.value)}
-                                    placeholder="e.g. com.growdex.app or Apple App ID"
-                                  />
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Required for App Promotion.
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Setup Creative */}
-                    <CreativeSection
-                      progressTab={progressTab}
-                      setProgressTab={setProgressTab}
-                      selectedPlatforms={selectedPlatforms}
-                      creativesByPlatform={creativesByPlatform}
-                      openCreativeModal={openCreativeModal}
-                    />
-
-                    {submissionError && (
-                      <p className="text-red-500 text-sm font-medium text-center">
-                        {submissionError}
-                      </p>
-                    )}
-
-                    {/* create draft campaign btn */}
-                    <Button
-                      type="submit"
-                      disabled={isCreatingCampaign}
-                      className="w-full bg-khaki-200 hover:bg-khaki-300 text-black text-center cursor-pointer"
-                    >
-                      <CircleArrowRight />
-                      {isCreatingCampaign ? "Saving..." : "Save + Review"}
-                    </Button>
-                  </form>
-
-                  {/* Creative Modal */}
-                  {isCreativeModalOpen && (
-                    <div className="fixed inset-0 bg-slate-800/40 flex items-center justify-center z-50 p-4">
-                      <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[600px] overflow-y-auto hide-scrollbar">
-                        <form onSubmit={handleCreativeSubmit}>
-                          <div className="p-4 border-b">
-                            <h2 className="text-lg font-bold text-center">
-                              {creativeType === "meta"
-                                ? "Meta Creative"
-                                : "TikTok Creative"}
-                            </h2>
-                          </div>
-
-                          <div className="p-4 space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">
-                                Heading
-                              </label>
-                              <Input
-                                value={creativeHeading}
-                                onChange={(e) =>
-                                  setCreativeHeading(
-                                    (e.target as HTMLInputElement).value,
-                                  )
-                                }
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">
-                                Sub heading
-                              </label>
-                              <Input
-                                value={creativeSubheading}
-                                onChange={(e) =>
-                                  setCreativeSubheading(
-                                    (e.target as HTMLInputElement).value,
-                                  )
-                                }
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">
-                                Image
-                              </label>
-                              <div
-                                onDragOver={handleDragOver}
-                                onDrop={handleDrop}
-                                onClick={handleBrowseClick}
-                                className="mt-2 border-2 border-dashed border-[#B8A247] rounded-md p-6 flex flex-col items-center justify-center cursor-pointer"
-                              >
-                                <UploadCloud className="w-10 h-10 text-[#B8A247]" />
-                                <p className="text-sm text-gray-600 mt-2">
-                                  Browse or drag and drop an image or video here
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  Supported: JPG, PNG (max 10MB); MP4 (max 10MB)
-                                </p>
-                                <input
-                                  ref={fileInputRef}
-                                  type="file"
-                                  accept="image/*,video/*"
-                                  onChange={handleImageChange}
-                                  className="hidden"
-                                />
-
-                                {uploadError && (
-                                  <div className="mt-2 text-xs text-red-600">
-                                    {uploadError}
-                                  </div>
-                                )}
-                              </div>
-
-                              {creativePreview && (
-                                <div className="mt-2">
-                                  {creativeImage?.type.startsWith("video/") ? (
-                                    <video
-                                      src={creativePreview}
-                                      controls
-                                      className="max-h-40 rounded-md"
-                                    />
-                                  ) : (
-                                    <img
-                                      src={creativePreview}
-                                      alt="preview"
-                                      className="max-h-40 rounded-md"
-                                    />
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="p-4 border-t flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setIsCreativeModalOpen(false)}
-                              disabled={isUploading}
-                              className="px-4 py-2 border rounded-lg"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              disabled={isUploading}
-                              className="px-4 py-2 bg-khaki-200 rounded-lg"
-                            >
-                              {isUploading
-                                ? `Uploading ${uploadProgress}%`
-                                : "Save creative"}
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  )}
-                </>
+                  <div className="mt-5 grid gap-5 md:grid-cols-3">
+                    <label className="text-sm font-medium text-gray-700">Minimum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMin ?? 18} onChange={(event) => patch({ audience: { ...campaign.audience, ageMin: Number(event.target.value) } })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Maximum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMax ?? 65} onChange={(event) => patch({ audience: { ...campaign.audience, ageMax: Number(event.target.value) } })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Interests<Input className="mt-2" value={(campaign.audience.interests ?? []).join(", ")} onChange={(event) => patch({ audience: { ...campaign.audience, interests: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) } })} placeholder="Business, technology" /></label>
+                  </div>
+                </section>
               )}
+
+              {step === 4 && (
+                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                  <h2 className="text-xl font-bold text-gray-900">How much do you want to spend?</h2>
+                  <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                    <label className="text-sm font-medium text-gray-700">Amount<Input className="mt-2" type="number" min="0.01" step="0.01" value={campaign.budget.amount || ""} onChange={(event) => patch({ budget: { ...campaign.budget, amount: Number(event.target.value) } })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Currency<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.currency} onChange={(event) => patch({ budget: { ...campaign.budget, currency: event.target.value as "NGN" | "USD" } })}><option value="NGN">NGN</option><option value="USD">USD</option></select></label>
+                    <label className="text-sm font-medium text-gray-700">Budget type<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.type} onChange={(event) => patch({ budget: { ...campaign.budget, type: event.target.value as "daily" | "lifetime" } })}><option value="daily">Daily</option><option value="lifetime">Lifetime</option></select></label>
+                    <label className="text-sm font-medium text-gray-700">Start time<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.startDate)} onChange={(event) => event.target.value && patch({ budget: { ...campaign.budget, startDate: new Date(event.target.value).toISOString() } })} /></label>
+                    <label className="text-sm font-medium text-gray-700">End time (optional)<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.endDate)} onChange={(event) => patch({ budget: { ...campaign.budget, endDate: event.target.value ? new Date(event.target.value).toISOString() : undefined } })} /></label>
+                  </div>
+                </section>
+              )}
+
+              {step === 5 && (
+                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                  <h2 className="text-xl font-bold text-gray-900">Setup your ad creatives</h2>
+                  <p className="mt-2 text-sm text-gray-500">Each platform gets its own copy and media in the order shown.</p>
+                  <div className="mt-6 space-y-6">
+                    {campaign.campaign.platforms.map((platform, index) => {
+                      const creative = campaign.adContent.creatives[index] ?? emptyCreative(platform);
+                      return (
+                        <fieldset key={platform} className="rounded-xl border border-gray-200 p-5">
+                          <legend className="px-2 font-semibold capitalize text-gray-900">{platform === "meta" ? "Meta image ad" : "TikTok video ad"}</legend>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <label className="text-sm font-medium text-gray-700 md:col-span-2">Primary text<textarea className="mt-2 min-h-24 w-full rounded-lg border p-3" maxLength={125} value={creative.primaryText} onChange={(event) => patchCreative(index, { primaryText: event.target.value })} /></label>
+                            <label className="text-sm font-medium text-gray-700">Headline<Input className="mt-2" maxLength={40} value={creative.headline ?? ""} onChange={(event) => patchCreative(index, { headline: event.target.value })} /></label>
+                            <label className="text-sm font-medium text-gray-700">Call to action<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={creative.cta} onChange={(event) => patchCreative(index, { cta: event.target.value as CampaignCta })}>{CTA_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                            <label className="text-sm font-medium text-gray-700 md:col-span-2">Landing page URL{platform === "meta" ? " *" : ""}<Input className="mt-2" type="url" value={creative.landingPageUrl ?? ""} onChange={(event) => patchCreative(index, { landingPageUrl: event.target.value || undefined })} placeholder="https://example.com/offer" /></label>
+                            {campaign.campaign.goal === "LEADS" && <label className="text-sm font-medium text-gray-700 md:col-span-2">Lead form ID<Input className="mt-2" value={creative.leadFormId ?? ""} onChange={(event) => patchCreative(index, { leadFormId: event.target.value })} /></label>}
+                            {campaign.campaign.goal === "APP_PROMOTION" && <label className="text-sm font-medium text-gray-700 md:col-span-2">App ID<Input className="mt-2" value={creative.appId ?? ""} onChange={(event) => patchCreative(index, { appId: event.target.value })} /></label>}
+                            <div className="md:col-span-2">
+                              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {uploading === index ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                                {uploading === index ? "Uploading…" : `Upload ${platform === "meta" ? "image" : "video"}`}
+                                <input className="hidden" type="file" disabled={uploading !== null} accept={platform === "meta" ? "image/*" : "video/*"} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadMedia(index, platform, file); event.target.value = ""; }} />
+                              </label>
+                              {creative.mediaUrl && (
+                                <div className="mt-4 overflow-hidden rounded-xl border bg-gray-50">
+                                  {isVideoUrl(creative.mediaUrl) ? <video className="max-h-72 w-full object-contain" src={creative.mediaUrl} controls /> : <Image className="max-h-72 w-full object-contain" src={creative.mediaUrl} alt={`${platform} creative`} width={800} height={450} unoptimized />}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </fieldset>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {step === 6 && (
+                <ReviewPublishScreen
+                  campaign={campaign}
+                  brandName={brandName}
+                  onBack={() => setStep(5)}
+                  onSaveDraft={() => void createDraft()}
+                  onPublish={() => void createAndPublish()}
+                  saving={saving}
+                  publishing={publishing}
+                  error={error}
+                />
+              )}
+
+              {step > 0 && nav}
             </div>
-          </div>
+          </main>
         </div>
       </div>
     </PanelLayout>
