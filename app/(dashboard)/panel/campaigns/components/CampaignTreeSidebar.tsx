@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronDown, MoreHorizontal, TriangleAlert } from "lucide-react";
+import { ChevronLeft, ChevronDown, TriangleAlert } from "lucide-react";
+import type { CreateCampaignPayload } from "@/lib/campaigns";
 
 interface AdSet {
   id: string;
@@ -20,18 +21,42 @@ interface AdGroup {
 interface CampaignTreeSidebarProps {
   campaignName?: string;
   adGroups?: AdGroup[];
+  campaign?: Pick<CreateCampaignPayload, "campaign" | "adContent">;
 }
 
 export function CampaignTreeSidebar({
   campaignName = "Untitled Campaign",
   adGroups = [],
+  campaign,
 }: CampaignTreeSidebarProps) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(adGroups.map((g) => [g.id, true])),
+  const visibleGroups = useMemo<AdGroup[]>(
+    () =>
+      campaign
+        ? campaign.campaign.platforms.map((platform) => {
+            const label = platform === "meta" ? "Meta" : "TikTok";
+            const creatives = campaign.adContent.creatives.filter(
+              (creative) => creative.platform === platform,
+            );
+
+            return {
+              id: platform,
+              name: `${label} ad group`,
+              warning:
+                !campaign.campaign.configuration.accountAssetIds?.[platform],
+              adSets: creatives.map((creative, index) => ({
+                id: `${platform}-${index}`,
+                name: creative.headline?.trim() || `${label} creative ${index + 1}`,
+                warning: !creative.mediaUrl,
+              })),
+            };
+          })
+        : adGroups,
+    [adGroups, campaign],
   );
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const toggle = (id: string) =>
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+    setExpanded((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
 
   const truncatedName =
     campaignName.length > 18 ? `${campaignName.slice(0, 18)}..` : campaignName;
@@ -54,8 +79,8 @@ export function CampaignTreeSidebar({
 
       {/* Ad groups tree */}
       <div className="mt-3 space-y-2">
-        {adGroups.map((group) => {
-          const isOpen = expanded[group.id];
+        {visibleGroups.map((group) => {
+          const isOpen = expanded[group.id] ?? true;
           return (
             <div key={group.id}>
               {/* Ad group row */}
@@ -77,13 +102,6 @@ export function CampaignTreeSidebar({
                     <TriangleAlert className="w-4 h-4 text-khaki-200" />
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="shrink-0 text-gray-400 hover:text-white transition-colors"
-                  aria-label="Ad group options"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
               </div>
 
               {/* Ad sets */}
@@ -104,13 +122,6 @@ export function CampaignTreeSidebar({
                             <TriangleAlert className="w-4 h-4 text-khaki-300" />
                           )}
                         </div>
-                        <button
-                          type="button"
-                          className="shrink-0 text-gray-400 hover:text-gray-700 transition-colors"
-                          aria-label="Ad set options"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
                   ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Paperclip, SendHorizontal, ChevronDown } from "lucide-react";
+import { SendHorizontal, ChevronDown } from "lucide-react";
 import { PURPLE_GRADIENT } from "../campaigns/components/AiCampaignChat";
 
 interface DashboardAiBarProps {
@@ -47,13 +47,6 @@ export function DashboardAiBar({
 
       {/* Prompt input */}
       <div className="flex flex-1 max-w-2xl items-center gap-2 rounded-lg border border-violet-200 bg-white pl-4 pr-1.5 py-1.5 shadow-sm focus-within:border-violet-300">
-        <button
-          type="button"
-          className="shrink-0 text-gray-400 hover:text-gray-600"
-          aria-label="Attach a file"
-        >
-          <Paperclip className="w-4 h-4" />
-        </button>
         <input
           type="text"
           value={prompt}

@@ -125,10 +125,10 @@ export function ReviewPublishScreen({
           </section>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {campaign.campaign.platforms.map((platform, index) => {
-              const creative = campaign.adContent.creatives[index];
+            {campaign.adContent.creatives.map((creative, index) => {
+              const platform = creative.platform;
               return (
-                <article key={platform} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <article key={`${platform}-${index}-${creative.mediaUrl}`} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                   <div className="p-4">
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
@@ -172,6 +172,29 @@ export function ReviewPublishScreen({
 
         <aside className="space-y-4">
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="font-semibold text-gray-900">Delivery settings</h3>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div>
+                <dt className="text-gray-400">Destination and optimization</dt>
+                <dd className="mt-1 text-gray-700">
+                  {campaign.campaign.configuration.destination.replaceAll("_", " ")} · {campaign.campaign.configuration.optimizationGoal.replaceAll("_", " ")}
+                </dd>
+              </div>
+              {campaign.campaign.platforms.map((platform) => (
+                <div key={platform}>
+                  <dt className="capitalize text-gray-400">{platform} account</dt>
+                  <dd className="mt-1 break-all text-gray-700">
+                    {campaign.campaign.configuration.accountAssetIds?.[platform]}
+                    {campaign.campaign.configuration.eventSourceIds?.[platform]
+                      ? ` · Pixel ${campaign.campaign.configuration.eventSourceIds[platform]}`
+                      : ""}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900">Audience</h3>
             <dl className="mt-4 space-y-3 text-sm">
               <div>
@@ -192,6 +215,12 @@ export function ReviewPublishScreen({
                 <dt className="text-gray-400">Interests</dt>
                 <dd className="mt-1 text-gray-700">
                   {campaign.audience.interests?.filter(Boolean).join(", ") || "Broad audience"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-400">Languages and devices</dt>
+                <dd className="mt-1 capitalize text-gray-700">
+                  {campaign.audience.languages?.join(", ") || "All languages"} · {(campaign.audience.devices ?? ["mobile"]).join(", ")}
                 </dd>
               </div>
             </dl>

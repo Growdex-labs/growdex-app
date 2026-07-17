@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Paperclip, SendHorizontal } from "lucide-react";
+import { SendHorizontal } from "lucide-react";
 import { GradientSparkle } from "./GradientSparkle";
 
 export const PURPLE_GRADIENT =
@@ -52,13 +52,6 @@ export function AiCampaignChat({
       {/* Prompt input */}
       <div className="w-full max-w-xl">
         <div className="flex items-center gap-2 rounded-[10px] border border-gray-200 bg-white pl-4 pr-2 py-2 shadow-sm focus-within:border-violet-300">
-          <button
-            type="button"
-            className="shrink-0 text-gray-400 hover:text-gray-600"
-            aria-label="Attach a file"
-          >
-            <Paperclip className="w-4 h-4" />
-          </button>
           <input
             type="text"
             value={prompt}

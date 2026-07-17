@@ -76,7 +76,7 @@ export default function PublishCampaignPage() {
         <div className="relative z-10 flex h-full w-full">
           <CampaignTreeSidebar
             campaignName={campaign?.campaign.name ?? "Campaign review"}
-            adGroups={[]}
+            campaign={campaign ?? undefined}
           />
           <main className="h-full flex-1 overflow-y-auto">
             <div className="mx-auto max-w-5xl p-4 md:p-8">
