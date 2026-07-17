@@ -21,12 +21,14 @@ import {
   createInitialCampaignPayload,
   generateCampaignDraft,
   publishCampaign,
+  searchMetaInterests,
   validateCampaignPayload,
   type CampaignCreativeInput,
   type CampaignCta,
   type CampaignGoal,
   type CampaignPlatform,
   type CreateCampaignPayload,
+  type MetaInterest,
 } from "@/lib/campaigns";
 import { validateFile, isVideoUrl } from "@/lib/campaign-shared";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
@@ -132,6 +134,10 @@ export default function NewCampaignPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [checkingInterests, setCheckingInterests] = useState(false);
+  const [unavailableInterests, setUnavailableInterests] = useState<
+    Record<string, MetaInterest[]>
+  >({});
 
   useEffect(() => {
     let active = true;
@@ -320,7 +326,78 @@ export default function NewCampaignPage() {
     }
   };
 
-  const next = () => {
+  const validateMetaAudienceInterests = async () => {
+    const interests = campaign.audience.interests ?? [];
+    if (!campaign.campaign.platforms.includes("meta") || !interests.length) {
+      setUnavailableInterests({});
+      return true;
+    }
+
+    setCheckingInterests(true);
+    try {
+      const results = await Promise.all(
+        interests.map(async (interest) => ({
+          interest,
+          matches: await searchMetaInterests(interest),
+        })),
+      );
+      const unavailable: Record<string, MetaInterest[]> = {};
+      const canonicalNames: string[] = [];
+
+      for (const { interest, matches } of results) {
+        const exact = matches.find(
+          (match) => match.name.trim().toLowerCase() === interest.toLowerCase(),
+        );
+        if (exact) canonicalNames.push(exact.name);
+        else unavailable[interest] = matches.slice(0, 5);
+      }
+
+      if (Object.keys(unavailable).length) {
+        setUnavailableInterests(unavailable);
+        setError("Choose available Meta interests before continuing.");
+        return false;
+      }
+
+      setUnavailableInterests({});
+      patch({
+        audience: { ...campaign.audience, interests: canonicalNames },
+      });
+      return true;
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not validate Meta interests.",
+      );
+      return false;
+    } finally {
+      setCheckingInterests(false);
+    }
+  };
+
+  const replaceUnavailableInterest = (
+    unavailable: string,
+    replacement: string,
+  ) => {
+    patch({
+      audience: {
+        ...campaign.audience,
+        interests: (campaign.audience.interests ?? []).map((interest) =>
+          interest.toLowerCase() === unavailable.toLowerCase()
+            ? replacement
+            : interest,
+        ),
+      },
+    });
+    setUnavailableInterests((current) => {
+      const nextUnavailable = { ...current };
+      delete nextUnavailable[unavailable];
+      return nextUnavailable;
+    });
+    setError(null);
+  };
+
+  const next = async () => {
     setError(null);
     if (step === 0 && !campaign.campaign.name.trim()) {
       setError("Enter a campaign name.");
@@ -334,6 +411,7 @@ export default function NewCampaignPage() {
       setError("Choose at least one audience location.");
       return;
     }
+    if (step === 3 && !(await validateMetaAudienceInterests())) return;
     if (step === 4 && campaign.budget.amount <= 0) {
       setError("Enter a budget greater than zero.");
       return;
@@ -413,11 +491,11 @@ export default function NewCampaignPage() {
       </button>
       <button
         type="button"
-        onClick={next}
-        disabled={uploading !== null}
+        onClick={() => void next()}
+        disabled={uploading !== null || checkingInterests}
         className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 disabled:opacity-50"
       >
-        Continue <ArrowRight className="h-4 w-4" />
+        {checkingInterests ? "Checking interests…" : "Continue"} <ArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
@@ -607,8 +685,62 @@ export default function NewCampaignPage() {
                   <div className="mt-5 grid gap-5 md:grid-cols-3">
                     <label className="text-sm font-medium text-gray-700">Minimum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMin ?? 18} onChange={(event) => patch({ audience: { ...campaign.audience, ageMin: Number(event.target.value) } })} /></label>
                     <label className="text-sm font-medium text-gray-700">Maximum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMax ?? 65} onChange={(event) => patch({ audience: { ...campaign.audience, ageMax: Number(event.target.value) } })} /></label>
-                    <label className="text-sm font-medium text-gray-700">Interests<Input className="mt-2" value={(campaign.audience.interests ?? []).join(", ")} onChange={(event) => patch({ audience: { ...campaign.audience, interests: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) } })} placeholder="Business, technology" /></label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Interests
+                      <Input
+                        className="mt-2"
+                        value={(campaign.audience.interests ?? []).join(", ")}
+                        onChange={(event) => {
+                          patch({
+                            audience: {
+                              ...campaign.audience,
+                              interests: event.target.value
+                                .split(",")
+                                .map((item) => item.trim())
+                                .filter(Boolean),
+                            },
+                          });
+                          setUnavailableInterests({});
+                        }}
+                        placeholder="Business, technology"
+                      />
+                    </label>
                   </div>
+                  {Object.entries(unavailableInterests).map(
+                    ([unavailable, suggestions]) => (
+                      <div
+                        key={unavailable}
+                        className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4"
+                      >
+                        <p className="text-sm font-medium text-amber-900">
+                          “{unavailable}” is not an available Meta interest.
+                        </p>
+                        {suggestions.length ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {suggestions.map((suggestion) => (
+                              <button
+                                key={suggestion.id}
+                                type="button"
+                                onClick={() =>
+                                  replaceUnavailableInterest(
+                                    unavailable,
+                                    suggestion.name,
+                                  )
+                                }
+                                className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100"
+                              >
+                                Use {suggestion.name}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-xs text-amber-800">
+                            Remove it or enter a different interest.
+                          </p>
+                        )}
+                      </div>
+                    ),
+                  )}
                 </section>
               )}
 

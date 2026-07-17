@@ -106,6 +106,12 @@ export interface CampaignMetrics {
   campaigns: CampaignDto[];
 }
 
+export interface MetaInterest {
+  id: string;
+  name: string;
+  audience_size?: number;
+}
+
 const readJson = async (res: Response) => res.json().catch(() => ({}));
 
 const getApiError = (data: unknown, fallback: string) => {
@@ -201,6 +207,23 @@ export const generateCampaignDraft = async (input: {
     throw new Error(getApiError(data, `Generate campaign failed (${res.status})`));
   }
   return data as GeneratedCampaignDraft;
+};
+
+export const searchMetaInterests = async (
+  query: string,
+): Promise<MetaInterest[]> => {
+  const res = await apiFetch(
+    `/campaigns/get-interests?interest=${encodeURIComponent(query)}`,
+    { method: "GET" },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Interest search failed (${res.status})`));
+  }
+  if (!Array.isArray(data?.interests)) {
+    throw new Error("Interest search returned an invalid response shape");
+  }
+  return data.interests as MetaInterest[];
 };
 
 const serializeCampaignPayload = (
