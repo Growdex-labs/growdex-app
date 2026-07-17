@@ -80,17 +80,13 @@ export const GoalSection = ({
                 <input
                   type="radio"
                   name="campaignGoal"
-                  value="conversions"
-                  checked={campaignGoal.toLowerCase() === "conversions"}
-                  onChange={(e) =>
-                    setCampaignGoal(
-                      e.target.value.toUpperCase() as CampaignGoal,
-                    )
-                  }
+                  value="ENGAGEMENT"
+                  checked={campaignGoal === "ENGAGEMENT"}
+                  onChange={() => setCampaignGoal("ENGAGEMENT")}
                   disabled={readOnly}
                   className="form-radio"
                 />
-                <span className="ml-2">Conversions</span>
+                <span className="ml-2">Engagement</span>
               </label>
               <label className="inline-flex items-center">
                 <input
@@ -134,6 +130,7 @@ export const GoalSection = ({
                     setCampaignGoal(
                       e.target.value.toUpperCase() as CampaignGoal,
                     )}
+                  disabled={readOnly}
                   className="form-radio"
                 />
                 <span className="ml-2">App Promotion</span>
