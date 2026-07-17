@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Paperclip, SendHorizontal, Pencil, Copy, Check } from "lucide-react";
+import { SendHorizontal, Check } from "lucide-react";
 import { PURPLE_GRADIENT } from "./AiCampaignChat";
 
 export interface AiMessage {
   id: string;
   text: string;
   sender?: "ai" | "user";
-  /** Render inside a highlighted bubble with Edit/Copy actions. */
-  actionable?: boolean;
 }
 
 interface AiSidePanelProps {
@@ -23,26 +21,11 @@ interface AiSidePanelProps {
   onSubmit?: (prompt: string) => void;
 }
 
-const DEFAULT_SUGGESTIONS = ["Audience too broad", "Make the copy shorter"];
-
-// Mock conversation matching the design. Swap for real data later.
-const DEFAULT_MESSAGES: AiMessage[] = [
-  {
-    id: "m1",
-    text: "Audience can be better optimized. 2 changes discovered for Ad copy.",
-    actionable: true,
-  },
-  {
-    id: "m2",
-    text: "TikTok is outperforming Meta for on this campaign. We recommend you change the image.",
-  },
-];
-
 export function AiSidePanel({
-  messages = DEFAULT_MESSAGES,
+  messages = [],
   question,
   options = [],
-  suggestions = DEFAULT_SUGGESTIONS,
+  suggestions = [],
   onAnswer,
   onSubmit,
 }: AiSidePanelProps) {
@@ -52,11 +35,6 @@ export function AiSidePanel({
   >({});
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
-
-  // Reset the selection whenever the AI moves on to a new question.
-  useEffect(() => {
-    setSelectedOptions({});
-  }, [question]);
 
   // Keep the conversation scrolled to the newest message/question.
   useEffect(() => {
@@ -86,32 +64,6 @@ export function AiSidePanel({
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 hide-scrollbar">
         {messages.map((message) => {
           const isUser = message.sender === "user";
-
-          if (message.actionable) {
-            return (
-              <div key={message.id} className="self-start max-w-[85%]">
-                <div className="bg-violet-50 rounded-lg p-3 text-xs leading-relaxed text-gray-700">
-                  {message.text}
-                </div>
-                <div className="mt-1.5 flex items-center gap-3 text-[11px] text-gray-400">
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 hover:text-gray-600"
-                  >
-                    <Pencil className="w-3 h-3" />
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 hover:text-gray-600"
-                  >
-                    <Copy className="w-3 h-3" />
-                    Copy
-                  </button>
-                </div>
-              </div>
-            );
-          }
 
           return (
             <div
@@ -204,13 +156,6 @@ export function AiSidePanel({
         )}
 
         <div className="flex items-center gap-2 rounded-[10px] border border-gray-200 bg-white pl-3 pr-1.5 py-1.5 focus-within:border-violet-300">
-          <button
-            type="button"
-            className="shrink-0 text-gray-400 hover:text-gray-600"
-            aria-label="Attach a file"
-          >
-            <Paperclip className="w-4 h-4" />
-          </button>
           <input
             type="text"
             value={prompt}

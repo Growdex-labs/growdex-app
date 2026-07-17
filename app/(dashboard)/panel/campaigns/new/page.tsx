@@ -33,8 +33,11 @@ import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { AiCampaignChat } from "../components/AiCampaignChat";
+import type { AiMessage } from "../components/AiSidePanel";
 import { AdCreatedModal } from "../components/AdCreatedModal";
 import { AiWorkingView } from "../components/AiWorkingView";
+import type { AiStep } from "../components/use-ai-campaign-flow";
+import { useAiCampaignFlow } from "../components/use-ai-campaign-flow";
 import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
 import { CampaignNameCard } from "../components/CampaignNameCard";
 import { CampaignStepper } from "../components/CampaignStepper";
@@ -57,6 +60,15 @@ const STEPS = [
   "Creative setup",
   "Review and publish",
 ];
+
+const EMPTY_AI_RATIONALES = {
+  setup: "The model has not generated this decision yet.",
+  goal: "The model has not generated this decision yet.",
+  platforms: "The model has not generated this decision yet.",
+  audience: "The model has not generated this decision yet.",
+  budget: "The model has not generated this decision yet.",
+  creative: "The model has not generated this decision yet.",
+};
 
 const CTA_OPTIONS: Array<{ value: CampaignCta; label: string }> = [
   { value: "LEARN_MORE", label: "Learn more" },
@@ -110,6 +122,12 @@ export default function NewCampaignPage() {
   const [connecting, setConnecting] = useState<CampaignPlatform | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
+  const [aiReviewActive, setAiReviewActive] = useState(false);
+  const [aiOriginalPrompt, setAiOriginalPrompt] = useState("");
+  const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
+  const [aiStepRationales, setAiStepRationales] = useState(
+    EMPTY_AI_RATIONALES,
+  );
   const [uploading, setUploading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -125,6 +143,7 @@ export default function NewCampaignPage() {
   const creativeCache = useRef(
     new Map<CampaignPlatform, CampaignCreativeInput[]>(),
   );
+  const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
 
   useEffect(() => {
     let active = true;
@@ -242,11 +261,31 @@ export default function NewCampaignPage() {
     }
   };
 
-  const generateWithAi = async (prompt: string) => {
+  const generateWithAi = async (
+    prompt: string,
+    options?: { revision?: boolean; stepId?: AiStep["id"]; userText?: string },
+  ) => {
+    const revision = options?.revision === true;
+    const request = revision
+      ? `${aiOriginalPrompt}\n\nRevision request: ${prompt}`
+      : prompt;
+    if (revision && options.stepId) aiFlow.markRevising(options.stepId);
     setAiLoading(true);
     setError(null);
+    if (!revision) setAiOriginalPrompt(prompt);
+    setAiMessages((current) => [
+      ...current,
+      {
+        id: `user-${Date.now()}`,
+        sender: "user",
+        text: options?.userText ?? prompt,
+      },
+    ]);
     try {
-      const generated = await generateCampaignDraft({ prompt, brandName });
+      const generated = await generateCampaignDraft({
+        prompt: request,
+        brandName,
+      });
       const start = generated.budget.startDateLocal
         ? new Date(generated.budget.startDateLocal)
         : new Date(Date.now() + 30 * 60_000);
@@ -298,8 +337,19 @@ export default function NewCampaignPage() {
       });
       setGoalConfirmed(true);
       setAiRationale(generated.rationale);
-      setStep(1);
+      setAiStepRationales(generated.stepRationales);
+      aiFlow.resetReviews();
+      setAiReviewActive(true);
+      setAiMessages((current) => [
+        ...current,
+        {
+          id: `ai-${Date.now()}`,
+          text: generated.rationale,
+        },
+      ]);
+      setStep(0);
     } catch (failure) {
+      if (options?.stepId) aiFlow.markReview(options.stepId);
       setError(
         failure instanceof Error ? failure.message : "Could not generate the campaign draft.",
       );
@@ -616,7 +666,19 @@ export default function NewCampaignPage() {
               {aiRationale && step > 0 && step < 6 && (
                 <div className="mb-6 flex items-start gap-3 rounded-2xl bg-violet-50 p-4 text-sm text-violet-800">
                   <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-                  <p><span className="font-semibold">AI draft:</span> {aiRationale} Review every choice before publishing.</p>
+                  <div className="flex-1">
+                    <p><span className="font-semibold">AI draft:</span> {aiRationale} Review every choice before publishing.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep(0);
+                        setAiReviewActive(true);
+                      }}
+                      className="mt-2 text-xs font-semibold text-violet-700 underline"
+                    >
+                      Return to AI decision review
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -626,12 +688,12 @@ export default function NewCampaignPage() {
 
               {step === 0 && (
                 <div className="space-y-6">
-                  <CampaignNameCard
-                    value={campaign.campaign.name}
-                    onChange={(name) =>
-                      patchCampaign({ name })
-                    }
-                  />
+                  {!aiReviewActive && (
+                    <CampaignNameCard
+                      value={campaign.campaign.name}
+                      onChange={(name) => patchCampaign({ name })}
+                    />
+                  )}
                   {method !== "ai" ? (
                     <CreateMethodBox
                       value={method}
@@ -643,6 +705,48 @@ export default function NewCampaignPage() {
                           setGoalConfirmed(false);
                           setStep(1);
                         }
+                      }}
+                    />
+                  ) : aiReviewActive ? (
+                    <AiWorkingView
+                      campaignName={campaign.campaign.name}
+                      steps={aiFlow.steps}
+                      messages={aiMessages}
+                      allApproved={aiFlow.allApproved}
+                      revising={aiLoading}
+                      onApprove={aiFlow.approve}
+                      onWhyThis={(reviewStep) =>
+                        setAiMessages((current) => [
+                          ...current,
+                          {
+                            id: `why-${reviewStep.id}-${Date.now()}`,
+                            text: reviewStep.reason,
+                          },
+                        ])
+                      }
+                      onEdit={(reviewStep) => {
+                        setAiReviewActive(false);
+                        setStep(reviewStep.editStep);
+                      }}
+                      onDecline={(reviewStep, instruction) =>
+                        void generateWithAi(
+                          `${reviewStep.title}: ${instruction}`,
+                          {
+                            revision: true,
+                            stepId: reviewStep.id,
+                            userText: instruction,
+                          },
+                        )
+                      }
+                      onPrompt={(prompt) =>
+                        void generateWithAi(prompt, {
+                          revision: true,
+                          userText: prompt,
+                        })
+                      }
+                      onContinue={() => {
+                        setAiReviewActive(false);
+                        setStep(1);
                       }}
                     />
                   ) : aiLoading ? (
