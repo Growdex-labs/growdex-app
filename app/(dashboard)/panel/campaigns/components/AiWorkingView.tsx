@@ -20,6 +20,7 @@ interface AiWorkingViewProps {
   allApproved?: boolean;
   revising?: boolean;
   onApprove?: (id: AiStepId) => void;
+  onApproveAll?: () => void;
   onDecline?: (step: AiStep, instruction: string) => void;
   onEdit?: (step: AiStep) => void;
   onWhyThis?: (step: AiStep) => void;
@@ -34,6 +35,7 @@ export function AiWorkingView({
   allApproved = false,
   revising = false,
   onApprove,
+  onApproveAll,
   onDecline,
   onEdit,
   onWhyThis,
@@ -96,8 +98,8 @@ export function AiWorkingView({
         </div>
         <button
           type="button"
-          onClick={onContinue}
-          disabled={!allApproved || revising}
+          onClick={allApproved ? onContinue : onApproveAll}
+          disabled={revising}
           className="rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-medium text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {allApproved ? "Open full editor" : "Approve all decisions"}

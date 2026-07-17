@@ -715,6 +715,7 @@ export default function NewCampaignPage() {
                       allApproved={aiFlow.allApproved}
                       revising={aiLoading}
                       onApprove={aiFlow.approve}
+                      onApproveAll={aiFlow.approveAll}
                       onWhyThis={(reviewStep) =>
                         setAiMessages((current) => [
                           ...current,

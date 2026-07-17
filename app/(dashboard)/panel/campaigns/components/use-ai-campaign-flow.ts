@@ -128,6 +128,12 @@ export function useAiCampaignFlow(
 
   const approve = (id: AiStepId) =>
     setStatuses((current) => ({ ...current, [id]: "approved" }));
+  const approveAll = () =>
+    setStatuses(
+      Object.fromEntries(
+        Object.keys(DEFAULT_STATUSES).map((id) => [id, "approved"]),
+      ) as Record<AiStepId, AiStepStatus>,
+    );
   const markRevising = (id: AiStepId) =>
     setStatuses((current) => ({ ...current, [id]: "revising" }));
   const markReview = (id: AiStepId) =>
@@ -140,6 +146,7 @@ export function useAiCampaignFlow(
   return {
     steps,
     approve,
+    approveAll,
     markRevising,
     markReview,
     resetReviews,
