@@ -208,6 +208,40 @@ const getApiError = (data: unknown, fallback: string) => {
   return typeof response.message === "string" ? response.message : fallback;
 };
 
+const CAMPAIGN_RATIONALE_KEYS = [
+  "setup",
+  "goal",
+  "platforms",
+  "audience",
+  "budget",
+  "creative",
+] as const;
+
+const parseGeneratedCampaignDraft = (
+  data: unknown,
+): GeneratedCampaignDraft => {
+  if (!data || typeof data !== "object") {
+    throw new Error("The AI service returned an invalid campaign draft.");
+  }
+
+  const draft = data as Partial<GeneratedCampaignDraft>;
+  const rationales = draft.stepRationales;
+  if (
+    !rationales ||
+    typeof rationales !== "object" ||
+    CAMPAIGN_RATIONALE_KEYS.some(
+      (key) =>
+        typeof rationales[key] !== "string" || !rationales[key].trim(),
+    )
+  ) {
+    throw new Error(
+      "The AI service returned a campaign without the required review explanations. Restart the updated backend and try again.",
+    );
+  }
+
+  return data as GeneratedCampaignDraft;
+};
+
 const futureIso = (minutes: number) =>
   new Date(Date.now() + minutes * 60_000).toISOString();
 
@@ -327,7 +361,7 @@ export const generateCampaignDraft = async (input: {
   if (!res.ok) {
     throw new Error(getApiError(data, `Generate campaign failed (${res.status})`));
   }
-  return data as GeneratedCampaignDraft;
+  return parseGeneratedCampaignDraft(data);
 };
 
 export const requestCampaignAdvice = async (
