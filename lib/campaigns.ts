@@ -71,8 +71,16 @@ export interface GeneratedCampaignDraft {
     currency: CampaignCurrency;
     type: BudgetType;
     durationDays: number;
+    startDate?: string | null;
+    endDate?: string | null;
   };
-  creative: Omit<CampaignCreativeInput, "mediaUrl" | "platform">;
+  creative: Omit<
+    CampaignCreativeInput,
+    "platform" | "mediaUrl" | "landingPageUrl"
+  > & {
+    mediaUrl?: string | null;
+    landingPageUrl?: string | null;
+  };
   rationale: string;
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -124,6 +124,7 @@ export default function NewCampaignPage() {
     createInitialCampaignPayload(),
   );
   const [method, setMethod] = useState<CreationMethod | null>(null);
+  const [goalConfirmed, setGoalConfirmed] = useState(false);
   const [step, setStep] = useState(0);
   const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -138,6 +139,9 @@ export default function NewCampaignPage() {
   const [unavailableInterests, setUnavailableInterests] = useState<
     Record<string, MetaInterest[]>
   >({});
+  const creativeCache = useRef(
+    new Map<CampaignPlatform, CampaignCreativeInput>(),
+  );
 
   useEffect(() => {
     let active = true;
@@ -159,19 +163,41 @@ export default function NewCampaignPage() {
   const patch = (next: Partial<CreateCampaignPayload>) =>
     setCampaign((current) => ({ ...current, ...next }));
 
+  const patchCampaign = (
+    next: Partial<CreateCampaignPayload["campaign"]>,
+  ) =>
+    setCampaign((current) => ({
+      ...current,
+      campaign: { ...current.campaign, ...next },
+    }));
+
+  const patchAudience = (
+    next: Partial<CreateCampaignPayload["audience"]>,
+  ) =>
+    setCampaign((current) => ({
+      ...current,
+      audience: { ...current.audience, ...next },
+    }));
+
+  const patchBudget = (next: Partial<CreateCampaignPayload["budget"]>) =>
+    setCampaign((current) => ({
+      ...current,
+      budget: { ...current.budget, ...next },
+    }));
+
   const setPlatforms = (platforms: CampaignPlatform[]) => {
     setCampaign((current) => {
-      const byPlatform = new Map(
-        current.campaign.platforms.map((platform, index) => [
-          platform,
-          current.adContent.creatives[index],
-        ]),
+      current.adContent.creatives.forEach((creative) =>
+        creativeCache.current.set(creative.platform, creative),
       );
       return {
         ...current,
         campaign: { ...current.campaign, platforms },
         adContent: {
-          creatives: platforms.map((platform) => byPlatform.get(platform) ?? emptyCreative(platform)),
+          creatives: platforms.map(
+            (platform) =>
+              creativeCache.current.get(platform) ?? emptyCreative(platform),
+          ),
         },
       };
     });
@@ -209,13 +235,20 @@ export default function NewCampaignPage() {
     setError(null);
     try {
       const generated = await generateCampaignDraft({ prompt, brandName });
-      const start = new Date(Date.now() + 30 * 60_000);
-      const end = new Date(start);
-      end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
+      const start = generated.budget.startDate
+        ? new Date(generated.budget.startDate)
+        : new Date(Date.now() + 30 * 60_000);
+      const end = generated.budget.endDate
+        ? new Date(generated.budget.endDate)
+        : new Date(start);
+      if (!generated.budget.endDate) {
+        end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
+      }
+      const requestedName = campaign.campaign.name.trim();
       setCampaign({
         creationMode: "ai",
         campaign: {
-          name: generated.name,
+          name: requestedName || generated.name,
           goal: generated.goal,
           platforms: generated.platforms,
         },
@@ -231,11 +264,12 @@ export default function NewCampaignPage() {
           creatives: generated.platforms.map((platform) => ({
             ...generated.creative,
             platform,
-            mediaUrl: "",
-            landingPageUrl: "",
+            mediaUrl: generated.creative.mediaUrl ?? "",
+            landingPageUrl: generated.creative.landingPageUrl ?? "",
           })),
         },
       });
+      setGoalConfirmed(true);
       setAiRationale(generated.rationale);
       setStep(1);
     } catch (failure) {
@@ -248,12 +282,16 @@ export default function NewCampaignPage() {
   };
 
   const patchCreative = (index: number, next: Partial<CampaignCreativeInput>) => {
-    const creatives = [...campaign.adContent.creatives];
-    creatives[index] = {
-      ...(creatives[index] ?? emptyCreative(campaign.campaign.platforms[index])),
-      ...next,
-    };
-    patch({ adContent: { creatives } });
+    setCampaign((current) => {
+      const creatives = [...current.adContent.creatives];
+      const platform = current.campaign.platforms[index];
+      creatives[index] = {
+        ...(creatives[index] ?? emptyCreative(platform)),
+        ...next,
+      };
+      creativeCache.current.set(platform, creatives[index]);
+      return { ...current, adContent: { creatives } };
+    });
   };
 
   const uploadMedia = async (
@@ -359,9 +397,7 @@ export default function NewCampaignPage() {
       }
 
       setUnavailableInterests({});
-      patch({
-        audience: { ...campaign.audience, interests: canonicalNames },
-      });
+      patchAudience({ interests: canonicalNames });
       return true;
     } catch (failure) {
       setError(
@@ -379,15 +415,12 @@ export default function NewCampaignPage() {
     unavailable: string,
     replacement: string,
   ) => {
-    patch({
-      audience: {
-        ...campaign.audience,
-        interests: (campaign.audience.interests ?? []).map((interest) =>
-          interest.toLowerCase() === unavailable.toLowerCase()
-            ? replacement
-            : interest,
-        ),
-      },
+    patchAudience({
+      interests: (campaign.audience.interests ?? []).map((interest) =>
+        interest.toLowerCase() === unavailable.toLowerCase()
+          ? replacement
+          : interest,
+      ),
     });
     setUnavailableInterests((current) => {
       const nextUnavailable = { ...current };
@@ -405,6 +438,10 @@ export default function NewCampaignPage() {
     }
     if (step === 1 && !campaign.campaign.platforms.length) {
       setError("Choose at least one advertising platform.");
+      return;
+    }
+    if (step === 2 && !goalConfirmed) {
+      setError("Choose a campaign goal before continuing.");
       return;
     }
     if (step === 3 && !campaign.audience.locations.length) {
@@ -529,7 +566,7 @@ export default function NewCampaignPage() {
                   <CampaignNameCard
                     value={campaign.campaign.name}
                     onChange={(name) =>
-                      patch({ campaign: { ...campaign.campaign, name } })
+                      patchCampaign({ name })
                     }
                   />
                   {method !== "ai" ? (
@@ -539,7 +576,10 @@ export default function NewCampaignPage() {
                         setMethod(nextMethod);
                         patch({ creationMode: nextMethod });
                         setError(null);
-                        if (nextMethod === "manual") setStep(1);
+                        if (nextMethod === "manual") {
+                          setGoalConfirmed(false);
+                          setStep(1);
+                        }
                       }}
                     />
                   ) : aiLoading ? (
@@ -615,12 +655,17 @@ export default function NewCampaignPage() {
                   <h2 className="text-xl font-bold text-gray-900">What is the goal for your campaign?</h2>
                   <div className="mt-6 space-y-3">
                     {GOALS.map((goal) => {
-                      const selected = campaign.campaign.goal === goal.value;
+                      const selected =
+                        goalConfirmed && campaign.campaign.goal === goal.value;
                       return (
                         <button
                           key={goal.value}
                           type="button"
-                          onClick={() => patch({ campaign: { ...campaign.campaign, goal: goal.value } })}
+                          onClick={() => {
+                            patchCampaign({ goal: goal.value });
+                            setGoalConfirmed(true);
+                            setError(null);
+                          }}
                           className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left ${selected ? "border-khaki-300" : "border-gray-200 hover:border-gray-300"}`}
                         >
                           <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? "border-gray-800" : "border-gray-300"}`}>
@@ -649,7 +694,9 @@ export default function NewCampaignPage() {
                         onChange={(event) => {
                           const code = event.target.value;
                           if (code && !selectedCountries.has(code)) {
-                            patch({ audience: { ...campaign.audience, locations: [...campaign.audience.locations, code] } });
+                            patchAudience({
+                              locations: [...campaign.audience.locations, code],
+                            });
                           }
                         }}
                       >
@@ -662,7 +709,14 @@ export default function NewCampaignPage() {
                       <select
                         className="mt-2 h-11 w-full rounded-lg border bg-white px-3"
                         value={campaign.audience.gender ?? "all"}
-                        onChange={(event) => patch({ audience: { ...campaign.audience, gender: event.target.value as "all" | "male" | "female" } })}
+                        onChange={(event) =>
+                          patchAudience({
+                            gender: event.target.value as
+                              | "all"
+                              | "male"
+                              | "female",
+                          })
+                        }
                       >
                         <option value="all">All</option>
                         <option value="female">Women</option>
@@ -675,7 +729,14 @@ export default function NewCampaignPage() {
                       <button
                         key={code}
                         type="button"
-                        onClick={() => campaign.audience.locations.length > 1 && patch({ audience: { ...campaign.audience, locations: campaign.audience.locations.filter((item) => item !== code) } })}
+                        onClick={() =>
+                          campaign.audience.locations.length > 1 &&
+                          patchAudience({
+                            locations: campaign.audience.locations.filter(
+                              (item) => item !== code,
+                            ),
+                          })
+                        }
                         className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
                       >
                         {metaSpecialAdLocations[code as keyof typeof metaSpecialAdLocations] ?? code} ×
@@ -683,22 +744,19 @@ export default function NewCampaignPage() {
                     ))}
                   </div>
                   <div className="mt-5 grid gap-5 md:grid-cols-3">
-                    <label className="text-sm font-medium text-gray-700">Minimum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMin ?? 18} onChange={(event) => patch({ audience: { ...campaign.audience, ageMin: Number(event.target.value) } })} /></label>
-                    <label className="text-sm font-medium text-gray-700">Maximum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMax ?? 65} onChange={(event) => patch({ audience: { ...campaign.audience, ageMax: Number(event.target.value) } })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Minimum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMin ?? 18} onChange={(event) => patchAudience({ ageMin: Number(event.target.value) })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Maximum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMax ?? 65} onChange={(event) => patchAudience({ ageMax: Number(event.target.value) })} /></label>
                     <label className="text-sm font-medium text-gray-700">
                       Interests
                       <Input
                         className="mt-2"
                         value={(campaign.audience.interests ?? []).join(", ")}
                         onChange={(event) => {
-                          patch({
-                            audience: {
-                              ...campaign.audience,
-                              interests: event.target.value
-                                .split(",")
-                                .map((item) => item.trim())
-                                .filter(Boolean),
-                            },
+                          patchAudience({
+                            interests: event.target.value
+                              .split(",")
+                              .map((item) => item.trim())
+                              .filter(Boolean),
                           });
                           setUnavailableInterests({});
                         }}
@@ -748,11 +806,11 @@ export default function NewCampaignPage() {
                 <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
                   <h2 className="text-xl font-bold text-gray-900">How much do you want to spend?</h2>
                   <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                    <label className="text-sm font-medium text-gray-700">Amount<Input className="mt-2" type="number" min="0.01" step="0.01" value={campaign.budget.amount || ""} onChange={(event) => patch({ budget: { ...campaign.budget, amount: Number(event.target.value) } })} /></label>
-                    <label className="text-sm font-medium text-gray-700">Currency<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.currency} onChange={(event) => patch({ budget: { ...campaign.budget, currency: event.target.value as "NGN" | "USD" } })}><option value="NGN">NGN</option><option value="USD">USD</option></select></label>
-                    <label className="text-sm font-medium text-gray-700">Budget type<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.type} onChange={(event) => patch({ budget: { ...campaign.budget, type: event.target.value as "daily" | "lifetime" } })}><option value="daily">Daily</option><option value="lifetime">Lifetime</option></select></label>
-                    <label className="text-sm font-medium text-gray-700">Start time<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.startDate)} onChange={(event) => event.target.value && patch({ budget: { ...campaign.budget, startDate: new Date(event.target.value).toISOString() } })} /></label>
-                    <label className="text-sm font-medium text-gray-700">End time (optional)<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.endDate)} onChange={(event) => patch({ budget: { ...campaign.budget, endDate: event.target.value ? new Date(event.target.value).toISOString() : undefined } })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Amount<Input className="mt-2" type="number" min="0.01" step="0.01" value={campaign.budget.amount || ""} onChange={(event) => patchBudget({ amount: Number(event.target.value) })} /></label>
+                    <label className="text-sm font-medium text-gray-700">Currency<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.currency} onChange={(event) => patchBudget({ currency: event.target.value as "NGN" | "USD" })}><option value="NGN">NGN</option><option value="USD">USD</option></select></label>
+                    <label className="text-sm font-medium text-gray-700">Budget type<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.type} onChange={(event) => patchBudget({ type: event.target.value as "daily" | "lifetime" })}><option value="daily">Daily</option><option value="lifetime">Lifetime</option></select></label>
+                    <label className="text-sm font-medium text-gray-700">Start time<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.startDate)} onChange={(event) => event.target.value && patchBudget({ startDate: new Date(event.target.value).toISOString() })} /></label>
+                    <label className="text-sm font-medium text-gray-700">End time (optional)<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.endDate)} onChange={(event) => patchBudget({ endDate: event.target.value ? new Date(event.target.value).toISOString() : undefined })} /></label>
                   </div>
                 </section>
               )}
