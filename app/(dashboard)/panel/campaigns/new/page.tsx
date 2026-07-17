@@ -1,15 +1,12 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
-  Loader2,
   Sparkles,
-  UploadCloud,
 } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
@@ -30,17 +27,21 @@ import {
   type CreateCampaignPayload,
   type MetaInterest,
 } from "@/lib/campaigns";
-import { validateFile, isVideoUrl } from "@/lib/campaign-shared";
+import { validateFile } from "@/lib/campaign-shared";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { hashFolderName } from "@/lib/encrypt";
-import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
 import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { AiCampaignChat } from "../components/AiCampaignChat";
+import { AdCreatedModal } from "../components/AdCreatedModal";
+import { AiWorkingView } from "../components/AiWorkingView";
+import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
 import { CampaignNameCard } from "../components/CampaignNameCard";
+import { CampaignSkeleton } from "../components/CampaignSkeleton";
 import { CampaignStepper } from "../components/CampaignStepper";
 import { CampaignTreeSidebar } from "../components/CampaignTreeSidebar";
+import { CreativeSetupScreen } from "../components/CreativeSetupScreen";
 import {
   CreateMethodBox,
   type CreationMethod,
@@ -78,10 +79,6 @@ const CTA_OPTIONS: Array<{ value: CampaignCta; label: string }> = [
   { value: "APPLY_NOW", label: "Apply now" },
   { value: "NO_BUTTON", label: "No button" },
 ];
-
-const COUNTRIES = Object.entries(metaSpecialAdLocations).sort(([, a], [, b]) =>
-  a.localeCompare(b),
-);
 
 const emptyCreative = (platform: CampaignPlatform): CampaignCreativeInput => ({
   platform,
@@ -127,6 +124,7 @@ export default function NewCampaignPage() {
   const [goalConfirmed, setGoalConfirmed] = useState(false);
   const [step, setStep] = useState(0);
   const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(null);
+  const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<CampaignPlatform | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -135,6 +133,10 @@ export default function NewCampaignPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [completion, setCompletion] = useState<{
+    kind: "draft" | "publish";
+    campaignId: string;
+  } | null>(null);
   const [checkingInterests, setCheckingInterests] = useState(false);
   const [unavailableInterests, setUnavailableInterests] = useState<
     Record<string, MetaInterest[]>
@@ -149,16 +151,13 @@ export default function NewCampaignPage() {
       if (!active) return;
       if (result.success) setAccounts(result.data ?? {});
       else setAccountError(result.error ?? "Could not load connected accounts.");
+    }).finally(() => {
+      if (active) setAccountsLoading(false);
     });
     return () => {
       active = false;
     };
   }, []);
-
-  const selectedCountries = useMemo(
-    () => new Set(campaign.audience.locations),
-    [campaign.audience.locations],
-  );
 
   const patch = (next: Partial<CreateCampaignPayload>) =>
     setCampaign((current) => ({ ...current, ...next }));
@@ -473,7 +472,8 @@ export default function NewCampaignPage() {
     setError(null);
     try {
       const created = await createCampaign(campaign);
-      router.push(`/panel/campaigns/new/publish?id=${encodeURIComponent(created.id)}`);
+      setCompletion({ kind: "draft", campaignId: created.id });
+      setSaving(false);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Could not save the campaign.");
       setSaving(false);
@@ -500,7 +500,8 @@ export default function NewCampaignPage() {
     try {
       const created = await createCampaign(campaign);
       await publishCampaign(created.id);
-      router.push("/panel/campaigns");
+      setCompletion({ kind: "publish", campaignId: created.id });
+      setPublishing(false);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Could not publish the campaign.");
       setPublishing(false);
@@ -583,11 +584,7 @@ export default function NewCampaignPage() {
                       }}
                     />
                   ) : aiLoading ? (
-                    <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-violet-100 bg-white p-8 text-center shadow-sm">
-                      <Loader2 className="h-9 w-9 animate-spin text-violet-500" />
-                      <h2 className="mt-5 text-xl font-semibold text-gray-900">Creating an editable campaign draft</h2>
-                      <p className="mt-2 max-w-md text-sm text-gray-500">Growdex is choosing a goal, platforms, audience, budget, and ad copy from your request.</p>
-                    </div>
+                    <AiWorkingView campaignName={campaign.campaign.name} />
                   ) : (
                     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
                       <button
@@ -615,7 +612,12 @@ export default function NewCampaignPage() {
                 <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
                   <h2 className="text-xl font-bold text-gray-900">What platforms are you running this ad on?</h2>
                   <p className="mt-2 text-sm text-gray-500">You can build a draft before connecting an account. A live connection is required to publish.</p>
-                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {accountsLoading ? (
+                    <div className="mt-6 grid gap-4 md:grid-cols-2">
+                      <CampaignSkeleton className="h-32 w-full" />
+                      <CampaignSkeleton className="h-32 w-full" />
+                    </div>
+                  ) : <div className="mt-6 grid gap-4 md:grid-cols-2">
                     {(["meta", "tiktok"] as CampaignPlatform[]).map((platform) => {
                       const isSelected = campaign.campaign.platforms.includes(platform);
                       const isConnected = connected(accounts, platform);
@@ -645,7 +647,7 @@ export default function NewCampaignPage() {
                         </div>
                       );
                     })}
-                  </div>
+                  </div>}
                   {accountError && <p className="mt-4 text-sm text-red-600">{accountError}</p>}
                 </section>
               )}
@@ -683,123 +685,21 @@ export default function NewCampaignPage() {
               )}
 
               {step === 3 && (
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-                  <h2 className="text-xl font-bold text-gray-900">Find the people you want to reach</h2>
-                  <div className="mt-6 grid gap-5 md:grid-cols-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Add a country
-                      <select
-                        className="mt-2 h-11 w-full rounded-lg border bg-white px-3"
-                        value=""
-                        onChange={(event) => {
-                          const code = event.target.value;
-                          if (code && !selectedCountries.has(code)) {
-                            patchAudience({
-                              locations: [...campaign.audience.locations, code],
-                            });
-                          }
-                        }}
-                      >
-                        <option value="">Choose a country</option>
-                        {COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-                      </select>
-                    </label>
-                    <label className="text-sm font-medium text-gray-700">
-                      Gender
-                      <select
-                        className="mt-2 h-11 w-full rounded-lg border bg-white px-3"
-                        value={campaign.audience.gender ?? "all"}
-                        onChange={(event) =>
-                          patchAudience({
-                            gender: event.target.value as
-                              | "all"
-                              | "male"
-                              | "female",
-                          })
-                        }
-                      >
-                        <option value="all">All</option>
-                        <option value="female">Women</option>
-                        <option value="male">Men</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {campaign.audience.locations.map((code) => (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={() =>
-                          campaign.audience.locations.length > 1 &&
-                          patchAudience({
-                            locations: campaign.audience.locations.filter(
-                              (item) => item !== code,
-                            ),
-                          })
-                        }
-                        className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
-                      >
-                        {metaSpecialAdLocations[code as keyof typeof metaSpecialAdLocations] ?? code} ×
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-5 grid gap-5 md:grid-cols-3">
-                    <label className="text-sm font-medium text-gray-700">Minimum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMin ?? 18} onChange={(event) => patchAudience({ ageMin: Number(event.target.value) })} /></label>
-                    <label className="text-sm font-medium text-gray-700">Maximum age<Input className="mt-2" type="number" min={18} max={65} value={campaign.audience.ageMax ?? 65} onChange={(event) => patchAudience({ ageMax: Number(event.target.value) })} /></label>
-                    <label className="text-sm font-medium text-gray-700">
-                      Interests
-                      <Input
-                        className="mt-2"
-                        value={(campaign.audience.interests ?? []).join(", ")}
-                        onChange={(event) => {
-                          patchAudience({
-                            interests: event.target.value
-                              .split(",")
-                              .map((item) => item.trim())
-                              .filter(Boolean),
-                          });
-                          setUnavailableInterests({});
-                        }}
-                        placeholder="Business, technology"
-                      />
-                    </label>
-                  </div>
-                  {Object.entries(unavailableInterests).map(
-                    ([unavailable, suggestions]) => (
-                      <div
-                        key={unavailable}
-                        className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4"
-                      >
-                        <p className="text-sm font-medium text-amber-900">
-                          “{unavailable}” is not an available Meta interest.
-                        </p>
-                        {suggestions.length ? (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {suggestions.map((suggestion) => (
-                              <button
-                                key={suggestion.id}
-                                type="button"
-                                onClick={() =>
-                                  replaceUnavailableInterest(
-                                    unavailable,
-                                    suggestion.name,
-                                  )
-                                }
-                                className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100"
-                              >
-                                Use {suggestion.name}
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="mt-2 text-xs text-amber-800">
-                            Remove it or enter a different interest.
-                          </p>
-                        )}
-                      </div>
-                    ),
-                  )}
-                </section>
+                <div>
+                  <AudienceTargetingScreen
+                    goal={campaign.campaign.goal}
+                    platforms={campaign.campaign.platforms}
+                    audience={campaign.audience}
+                    accounts={accounts}
+                    connecting={connecting}
+                    unavailableInterests={unavailableInterests}
+                    onChange={patchAudience}
+                    onConnect={(platform) => void connect(platform)}
+                    onReplaceInterest={replaceUnavailableInterest}
+                    onClearUnavailableInterests={() => setUnavailableInterests({})}
+                  />
+                  {accountError && <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{accountError}</p>}
+                </div>
               )}
 
               {step === 4 && (
@@ -816,50 +716,15 @@ export default function NewCampaignPage() {
               )}
 
               {step === 5 && (
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-                  <h2 className="text-xl font-bold text-gray-900">Setup your ad creatives</h2>
-                  <p className="mt-2 text-sm text-gray-500">Each platform gets its own copy and media in the order shown.</p>
-                  <div className="mt-6 space-y-6">
-                    {campaign.campaign.platforms.map((platform, index) => {
-                      const creative = campaign.adContent.creatives[index] ?? emptyCreative(platform);
-                      return (
-                        <fieldset key={platform} className="rounded-xl border border-gray-200 p-5">
-                          <legend className="px-2 font-semibold capitalize text-gray-900">{platform === "meta" ? "Meta image ad" : "TikTok video ad"}</legend>
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <label className="text-sm font-medium text-gray-700 md:col-span-2">Primary text<textarea className="mt-2 min-h-24 w-full rounded-lg border p-3" maxLength={125} value={creative.primaryText} onChange={(event) => patchCreative(index, { primaryText: event.target.value })} /></label>
-                            <label className="text-sm font-medium text-gray-700">Headline<Input className="mt-2" maxLength={40} value={creative.headline ?? ""} onChange={(event) => patchCreative(index, { headline: event.target.value })} /></label>
-                            <label className="text-sm font-medium text-gray-700">Call to action<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={creative.cta} onChange={(event) => patchCreative(index, { cta: event.target.value as CampaignCta })}>{CTA_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-                            <label className="text-sm font-medium text-gray-700 md:col-span-2">Landing page URL{platform === "meta" ? " *" : ""}<Input className="mt-2" type="url" value={creative.landingPageUrl ?? ""} onChange={(event) => patchCreative(index, { landingPageUrl: event.target.value || undefined })} placeholder="https://example.com/offer" /></label>
-                            {campaign.campaign.goal === "LEADS" && <label className="text-sm font-medium text-gray-700 md:col-span-2">Lead form ID<Input className="mt-2" value={creative.leadFormId ?? ""} onChange={(event) => patchCreative(index, { leadFormId: event.target.value })} /></label>}
-                            {campaign.campaign.goal === "APP_PROMOTION" && <label className="text-sm font-medium text-gray-700 md:col-span-2">App ID<Input className="mt-2" value={creative.appId ?? ""} onChange={(event) => patchCreative(index, { appId: event.target.value })} /></label>}
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-medium text-gray-700">
-                                Hosted media URL
-                                <Input
-                                  className="mt-2"
-                                  type="url"
-                                  value={creative.mediaUrl}
-                                  onChange={(event) => patchCreative(index, { mediaUrl: event.target.value })}
-                                  placeholder="https://res.cloudinary.com/…"
-                                />
-                              </label>
-                              <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                {uploading === index ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
-                                {uploading === index ? "Uploading…" : `Upload ${platform === "meta" ? "image" : "video"}`}
-                                <input className="hidden" type="file" disabled={uploading !== null} accept={platform === "meta" ? "image/*" : "video/*"} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadMedia(index, platform, file); event.target.value = ""; }} />
-                              </label>
-                              {creative.mediaUrl && (
-                                <div className="mt-4 overflow-hidden rounded-xl border bg-gray-50">
-                                  {isVideoUrl(creative.mediaUrl) ? <video className="max-h-72 w-full object-contain" src={creative.mediaUrl} controls /> : <Image className="max-h-72 w-full object-contain" src={creative.mediaUrl} alt={`${platform} creative`} width={800} height={450} unoptimized />}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </fieldset>
-                      );
-                    })}
-                  </div>
-                </section>
+                <CreativeSetupScreen
+                  goal={campaign.campaign.goal}
+                  platforms={campaign.campaign.platforms}
+                  creatives={campaign.adContent.creatives}
+                  ctaOptions={CTA_OPTIONS}
+                  uploading={uploading}
+                  onChange={patchCreative}
+                  onUpload={(index, platform, file) => void uploadMedia(index, platform, file)}
+                />
               )}
 
               {step === 6 && (
@@ -879,6 +744,25 @@ export default function NewCampaignPage() {
             </div>
           </main>
         </div>
+        <AdCreatedModal
+          open={completion !== null}
+          kind={completion?.kind ?? "draft"}
+          navigating={saving || publishing}
+          onPrimary={() => {
+            if (!completion) return;
+            if (completion.kind === "publish") {
+              setPublishing(true);
+              router.push("/panel/campaigns");
+            } else {
+              setSaving(true);
+              router.push(`/panel/campaigns/new/publish?id=${encodeURIComponent(completion.campaignId)}`);
+            }
+          }}
+          onCampaigns={() => {
+            setSaving(true);
+            router.push("/panel/campaigns");
+          }}
+        />
       </div>
     </PanelLayout>
   );
