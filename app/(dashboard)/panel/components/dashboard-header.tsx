@@ -17,32 +17,32 @@ export function DashboardHeader() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-semibold text-gray-900">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl md:text-[28px] text-gray-500 font-gilroy-regular">
           {greeting}, {isLoading ? "Loading…" : userName}!
         </h1>
 
         <div className="flex items-center gap-4">
           {/* User Profile Button */}
-          <Link href="/panel/profile" className="h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors gap-4 cursor-pointer">
-            <img src={me?.avatarUrl ?? "/profile.png"} alt="profile-icon" className="w-8 h-8 rounded-full object-cover bg-gray-100" />
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-semibold text-gray-400">
+          <Link href="/panel/profile" className="h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors gap-3 cursor-pointer">
+            <img src={me?.avatarUrl ?? "/profile.png"} alt="profile-icon" className="w-7 h-7 rounded object-cover bg-gray-100" />
+            <div className="flex flex-col items-end">
+              <span className="text-sm text-gray-500 font-gilroy-regular">
                 {isLoading ? "Loading…" : userName}
               </span>
-              <span className="text-xs text-gray-300">Edit profile</span>
+              <span className="text-[10px] text-gray-300">Edit profile</span>
             </div>
           </Link>
         </div>
       </div>
       {pathname === "/panel" && (
-        <div className="flex justify-between mb-8">
-          <h3>Dashboard</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-2xl text-gray-800 font-gilroy-regular">Dashboard</h3>
           {/* Filter by Date */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Filter by:</span>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <span className="text-sm text-gray-700">Date</span>
+            <span className="text-sm text-[#4d4d4d]">Filter by:</span>
+            <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+              <span className="text-sm text-[#4d4d4d]">Date</span>
               <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
           </div>

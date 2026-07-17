@@ -14,16 +14,22 @@ interface CTRChartProps {
   tiktokData?: number[];
 }
 
+const SAMPLE_FACEBOOK = [30, 55, 42, 48, 65, 70, 62, 68, 72];
+const SAMPLE_TIKTOK = [50, 46, 58, 52, 62, 80, 70, 66, 78];
+
 export function CTRLineChart({
-  facebookData = [],
-  tiktokData = [],
+  facebookData,
+  tiktokData,
 }: CTRChartProps) {
+  const fb = facebookData && facebookData.length > 0 ? facebookData : SAMPLE_FACEBOOK;
+  const tt = tiktokData && tiktokData.length > 0 ? tiktokData : SAMPLE_TIKTOK;
+
   // Transform data into format Recharts expects
-  const longest = Math.max(facebookData.length, tiktokData.length);
+  const longest = Math.max(fb.length, tt.length);
   const chartData = Array.from({ length: longest }, (_, index) => ({
     index,
-    facebook: facebookData[index] ?? 0,
-    tiktok: tiktokData[index] ?? 0,
+    facebook: fb[index] ?? 0,
+    tiktok: tt[index] ?? 0,
   }));
 
   return (

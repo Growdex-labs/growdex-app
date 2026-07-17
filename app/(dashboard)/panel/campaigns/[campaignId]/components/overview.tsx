@@ -16,21 +16,17 @@ interface OverviewProps {
 
 // Mock chart data
 const chartData = [
-  { date: "21/09/2025", meta: 6000, tiktok: 8000 },
-  { date: "21/09/2025", meta: 6500, tiktok: 9500 },
-  { date: "21/09/2025", meta: 7500, tiktok: 10000 },
-  { date: "21/09/2025", meta: 8000, tiktok: 10500 },
-  { date: "21/09/2025", meta: 12500, tiktok: 14500 },
+  { date: "21/09/2025", facebook: 2500, instagram: 5100, tiktok: 7200 },
+  { date: "21/09/2025", facebook: 6100, instagram: 3250, tiktok: 2750 },
+  { date: "21/09/2025", facebook: 4000, instagram: 7200, tiktok: 4400 },
+  { date: "21/09/2025", facebook: 4650, instagram: 7600, tiktok: 8500 },
+  { date: "21/09/2025", facebook: 12500, instagram: 4700, tiktok: 3700 },
 ];
 
 export function Overview({ campaign, subTab }: OverviewProps) {
   return (
     <div className="space-y-6">
-      <PerformanceChart
-        data={chartData}
-        totalSpent="N56,980.98"
-        changePercentage={-35.7}
-      />
+      <PerformanceChart data={chartData} totalSpent="N56,980.98" />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">

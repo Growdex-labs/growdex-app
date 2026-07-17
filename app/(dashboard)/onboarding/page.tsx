@@ -8,7 +8,7 @@ import {
   savePersonalInfo,
   saveBusinessInfo,
   saveMarketingGoals,
-  skipOnboarding,
+  completeOnboarding,
 } from '@/lib/onboarding';
 import { hydrateSocialAccounts } from '@/lib/social';
 import { SocialAccountSetupProps } from '@/types/social';
@@ -180,7 +180,7 @@ function OnboardingPageContent() {
 
   const handleSetupLater = async () => {
     setLoadingAction('setup-later');
-    const result = await skipOnboarding();
+    const result = await completeOnboarding();
     setLoadingAction(null);
 
     if (result.success) {
@@ -192,7 +192,7 @@ function OnboardingPageContent() {
 
   const handleComplete = async () => {
     setLoadingAction('complete');
-    const result = await skipOnboarding();
+    const result = await completeOnboarding();
     setLoadingAction(null);
 
     if (result.success) {
