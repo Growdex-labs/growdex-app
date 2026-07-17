@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Megaphone,
   Wallet,
+  Images,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -46,6 +48,7 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
     { icon: LayoutDashboard, label: "Overview", href: "/panel" },
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
     { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
+    { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
   ];
 
@@ -67,7 +70,7 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 shrink-0">
-              <img src="/logo.png" alt="logo" />
+              <Image src="/logo.png" alt="Growdex" width={40} height={40} />
             </div>
             {!isCollapsed && (
               <span className="font-semibold text-xl">Growdex</span>

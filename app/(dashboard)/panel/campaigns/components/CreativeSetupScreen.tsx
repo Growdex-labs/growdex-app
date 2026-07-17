@@ -15,7 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { isVideoUrl } from "@/lib/campaign-shared";
 import {
-  fetchCampaigns,
+  fetchCreativeAssets,
+  PUBLISHED_CAMPAIGN_STATUSES,
+  type CreativeAsset,
+} from "@/lib/assets";
+import {
   type CampaignCreativeInput,
   type CampaignCta,
   type CampaignGoal,
@@ -35,18 +39,8 @@ interface CreativeSetupScreenProps {
   onUpload: (index: number, platform: CampaignPlatform, file: File) => void;
 }
 
-type LibraryAsset = {
-  id: string;
-  name: string;
-  url: string;
-  platform: CampaignPlatform;
-  campaignName: string;
-  status: string;
-  createdAt: string;
-};
-
 const emptyFromAsset = (
-  asset: LibraryAsset,
+  asset: CreativeAsset,
   source?: CampaignCreativeInput,
 ): CampaignCreativeInput => ({
   platform: asset.platform,
@@ -71,7 +65,7 @@ export function CreativeSetupScreen({
   onReplace,
   onUpload,
 }: CreativeSetupScreenProps) {
-  const [library, setLibrary] = useState<LibraryAsset[]>([]);
+  const [library, setLibrary] = useState<CreativeAsset[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [tab, setTab] = useState<"posts" | "assets">("assets");
@@ -84,32 +78,10 @@ export function CreativeSetupScreen({
 
   useEffect(() => {
     let active = true;
-    void fetchCampaigns()
-      .then((campaigns) => {
+    void fetchCreativeAssets({ platforms })
+      .then((assets) => {
         if (!active) return;
-        const unique = new Map<string, LibraryAsset>();
-        campaigns.forEach((campaign) => {
-          (campaign.creatives ?? []).forEach((creative) => {
-            if (!creative.mediaUrl || !platforms.includes(creative.platform)) return;
-            const key = `${creative.platform}:${creative.mediaUrl}`;
-            if (!unique.has(key)) {
-              unique.set(key, {
-                id: creative.id,
-                name: creative.headline?.trim() || campaign.name,
-                url: creative.mediaUrl,
-                platform: creative.platform,
-                campaignName: campaign.name,
-                status: campaign.status ?? "draft",
-                createdAt: creative.createdAt ?? campaign.createdAt ?? "",
-              });
-            }
-          });
-        });
-        setLibrary(
-          [...unique.values()].sort((a, b) =>
-            b.createdAt.localeCompare(a.createdAt),
-          ),
-        );
+        setLibrary(assets);
       })
       .catch((failure) => {
         if (active) {
@@ -130,15 +102,11 @@ export function CreativeSetupScreen({
 
   const visibleAssets = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const publishedStatuses = new Set([
-      "publishing",
-      "under_review",
-      "active",
-      "paused",
-      "completed",
-    ]);
     return library.filter((asset) => {
-      if (tab === "posts" && !publishedStatuses.has(asset.status.toLowerCase())) {
+      if (
+        tab === "posts" &&
+        !PUBLISHED_CAMPAIGN_STATUSES.has(asset.status.toLowerCase())
+      ) {
         return false;
       }
       if (platformFilter !== "all" && asset.platform !== platformFilter) {
