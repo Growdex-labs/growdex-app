@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { AlertTriangle, Plus, Search } from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
 import { CampaignsSidebar } from "../components/campaigns-sidebar";
 import { CampaignsMobileHeader } from "../components/campaigns-mobile-header";
@@ -181,6 +181,12 @@ export default function CampaignsPage() {
                           <p className="text-xs text-gray-400">{campaign.budget.type === "daily" ? "Daily budget" : "Lifetime budget"}</p>
                           <p className="mt-1 font-semibold text-gray-900">{formatMoney(campaign)}</p>
                         </div>
+                        {campaign.publishError && (
+                          <div className="mt-4 flex gap-2 rounded-xl bg-red-50 p-3 text-xs leading-5 text-red-700">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <p>{campaign.publishError}</p>
+                          </div>
+                        )}
                       </Link>
                     );
                   })}
