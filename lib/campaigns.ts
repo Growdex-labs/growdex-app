@@ -129,6 +129,13 @@ export interface MetaInterest {
   audience_size?: number;
 }
 
+export interface AudienceReachForecast {
+  lower: number | null;
+  upper: number;
+  ready: boolean;
+  source: "meta";
+}
+
 const readJson = async (res: Response) => res.json().catch(() => ({}));
 
 const getApiError = (data: unknown, fallback: string) => {
@@ -241,6 +248,31 @@ export const searchMetaInterests = async (
     throw new Error("Interest search returned an invalid response shape");
   }
   return data.interests as MetaInterest[];
+};
+
+export const forecastCampaignReach = async (input: {
+  goal: CampaignGoal;
+  audience: CreateCampaignPayload["audience"];
+}): Promise<AudienceReachForecast> => {
+  const res = await apiFetch("/campaigns/reach-forecast", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Reach forecast failed (${res.status})`));
+  }
+  const forecast = data?.forecast;
+  if (
+    !forecast ||
+    typeof forecast.upper !== "number" ||
+    typeof forecast.ready !== "boolean" ||
+    forecast.source !== "meta"
+  ) {
+    throw new Error("Reach forecast returned an invalid response shape");
+  }
+  return forecast as AudienceReachForecast;
 };
 
 const serializeCampaignPayload = (
