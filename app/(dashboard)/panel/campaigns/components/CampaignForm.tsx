@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/auth";
@@ -19,6 +18,7 @@ import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { hashFolderName } from "@/lib/encrypt";
 import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
 import { hydrateSocialAccounts } from "@/lib/social";
+import { connectSocialAccount } from "@/lib/oauth";
 import type { SocialAccountSetupProps } from "@/types/social";
 
 const goalOptions: Array<{ value: CampaignGoal; label: string }> = [
@@ -170,6 +170,7 @@ export function CampaignForm({
 }: Props) {
   const [connections, setConnections] = useState<SocialAccountSetupProps | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [connectingPlatform, setConnectingPlatform] = useState<CampaignPlatform | null>(null);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -217,6 +218,41 @@ export function CampaignForm({
           creatives: value.adContent.creatives.filter((_, index) => index !== currentIndex),
         },
       });
+    }
+  };
+
+  const connectPlatform = async (platform: CampaignPlatform) => {
+    setConnectingPlatform(platform);
+    setConnectionError(null);
+
+    try {
+      const result = await connectSocialAccount(platform);
+      if (!result.success) {
+        setConnectionError(result.error ?? `Could not connect ${platform}.`);
+        return;
+      }
+
+      let nextConnections = result.data;
+      if (!nextConnections) {
+        const refreshed = await hydrateSocialAccounts();
+        if (!refreshed.success || !refreshed.data) {
+          setConnectionError(refreshed.error ?? "Connected, but could not refresh the account.");
+          return;
+        }
+        nextConnections = refreshed.data;
+      }
+
+      const platformConnection = nextConnections[platform];
+      if (!platformConnection?.connected || platformConnection.needsReauth) {
+        setConnectionError(`Connected, but ${platform} is not ready for campaign publishing.`);
+        return;
+      }
+
+      setConnections(nextConnections);
+    } catch {
+      setConnectionError(`Could not connect ${platform}.`);
+    } finally {
+      setConnectingPlatform(null);
     }
   };
 
@@ -333,30 +369,49 @@ export function CampaignForm({
               const connected = Boolean(state?.connected && !state?.needsReauth);
               const label = platform === "meta" ? "Meta" : "TikTok";
               return (
-                <label key={platform} className="flex items-center justify-between rounded-lg border p-3">
+                <div key={platform} className="flex items-center justify-between rounded-lg border p-3">
                   <span>
                     <span className="font-medium">{label}</span>
                     <span className={`ml-2 text-xs ${connected ? "text-green-700" : "text-red-600"}`}>
                       {connections ? (connected ? "Connected" : "Not connected") : "Checking…"}
                     </span>
                   </span>
-                  <input
-                    type="checkbox"
-                    checked={value.campaign.platforms.includes(platform)}
-                    disabled={!connected && !value.campaign.platforms.includes(platform)}
-                    onChange={(event) => setPlatform(platform, event.target.checked)}
-                    aria-label={`Use ${label}`}
-                  />
-                </label>
+                  {connected ? (
+                    <input
+                      type="checkbox"
+                      checked={value.campaign.platforms.includes(platform)}
+                      onChange={(event) => setPlatform(platform, event.target.checked)}
+                      aria-label={`Use ${label}`}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!connections || connectingPlatform !== null}
+                      onClick={() => connectPlatform(platform)}
+                      className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {connectingPlatform === platform ? (
+                        <span className="flex items-center gap-1.5">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Connecting…
+                        </span>
+                      ) : state?.needsReauth ? (
+                        `Reconnect ${label}`
+                      ) : (
+                        `Connect ${label}`
+                      )}
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
-          {(connectionError || (connections && !connections.meta?.connected && !connections.tiktok?.connected)) && (
-            <p className="mt-3 text-sm text-red-600">
-              {connectionError ?? "Connect an advertising account before creating a campaign."}{" "}
-              <Link className="underline" href="/panel/settings/manage-account">Manage accounts</Link>
+          {connectionError ? (
+            <p className="mt-3 text-sm text-red-600">{connectionError}</p>
+          ) : connections && !connections.meta?.connected && !connections.tiktok?.connected ? (
+            <p className="mt-3 text-sm text-gray-600">
+              Connect a platform here to create and publish its ad creative.
             </p>
-          )}
+          ) : null}
         </fieldset>
       </section>
 
@@ -364,7 +419,7 @@ export function CampaignForm({
         <h2 className="text-lg font-semibold">Audience</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="space-y-1 text-sm font-medium">
-            Add country
+            {value.audience.locations.length ? "Add another country" : "Add country"}
             <select
               className="h-10 w-full rounded-md border bg-white px-3"
               value=""
@@ -380,7 +435,9 @@ export function CampaignForm({
                 }
               }}
             >
-              <option value="">Choose a country</option>
+              <option value="">
+                {value.audience.locations.length ? "Choose another country" : "Choose a country"}
+              </option>
               {countries.map(([code, name]) => (
                 <option key={code} value={code}>{name}</option>
               ))}
@@ -518,7 +575,7 @@ export function CampaignForm({
             </select>
           </label>
           <label className="space-y-1 text-sm font-medium">
-            Starts
+            Starts (local time)
             <Input
               type="datetime-local"
               value={toDateTimeLocal(value.budget.startDate)}

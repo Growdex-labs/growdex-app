@@ -4,9 +4,19 @@ import React, { useState, useEffect } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
-import { useRouter } from "next/navigation";
 import { hydrateSocialAccounts } from "@/lib/social";
-import { disconnectSocialAccount, SocialPlatform } from "@/lib/oauth";
+import {
+  connectSocialAccount,
+  disconnectSocialAccount,
+  SocialPlatform,
+} from "@/lib/oauth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Loader2, PlusCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,11 +29,12 @@ interface ConnectedAccount {
 }
 
 export default function ManageAccountPage() {
-  const router = useRouter();
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
+  const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
+  const [connectingPlatform, setConnectingPlatform] = useState<SocialPlatform | null>(null);
 
   const fetchAccounts = async () => {
     setIsLoading(true);
@@ -57,7 +68,7 @@ export default function ManageAccountPage() {
       } else {
         setError(res.error || "Failed to fetch connected accounts");
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -80,10 +91,30 @@ export default function ManageAccountPage() {
       } else {
         toast.error(result.error || `Failed to disconnect ${platform}`);
       }
-    } catch (err) {
+    } catch {
       toast.error("An error occurred while disconnecting");
     } finally {
       setDisconnectingId(null);
+    }
+  };
+
+  const handleConnect = async (platform: SocialPlatform) => {
+    setConnectingPlatform(platform);
+
+    try {
+      const result = await connectSocialAccount(platform);
+      if (!result.success) {
+        toast.error(result.error || `Failed to connect ${platform}`);
+        return;
+      }
+
+      toast.success(`Connected to ${platform === "meta" ? "Meta" : "TikTok"}`);
+      setIsConnectDialogOpen(false);
+      await fetchAccounts();
+    } catch {
+      toast.error("An error occurred while connecting the account");
+    } finally {
+      setConnectingPlatform(null);
     }
   };
 
@@ -168,7 +199,7 @@ export default function ManageAccountPage() {
             <div className="mb-6 bg-khaki-200 rounded-lg px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3 mx-auto">
                 <span className="text-sm md:text-base font-semibold text-gray-900">
-                  Connected Ads Account
+                  {accounts.length === 1 ? "Connected Ads Account" : "Connected Ads Accounts"}
                 </span>
                 <span className="px-3 py-1 bg-white text-gray-900 rounded-full text-xs font-semibold">
                   {isLoading ? "..." : accounts.length}
@@ -177,11 +208,65 @@ export default function ManageAccountPage() {
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
-              <button 
-                onClick={() => router.push('/onboarding?step=2')}
+              <button
+                onClick={() => setIsConnectDialogOpen(true)}
                 className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors ml-auto mb-4 flex items-center gap-2 whitespace-nowrap">
                 <PlusCircle className="w-4 h-4" /> Connect New Account
               </button>
+
+              <Dialog
+                open={isConnectDialogOpen}
+                onOpenChange={(open) => {
+                  if (!connectingPlatform) setIsConnectDialogOpen(open);
+                }}
+              >
+                <DialogContent showCloseButton={!connectingPlatform} className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Connect an ads account</DialogTitle>
+                    <DialogDescription>
+                      Choose a platform, sign in, and select the ad account and assets Growdex can manage.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="grid gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleConnect("meta")}
+                      disabled={connectingPlatform !== null}
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {connectingPlatform === "meta" ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <MetaIcon />
+                      )}
+                      Meta Ads
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleConnect("tiktok")}
+                      disabled={connectingPlatform !== null}
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {connectingPlatform === "tiktok" ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <TiktokIcon />
+                      )}
+                      TikTok Ads
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsConnectDialogOpen(false)}
+                    disabled={connectingPlatform !== null}
+                    className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                </DialogContent>
+              </Dialog>
 
               <div className="bg-white rounded-lg overflow-hidden ">
                 <div className="bg-khaki-200/50 rounded-lg px-4 py-2 mb-4 grid grid-cols-4 gap-2 md:gap-4">
