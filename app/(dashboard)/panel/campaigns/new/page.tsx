@@ -38,7 +38,7 @@ import { validateFile } from "@/lib/campaign-shared";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { hashFolderName } from "@/lib/encrypt";
 import { connectSocialAccount } from "@/lib/oauth";
-import { hydrateSocialAccounts } from "@/lib/social";
+import { hydrateSocialAccounts, refreshSocialAccount } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { AiCampaignWorkspace } from "../components/AiCampaignWorkspace";
 import type { AiMessage } from "../components/AiSidePanel";
@@ -521,6 +521,26 @@ export default function NewCampaignPage() {
         failure instanceof Error
           ? failure.message
           : `Could not connect ${platform}.`,
+      );
+    } finally {
+      setConnecting(null);
+    }
+  };
+
+  const refreshConnection = async (platform: CampaignPlatform) => {
+    setConnecting(platform);
+    setAccountError(null);
+    try {
+      const result = await refreshSocialAccount(platform);
+      if (!result.success || !result.data) {
+        throw new Error(result.error ?? `Could not refresh ${platform}.`);
+      }
+      setAccounts(result.data);
+    } catch (failure) {
+      setAccountError(
+        failure instanceof Error
+          ? failure.message
+          : `Could not refresh ${platform}.`,
       );
     } finally {
       setConnecting(null);
@@ -1228,6 +1248,7 @@ export default function NewCampaignPage() {
               }
               onChange={setPlatformAccounts}
               onConnect={(platform) => void connect(platform)}
+              onRefresh={(platform) => void refreshConnection(platform)}
             />
             {accountError && (
               <p className="mt-3 text-sm text-red-600">{accountError}</p>
@@ -1504,6 +1525,9 @@ export default function NewCampaignPage() {
                         }
                         onChange={setPlatformAccounts}
                         onConnect={(platform) => void connect(platform)}
+                        onRefresh={(platform) =>
+                          void refreshConnection(platform)
+                        }
                       />
                       {accountError && (
                         <p className="mt-4 text-sm text-red-600">

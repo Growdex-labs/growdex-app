@@ -15,6 +15,7 @@ interface ManualPlatformScreenProps {
     accountAssetIds: Partial<Record<CampaignPlatform, string>>,
   ) => void;
   onConnect: (platform: CampaignPlatform) => void;
+  onRefresh: (platform: CampaignPlatform) => void;
 }
 
 function SelectionMark({ checked }: { checked: boolean }) {
@@ -37,6 +38,7 @@ export function ManualPlatformScreen({
   accountAssetIds,
   onChange,
   onConnect,
+  onRefresh,
 }: ManualPlatformScreenProps) {
   const selectAsset = (platform: CampaignPlatform, assetId: string) => {
     onChange(
@@ -172,7 +174,7 @@ export function ManualPlatformScreen({
                       ) && (
                         <button
                           type="button"
-                          onClick={() => onConnect("meta")}
+                          onClick={() => onRefresh("meta")}
                           disabled={connecting !== null}
                           className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 disabled:opacity-50"
                         >
