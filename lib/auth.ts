@@ -41,6 +41,7 @@ const isMockableDevUrl = (url: string) =>
   url === "/users/ad-accounts/billing" ||
   url === "/wallet" ||
   url === "/users/onboarding" ||
+  url === "/users/onboarding/status" ||
   url === "/users/onboarding/business" ||
   url === "/users/onboarding/goals" ||
   url === "/users/onboarding/complete" ||
@@ -219,6 +220,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
         needsReauth: false,
         assets: [
           {
+            id: "mock-meta-123",
             adAccountId: "mock-meta-123",
             adAccountName: "Growdex Meta Ads",
             pageName: "Growdex",
@@ -232,6 +234,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
         needsReauth: false,
         assets: [
           {
+            id: "mock-tiktok-456",
             advertiserId: "mock-tiktok-456",
             name: "Growdex TikTok Ads",
             isPrimary: true,

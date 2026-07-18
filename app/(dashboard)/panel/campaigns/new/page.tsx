@@ -715,7 +715,7 @@ export default function NewCampaignPage() {
                         patch({ creationMode: nextMethod });
                         setError(null);
                         if (nextMethod === "manual") {
-                          setGoalConfirmed(false);
+                          setGoalConfirmed(true);
                           setStep(1);
                         }
                       }}
@@ -886,7 +886,6 @@ export default function NewCampaignPage() {
                       accounts={accounts}
                       unavailableInterests={unavailableInterests}
                       onChange={patchAudience}
-                      onConfigurationChange={patchConfiguration}
                       onReplaceInterest={replaceUnavailableInterest}
                       onClearUnavailableInterests={() => setUnavailableInterests({})}
                     />

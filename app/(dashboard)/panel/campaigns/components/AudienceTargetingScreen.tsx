@@ -12,7 +12,6 @@ import {
 import type { SocialAccountSetupProps } from "@/types/social";
 import { AudienceReachCard } from "./AudienceReachCard";
 import { DemographicsForm } from "./DemographicsForm";
-import { ManualEventScreen } from "./ManualEventScreen";
 
 type Audience = CreateCampaignPayload["audience"];
 
@@ -24,7 +23,6 @@ interface AudienceTargetingScreenProps {
   accounts: SocialAccountSetupProps | null;
   unavailableInterests: Record<string, MetaInterest[]>;
   onChange: (next: Partial<Audience>) => void;
-  onConfigurationChange: (next: Partial<CampaignConfiguration>) => void;
   onReplaceInterest: (unavailable: string, replacement: string) => void;
   onClearUnavailableInterests: () => void;
 }
@@ -37,7 +35,6 @@ export function AudienceTargetingScreen({
   accounts,
   unavailableInterests,
   onChange,
-  onConfigurationChange,
   onReplaceInterest,
   onClearUnavailableInterests,
 }: AudienceTargetingScreenProps) {
@@ -102,17 +99,6 @@ export function AudienceTargetingScreen({
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
         <div className="min-w-0 space-y-6">
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <ManualEventScreen
-              platforms={platforms}
-              accountAssetIds={configuration.accountAssetIds ?? {}}
-              eventSourceIds={configuration.eventSourceIds ?? {}}
-              optimizationGoal={configuration.optimizationGoal}
-              onChange={(eventSourceIds) =>
-                onConfigurationChange({ eventSourceIds })
-              }
-            />
-          </div>
           <DemographicsForm
             platforms={platforms}
             accountAssetIds={configuration.accountAssetIds ?? {}}
