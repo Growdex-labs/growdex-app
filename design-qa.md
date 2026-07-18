@@ -1,15 +1,15 @@
 **Comparison Target**
 
 - Source visual truth path: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/68-figma-awareness-selected.png`
-- Implementation screenshot path: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/78-app-campaign-frame-1920x1024.png`
+- Implementation screenshot path: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/80-chrome-manual-review-1920x1024.png`
 - Full-view comparison evidence: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/77-campaign-platform-comparison.png`
 - Viewport: 1920 × 1024 for the browser-rendered implementation. The source is a proportional 582 × 310 export of the 1920 × 1024 Figma frame.
-- State: Version 2 platform selection with connected Meta and TikTok accounts versus the local manual platform step without connected social accounts. These are not the same data state, so account-row and campaign-tree details cannot be judged precisely.
+- State: Version 2 platform selection plus a completed local manual campaign at review. The local development session now renders both connected ad accounts, campaign groups, goal, event management, audience, budget, creatives, and review. AI generation still cannot reach a signed-in Growdex backend session.
 
 **Findings**
 
 - No remaining actionable P0/P1/P2 layout finding was visible in the campaign workspace shell after the second pass.
-- Verification blocker: the Figma frame shows named connected ad accounts and populated ad-group/ad-set rows. The local environment returns `Failed to fetch social setup`, so the same live state cannot be rendered without connected Meta and TikTok accounts. This blocks a same-state visual pass for platform selection, event sources, and the later manual stages.
+- Verification blocker: Chrome is signed in to Google, Meta, and TikTok, but those provider sessions do not authenticate Growdex's backend. AI draft generation returns `Unauthorized`. The local Google OAuth attempt reaches Google but fails with `Error 400: redirect_uri_mismatch` for `http://localhost:3000/auth/google/callback`, and `https://api.growdex.ai` was unreachable during the test. This blocks a real AI-generated review state and conversion-event-source verification.
 
 **Required Fidelity Surfaces**
 
@@ -21,14 +21,17 @@
 
 **Focused Region Comparison**
 
-- A separate focused crop was not used because the source and implementation could not be placed in the same connected-account state. The full-view comparison was sufficient to identify and correct the large navigation-frame mismatch; a focused control comparison would imply false precision until the integration state is available.
+- A separate focused crop was not needed for the campaign shell because the connected-account rows, campaign hierarchy, stepper, and review cards are readable in the full-view captures. A focused AI-state comparison would imply false precision until Growdex backend authentication works.
 
 **Comparison History**
 
 - Pass 1 finding: the implementation used a full 256 px global navigation sidebar and a narrow campaign tree, while Version 2 uses an icon rail and a wider campaign hierarchy. This was a P1 composition and density mismatch.
 - Pass 1 fixes: campaign creation now opens with the global navigation collapsed, the campaign hierarchy is widened, the collapsed user and logout controls no longer leak text, and future step buttons are visibly disabled. The mobile tree is hidden.
 - Pass 1 post-fix evidence: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/78-app-campaign-frame-1920x1024.png` and `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/73-app-campaign-mobile-synced.png`.
-- Pass 2 result: the shell proportions and responsive behavior are corrected. Same-state comparison remains blocked by unavailable live social-account data.
+- Pass 2 result: the shell proportions and responsive behavior are corrected.
+- Pass 3 findings: the development social-status response was excluded from the quick-login path, mock account assets had no selectable `id`, the selected default goal still required an invisible confirmation click, and event-source status appeared twice on the event-management screen.
+- Pass 3 fixes: development social status is now loaded intentionally, mock account IDs match the production type, the visible default goal is accepted, and event-source status is rendered once.
+- Pass 3 post-fix evidence: the manual path was completed from setup through review in signed-in Chrome. Review evidence is `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/80-chrome-manual-review-1920x1024.png`.
 
 **Interactions Tested**
 
@@ -36,18 +39,24 @@
 - Manual creation selection.
 - Future step lockout and navigation back to completed steps.
 - Connected-account error state.
+- Meta and TikTok account selection and campaign-tree population.
+- Goal, destination, optimization, event-source status, audience, budget, and creative controls.
+- Hosted Meta image and TikTok video previews.
+- Complete manual review state with delivery, audience, budget, and schedule summaries.
+- AI prompt submission and its authenticated-backend failure state.
+- Google sign-in handoff and redirect-URI failure state.
 - Desktop and mobile responsive layout.
 - Production compilation and TypeScript validation.
 
 **Open Questions**
 
-- None about product direction. A connected test account is needed only to complete the visual verification of live account rows, event sources, and later-stage content.
+- None about product direction. The remaining issue is backend OAuth configuration, not frontend campaign design.
 
 **Implementation Checklist**
 
-- Connect test Meta and TikTok accounts in the local environment.
-- Capture the platform, event-management, budget, creative, and review stages at the Figma viewport.
-- Run a final focused comparison for account rows, event-source controls, and campaign-tree population.
+- Register `http://localhost:3000/auth/google/callback` in the Google OAuth client used by the local backend, or provide another working local Growdex backend login.
+- Restore reachability for `https://api.growdex.ai` if the production backend is the intended test target.
+- Re-run AI generation and a conversions campaign with live event sources, then capture the AI review at the Figma viewport.
 
 **Follow-up Polish**
 
