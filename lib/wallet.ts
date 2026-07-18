@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/auth";
+import { apiFetch } from "./auth";
 
 export type WalletCurrency = "NGN" | "USD";
 export type WalletPlatform = "meta" | "tiktok";
@@ -59,7 +59,7 @@ const isTransaction = (value: unknown): value is WalletTransaction => {
   );
 };
 
-const parseWalletOverview = (value: unknown): WalletOverview => {
+export const parseWalletOverview = (value: unknown): WalletOverview => {
   if (!value || typeof value !== "object") {
     throw new Error("Wallet overview returned an invalid response.");
   }
@@ -112,13 +112,9 @@ export const fetchWalletOverview = async (): Promise<WalletOverview> => {
   return parseWalletOverview(data);
 };
 
-export const formatWalletMoney = (
-  amount: number,
-  currency: WalletCurrency,
-) =>
+export const formatWalletMoney = (amount: number, currency: WalletCurrency) =>
   new Intl.NumberFormat(currency === "NGN" ? "en-NG" : "en-US", {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
   }).format(amount);
-

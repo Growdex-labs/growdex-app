@@ -36,6 +36,31 @@ const transactionLabel = (transaction: WalletTransaction) =>
     : transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
 
 function SpendingChart({ overview }: { overview: WalletOverview }) {
+  if (overview.spending.length === 0) {
+    return (
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
+        <h2 className="font-gilroy-semibold text-gray-950">
+          Spending insights
+        </h2>
+        <p className="mt-1 text-xs text-gray-400">
+          Last six months by ad platform
+        </p>
+        <div className="mt-6 flex min-h-48 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center">
+          <div>
+            <TrendingUp className="mx-auto size-6 text-gray-300" />
+            <p className="mt-3 text-sm font-gilroy-semibold text-gray-700">
+              No platform spending yet
+            </p>
+            <p className="mt-1 max-w-sm text-xs leading-5 text-gray-400">
+              Spending insights will appear after a campaign starts using your
+              wallet.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   const max = Math.max(
     1,
     ...overview.spending.flatMap((point) => [point.meta, point.tiktok]),
@@ -45,8 +70,12 @@ function SpendingChart({ overview }: { overview: WalletOverview }) {
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-gilroy-semibold text-gray-950">Spending insights</h2>
-          <p className="mt-1 text-xs text-gray-400">Last six months by ad platform</p>
+          <h2 className="font-gilroy-semibold text-gray-950">
+            Spending insights
+          </h2>
+          <p className="mt-1 text-xs text-gray-400">
+            Last six months by ad platform
+          </p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-gilroy-semibold text-emerald-700">
           <TrendingUp className="size-3.5" /> {overview.spendChangePercent}%
@@ -55,7 +84,10 @@ function SpendingChart({ overview }: { overview: WalletOverview }) {
 
       <div className="mt-8 flex h-52 items-end gap-4 border-b border-gray-200 px-2 sm:gap-7">
         {overview.spending.map((point) => (
-          <div key={point.label} className="flex h-full min-w-0 flex-1 flex-col justify-end">
+          <div
+            key={point.label}
+            className="flex h-full min-w-0 flex-1 flex-col justify-end"
+          >
             <div className="flex flex-1 items-end justify-center gap-1.5">
               <span
                 className="w-3 rounded-t-full bg-khaki-200 sm:w-4"
@@ -64,7 +96,9 @@ function SpendingChart({ overview }: { overview: WalletOverview }) {
               />
               <span
                 className="w-3 rounded-t-full bg-[#312f25] sm:w-4"
-                style={{ height: `${Math.max(8, (point.tiktok / max) * 100)}%` }}
+                style={{
+                  height: `${Math.max(8, (point.tiktok / max) * 100)}%`,
+                }}
                 title={`TikTok ${formatWalletMoney(point.tiktok, "NGN")}`}
               />
             </div>
@@ -187,27 +221,50 @@ export default function WalletOverviewPage() {
                       {formatWalletMoney(overview.balances[currency], currency)}
                     </p>
                     <div className="mt-5 flex items-center gap-2 text-xs text-emerald-700">
-                      <ArrowUpRight className="size-4" /> Funds available for active campaigns
+                      <ArrowUpRight className="size-4" /> Funds available for
+                      active campaigns
                     </div>
                   </article>
 
                   <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
                     <p className="text-sm text-gray-500">Ads breakdown</p>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      {overview.adAccounts.map((account) => (
-                        <div key={account.platform} className="rounded-xl bg-gray-50 p-4">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs uppercase tracking-wide text-gray-400">
-                              {account.platform}
-                            </span>
-                            <span className={`size-2.5 rounded-full ${account.platform === "meta" ? "bg-blue-500" : "bg-gray-900"}`} />
-                          </div>
-                          <p className="mt-4 text-lg font-gilroy-bold text-gray-900">
-                            {formatWalletMoney(account.balance, account.currency)}
+                    {overview.adAccounts.length === 0 ? (
+                      <div className="mt-5 flex min-h-28 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-5 text-center">
+                        <div>
+                          <p className="text-sm font-gilroy-semibold text-gray-700">
+                            No platform spend yet
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-gray-400">
+                            Meta and TikTok activity will appear here when your
+                            campaigns start spending.
                           </p>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        {overview.adAccounts.map((account) => (
+                          <div
+                            key={account.platform}
+                            className="rounded-xl bg-gray-50 p-4"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs uppercase tracking-wide text-gray-400">
+                                {account.platform}
+                              </span>
+                              <span
+                                className={`size-2.5 rounded-full ${account.platform === "meta" ? "bg-blue-500" : "bg-gray-900"}`}
+                              />
+                            </div>
+                            <p className="mt-4 text-lg font-gilroy-bold text-gray-900">
+                              {formatWalletMoney(
+                                account.balance,
+                                account.currency,
+                              )}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </article>
                 </section>
 
@@ -216,31 +273,75 @@ export default function WalletOverviewPage() {
                 <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                   <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4 lg:px-6">
                     <div>
-                      <h2 className="font-gilroy-semibold text-gray-950">Recent transactions</h2>
-                      <p className="mt-1 text-xs text-gray-400">Latest wallet activity</p>
+                      <h2 className="font-gilroy-semibold text-gray-950">
+                        Recent transactions
+                      </h2>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Latest wallet activity
+                      </p>
                     </div>
-                    <Link href="/panel/wallet/transactions" className="text-xs font-gilroy-semibold text-peru-200 hover:underline">
+                    <Link
+                      href="/panel/wallet/transactions"
+                      className="text-xs font-gilroy-semibold text-peru-200 hover:underline"
+                    >
                       View all
                     </Link>
                   </div>
 
                   <div className="divide-y divide-gray-100">
-                    {overview.transactions.map((transaction) => (
-                      <div key={transaction.id} className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 text-sm lg:grid-cols-[1.5fr_1fr_1fr_auto] lg:px-6">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span className={`flex size-9 shrink-0 items-center justify-center rounded-full ${transaction.type === "deposit" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                            {transaction.type === "deposit" ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate font-gilroy-semibold text-gray-900">{transactionLabel(transaction)}</p>
-                            <p className="truncate text-xs text-gray-400">{transaction.merchant}</p>
-                          </div>
-                        </div>
-                        <span className="hidden text-gray-500 lg:block">{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(transaction.date))}</span>
-                        <span className="hidden font-gilroy-semibold text-gray-900 lg:block">{formatWalletMoney(transaction.amount, transaction.currency)}</span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-gilroy-semibold capitalize ${STATUS_STYLES[transaction.status]}`}>{transaction.status}</span>
+                    {overview.transactions.length === 0 ? (
+                      <div className="px-5 py-10 text-center lg:px-6">
+                        <p className="text-sm font-gilroy-semibold text-gray-700">
+                          No wallet activity yet
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          Your deposits and campaign charges will appear here.
+                        </p>
                       </div>
-                    ))}
+                    ) : (
+                      overview.transactions.map((transaction) => (
+                        <div
+                          key={transaction.id}
+                          className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 text-sm lg:grid-cols-[1.5fr_1fr_1fr_auto] lg:px-6"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span
+                              className={`flex size-9 shrink-0 items-center justify-center rounded-full ${transaction.type === "deposit" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}
+                            >
+                              {transaction.type === "deposit" ? (
+                                <ArrowDownLeft className="size-4" />
+                              ) : (
+                                <ArrowUpRight className="size-4" />
+                              )}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate font-gilroy-semibold text-gray-900">
+                                {transactionLabel(transaction)}
+                              </p>
+                              <p className="truncate text-xs text-gray-400">
+                                {transaction.merchant}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="hidden text-gray-500 lg:block">
+                            {new Intl.DateTimeFormat("en-NG", {
+                              dateStyle: "medium",
+                            }).format(new Date(transaction.date))}
+                          </span>
+                          <span className="hidden font-gilroy-semibold text-gray-900 lg:block">
+                            {formatWalletMoney(
+                              transaction.amount,
+                              transaction.currency,
+                            )}
+                          </span>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-gilroy-semibold capitalize ${STATUS_STYLES[transaction.status]}`}
+                          >
+                            {transaction.status}
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </section>
               </>
