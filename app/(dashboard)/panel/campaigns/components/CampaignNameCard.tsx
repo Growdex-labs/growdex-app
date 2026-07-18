@@ -9,6 +9,7 @@ interface CampaignNameCardProps {
   generating?: boolean;
   rationale?: string | null;
   disabledReason?: string | null;
+  prominent?: boolean;
 }
 
 export function CampaignNameCard({
@@ -18,15 +19,20 @@ export function CampaignNameCard({
   generating = false,
   rationale,
   disabledReason,
+  prominent = false,
 }: CampaignNameCardProps) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+    <div
+      className={`rounded-2xl border border-gray-200 bg-white shadow-sm ${
+        prominent ? "p-6 md:p-7" : "p-5"
+      }`}
+    >
       <label
         htmlFor="setupCampaignName"
         className={
           value.trim()
             ? "sr-only"
-            : "block text-sm text-gray-400 mb-1"
+            : `mb-1 block text-gray-400 ${prominent ? "text-base" : "text-sm"}`
         }
       >
         Enter your campaign name
@@ -38,14 +44,18 @@ export function CampaignNameCard({
         onChange={(e) => onChange(e.target.value)}
         maxLength={100}
         placeholder="Untitled Campaign"
-        className="block w-full text-lg font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none"
+        className={`block w-full font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none ${
+          prominent ? "text-2xl" : "text-lg"
+        }`}
       />
       {onGenerate && (
         <button
           type="button"
           onClick={onGenerate}
           disabled={generating || Boolean(disabledReason)}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-violet-500 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`mt-2 inline-flex items-center gap-1 font-medium text-violet-500 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-50 ${
+            prominent ? "text-sm" : "text-xs"
+          }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
           {generating ? "Generating campaign name…" : "Generate campaign name"}
@@ -55,7 +65,9 @@ export function CampaignNameCard({
         <p className="mt-2 text-xs leading-5 text-violet-600">{rationale}</p>
       )}
       {disabledReason && onGenerate && (
-        <p className="mt-2 text-xs leading-5 text-amber-700">{disabledReason}</p>
+        <p className="mt-2 text-xs leading-5 text-amber-700">
+          {disabledReason}
+        </p>
       )}
     </div>
   );

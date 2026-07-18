@@ -1150,11 +1150,14 @@ export default function NewCampaignPage() {
                 error={error}
                 approvalBlocker={aiApprovalBlocker}
                 disabledReason={aiDisabledReason}
+                generatingName={generatingName}
+                nameRationale={nameRationale}
                 onCampaignNameChange={(name) => {
                   if (aiGeneratedDraft) aiFlow.markReview("setup");
                   patchCampaign({ name });
                   setNameRationale(null);
                 }}
+                onGenerateName={() => void generateCampaignName()}
                 onApprove={aiFlow.approve}
                 onApproveAll={aiFlow.approveAll}
                 onAnswer={(optionIds) => void answerAiQuestion(optionIds)}

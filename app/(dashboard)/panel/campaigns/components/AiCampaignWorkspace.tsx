@@ -2,8 +2,10 @@
 
 import { Check, Loader2, Sparkles } from "lucide-react";
 import type { AiCampaignQuestion } from "@/lib/campaigns";
+import { AiPromptComposer } from "./AiPromptComposer";
 import { AiSidePanel, type AiMessage } from "./AiSidePanel";
 import { AiStepList } from "./AiStepList";
+import { CampaignNameCard } from "./CampaignNameCard";
 import { CampaignSkeleton } from "./CampaignSkeleton";
 import { CampaignStepper } from "./CampaignStepper";
 import { GradientSparkle } from "./GradientSparkle";
@@ -30,7 +32,10 @@ interface AiCampaignWorkspaceProps {
   error?: string | null;
   approvalBlocker?: string | null;
   disabledReason?: string | null;
+  generatingName?: boolean;
+  nameRationale?: string | null;
   onCampaignNameChange: (name: string) => void;
+  onGenerateName: () => void;
   onApprove: (id: AiStepId) => void;
   onApproveAll: () => void;
   onDecline: (step: AiStep, instruction: string) => void;
@@ -52,7 +57,10 @@ export function AiCampaignWorkspace({
   error,
   approvalBlocker,
   disabledReason,
+  generatingName = false,
+  nameRationale,
   onCampaignNameChange,
+  onGenerateName,
   onApprove,
   onApproveAll,
   onDecline,
@@ -63,9 +71,17 @@ export function AiCampaignWorkspace({
   onContinue,
 }: AiCampaignWorkspaceProps) {
   const hasDraft = Boolean(steps?.length);
+  const showAssistant =
+    hasDraft || loading || Boolean(question) || messages.length > 0;
 
   return (
-    <main className="grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-1 xl:grid-cols-[minmax(0,1fr)_22rem]">
+    <main
+      className={
+        showAssistant
+          ? "grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-1 xl:grid-cols-[minmax(0,1fr)_28rem] 2xl:grid-cols-[minmax(0,1fr)_30rem]"
+          : "h-full min-w-0 flex-1 overflow-hidden"
+      }
+    >
       <section className="min-w-0 overflow-y-auto px-5 py-4 md:py-6 md:pl-14 md:pr-6">
         <div className="mx-auto max-w-5xl">
           <div>
@@ -77,13 +93,17 @@ export function AiCampaignWorkspace({
             />
           </div>
 
-          <input
-            aria-label="Campaign name"
-            value={campaignName}
-            onChange={(event) => onCampaignNameChange(event.target.value)}
-            placeholder="Untitled campaign"
-            className="mt-5 h-12 w-full rounded-lg border border-gray-200 bg-white px-4 text-base text-gray-800 shadow-sm outline-none transition-colors focus:border-violet-300"
-          />
+          <div className="mt-5">
+            <CampaignNameCard
+              value={campaignName}
+              onChange={onCampaignNameChange}
+              onGenerate={onGenerateName}
+              generating={generatingName}
+              rationale={nameRationale}
+              disabledReason={disabledReason}
+              prominent
+            />
+          </div>
 
           {error && (
             <p className="mt-4 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -92,16 +112,26 @@ export function AiCampaignWorkspace({
           )}
 
           {!hasDraft && !loading && !question && (
-            <div className="flex min-h-[430px] flex-col items-center justify-center px-6 text-center">
-              <GradientSparkle className="h-12 w-12" />
-              <h1 className="mt-6 text-3xl font-semibold text-gray-800">
+            <div className="flex min-h-[calc(100vh-13rem)] flex-col items-center justify-center px-6 pb-20 text-center">
+              <GradientSparkle className="h-16 w-16" />
+              <h1 className="mt-7 text-3xl font-semibold text-gray-800 md:text-4xl">
                 Hello{firstName ? ` ${firstName}` : ""}, let&apos;s create your
                 campaign
               </h1>
-              <p className="mt-4 max-w-xl text-base leading-7 text-gray-500">
-                Describe the outcome in the assistant. Your campaign decisions
-                will appear here as Growdex AI builds them.
-              </p>
+              <div className="mt-10 flex w-full justify-center">
+                <AiPromptComposer
+                  variant="welcome"
+                  suggestions={[
+                    "Campaign for Real Estate",
+                    "Re-targeting campaign",
+                    "Lead generation campaign for newsletter",
+                  ]}
+                  onSubmit={onPrompt}
+                  submitting={loading}
+                  error={error}
+                  disabledReason={disabledReason}
+                />
+              </div>
             </div>
           )}
 
@@ -156,7 +186,7 @@ export function AiCampaignWorkspace({
                   disabled={
                     loading || (!allApproved && Boolean(approvalBlocker))
                   }
-                  className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-3 text-base font-medium text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-3 text-base font-medium text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:bg-khaki-100 disabled:text-gray-500"
                 >
                   {allApproved && <Check className="h-4 w-4" />}
                   {allApproved ? "Open full editor" : "Approve all decisions"}
@@ -167,28 +197,30 @@ export function AiCampaignWorkspace({
         </div>
       </section>
 
-      <aside className="h-[22.5rem] min-w-0 border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:p-4 xl:px-4 xl:py-8">
-        <AiSidePanel
-          messages={messages}
-          question={question?.prompt}
-          options={question?.options}
-          allowMultiple={question?.allowMultiple}
-          suggestions={
-            hasDraft
-              ? []
-              : [
-                  "Launch a lead campaign in Nigeria",
-                  "Promote a new product",
-                  "Drive visitors to my website",
-                ]
-          }
-          onAnswer={onAnswer}
-          onSubmit={onPrompt}
-          submitting={loading}
-          error={error}
-          disabledReason={disabledReason}
-        />
-      </aside>
+      {showAssistant && (
+        <aside className="h-[22.5rem] min-w-0 border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:p-4 xl:px-4 xl:py-8">
+          <AiSidePanel
+            messages={messages}
+            question={question?.prompt}
+            options={question?.options}
+            allowMultiple={question?.allowMultiple}
+            suggestions={
+              hasDraft
+                ? []
+                : [
+                    "Launch a lead campaign in Nigeria",
+                    "Promote a new product",
+                    "Drive visitors to my website",
+                  ]
+            }
+            onAnswer={onAnswer}
+            onSubmit={onPrompt}
+            submitting={loading}
+            error={error}
+            disabledReason={disabledReason}
+          />
+        </aside>
+      )}
     </main>
   );
 }

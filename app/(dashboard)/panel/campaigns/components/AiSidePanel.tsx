@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SendHorizontal, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { AiPromptComposer } from "./AiPromptComposer";
 import { PURPLE_GRADIENT } from "./ai-campaign-theme";
 
 export interface AiMessage {
@@ -43,7 +44,6 @@ export function AiSidePanel({
   error,
   disabledReason,
 }: AiSidePanelProps) {
-  const [prompt, setPrompt] = useState("");
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, boolean>
   >({});
@@ -67,13 +67,6 @@ export function AiSidePanel({
   const confirmSelection = () => {
     if (selectedList.length === 0) return;
     onAnswer?.(selectedList.map((option) => option.id));
-  };
-
-  const submit = () => {
-    const value = prompt.trim();
-    if (!value || disabledReason) return;
-    onSubmit?.(value);
-    setPrompt("");
   };
 
   return (
@@ -179,57 +172,13 @@ export function AiSidePanel({
 
       {/* Prompt input */}
       <div className="p-4 border-gray-100">
-        {submitting && (
-          <p className="mb-2 text-sm text-violet-600">Thinking…</p>
-        )}
-        {(error || disabledReason) && (
-          <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error || disabledReason}
-          </p>
-        )}
-        {/* Quick-reply suggestion chips */}
-        {suggestions.length > 0 && (
-          <div className="mb-3 grid gap-2">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => onSubmit?.(suggestion)}
-                disabled={submitting || Boolean(disabledReason)}
-                className="w-full rounded-full bg-violet-50 px-4 py-2.5 text-center text-sm text-violet-600 transition-colors hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 xl:text-base"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white py-2 pl-4 pr-2 focus-within:border-violet-300">
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            placeholder="Where are we starting from?"
-            disabled={submitting || Boolean(disabledReason)}
-            className="min-w-0 flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none disabled:opacity-60 xl:text-base"
-          />
-          <button
-            type="button"
-            onClick={submit}
-            disabled={submitting || Boolean(disabledReason) || !prompt.trim()}
-            style={{ background: PURPLE_GRADIENT }}
-            className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Send"
-          >
-            <SendHorizontal className="h-5 w-5" />
-          </button>
-        </div>
+        <AiPromptComposer
+          suggestions={suggestions}
+          onSubmit={onSubmit}
+          submitting={submitting}
+          error={error}
+          disabledReason={disabledReason}
+        />
       </div>
     </div>
   );
