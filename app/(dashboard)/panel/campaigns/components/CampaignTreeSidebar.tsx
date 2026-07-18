@@ -67,14 +67,16 @@ export function CampaignTreeSidebar({
   return (
     <aside
       className={`hidden h-full shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white lg:flex ${
-        compact ? "w-28 p-2" : "w-[27rem] p-4"
+        compact ? "w-44 p-3 xl:w-52 xl:p-4" : "w-[27rem] p-4"
       }`}
     >
       {/* Back */}
       <Link
         href="/panel/campaigns"
         className={`flex items-center gap-2 rounded-lg bg-gray-50 text-gray-700 transition-colors hover:bg-gray-100 ${
-          compact ? "px-2.5 py-2 text-xs" : "px-4 py-2.5 text-sm font-medium"
+          compact
+            ? "px-3 py-2.5 text-sm font-medium"
+            : "px-4 py-2.5 text-sm font-medium"
         }`}
       >
         <ChevronLeft className="w-4 h-4" />
@@ -84,7 +86,7 @@ export function CampaignTreeSidebar({
       {/* Campaign name */}
       <div
         className={`rounded-lg bg-khaki-200 font-semibold text-gray-900 truncate ${
-          compact ? "mt-3 px-2.5 py-2 text-xs" : "mt-6 px-4 py-2.5 text-sm"
+          compact ? "mt-4 px-3 py-2.5 text-sm" : "mt-6 px-4 py-2.5 text-sm"
         }`}
       >
         {truncatedName}
@@ -97,11 +99,7 @@ export function CampaignTreeSidebar({
           return (
             <div key={group.id}>
               {/* Ad group row */}
-              <div
-                className={`flex items-center gap-2 rounded-lg bg-gray-900 text-khaki-200 ${
-                  compact ? "px-2 py-2" : "px-3 py-2.5"
-                }`}
-              >
+              <div className="flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2.5 text-khaki-200">
                 <button
                   type="button"
                   onClick={() => toggle(group.id)}
@@ -117,7 +115,7 @@ export function CampaignTreeSidebar({
                   <span
                     className={
                       compact
-                        ? "text-[11px] font-semibold"
+                        ? "text-xs font-semibold xl:text-sm"
                         : "text-sm font-semibold"
                     }
                   >
@@ -138,16 +136,12 @@ export function CampaignTreeSidebar({
                     <div key={adSet.id} className="relative">
                       {/* horizontal connector */}
                       <span className="absolute -left-4 top-1/2 w-4 h-px bg-gray-200" />
-                      <div
-                        className={`flex items-center gap-2 rounded-lg border border-gray-200 bg-white ${
-                          compact ? "px-2 py-2" : "px-3 py-2.5"
-                        }`}
-                      >
+                      <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5">
                         <div className="flex flex-1 items-center gap-1.5">
                           <span
                             className={
                               compact
-                                ? "text-[11px] text-gray-700"
+                                ? "text-xs text-gray-700 xl:text-sm"
                                 : "text-sm text-gray-700"
                             }
                           >

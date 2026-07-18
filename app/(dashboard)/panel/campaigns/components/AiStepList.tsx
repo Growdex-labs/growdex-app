@@ -49,51 +49,51 @@ export function AiStepList({
   );
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-7 pb-10">
       {orderedSteps.map((step) => (
         <article key={step.id} className="min-w-0">
-          <div className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-400">
-            <Sparkles className="h-3 w-3" /> {step.title}
+          <div className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400">
+            <Sparkles className="h-3.5 w-3.5" /> {step.title}
           </div>
-          <h3 className="mt-0.5 truncate text-sm font-semibold text-gray-800">
+          <h3 className="mt-1 truncate text-base font-semibold text-gray-800">
             {step.result}
           </h3>
           <div
-            className="mt-1 h-1 rounded-full"
+            className="mt-1.5 h-1.5 rounded-full"
             style={{ background: PURPLE_GRADIENT }}
           />
-          <div className="mt-1 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-violet-50/80 px-2.5 py-1.5">
+          <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-violet-50/80 px-3 py-2">
             <button
               type="button"
               onClick={() => onWhyThis(step)}
               disabled={busy}
               style={{ background: PURPLE_GRADIENT }}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Info className="h-3 w-3" /> Why this?
             </button>
 
             {step.status === "approved" ? (
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700">
-                  <Check className="h-3.5 w-3.5" /> Approved
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-green-700">
+                  <Check className="h-4 w-4" /> Approved
                 </span>
                 <button
                   type="button"
                   onClick={() => onEdit(step)}
                   disabled={busy}
-                  className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Pencil className="h-3.5 w-3.5 text-violet-500" /> Edit
                 </button>
               </div>
             ) : step.status === "revising" ? (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-700">
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-violet-700">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Revising with
                 AI
               </span>
             ) : (
-              <div className="flex items-center gap-4 text-xs text-gray-700">
+              <div className="flex items-center gap-4 text-sm text-gray-700">
                 <button
                   type="button"
                   disabled={busy}

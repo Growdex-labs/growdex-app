@@ -20,9 +20,7 @@ export function CampaignStepper({
   compact = false,
 }: CampaignStepperProps) {
   return (
-    <div
-      className={`flex items-start overflow-x-auto hide-scrollbar ${compact ? "gap-1" : "gap-3"}`}
-    >
+    <div className="flex items-start gap-3 overflow-x-auto hide-scrollbar">
       {steps.map((step, index) => {
         const isActive = index === current;
         const isDone = index < current;
@@ -35,11 +33,13 @@ export function CampaignStepper({
             aria-current={isActive ? "step" : undefined}
             onClick={() => onStepClick?.(index)}
             className={`flex flex-1 flex-col text-left disabled:cursor-not-allowed ${
-              compact ? "min-w-0 gap-1.5" : "min-w-[108px] gap-2 md:min-w-20"
+              compact
+                ? "min-w-24 gap-2 xl:min-w-0"
+                : "min-w-[108px] gap-2 md:min-w-20"
             }`}
           >
             <span
-              className={`whitespace-nowrap transition-colors ${compact ? "text-[7px] xl:text-[8px]" : "text-[10px] 2xl:text-xs"} ${
+              className={`transition-colors ${compact ? "flex min-h-8 items-center justify-center whitespace-normal text-center text-xs leading-4" : "whitespace-nowrap text-[10px] 2xl:text-xs"} ${
                 isActive
                   ? "font-semibold text-gray-900"
                   : isDone
