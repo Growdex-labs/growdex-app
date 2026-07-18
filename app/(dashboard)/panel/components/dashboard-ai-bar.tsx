@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SendHorizontal, ChevronDown } from "lucide-react";
-import { PURPLE_GRADIENT } from "../campaigns/components/AiCampaignChat";
+import { PURPLE_GRADIENT } from "../campaigns/components/ai-campaign-theme";
 
 interface DashboardAiBarProps {
   campaigns: Array<{ id: string; name: string }>;
