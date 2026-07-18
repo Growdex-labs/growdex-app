@@ -1328,6 +1328,10 @@ export default function NewCampaignPage() {
         return (
           <CreativeSetupScreen
             goal={campaign.campaign.goal}
+            destination={campaign.campaign.configuration.destination}
+            metaAssetId={
+              campaign.campaign.configuration.accountAssetIds?.meta
+            }
             platforms={campaign.campaign.platforms}
             creatives={campaign.adContent.creatives}
             ctaOptions={CTA_OPTIONS}
@@ -1637,6 +1641,10 @@ export default function NewCampaignPage() {
                   {step === 5 && (
                     <CreativeSetupScreen
                       goal={campaign.campaign.goal}
+                      destination={campaign.campaign.configuration.destination}
+                      metaAssetId={
+                        campaign.campaign.configuration.accountAssetIds?.meta
+                      }
                       platforms={campaign.campaign.platforms}
                       creatives={campaign.adContent.creatives}
                       ctaOptions={CTA_OPTIONS}

@@ -72,6 +72,20 @@ export interface CampaignCreativeInput {
   leadFormId?: string;
 }
 
+export interface MetaLeadForm {
+  id: string;
+  name: string;
+  status: string;
+  locale: string | null;
+}
+
+export interface MetaLeadFormsResponse {
+  page: { id: string; name: string };
+  adAccount: { assetId: string; id: string; name: string };
+  forms: MetaLeadForm[];
+  paging: { nextCursor: string | null };
+}
+
 export interface CreateCampaignPayload {
   creationMode: CampaignCreationMode;
   campaign: {
@@ -904,6 +918,61 @@ export const validateCampaignDraftPayload = (payload: CampaignReviewPayload) => 
     return "Every saved creative must belong to a selected platform.";
   }
   return null;
+};
+
+export const fetchMetaLeadForms = async (
+  assetId: string,
+  signal?: AbortSignal,
+): Promise<MetaLeadFormsResponse> => {
+  const params = new URLSearchParams({ assetId, limit: "100" });
+  const res = await apiFetch(`/campaigns/lead-forms?${params.toString()}`, {
+    method: "GET",
+    signal,
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      getApiError(data, `Load Meta Instant Forms failed (${res.status})`),
+    );
+  }
+  if (
+    !isRecord(data) ||
+    !isRecord(data.page) ||
+    !isRecord(data.adAccount) ||
+    !Array.isArray(data.forms) ||
+    !isRecord(data.paging)
+  ) {
+    throw new Error("Meta returned an invalid Instant Form response.");
+  }
+
+  return {
+    page: {
+      id: requiredString(data.page.id, "Meta Page ID"),
+      name: requiredString(data.page.name, "Meta Page name"),
+    },
+    adAccount: {
+      assetId: requiredString(data.adAccount.assetId, "Meta account asset ID"),
+      id: requiredString(data.adAccount.id, "Meta ad account ID"),
+      name: requiredString(data.adAccount.name, "Meta ad account name"),
+    },
+    forms: data.forms.map((form, index) => {
+      if (!isRecord(form)) {
+        throw new Error(`Meta Instant Form ${index + 1} is invalid.`);
+      }
+      return {
+        id: requiredString(form.id, "Meta Instant Form ID"),
+        name: requiredString(form.name, "Meta Instant Form name"),
+        status: requiredString(form.status, "Meta Instant Form status"),
+        locale:
+          optionalString(form.locale, "Meta Instant Form locale") ?? null,
+      };
+    }),
+    paging: {
+      nextCursor:
+        optionalString(data.paging.nextCursor, "Meta Instant Form cursor") ??
+        null,
+    },
+  };
 };
 
 export const startAiCampaignDraft = async (input: {

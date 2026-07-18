@@ -20,14 +20,19 @@ import {
   type CreativeAsset,
 } from "@/lib/assets";
 import {
+  fetchMetaLeadForms,
   type CampaignCreativeInput,
   type CampaignCta,
+  type CampaignDestination,
   type CampaignGoal,
   type CampaignPlatform,
+  type MetaLeadForm,
 } from "@/lib/campaigns";
 
 interface CreativeSetupScreenProps {
   goal: CampaignGoal;
+  destination: CampaignDestination;
+  metaAssetId?: string;
   platforms: CampaignPlatform[];
   creatives: CampaignCreativeInput[];
   ctaOptions: Array<{ value: CampaignCta; label: string }>;
@@ -55,6 +60,8 @@ const emptyFromAsset = (
 
 export function CreativeSetupScreen({
   goal,
+  destination,
+  metaAssetId,
   platforms,
   creatives,
   ctaOptions,
@@ -75,6 +82,11 @@ export function CreativeSetupScreen({
     "all",
   );
   const [selected, setSelected] = useState<string[]>([]);
+  const [leadFormsResult, setLeadFormsResult] = useState<{
+    assetId: string;
+    forms: MetaLeadForm[];
+    error: string | null;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -99,6 +111,48 @@ export function CreativeSetupScreen({
       active = false;
     };
   }, [platforms]);
+
+  useEffect(() => {
+    if (destination !== "INSTANT_FORM" || !metaAssetId) {
+      return;
+    }
+
+    const controller = new AbortController();
+    void fetchMetaLeadForms(metaAssetId, controller.signal)
+      .then((response) =>
+        setLeadFormsResult({
+          assetId: metaAssetId,
+          forms: response.forms,
+          error: null,
+        }),
+      )
+      .catch((failure) => {
+        if (controller.signal.aborted) return;
+        setLeadFormsResult({
+          assetId: metaAssetId,
+          forms: [],
+          error:
+            failure instanceof Error
+              ? failure.message
+              : "Could not load Meta Instant Forms.",
+        });
+      });
+
+    return () => controller.abort();
+  }, [destination, metaAssetId]);
+
+  const leadForms =
+    metaAssetId && leadFormsResult?.assetId === metaAssetId
+      ? leadFormsResult.forms
+      : [];
+  const leadFormsError =
+    metaAssetId && leadFormsResult?.assetId === metaAssetId
+      ? leadFormsResult.error
+      : null;
+  const leadFormsLoading =
+    destination === "INSTANT_FORM" &&
+    Boolean(metaAssetId) &&
+    leadFormsResult?.assetId !== metaAssetId;
 
   const visibleAssets = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -431,30 +485,69 @@ export function CreativeSetupScreen({
                     </select>
                   </label>
                 </div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Landing page URL{platform === "meta" ? " *" : ""}
-                  <Input
-                    className="mt-2"
-                    type="url"
-                    value={creative.landingPageUrl ?? ""}
-                    onChange={(event) =>
-                      onChange(index, {
-                        landingPageUrl: event.target.value || undefined,
-                      })
-                    }
-                    placeholder="https://example.com/offer"
-                  />
-                </label>
-                {goal === "LEADS" && (
+                {destination !== "INSTANT_FORM" && (
                   <label className="block text-sm font-medium text-gray-700">
-                    Lead form ID
+                    Landing page URL *
                     <Input
                       className="mt-2"
-                      value={creative.leadFormId ?? ""}
+                      type="url"
+                      value={creative.landingPageUrl ?? ""}
                       onChange={(event) =>
-                        onChange(index, { leadFormId: event.target.value })
+                        onChange(index, {
+                          landingPageUrl: event.target.value || undefined,
+                        })
                       }
+                      placeholder="https://example.com/offer"
                     />
+                  </label>
+                )}
+                {platform === "meta" && destination === "INSTANT_FORM" && (
+                  <label className="block text-sm font-medium text-gray-700">
+                    Meta Instant Form *
+                    <select
+                      className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={creative.leadFormId ?? ""}
+                      disabled={leadFormsLoading || Boolean(leadFormsError)}
+                      onChange={(event) =>
+                        onChange(index, {
+                          leadFormId: event.target.value || undefined,
+                        })
+                      }
+                    >
+                      <option value="">
+                        {leadFormsLoading
+                          ? "Loading forms from Meta…"
+                          : leadForms.length
+                            ? "Choose an active form"
+                            : "No forms available"}
+                      </option>
+                      {leadForms.map((form) => (
+                        <option
+                          key={form.id}
+                          value={form.id}
+                          disabled={form.status !== "ACTIVE"}
+                        >
+                          {form.name}
+                          {form.locale ? ` · ${form.locale}` : ""}
+                          {form.status !== "ACTIVE"
+                            ? ` · ${form.status.toLowerCase()}`
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {leadFormsError && (
+                      <span className="mt-2 block text-xs text-red-600">
+                        {leadFormsError}
+                      </span>
+                    )}
+                    {!leadFormsLoading &&
+                      !leadFormsError &&
+                      leadForms.length === 0 && (
+                        <span className="mt-2 block text-xs text-amber-700">
+                          Create and publish an Instant Form on the selected
+                          Meta Page before continuing.
+                        </span>
+                      )}
                   </label>
                 )}
                 {goal === "APP_PROMOTION" && (

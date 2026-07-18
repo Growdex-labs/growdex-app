@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { apiFetch } from "./auth";
 import {
+  fetchMetaLeadForms,
   parseAiCampaignDraftResponse,
   parseCampaignNameSuggestion,
   parseCampaignOptimizationResponse,
@@ -9,6 +11,8 @@ import {
   validateCampaignPayload,
   type MetaSpecialAdCategory,
 } from "./campaigns";
+
+vi.mock("./auth", () => ({ apiFetch: vi.fn() }));
 
 describe("parseCampaignNameSuggestion", () => {
   it("accepts a readable campaign title", () => {
@@ -216,6 +220,49 @@ describe("validateCampaignCreativeSetup", () => {
   });
 });
 
+describe("fetchMetaLeadForms", () => {
+  it("loads only the non-sensitive form metadata used by campaign creation", async () => {
+    vi.mocked(apiFetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          page: { id: "page-1", name: "Growdex Agency" },
+          adAccount: {
+            assetId: "asset-1",
+            id: "account-1",
+            name: "Growdex Ads",
+          },
+          forms: [
+            {
+              id: "form-1",
+              name: "Property enquiry",
+              status: "ACTIVE",
+              locale: "en_GB",
+            },
+          ],
+          paging: { nextCursor: null },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const result = await fetchMetaLeadForms("asset-1");
+
+    expect(apiFetch).toHaveBeenCalledWith(
+      "/campaigns/lead-forms?assetId=asset-1&limit=100",
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(result.forms).toEqual([
+      {
+        id: "form-1",
+        name: "Property enquiry",
+        status: "ACTIVE",
+        locale: "en_GB",
+      },
+    ]);
+    expect(result).not.toHaveProperty("leads");
+  });
+});
+
 describe("parseAiCampaignDraftResponse", () => {
   it("accepts a complete platform-specific draft", () => {
     const result = parseAiCampaignDraftResponse(readyResponse());
@@ -255,7 +302,7 @@ describe("parseAiCampaignDraftResponse", () => {
     response.draft.creatives = response.draft.creatives.filter(
       (creative) => creative.platform === "meta",
     );
-    response.draft.configuration.accountAssetIds = { meta: "meta-account" };
+    delete response.draft.configuration.accountAssetIds.tiktok;
     response.draft.configuration.specialAdCategories = ["HOUSING"];
     Object.assign(response.draft.audience, {
       ageMin: 18,
