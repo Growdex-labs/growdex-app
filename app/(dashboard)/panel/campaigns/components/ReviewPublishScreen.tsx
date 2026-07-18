@@ -20,6 +20,7 @@ interface ReviewPublishScreenProps {
   publishing?: boolean;
   saving?: boolean;
   error?: string | null;
+  publishLabel?: string;
 }
 
 const goalLabels: Record<CampaignReviewPayload["campaign"]["goal"], string> = {
@@ -49,6 +50,7 @@ export function ReviewPublishScreen({
   publishing = false,
   saving = false,
   error,
+  publishLabel = "Publish ad",
 }: ReviewPublishScreenProps) {
   const validationError = validateCampaignPayload(campaign);
   const busy = publishing || saving;
@@ -92,7 +94,7 @@ export function ReviewPublishScreen({
             className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {publishing && <Loader2 className="h-4 w-4 animate-spin" />}
-            {publishing ? "Publishing…" : "Publish ad"}
+            {publishing ? "Publishing…" : publishLabel}
           </button>
         </div>
       </div>

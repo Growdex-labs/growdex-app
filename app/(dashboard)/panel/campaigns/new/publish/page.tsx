@@ -23,6 +23,7 @@ export default function PublishCampaignPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sourceStatus, setSourceStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!campaignId) {
@@ -34,9 +35,12 @@ export default function PublishCampaignPage() {
     void fetchCampaignById(campaignId)
       .then((result) => {
         if (!active) return;
-        if (result.status && result.status !== "draft") {
-          throw new Error("Only draft campaigns can be published from this screen.");
+        if (result.status && !["draft", "failed"].includes(result.status)) {
+          throw new Error(
+            "Only draft or failed campaigns can be published from this screen.",
+          );
         }
+        setSourceStatus(result.status ?? "draft");
         setCampaign(campaignDtoToPayload(result));
       })
       .catch((failure) => {
@@ -94,10 +98,17 @@ export default function PublishCampaignPage() {
                 <ReviewPublishScreen
                   campaign={campaign}
                   brandName={me?.brand?.name ?? "Your brand"}
-                  onSaveDraft={() => router.push("/panel/campaigns")}
+                  onSaveDraft={
+                    sourceStatus === "draft"
+                      ? () => router.push("/panel/campaigns")
+                      : undefined
+                  }
                   onPublish={() => void handlePublish()}
                   publishing={isPublishing}
                   error={error}
+                  publishLabel={
+                    sourceStatus === "failed" ? "Retry publish" : undefined
+                  }
                 />
               )}
             </div>

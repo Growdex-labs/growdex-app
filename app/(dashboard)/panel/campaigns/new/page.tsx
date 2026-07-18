@@ -322,6 +322,7 @@ export default function NewCampaignPage() {
       if (
         !value.campaign ||
         value.campaign.creationMode !== "ai" ||
+        typeof value.savedCampaignId === "string" ||
         typeof value.draftId !== "string" ||
         typeof value.revision !== "number" ||
         (!value.generatedDraft && !value.question) ||
@@ -1103,6 +1104,7 @@ export default function NewCampaignPage() {
           });
       setSavedCampaignId(created.id);
       setCompletion({ kind: "draft", campaignId: created.id });
+      sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
       setSaving(false);
     } catch (failure) {
       setError(
@@ -1154,6 +1156,7 @@ export default function NewCampaignPage() {
         idempotencyKey: publishAttemptRef.current.key,
       });
       setCompletion({ kind: "publish", campaignId: saved.id });
+      sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
       setPublishing(false);
     } catch (failure) {
       setError(
@@ -1688,6 +1691,7 @@ export default function NewCampaignPage() {
           navigating={saving || publishing}
           onPrimary={() => {
             if (!completion) return;
+            sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
             if (completion.kind === "publish") {
               setPublishing(true);
               router.push("/panel/campaigns");
@@ -1699,6 +1703,7 @@ export default function NewCampaignPage() {
             }
           }}
           onCampaigns={() => {
+            sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
             setSaving(true);
             router.push("/panel/campaigns");
           }}

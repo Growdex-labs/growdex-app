@@ -138,8 +138,9 @@ export default function CampaignsPage() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {displayed.map((campaign) => {
-                    const isDraft = (campaign.status ?? "draft").toLowerCase() === "draft";
-                    const href = isDraft
+                    const status = (campaign.status ?? "draft").toLowerCase();
+                    const canPublish = ["draft", "failed"].includes(status);
+                    const href = canPublish
                       ? `/panel/campaigns/new/publish?id=${encodeURIComponent(campaign.id)}`
                       : `/panel/campaigns/${encodeURIComponent(campaign.id)}`;
                     return <CampaignCard key={campaign.id} campaign={campaign} href={href} />;
