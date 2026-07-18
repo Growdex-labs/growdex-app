@@ -3,10 +3,6 @@
 import {
   FileText,
   Globe2,
-  MessageCircle,
-  Smartphone,
-  UserRound,
-  Video,
 } from "lucide-react";
 import type {
   CampaignConfiguration,
@@ -41,27 +37,6 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
         { value: "IMPRESSIONS", label: "Impressions", description: "Maximize the total number of times the campaign is shown." },
       ],
     },
-    {
-      value: "PROFILE",
-      label: "Social profile",
-      description: "Grow awareness around your Meta profile.",
-      icon: UserRound,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "FOLLOWERS", label: "Followers", description: "Prioritize people likely to follow your profile." },
-        { value: "REACH", label: "Reach", description: "Reach more people who match the audience." },
-      ],
-    },
-    {
-      value: "VIDEO",
-      label: "Video",
-      description: "Build awareness through video viewing.",
-      icon: Video,
-      optimizationGoals: [
-        { value: "VIDEO_VIEWS", label: "Video views", description: "Prioritize people likely to watch the creative." },
-        { value: "IMPRESSIONS", label: "Impressions", description: "Maximize the number of video impressions." },
-      ],
-    },
   ],
   TRAFFIC: [
     {
@@ -72,36 +47,6 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
       optimizationGoals: [
         { value: "LINK_CLICKS", label: "Link clicks", description: "Prioritize people likely to click the ad." },
         { value: "LANDING_PAGE_VIEWS", label: "Landing-page views", description: "Prioritize people likely to wait for the page to load." },
-      ],
-    },
-    {
-      value: "APP",
-      label: "App",
-      description: "Send people directly into your mobile app.",
-      icon: Smartphone,
-      optimizationGoals: [
-        { value: "LINK_CLICKS", label: "Link clicks", description: "Drive taps on your app link." },
-        { value: "APP_EVENTS", label: "App events", description: "Prioritize people likely to act inside the app." },
-      ],
-    },
-    {
-      value: "WHATSAPP",
-      label: "WhatsApp",
-      description: "Start WhatsApp conversations from the ad.",
-      icon: MessageCircle,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "MESSAGES", label: "Messages", description: "Prioritize people likely to start a conversation." },
-      ],
-    },
-    {
-      value: "MESSENGER",
-      label: "Messenger",
-      description: "Start Messenger conversations from the ad.",
-      icon: MessageCircle,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "MESSAGES", label: "Messages", description: "Prioritize people likely to start a conversation." },
       ],
     },
   ],
@@ -116,27 +61,6 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
         { value: "VIDEO_VIEWS", label: "Video views", description: "Prioritize people likely to watch the creative." },
       ],
     },
-    {
-      value: "WHATSAPP",
-      label: "WhatsApp",
-      description: "Turn engagement into WhatsApp conversations.",
-      icon: MessageCircle,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "MESSAGES", label: "Messages", description: "Prioritize people likely to start a conversation." },
-      ],
-    },
-    {
-      value: "PROFILE",
-      label: "Social profile",
-      description: "Grow profile visits and followers.",
-      icon: UserRound,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "FOLLOWERS", label: "Followers", description: "Prioritize people likely to follow your profile." },
-        { value: "POST_ENGAGEMENT", label: "Profile engagement", description: "Prioritize people likely to engage with your content." },
-      ],
-    },
   ],
   SALES: [
     {
@@ -147,16 +71,6 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
       optimizationGoals: [
         { value: "CONVERSIONS", label: "Conversions", description: "Optimize toward purchases or another selected website event." },
         { value: "LANDING_PAGE_VIEWS", label: "Landing-page views", description: "Drive qualified visits before conversion data is available." },
-      ],
-    },
-    {
-      value: "APP",
-      label: "App",
-      description: "Drive purchases or other high-value app events.",
-      icon: Smartphone,
-      optimizationGoals: [
-        { value: "APP_EVENTS", label: "App events", description: "Optimize toward a selected app event." },
-        { value: "APP_INSTALLS", label: "App installs", description: "Grow the audience available for later app sales." },
       ],
     },
   ],
@@ -181,40 +95,8 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
         { value: "LEAD_GENERATION", label: "Instant-form leads", description: "Prioritize people likely to complete the form." },
       ],
     },
-    {
-      value: "WHATSAPP",
-      label: "WhatsApp",
-      description: "Collect and qualify leads in WhatsApp.",
-      icon: MessageCircle,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "MESSAGES", label: "Messages", description: "Prioritize people likely to start a conversation." },
-      ],
-    },
-    {
-      value: "MESSENGER",
-      label: "Messenger",
-      description: "Collect and qualify leads in Messenger.",
-      icon: MessageCircle,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "MESSAGES", label: "Messages", description: "Prioritize people likely to start a conversation." },
-      ],
-    },
   ],
-  APP_PROMOTION: [
-    {
-      value: "APP",
-      label: "App",
-      description: "Send people to your registered mobile app.",
-      icon: Smartphone,
-      metaOnly: true,
-      optimizationGoals: [
-        { value: "APP_INSTALLS", label: "App installs", description: "Prioritize people likely to install the app." },
-        { value: "APP_EVENTS", label: "App events", description: "Prioritize people likely to complete an in-app action." },
-      ],
-    },
-  ],
+  APP_PROMOTION: [],
 };
 
 export function ManualEventManagementScreen({

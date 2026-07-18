@@ -41,21 +41,21 @@ const GOALS: GoalDefinition[] = [
   {
     value: "TRAFFIC",
     label: "Traffic",
-    description: "Send people to a website, app, profile, or conversation.",
+    description: "Send people to a website or landing page.",
     destination: "WEBSITE",
     optimizationGoal: "LINK_CLICKS",
   },
   {
     value: "ENGAGEMENT",
     label: "Engagement",
-    description: "Grow reactions, messages, followers, or video attention.",
+    description: "Grow reactions, comments, shares, and saves on your ad.",
     destination: "WEBSITE",
     optimizationGoal: "POST_ENGAGEMENT",
   },
   {
     value: "SALES",
     label: "Sales",
-    description: "Drive purchases measured by your website or app events.",
+    description: "Drive purchases measured by your website events.",
     destination: "WEBSITE",
     optimizationGoal: "CONVERSIONS",
   },
@@ -65,14 +65,6 @@ const GOALS: GoalDefinition[] = [
     description: "Collect details from potential customers across Meta or your website.",
     destination: "WEBSITE",
     optimizationGoal: "LEAD_GENERATION",
-  },
-  {
-    value: "APP_PROMOTION",
-    label: "App promotion",
-    description: "Drive installs or actions for a registered Meta app.",
-    destination: "APP",
-    optimizationGoal: "APP_INSTALLS",
-    metaOnly: true,
   },
 ];
 
