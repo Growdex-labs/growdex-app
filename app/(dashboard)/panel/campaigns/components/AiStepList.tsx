@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Info, Loader2, Pencil, Sparkles, X } from "lucide-react";
-import { PURPLE_GRADIENT } from "./AiCampaignChat";
+import { PURPLE_GRADIENT } from "./ai-campaign-theme";
 import type { AiStep, AiStepId } from "./use-ai-campaign-flow";
 
 interface AiStepListProps {

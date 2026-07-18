@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SendHorizontal, Check } from "lucide-react";
-import { PURPLE_GRADIENT } from "./AiCampaignChat";
+import { PURPLE_GRADIENT } from "./ai-campaign-theme";
 
 export interface AiMessage {
   id: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { PURPLE_GRADIENT } from "./AiCampaignChat";
+import { PURPLE_GRADIENT } from "./ai-campaign-theme";
 
 interface CampaignStepperProps {
   steps: string[];
