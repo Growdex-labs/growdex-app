@@ -19,6 +19,7 @@ import {
   AI_CAMPAIGN_STEP_IDS,
   publishCampaign,
   reviseAiCampaignDraft,
+  requestCampaignName,
   searchMetaInterests,
   startAiCampaignDraft,
   validateCampaignPayload,
@@ -197,6 +198,8 @@ export default function NewCampaignPage() {
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<CampaignPlatform | null>(null);
+  const [generatingName, setGeneratingName] = useState(false);
+  const [nameRationale, setNameRationale] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [aiReviewActive, setAiReviewActive] = useState(false);
@@ -457,6 +460,31 @@ export default function NewCampaignPage() {
       );
     } finally {
       setConnecting(null);
+    }
+  };
+
+  const generateCampaignName = async () => {
+    if (generatingName) return;
+    setGeneratingName(true);
+    setError(null);
+    try {
+      const suggestion = await requestCampaignName({
+        brandName,
+        currentName: campaign.campaign.name.trim() || undefined,
+        goal: campaign.campaign.goal,
+        platforms: campaign.campaign.platforms,
+      });
+      if (campaign.creationMode === "ai") aiFlow.markReview("setup");
+      patchCampaign({ name: suggestion.name });
+      setNameRationale(suggestion.rationale);
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not generate a campaign name.",
+      );
+    } finally {
+      setGeneratingName(false);
     }
   };
 
@@ -1041,7 +1069,11 @@ export default function NewCampaignPage() {
                       onChange={(name) => {
                         if (campaign.creationMode === "ai") aiFlow.markReview("setup");
                         patchCampaign({ name });
+                        setNameRationale(null);
                       }}
+                      onGenerate={() => void generateCampaignName()}
+                      generating={generatingName}
+                      rationale={nameRationale}
                     />
                   )}
                   {method !== "ai" ? (

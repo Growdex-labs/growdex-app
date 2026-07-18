@@ -241,6 +241,11 @@ export interface CampaignOptimizationResponse {
   proposals: CampaignOptimizationProposal[];
 }
 
+export interface CampaignNameSuggestion {
+  name: string;
+  rationale: string;
+}
+
 export interface MetaInterest {
   id: string;
   name: string;
@@ -897,6 +902,34 @@ export const requestCampaignAdvice = async (
     throw new Error("The campaign assistant returned an invalid response.");
   }
   return { answer: answer.trim() };
+};
+
+export const requestCampaignName = async (input: {
+  brandName: string;
+  currentName?: string;
+  goal: CampaignGoal;
+  platforms: CampaignPlatform[];
+}): Promise<CampaignNameSuggestion> => {
+  const res = await apiFetch("/ai/campaign-name", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Generate campaign name failed (${res.status})`));
+  }
+  if (!isRecord(data)) {
+    throw new Error("The AI naming service returned an invalid response.");
+  }
+  const name = requiredString(data.name, "campaign name suggestion");
+  if (name.length > 100) {
+    throw new Error("The AI naming service returned a name longer than 100 characters.");
+  }
+  return {
+    name,
+    rationale: requiredString(data.rationale, "campaign name rationale"),
+  };
 };
 
 export const fetchCampaignOptimizations = async (
