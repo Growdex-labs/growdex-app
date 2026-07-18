@@ -1,6 +1,6 @@
-import React from "react";
-import { OptimizationBadge } from "../optimization-badge";
-import { SparklesIcon, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { SparklesIcon, ChevronDown, Loader2 } from "lucide-react";
+import { requestCampaignCreativeSuggestion } from "@/lib/campaigns";
 import CreativeAndCaption from "./form-sections/creative-and-caption";
 import {
   DropdownMenu,
@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface AdFormSectionProps {
+  campaignId: string;
   platform: "meta" | "tiktok";
   headline: string;
   setHeadline: (value: string) => void;
-  headlineOptimization: number;
   creative: { type: "image" | "video"; url: string } | null;
   setCreative: (
     creative: { type: "image" | "video"; url: string } | null
@@ -25,10 +25,10 @@ interface AdFormSectionProps {
 }
 
 export default function AdFormSection({
+  campaignId,
   platform,
   headline,
   setHeadline,
-  headlineOptimization,
   creative,
   setCreative,
   caption,
@@ -36,6 +36,12 @@ export default function AdFormSection({
   callToAction,
   setCallToAction,
 }: AdFormSectionProps) {
+  const [headlineSuggestion, setHeadlineSuggestion] = useState<{
+    value: string;
+    rationale: string;
+  } | null>(null);
+  const [headlineLoading, setHeadlineLoading] = useState(false);
+  const [headlineError, setHeadlineError] = useState<string | null>(null);
   const ctaOptions = [
     "Join Now",
     "Learn More",
@@ -48,6 +54,34 @@ export default function AdFormSection({
     "Subscribe",
     "Book Now",
   ];
+
+  const improveHeadline = async () => {
+    if (headlineLoading) return;
+    setHeadlineLoading(true);
+    setHeadlineError(null);
+    setHeadlineSuggestion(null);
+    try {
+      const suggestion = await requestCampaignCreativeSuggestion(campaignId, {
+        platform,
+        field: "headline",
+        currentValue: headline,
+        headline,
+        caption,
+      });
+      setHeadlineSuggestion({
+        value: suggestion.value,
+        rationale: suggestion.rationale,
+      });
+    } catch (failure) {
+      setHeadlineError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not improve the headline.",
+      );
+    } finally {
+      setHeadlineLoading(false);
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Headline */}
@@ -55,7 +89,6 @@ export default function AdFormSection({
         <div className="bg-slate-50/60 p-4 rounded-lg">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">Headline</h2>
-            <OptimizationBadge percentage={headlineOptimization} size="sm" />
           </div>
 
           <input
@@ -66,16 +99,58 @@ export default function AdFormSection({
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-300"
           />
 
-          <button className="text-khaki-300 font-medium text-sm flex items-center gap-1 mt-3 hover:text-khaki-400 transition-colors">
-            <SparklesIcon className="inline-flex size-4" /> Improve headline
-            performance
+          <button
+            type="button"
+            onClick={() => void improveHeadline()}
+            disabled={headlineLoading}
+            className="mt-3 flex items-center gap-1 text-sm font-medium text-khaki-300 transition-colors hover:text-khaki-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {headlineLoading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <SparklesIcon className="size-4" />
+            )}
+            {headlineLoading ? "Improving headline…" : "Improve headline performance"}
           </button>
+          {headlineError && (
+            <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+              {headlineError}
+            </p>
+          )}
+          {headlineSuggestion && (
+            <div className="mt-3 rounded-lg border border-violet-100 bg-violet-50 p-3">
+              <p className="text-sm font-medium text-gray-900">{headlineSuggestion.value}</p>
+              <p className="mt-1 text-xs leading-5 text-violet-700">
+                {headlineSuggestion.rationale}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeadline(headlineSuggestion.value);
+                    setHeadlineSuggestion(null);
+                  }}
+                  className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white"
+                >
+                  Use suggestion
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHeadlineSuggestion(null)}
+                  className="rounded-lg border border-violet-200 px-3 py-1.5 text-xs text-violet-700"
+                >
+                  Keep current
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Creative and Caption */}
       <div className="bg-slate-50/60 p-4 rounded-lg">
         <CreativeAndCaption
+          campaignId={campaignId}
           platform={platform}
           creative={creative}
           setCreative={setCreative}

@@ -246,6 +246,12 @@ export interface CampaignNameSuggestion {
   rationale: string;
 }
 
+export interface CampaignCreativeSuggestion {
+  field: "headline" | "caption";
+  value: string;
+  rationale: string;
+}
+
 export interface MetaInterest {
   id: string;
   name: string;
@@ -929,6 +935,47 @@ export const requestCampaignName = async (input: {
   return {
     name,
     rationale: requiredString(data.rationale, "campaign name rationale"),
+  };
+};
+
+export const requestCampaignCreativeSuggestion = async (
+  campaignId: string,
+  input: {
+    platform: CampaignPlatform;
+    field: "headline" | "caption";
+    currentValue: string;
+    headline?: string;
+    caption?: string;
+  },
+): Promise<CampaignCreativeSuggestion> => {
+  const res = await apiFetch(
+    `/ai/campaigns/${encodeURIComponent(campaignId)}/creative-suggestions`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Generate creative suggestion failed (${res.status})`));
+  }
+  if (!isRecord(data)) {
+    throw new Error("The AI creative service returned an invalid response.");
+  }
+  const field = enumValue(data.field, ["headline", "caption"], "creative suggestion field");
+  if (field !== input.field) {
+    throw new Error("The AI creative service returned a suggestion for the wrong field.");
+  }
+  const value = requiredString(data.value, "creative suggestion");
+  const limit = field === "headline" ? 255 : 2_200;
+  if (value.length > limit) {
+    throw new Error(`The AI creative service returned ${field} text over ${limit} characters.`);
+  }
+  return {
+    field,
+    value,
+    rationale: requiredString(data.rationale, "creative suggestion rationale"),
   };
 };
 

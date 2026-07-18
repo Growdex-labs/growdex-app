@@ -303,7 +303,7 @@ export default function CampaignDetailPage({
                 </div>
 
                 <div className="bg-white p-4 rounded-lg relative">
-                  <CreateAdLayout />
+                  <CreateAdLayout campaignId={campaignId} />
                 </div>
               </>
             )}
