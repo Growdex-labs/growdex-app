@@ -733,6 +733,42 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
   adContent: { creatives: [] },
 });
 
+export const validateCampaignCreativeSetup = (
+  payload: CampaignReviewPayload,
+) => {
+  if (payload.adContent.creatives.length > 6) {
+    return "A campaign can contain at most six creatives.";
+  }
+  for (const platform of payload.campaign.platforms) {
+    const platformCreatives = payload.adContent.creatives.filter(
+      (creative) => creative.platform === platform,
+    );
+    const label = platform === "meta" ? "Meta" : "TikTok";
+    if (!platformCreatives.length) return `Add at least one ${label} creative.`;
+    for (const creative of platformCreatives) {
+      if (!creative.primaryText.trim()) return `Enter primary text for ${label}.`;
+      if (!creative.mediaUrl.trim()) return `Upload media for ${label}.`;
+      if (
+        platform === "meta" &&
+        payload.campaign.configuration.destination !== "INSTANT_FORM" &&
+        !creative.landingPageUrl?.trim()
+      ) {
+        return "Enter a landing page URL for Meta.";
+      }
+      if (
+        payload.campaign.configuration.destination === "INSTANT_FORM" &&
+        !creative.leadFormId?.trim()
+      ) {
+        return `Enter a lead form ID for ${label}.`;
+      }
+      if (payload.campaign.goal === "APP_PROMOTION" && !creative.appId?.trim()) {
+        return `Enter an app ID for ${label}.`;
+      }
+    }
+  }
+  return null;
+};
+
 export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name.";
   if (!payload.campaign.platforms.length) return "Select at least one platform.";
@@ -768,37 +804,7 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
       return "End time must be after the start time.";
     }
   }
-  if (payload.adContent.creatives.length > 6) {
-    return "A campaign can contain at most six creatives.";
-  }
-  for (const platform of payload.campaign.platforms) {
-    const platformCreatives = payload.adContent.creatives.filter(
-      (creative) => creative.platform === platform,
-    );
-    const label = platform === "meta" ? "Meta" : "TikTok";
-    if (!platformCreatives.length) return `Add at least one ${label} creative.`;
-    for (const creative of platformCreatives) {
-      if (!creative.primaryText.trim()) return `Enter primary text for ${label}.`;
-      if (!creative.mediaUrl.trim()) return `Upload media for ${label}.`;
-      if (
-        platform === "meta" &&
-        payload.campaign.configuration.destination !== "INSTANT_FORM" &&
-        !creative.landingPageUrl?.trim()
-      ) {
-        return "Enter a landing page URL for Meta.";
-      }
-      if (
-        payload.campaign.configuration.destination === "INSTANT_FORM" &&
-        !creative.leadFormId?.trim()
-      ) {
-        return `Enter a lead form ID for ${label}.`;
-      }
-      if (payload.campaign.goal === "APP_PROMOTION" && !creative.appId?.trim()) {
-        return `Enter an app ID for ${label}.`;
-      }
-    }
-  }
-  return null;
+  return validateCampaignCreativeSetup(payload);
 };
 
 export const validateCampaignDraftPayload = (payload: CampaignReviewPayload) => {

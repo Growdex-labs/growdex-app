@@ -4,6 +4,7 @@ import {
   parseCampaignNameSuggestion,
   parseCampaignOptimizationResponse,
   createInitialCampaignPayload,
+  validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
 } from "./campaigns";
 
@@ -161,6 +162,36 @@ describe("validateCampaignDraftPayload", () => {
     draft.audience.ageMin = 50;
     draft.audience.ageMax = 30;
     expect(validateCampaignDraftPayload(draft)).toContain("Audience age");
+  });
+});
+
+describe("validateCampaignCreativeSetup", () => {
+  it("routes incomplete media to creative setup and completed media onward", () => {
+    const campaign = createInitialCampaignPayload();
+    campaign.campaign.name = "Luxury leads";
+    campaign.campaign.goal = "LEADS";
+    campaign.campaign.platforms = ["meta"];
+    campaign.campaign.configuration.destination = "INSTANT_FORM";
+    campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
+    campaign.budget.startDate = "2020-01-01T00:00:00.000Z";
+    campaign.adContent.creatives = [
+      {
+        platform: "meta",
+        primaryText: "Discover premium homes in Lagos.",
+        headline: "Own your luxury home",
+        cta: "SIGN_UP",
+        mediaUrl: "",
+        leadFormId: "lead-form-1",
+      },
+    ];
+
+    expect(validateCampaignCreativeSetup(campaign)).toBe(
+      "Upload media for Meta.",
+    );
+
+    campaign.adContent.creatives[0].mediaUrl =
+      "https://images.example.com/luxury-home.jpg";
+    expect(validateCampaignCreativeSetup(campaign)).toBeNull();
   });
 });
 

@@ -45,6 +45,7 @@ interface AiCampaignWorkspaceProps {
   onWhyThis: (step: AiStep) => void;
   onPrompt: (prompt: string) => void;
   onAnswer: (optionIds: string[]) => void;
+  continueLabel: string;
   onContinue: () => void;
 }
 
@@ -71,6 +72,7 @@ export function AiCampaignWorkspace({
   onWhyThis,
   onPrompt,
   onAnswer,
+  continueLabel,
   onContinue,
 }: AiCampaignWorkspaceProps) {
   const hasDraft = Boolean(steps?.length);
@@ -191,9 +193,7 @@ export function AiCampaignWorkspace({
                   className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-3 text-base font-medium text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:bg-khaki-100 disabled:text-gray-500"
                 >
                   {allApproved && <Check className="h-4 w-4" />}
-                  {allApproved
-                    ? "Continue to campaign setup"
-                    : "Approve all decisions"}
+                  {allApproved ? continueLabel : "Approve all decisions"}
                 </button>
               </div>
             </div>

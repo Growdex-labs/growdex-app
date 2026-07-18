@@ -18,6 +18,7 @@ import {
   searchMetaInterests,
   startAiCampaignDraft,
   updateCampaign,
+  validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
   validateCampaignPayload,
   type AiCampaignDraftResponse,
@@ -259,6 +260,11 @@ export default function NewCampaignPage() {
           ? "Add the required Meta images and TikTok videos before publishing."
           : null
     : null;
+  const aiPostReviewStep = validateCampaignCreativeSetup(campaign) ? 5 : 6;
+  const aiPostReviewLabel =
+    aiPostReviewStep === 5
+      ? "Continue to creative setup"
+      : "Review and publish";
 
   useEffect(() => {
     let active = true;
@@ -1340,8 +1346,9 @@ export default function NewCampaignPage() {
                     ? reviseAiDraft(prompt)
                     : startAiDraft(prompt))
                 }
+                continueLabel={aiPostReviewLabel}
                 onContinue={() => {
-                  setStep(1);
+                  setStep(aiPostReviewStep);
                 }}
               />
             </>
