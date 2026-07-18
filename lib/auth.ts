@@ -300,6 +300,11 @@ export const clearDevSession = (): void => {
   document.cookie = `access_token=; path=/; expires=${expire}`;
 };
 
+export const isDevelopmentMockSessionActive = () =>
+  process.env.NEXT_PUBLIC_APP_ENV === "development" &&
+  typeof document !== "undefined" &&
+  document.cookie.includes("dev_session=true");
+
 /**
  * Wrapper around fetch that automatically includes cookies
  * and attempts refresh if 401 is returned

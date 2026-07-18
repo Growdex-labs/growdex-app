@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -11,7 +11,7 @@ import { PanelLayout } from "../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
 import { Input } from "@/components/ui/input";
 import { useMe } from "@/context/me-context";
-import { apiFetch } from "@/lib/auth";
+import { apiFetch, isDevelopmentMockSessionActive } from "@/lib/auth";
 import {
   createCampaign,
   createInitialCampaignPayload,
@@ -84,6 +84,7 @@ const EMPTY_AI_RATIONALES = {
 };
 
 const AI_DRAFT_STORAGE_KEY = "growdex.aiCampaignDraft.v2";
+const subscribeToStaticBrowserState = () => () => undefined;
 
 const CTA_OPTIONS: Array<{ value: CampaignCta; label: string }> = [
   { value: "LEARN_MORE", label: "Learn more" },
@@ -202,6 +203,14 @@ export default function NewCampaignPage() {
   const [connecting, setConnecting] = useState<CampaignPlatform | null>(null);
   const [generatingName, setGeneratingName] = useState(false);
   const [nameRationale, setNameRationale] = useState<string | null>(null);
+  const isDevelopmentMockSession = useSyncExternalStore(
+    subscribeToStaticBrowserState,
+    isDevelopmentMockSessionActive,
+    () => false,
+  );
+  const aiDisabledReason = isDevelopmentMockSession
+    ? "Real AI is unavailable in the development quick-login session. Sign in with a real Growdex account to generate or revise campaign decisions."
+    : null;
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [aiReviewActive, setAiReviewActive] = useState(false);
@@ -477,6 +486,10 @@ export default function NewCampaignPage() {
   };
 
   const generateCampaignName = async () => {
+    if (aiDisabledReason) {
+      setError(aiDisabledReason);
+      return;
+    }
     if (generatingName) return;
     setGeneratingName(true);
     setError(null);
@@ -637,6 +650,10 @@ export default function NewCampaignPage() {
   };
 
   const startAiDraft = async (prompt: string) => {
+    if (aiDisabledReason) {
+      setError(aiDisabledReason);
+      return;
+    }
     if (accountsLoading) {
       setError("Wait while Growdex checks your connected ad accounts.");
       return;
@@ -1111,6 +1128,7 @@ export default function NewCampaignPage() {
                       onGenerate={() => void generateCampaignName()}
                       generating={generatingName}
                       rationale={nameRationale}
+                      disabledReason={aiDisabledReason}
                     />
                   )}
                   {method !== "ai" ? (
@@ -1184,6 +1202,7 @@ export default function NewCampaignPage() {
                       <AiCampaignChat
                         firstName={firstName}
                         onSubmit={(prompt) => void startAiDraft(prompt)}
+                        disabledReason={aiDisabledReason}
                         suggestions={[
                           "Launch a lead campaign for my business in Nigeria",
                           "Promote a new product to young adults",

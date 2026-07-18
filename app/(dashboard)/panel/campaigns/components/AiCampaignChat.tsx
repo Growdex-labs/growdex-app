@@ -12,6 +12,7 @@ interface AiCampaignChatProps {
   onSubmit?: (prompt: string) => void;
   onPromptChange?: (value: string) => void;
   suggestions?: string[];
+  disabledReason?: string | null;
 }
 
 const DEFAULT_SUGGESTIONS = [
@@ -25,6 +26,7 @@ export function AiCampaignChat({
   onSubmit,
   onPromptChange,
   suggestions = DEFAULT_SUGGESTIONS,
+  disabledReason,
 }: AiCampaignChatProps) {
   const [prompt, setPrompt] = useState("");
 
@@ -37,7 +39,7 @@ export function AiCampaignChat({
 
   const submit = () => {
     const value = prompt.trim();
-    if (!value) return;
+    if (!value || disabledReason) return;
     onSubmit?.(value);
   };
 
@@ -51,6 +53,11 @@ export function AiCampaignChat({
 
       {/* Prompt input */}
       <div className="w-full max-w-xl">
+        {disabledReason && (
+          <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-sm leading-6 text-amber-800">
+            {disabledReason}
+          </p>
+        )}
         <div className="flex items-center gap-2 rounded-[10px] border border-gray-200 bg-white pl-4 pr-2 py-2 shadow-sm focus-within:border-violet-300">
           <input
             type="text"
@@ -63,13 +70,15 @@ export function AiCampaignChat({
               }
             }}
             placeholder="Where are we starting from?"
-            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none"
+            disabled={Boolean(disabledReason)}
+            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
           <button
             type="button"
             onClick={submit}
+            disabled={Boolean(disabledReason) || !prompt.trim()}
             style={{ background: PURPLE_GRADIENT }}
-            className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg text-white hover:opacity-90 transition-opacity"
+            className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg text-white hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Send"
           >
             <SendHorizontal className="w-4 h-4" />
@@ -83,7 +92,8 @@ export function AiCampaignChat({
               key={s}
               type="button"
               onClick={() => updatePrompt(s)}
-              className="rounded-lg bg-violet-50 px-4 py-2 text-xs text-violet-600 hover:bg-violet-100 transition-colors max-w-[220px]"
+              disabled={Boolean(disabledReason)}
+              className="max-w-[220px] rounded-lg bg-violet-50 px-4 py-2 text-xs text-violet-600 transition-colors hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {s}
             </button>

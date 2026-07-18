@@ -8,6 +8,7 @@ interface CampaignNameCardProps {
   onGenerate?: () => void;
   generating?: boolean;
   rationale?: string | null;
+  disabledReason?: string | null;
 }
 
 export function CampaignNameCard({
@@ -16,6 +17,7 @@ export function CampaignNameCard({
   onGenerate,
   generating = false,
   rationale,
+  disabledReason,
 }: CampaignNameCardProps) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
@@ -42,7 +44,7 @@ export function CampaignNameCard({
         <button
           type="button"
           onClick={onGenerate}
-          disabled={generating}
+          disabled={generating || Boolean(disabledReason)}
           className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-violet-500 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Sparkles className="w-3.5 h-3.5" />
@@ -51,6 +53,9 @@ export function CampaignNameCard({
       )}
       {rationale && (
         <p className="mt-2 text-xs leading-5 text-violet-600">{rationale}</p>
+      )}
+      {disabledReason && onGenerate && (
+        <p className="mt-2 text-xs leading-5 text-amber-700">{disabledReason}</p>
       )}
     </div>
   );
