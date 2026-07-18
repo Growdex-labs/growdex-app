@@ -85,7 +85,7 @@ export function useAiCampaignFlow(
         id: "goals",
         title: "Set campaign goals",
         label: "Campaign objective",
-        reason: rationales.event,
+        reason: rationales.goal,
         status: statuses.goals,
         result: campaign.campaign.goal.replaceAll("_", " "),
         detail: "The business outcome Growdex AI selected from your request.",
@@ -95,7 +95,7 @@ export function useAiCampaignFlow(
         id: "event",
         title: "Event management",
         label: "Destination and delivery result",
-        reason: rationales.goal,
+        reason: rationales.event,
         status: statuses.event,
         result: `${campaign.campaign.configuration.destination.replaceAll("_", " ")} · ${campaign.campaign.configuration.optimizationGoal.replaceAll("_", " ")}`,
         detail:
