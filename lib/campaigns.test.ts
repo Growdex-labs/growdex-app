@@ -252,6 +252,9 @@ describe("parseAiCampaignDraftResponse", () => {
   it("accepts compliant AI housing campaigns and rejects restricted interests", () => {
     const response = readyResponse();
     response.draft.platforms = ["meta"];
+    response.draft.creatives = response.draft.creatives.filter(
+      (creative) => creative.platform === "meta",
+    );
     response.draft.configuration.accountAssetIds = { meta: "meta-account" };
     response.draft.configuration.specialAdCategories = ["HOUSING"];
     Object.assign(response.draft.audience, {

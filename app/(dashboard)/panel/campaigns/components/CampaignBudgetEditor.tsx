@@ -9,6 +9,10 @@ type CampaignBudget = CreateCampaignPayload["budget"];
 interface CampaignBudgetEditorProps {
   budget: CampaignBudget;
   onChange: (next: Partial<CampaignBudget>) => void;
+  accountRules?: {
+    timezoneName: string;
+    minimumDailyBudget: number;
+  };
 }
 
 const localDatePart = (iso?: string) => {
@@ -34,11 +38,18 @@ const mergeLocalDateTime = (datePart: string, timePart: string) => {
 };
 
 const currencySymbol = (currency: CampaignBudget["currency"]) =>
-  currency === "NGN" ? "₦" : "$";
+  new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency,
+    currencyDisplay: "narrowSymbol",
+  })
+    .formatToParts(0)
+    .find((part) => part.type === "currency")?.value ?? currency;
 
 export function CampaignBudgetEditor({
   budget,
   onChange,
+  accountRules,
 }: CampaignBudgetEditorProps) {
   const startDate = localDatePart(budget.startDate);
   const startTime = localTimePart(budget.startDate) || "09:00";
@@ -80,7 +91,7 @@ export function CampaignBudgetEditor({
             <Input
               id="aiBudgetAmount"
               type="number"
-              min="0.01"
+              min={accountRules?.minimumDailyBudget ?? 0.01}
               step="0.01"
               value={budget.amount || ""}
               onChange={(event) =>
@@ -88,17 +99,9 @@ export function CampaignBudgetEditor({
               }
               className="h-14 min-w-0 flex-1 border-0 px-3 text-lg font-semibold shadow-none focus-visible:ring-0"
             />
-            <select
-              aria-label="Budget currency"
-              value={budget.currency}
-              onChange={(event) =>
-                onChange({ currency: event.target.value as "NGN" | "USD" })
-              }
-              className="h-14 border-0 border-l border-gray-100 bg-white px-3 text-sm text-gray-600 outline-none"
-            >
-              <option value="NGN">NGN</option>
-              <option value="USD">USD</option>
-            </select>
+            <span className="flex h-14 items-center border-l border-gray-100 px-3 text-sm font-medium text-gray-600">
+              {budget.currency}
+            </span>
             <select
               aria-label="Budget type"
               value={budget.type}
@@ -113,9 +116,18 @@ export function CampaignBudgetEditor({
               <option value="lifetime">Lifetime</option>
             </select>
           </div>
-          {budget.amount <= 0 && (
+          {accountRules && (
+            <p className="mt-2 text-xs text-gray-500">
+              Meta bills this account in {budget.currency}. Schedule times use{" "}
+              {accountRules.timezoneName}; minimum daily budget is{" "}
+              {currencySymbol(budget.currency)}
+              {accountRules.minimumDailyBudget.toLocaleString()}.
+            </p>
+          )}
+          {budget.amount < (accountRules?.minimumDailyBudget ?? 0.01) && (
             <p className="mt-2 text-sm text-red-600">
-              Enter a budget greater than zero.
+              Enter at least {currencySymbol(budget.currency)}
+              {(accountRules?.minimumDailyBudget ?? 0.01).toLocaleString()}.
             </p>
           )}
         </div>

@@ -12,7 +12,7 @@ export type CampaignPlatform = "meta" | "tiktok";
 export type CampaignCreationMode = "manual" | "ai";
 export type CampaignGender = "all" | "male" | "female";
 export type BudgetType = "daily" | "lifetime";
-export type CampaignCurrency = "NGN" | "USD";
+export type CampaignCurrency = string;
 export type MetaSpecialAdCategory =
   | "CREDIT"
   | "EMPLOYMENT"
@@ -523,7 +523,10 @@ const parseGeneratedCampaignDraft = (
   if (typeof data.budget.amount !== "number" || data.budget.amount <= 0) {
     return invalidAiResponse("budget amount must be greater than zero.");
   }
-  const currency = enumValue(data.budget.currency, ["NGN", "USD"], "currency");
+  const currency = requiredString(data.budget.currency, "currency");
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    return invalidAiResponse("currency must be an uppercase ISO 4217 code.");
+  }
   const budgetType = enumValue(data.budget.type, ["daily", "lifetime"], "budget type");
   if (
     typeof data.budget.durationDays !== "number" ||

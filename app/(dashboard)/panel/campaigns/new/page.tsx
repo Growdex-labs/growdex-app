@@ -270,6 +270,19 @@ export default function NewCampaignPage() {
     aiPostReviewStep === 5
       ? "Continue to creative setup"
       : "Review and publish";
+  const selectedMetaAsset = accounts?.meta?.assets?.find(
+    (asset) =>
+      asset.id === campaign.campaign.configuration.accountAssetIds?.meta,
+  );
+  const selectedMetaAccountRules =
+    selectedMetaAsset?.currency &&
+    selectedMetaAsset.timezoneName &&
+    typeof selectedMetaAsset.minDailyBudgetMinor === "number"
+      ? {
+          timezoneName: selectedMetaAsset.timezoneName,
+          minimumDailyBudget: selectedMetaAsset.minDailyBudgetMinor / 100,
+        }
+      : undefined;
 
   useEffect(() => {
     let active = true;
@@ -464,9 +477,26 @@ export default function NewCampaignPage() {
             }
           : {}),
       };
+      const selectedMetaAsset = accounts?.meta?.assets?.find(
+        (asset) => asset.id === accountAssetIds.meta,
+      );
+      const budget =
+        selectedMetaAsset?.readyForCampaigns &&
+        selectedMetaAsset.currency &&
+        typeof selectedMetaAsset.minDailyBudgetMinor === "number"
+          ? {
+              ...current.budget,
+              currency: selectedMetaAsset.currency,
+              amount: Math.max(
+                current.budget.amount,
+                selectedMetaAsset.minDailyBudgetMinor / 100,
+              ),
+            }
+          : current.budget;
       return {
         ...current,
         campaign: { ...current.campaign, platforms, goal, configuration },
+        budget,
         adContent: {
           creatives: platforms.flatMap((platform) => {
             const cached = creativeCache.current.get(platform);
@@ -598,12 +628,25 @@ export default function NewCampaignPage() {
 
     for (const platform of generated.platforms) {
       const configuredId = generated.configuration.accountAssetIds?.[platform];
-      const available = accounts?.[platform]?.assets?.some(
+      const selectedAsset = accounts?.[platform]?.assets?.find(
         (asset) => asset.id === configuredId,
       );
-      if (!configuredId || !available) {
+      if (!configuredId || !selectedAsset) {
         throw new Error(
           `Growdex AI selected a ${platform === "meta" ? "Meta" : "TikTok"} account that is not available. Reconnect the account and try again.`,
+        );
+      }
+      if (
+        platform === "meta" &&
+        "currency" in selectedAsset &&
+        (generated.budget.currency !== selectedAsset.currency ||
+          (generated.budget.type === "daily" &&
+            typeof selectedAsset.minDailyBudgetMinor === "number" &&
+            generated.budget.amount * 100 <
+              selectedAsset.minDailyBudgetMinor))
+      ) {
+        throw new Error(
+          "Growdex AI returned a budget that does not match the selected Meta account currency and minimum. The draft was rejected.",
         );
       }
     }
@@ -1257,6 +1300,7 @@ export default function NewCampaignPage() {
           <CampaignBudgetEditor
             budget={campaign.budget}
             onChange={patchBudget}
+            accountRules={selectedMetaAccountRules}
           />
         );
       case "creative":
@@ -1561,6 +1605,7 @@ export default function NewCampaignPage() {
                       <CampaignBudgetEditor
                         budget={campaign.budget}
                         onChange={patchBudget}
+                        accountRules={selectedMetaAccountRules}
                       />
                     </section>
                   )}
