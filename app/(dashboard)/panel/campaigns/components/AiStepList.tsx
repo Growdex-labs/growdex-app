@@ -49,38 +49,20 @@ export function AiStepList({
   );
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-5 pb-8">
       {orderedSteps.map((step) => (
         <article key={step.id} className="min-w-0">
           <div className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-400">
             <Sparkles className="h-3 w-3" /> {step.title}
           </div>
-          <h3 className="mt-2 truncate text-sm font-semibold text-gray-800">
+          <h3 className="mt-0.5 truncate text-sm font-semibold text-gray-800">
             {step.result}
           </h3>
           <div
-            className="mt-2 h-1 rounded-full"
+            className="mt-1 h-1 rounded-full"
             style={{ background: PURPLE_GRADIENT }}
           />
-          {step.detail && (
-            <p className="mt-2 text-xs leading-5 text-gray-500">
-              {step.detail}
-            </p>
-          )}
-          {step.chips?.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {step.chips.map((chip) => (
-                <span
-                  key={chip}
-                  className="rounded-md border border-gray-200 px-3 py-1 text-xs capitalize text-gray-600"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-violet-50/80 px-2.5 py-1.5">
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-violet-50/80 px-2.5 py-1.5">
             <button
               type="button"
               onClick={() => onWhyThis(step)}

@@ -1155,10 +1155,6 @@ export default function NewCampaignPage() {
                   patchCampaign({ name });
                   setNameRationale(null);
                 }}
-                onChangeMethod={() => {
-                  setMethod(null);
-                  setError(null);
-                }}
                 onApprove={aiFlow.approve}
                 onApproveAll={aiFlow.approveAll}
                 onAnswer={(optionIds) => void answerAiQuestion(optionIds)}

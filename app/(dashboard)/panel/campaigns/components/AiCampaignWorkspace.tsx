@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import type { AiCampaignQuestion } from "@/lib/campaigns";
 import { AiSidePanel, type AiMessage } from "./AiSidePanel";
 import { AiStepList } from "./AiStepList";
@@ -31,7 +31,6 @@ interface AiCampaignWorkspaceProps {
   approvalBlocker?: string | null;
   disabledReason?: string | null;
   onCampaignNameChange: (name: string) => void;
-  onChangeMethod: () => void;
   onApprove: (id: AiStepId) => void;
   onApproveAll: () => void;
   onDecline: (step: AiStep, instruction: string) => void;
@@ -54,7 +53,6 @@ export function AiCampaignWorkspace({
   approvalBlocker,
   disabledReason,
   onCampaignNameChange,
-  onChangeMethod,
   onApprove,
   onApproveAll,
   onDecline,
@@ -67,26 +65,16 @@ export function AiCampaignWorkspace({
   const hasDraft = Boolean(steps?.length);
 
   return (
-    <main className="grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-1">
-      <section className="min-w-0 overflow-y-auto px-5 py-4 md:px-8 md:py-6">
+    <main className="grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_16.5rem] lg:grid-rows-1">
+      <section className="min-w-0 overflow-y-auto px-5 py-4 md:py-6 md:pl-14 md:pr-6">
         <div className="mx-auto max-w-4xl">
-          <div className="flex items-center justify-between gap-4">
-            <button
-              type="button"
-              onClick={onChangeMethod}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 transition-colors hover:text-gray-800"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Change creation method
-            </button>
-            {hasDraft && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-violet-600">
-                <Sparkles className="h-3.5 w-3.5" /> AI campaign review
-              </span>
-            )}
-          </div>
-
-          <div className="mt-5">
-            <CampaignStepper steps={AI_STEPS} current={0} activeGradient />
+          <div>
+            <CampaignStepper
+              steps={AI_STEPS}
+              current={0}
+              activeGradient
+              compact
+            />
           </div>
 
           <input
@@ -94,7 +82,7 @@ export function AiCampaignWorkspace({
             value={campaignName}
             onChange={(event) => onCampaignNameChange(event.target.value)}
             placeholder="Untitled campaign"
-            className="mt-5 h-11 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800 shadow-sm outline-none transition-colors focus:border-violet-300"
+            className="mt-4 h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800 shadow-sm outline-none transition-colors focus:border-violet-300"
           />
 
           {error && (
@@ -146,7 +134,7 @@ export function AiCampaignWorkspace({
           )}
 
           {hasDraft && steps && (
-            <div className="mt-8">
+            <div className="mt-5">
               <AiStepList
                 steps={steps}
                 onApprove={onApprove}
@@ -156,7 +144,7 @@ export function AiCampaignWorkspace({
                 busy={loading}
               />
 
-              <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-gray-100 bg-white/95 py-4 backdrop-blur-sm">
+              <div className="flex items-center justify-end gap-3 border-t border-gray-100 py-4">
                 {approvalBlocker && !allApproved && (
                   <p className="mr-auto max-w-sm text-xs leading-5 text-amber-700">
                     {approvalBlocker}
@@ -179,7 +167,7 @@ export function AiCampaignWorkspace({
         </div>
       </section>
 
-      <aside className="h-[22.5rem] border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:p-4">
+      <aside className="h-[22.5rem] border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:pb-16 lg:pl-0 lg:pr-12 lg:pt-8">
         <AiSidePanel
           messages={messages}
           question={question?.prompt}
@@ -187,11 +175,7 @@ export function AiCampaignWorkspace({
           allowMultiple={question?.allowMultiple}
           suggestions={
             hasDraft
-              ? [
-                  "Narrow the audience",
-                  "Make the copy shorter",
-                  "Lower the daily budget",
-                ]
+              ? []
               : [
                   "Launch a lead campaign in Nigeria",
                   "Promote a new product",

@@ -8,6 +8,8 @@ interface CampaignStepperProps {
   onStepClick?: (index: number) => void;
   /** When true, the active step bar uses the purple gradient instead of khaki. */
   activeGradient?: boolean;
+  /** Uses the tighter label and spacing treatment from the AI review canvas. */
+  compact?: boolean;
 }
 
 export function CampaignStepper({
@@ -15,9 +17,12 @@ export function CampaignStepper({
   current,
   onStepClick,
   activeGradient = false,
+  compact = false,
 }: CampaignStepperProps) {
   return (
-    <div className="flex items-start gap-3 overflow-x-auto hide-scrollbar">
+    <div
+      className={`flex items-start overflow-x-auto hide-scrollbar ${compact ? "gap-1" : "gap-3"}`}
+    >
       {steps.map((step, index) => {
         const isActive = index === current;
         const isDone = index < current;
@@ -29,10 +34,12 @@ export function CampaignStepper({
             disabled={isUnavailable}
             aria-current={isActive ? "step" : undefined}
             onClick={() => onStepClick?.(index)}
-            className="flex min-w-[108px] flex-1 flex-col gap-2 text-left disabled:cursor-not-allowed md:min-w-20"
+            className={`flex flex-1 flex-col text-left disabled:cursor-not-allowed ${
+              compact ? "min-w-0 gap-1.5" : "min-w-[108px] gap-2 md:min-w-20"
+            }`}
           >
             <span
-              className={`whitespace-nowrap text-[10px] transition-colors 2xl:text-xs ${
+              className={`whitespace-nowrap transition-colors ${compact ? "text-[7px] xl:text-[8px]" : "text-[10px] 2xl:text-xs"} ${
                 isActive
                   ? "font-semibold text-gray-900"
                   : isDone
