@@ -1,59 +1,56 @@
-# AI Campaign Workspace Design QA
+# AI Campaign Assistant Sidebar Design QA
 
 **Comparison target**
 
-- Source visual truth path: `/var/folders/61/_gpbs9bd52vgc9hwvjtng_pm0000gn/T/codex-clipboard-dee4a4e0-94ab-4e39-826e-5d5cfd57d14c.png`
+- Source visual truth path: `/var/folders/61/_gpbs9bd52vgc9hwvjtng_pm0000gn/T/codex-clipboard-ed03fff7-9332-4fe0-abe9-7662ed1b0a74.png`
 - Implementation URL: `http://localhost:4000/panel/campaigns/new`
-- Implementation screenshot path: `/private/tmp/growdex-ai-campaign-live-final.png`
-- Viewport: `1078 × 590` CSS pixels. The source image is `1078 × 586`; its four-pixel height difference is outside the product content comparison.
-- State: signed-in desktop, restored completed AI campaign draft, all decisions approved. The source shows the same AI review workspace during partial generation, so the number and wording of visible decisions differ by expected live state.
+- Implementation screenshot path: `/private/tmp/growdex-ai-sidebar-final.png`
+- Viewports checked: `1078 × 590` desktop, `1440 × 900` wide desktop, and `390 × 844` mobile.
+- State: the source shows the empty AI assistant with suggestions. The signed-in implementation restored a completed live draft, so its assistant contains real campaign messages and intentionally hides starter suggestions. The shared panel frame, message wrapping, prompt row, and responsive geometry are the comparison surfaces.
 
 **Full-view comparison evidence**
 
-- Side-by-side comparison: `/private/tmp/growdex-ai-campaign-comparison.png`
-- The final implementation matches the source's four-region structure: compact product navigation, campaign tree, dotted AI decision canvas, and fixed right-side assistant.
-- The step tracker, campaign name, linear decision rows, purple progress treatment, decision actions, and bottom-aligned prompt follow the source hierarchy and alignment.
+- Desktop implementation: `/private/tmp/growdex-ai-sidebar-final.png`
+- At 1078px, the assistant track is now 320px, its visible panel is 287px, and the prompt text area is 199px. The page has no horizontal overflow.
+- At 1440px, the assistant track grows to 352px, its visible panel is 319px, and the prompt text area is 231px.
+- At 390px, the assistant moves below the canvas as a 366px-wide panel with no horizontal overflow.
 
 **Focused region comparison evidence**
 
-- Center-canvas comparison: `/private/tmp/growdex-ai-campaign-focused-comparison.png`
-- A focused comparison was required because the step labels, decision typography, progress lines, and action alignment are too small to judge reliably in the full-view image.
-- The implementation keeps the product's current readable type scale while matching the source's hierarchy, compact step tracker, row rhythm, gradient, action colors, and control order.
+- Source/final focused comparison: `/private/tmp/growdex-ai-sidebar-focused-comparison.png`
+- The comparison combines the source panel's message and prompt regions with the browser-rendered final panel. The final prompt keeps the send button inside the control, message copy has a usable line length, and the assistant no longer has the narrow inset that caused the reported cramped layout.
 
 **Findings**
 
 - No actionable P0, P1, or P2 differences remain.
-- Expected difference: the source is a partial-generation state with two completed decisions and a loading row; the live implementation restores a real completed draft and therefore shows additional decisions.
-- Expected difference: the implementation retains the current Growdex application shell, logo sizing, and authenticated account controls instead of restyling shared navigation only for this route.
-- Fonts and typography: the rounded sans-serif family, weight hierarchy, truncation, and small-control treatment are consistent. The implementation keeps the current product's accessible body size.
-- Spacing and layout rhythm: the center canvas begins and ends at the same visual anchors as the source, the assistant starts at the same horizontal position, and the input/assistant vertical bounds match. No persistent controls are covered or clipped.
-- Colors and visual tokens: the dotted canvas, violet gradient, khaki campaign selection, dark navigation, muted disabled steps, green approval, violet edit, and red decline states match the design language.
-- Image quality and asset fidelity: the existing Growdex logo asset is used directly. Standard controls use the project's icon library; no source imagery was replaced by placeholders or hand-drawn assets.
-- Copy and content: structural labels and actions match the source. Campaign names, recommendations, and assistant messages come from the live saved AI draft, as required.
+- Fonts and typography: the existing rounded Growdex type treatment is unchanged. The wider column reduces avoidable wrapping without shrinking readable text.
+- Spacing and layout rhythm: the panel now uses balanced 16px desktop insets instead of a 48px right inset. Starter actions occupy consistent full-width rows, and the prompt input can shrink without pushing the send button outside its border.
+- Colors and visual tokens: violet borders, pale violet messages and actions, white canvas, and gradient user/send states are unchanged.
+- Image quality and asset fidelity: this UI contains no raster imagery. The standard send and selection controls continue to use the existing icon library.
+- Copy and content: all assistant copy is unchanged. Only its available width and wrapping changed.
+- Responsive behavior: there is no document-level horizontal overflow at desktop or mobile sizes, and the prompt remains visible and interactive at 390px.
 
 **Comparison history**
 
-1. Initial browser comparison — `/private/tmp/growdex-ai-campaign-live.png`
-   - Earlier findings: P1 region proportions left too little room for the decision canvas; P2 step labels overlapped; P2 the sticky editor button covered decision content; P2 quick suggestions crowded the completed-draft assistant.
-   - Fixes made: narrowed the campaign tree and assistant tracks, matched the assistant's source bounds, added a compact seven-step tracker, removed the sticky overlay, hid draft-time suggestions, and tightened the decision rows.
-2. Final browser comparison — `/private/tmp/growdex-ai-campaign-comparison.png` and `/private/tmp/growdex-ai-campaign-focused-comparison.png`
-   - Post-fix evidence: the center canvas and assistant now align with the source, every step label is legible without overlap, decision rows scroll naturally, and the editor entry no longer covers content.
+1. Reported state — source screenshot above.
+   - Earlier finding: P1, the desktop assistant was effectively about 216px wide after its grid track and asymmetric padding were applied. Starter prompts wrapped into uneven pills, the helper message broke too often, and the prompt/send row looked compressed.
+2. Final state — `/private/tmp/growdex-ai-sidebar-final.png` and `/private/tmp/growdex-ai-sidebar-focused-comparison.png`.
+   - Fixes made: increased the desktop track to 320px and 352px at wide desktop sizes, replaced the large asymmetric inset with balanced padding, made starter suggestions consistent full-width actions, and allowed the text input to shrink without colliding with the send button.
+   - Post-fix evidence: measured panel widths are 287px at 1078px, 319px at 1440px, and 366px at 390px. All checked viewports report equal document scroll and client widths.
 
 **Primary interactions tested**
 
-- “Why this?” adds the matching explanation to the assistant.
-- Typing a revision enables the send control; clearing it disables sending again.
-- “Open full editor” explicitly enters the detailed editor.
-- “Return to AI decision review” returns to the dedicated AI workspace.
+- Typing a campaign revision enables the send control; clearing it returns the control to disabled.
+- Prompt input remains visible at desktop and mobile sizes.
 - Browser console errors checked: none.
 
 **Implementation Checklist**
 
-- [x] Dedicated AI workspace instead of automatic manual-editor entry.
-- [x] Source-matched campaign tree, step tracker, decision canvas, and assistant proportions.
-- [x] Real approve, edit, decline, rationale, prompt, clarification, and explicit editor-entry behavior preserved.
-- [x] Desktop browser comparison completed at the source viewport.
-- [x] TypeScript, lint, unit tests, production build, interaction checks, and console check passed.
+- [x] Widen desktop assistant without covering the campaign canvas.
+- [x] Remove the asymmetric inset that made the content area narrower than its border.
+- [x] Keep starter actions and prompt control inside the panel at all checked sizes.
+- [x] Verify desktop, wide desktop, and mobile overflow behavior.
+- [x] TypeScript, lint, unit tests, interaction checks, and console check passed.
 
 **Follow-up Polish**
 

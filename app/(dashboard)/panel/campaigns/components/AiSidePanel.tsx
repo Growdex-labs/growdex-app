@@ -189,14 +189,14 @@ export function AiSidePanel({
         )}
         {/* Quick-reply suggestion chips */}
         {suggestions.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
+          <div className="mb-3 grid gap-2">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
                 onClick={() => onSubmit?.(suggestion)}
                 disabled={submitting || Boolean(disabledReason)}
-                className="rounded-full bg-violet-50 px-3 py-1 text-[11px] text-violet-600 hover:bg-violet-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-full bg-violet-50 px-4 py-2 text-center text-xs text-violet-600 transition-colors hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {suggestion}
               </button>
@@ -217,7 +217,7 @@ export function AiSidePanel({
             }}
             placeholder="Where are we starting from?"
             disabled={submitting || Boolean(disabledReason)}
-            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none disabled:opacity-60"
+            className="min-w-0 flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none disabled:opacity-60"
           />
           <button
             type="button"

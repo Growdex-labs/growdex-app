@@ -65,7 +65,7 @@ export function AiCampaignWorkspace({
   const hasDraft = Boolean(steps?.length);
 
   return (
-    <main className="grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_16.5rem] lg:grid-rows-1">
+    <main className="grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-1 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <section className="min-w-0 overflow-y-auto px-5 py-4 md:py-6 md:pl-14 md:pr-6">
         <div className="mx-auto max-w-4xl">
           <div>
@@ -167,7 +167,7 @@ export function AiCampaignWorkspace({
         </div>
       </section>
 
-      <aside className="h-[22.5rem] border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:pb-16 lg:pl-0 lg:pr-12 lg:pt-8">
+      <aside className="h-[22.5rem] min-w-0 border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:p-4 xl:px-4 xl:py-8">
         <AiSidePanel
           messages={messages}
           question={question?.prompt}
