@@ -97,8 +97,9 @@ export function ManualPlatformScreen({
                 </div>
 
                 {usable && assets.length ? (
-                  <div className="mt-4 space-y-2">
-                    {assets.map((asset) => {
+                  <>
+                    <div className="mt-4 space-y-2">
+                      {assets.map((asset) => {
                       const id = asset.id;
                       const selected = accountAssetIds[platform] === id;
                       const name =
@@ -117,16 +118,22 @@ export function ManualPlatformScreen({
                           : "advertiserId" in asset
                             ? asset.advertiserId
                             : "";
+                      const metaAsset =
+                        platform === "meta" && "adAccountName" in asset
+                          ? asset
+                          : null;
+                      const available = metaAsset?.readyForCampaigns ?? true;
                       return (
                         <button
                           key={id}
                           type="button"
                           onClick={() => selectAsset(platform, id)}
+                          disabled={!available}
                           className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
                             selected
                               ? "border-khaki-300 bg-dimYellow/30"
                               : "border-gray-200 hover:border-gray-300"
-                          }`}
+                          } disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60`}
                         >
                           <SelectionMark checked={selected} />
                           <span className="min-w-0 flex-1">
@@ -136,6 +143,17 @@ export function ManualPlatformScreen({
                             <span className="block truncate text-[11px] text-gray-400">
                               ID: {providerId}
                             </span>
+                            {metaAsset && (
+                              <span className="mt-1 block text-[11px] leading-relaxed text-gray-500">
+                                Page: {metaAsset.pageName}
+                                {metaAsset.instagramUsername
+                                  ? ` · Instagram: @${metaAsset.instagramUsername}`
+                                  : " · No Instagram identity"}
+                                {metaAsset.currency && metaAsset.timezoneName
+                                  ? ` · ${metaAsset.currency} · ${metaAsset.timezoneName}`
+                                  : " · Refresh connection details"}
+                              </span>
+                            )}
                           </span>
                           {asset.isPrimary && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-700">
@@ -144,8 +162,27 @@ export function ManualPlatformScreen({
                           )}
                         </button>
                       );
-                    })}
-                  </div>
+                      })}
+                    </div>
+                    {platform === "meta" &&
+                      assets.some(
+                        (asset) =>
+                          "readyForCampaigns" in asset &&
+                          !asset.readyForCampaigns,
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={() => onConnect("meta")}
+                          disabled={connecting !== null}
+                          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 disabled:opacity-50"
+                        >
+                          {connecting === "meta" && (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          )}
+                          Refresh Meta connection
+                        </button>
+                      )}
+                  </>
                 ) : (
                   <button
                     type="button"
