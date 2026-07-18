@@ -75,7 +75,13 @@ export function CollapsibleSidebar({
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 shrink-0">
-              <Image src="/logo.png" alt="Growdex" width={40} height={40} />
+              <Image
+                src="/logo.png"
+                alt="Growdex"
+                width={40}
+                height={40}
+                className="size-10 object-contain"
+              />
             </div>
             {!isCollapsed && (
               <span className="font-semibold text-xl">Growdex</span>
