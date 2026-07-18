@@ -1,69 +1,62 @@
-**Comparison Target**
+# AI Campaign Workspace Design QA
 
-- Source visual truth path: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/68-figma-awareness-selected.png`
-- Implementation screenshot path: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/80-chrome-manual-review-1920x1024.png`
-- Full-view comparison evidence: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/77-campaign-platform-comparison.png`
-- Viewport: 1920 × 1024 for the browser-rendered implementation. The source is a proportional 582 × 310 export of the 1920 × 1024 Figma frame.
-- State: Version 2 platform selection plus a completed local manual campaign at review. The local development session renders both connected ad accounts, campaign groups, goal, event management, audience, budget, creatives, and review. The frontend AI workflow is complete, but the available local backend does not implement its AI routes.
+**Comparison target**
+
+- Source visual truth path: `/var/folders/61/_gpbs9bd52vgc9hwvjtng_pm0000gn/T/codex-clipboard-dee4a4e0-94ab-4e39-826e-5d5cfd57d14c.png`
+- Implementation URL: `http://localhost:4000/panel/campaigns/new`
+- Implementation screenshot path: `/private/tmp/growdex-ai-campaign-live-final.png`
+- Viewport: `1078 × 590` CSS pixels. The source image is `1078 × 586`; its four-pixel height difference is outside the product content comparison.
+- State: signed-in desktop, restored completed AI campaign draft, all decisions approved. The source shows the same AI review workspace during partial generation, so the number and wording of visible decisions differ by expected live state.
+
+**Full-view comparison evidence**
+
+- Side-by-side comparison: `/private/tmp/growdex-ai-campaign-comparison.png`
+- The final implementation matches the source's four-region structure: compact product navigation, campaign tree, dotted AI decision canvas, and fixed right-side assistant.
+- The step tracker, campaign name, linear decision rows, purple progress treatment, decision actions, and bottom-aligned prompt follow the source hierarchy and alignment.
+
+**Focused region comparison evidence**
+
+- Center-canvas comparison: `/private/tmp/growdex-ai-campaign-focused-comparison.png`
+- A focused comparison was required because the step labels, decision typography, progress lines, and action alignment are too small to judge reliably in the full-view image.
+- The implementation keeps the product's current readable type scale while matching the source's hierarchy, compact step tracker, row rhythm, gradient, action colors, and control order.
 
 **Findings**
 
-- No remaining actionable P0/P1/P2 layout finding was visible in the campaign workspace shell after the second pass.
-- Verification blocker: the local backend returns `Cannot POST /ai/campaign-drafts`, and its source is not present in this workspace or mounted into the running container. The same backend also needs the campaign-name, creative-suggestion, and optimization routes defined by the frontend. Chrome is signed in to Google, Meta, and TikTok, but those provider sessions do not authenticate Growdex. The local Google OAuth attempt fails with `Error 400: redirect_uri_mismatch` for `http://localhost:3000/auth/google/callback`, and `https://api.growdex.ai` was unreachable during the test. This blocks a real AI-generated review state and conversion-event-source verification.
+- No actionable P0, P1, or P2 differences remain.
+- Expected difference: the source is a partial-generation state with two completed decisions and a loading row; the live implementation restores a real completed draft and therefore shows additional decisions.
+- Expected difference: the implementation retains the current Growdex application shell, logo sizing, and authenticated account controls instead of restyling shared navigation only for this route.
+- Fonts and typography: the rounded sans-serif family, weight hierarchy, truncation, and small-control treatment are consistent. The implementation keeps the current product's accessible body size.
+- Spacing and layout rhythm: the center canvas begins and ends at the same visual anchors as the source, the assistant starts at the same horizontal position, and the input/assistant vertical bounds match. No persistent controls are covered or clipped.
+- Colors and visual tokens: the dotted canvas, violet gradient, khaki campaign selection, dark navigation, muted disabled steps, green approval, violet edit, and red decline states match the design language.
+- Image quality and asset fidelity: the existing Growdex logo asset is used directly. Standard controls use the project's icon library; no source imagery was replaced by placeholders or hand-drawn assets.
+- Copy and content: structural labels and actions match the source. Campaign names, recommendations, and assistant messages come from the live saved AI draft, as required.
 
-**Required Fidelity Surfaces**
+**Comparison history**
 
-- Fonts and typography: the implementation uses the existing Growdex Gilroy family and follows the source hierarchy. Step labels, headings, helper copy, and card labels are visually consistent at the tested viewport.
-- Spacing and layout rhythm: the compact global rail, wide campaign tree, content start position, top stepper, dotted canvas, card radii, and main content width now follow the source composition. Desktop and 390 × 844 mobile layouts were rendered; the campaign tree is removed from the mobile flow and the stepper scrolls horizontally.
-- Colors and visual tokens: the implementation reuses the existing khaki, charcoal, white, gray, violet, success, and error tokens visible in the design. No new approximate palette was introduced.
-- Image quality and asset fidelity: existing Growdex logo assets and Lucide interface icons are used. No source artwork was replaced with CSS drawings, emoji, placeholder imagery, or handcrafted SVGs.
-- Copy and content: the seven Version 2 stages are present in order. Manual creation now separates objective selection from destination and delivery setup, and AI review exposes the same decisions. Live account errors remain explicit.
-- AI behavior: campaign creation now supports model questions, structured answers, per-decision approval, targeted revisions, approved-decision protection, request cancellation, session recovery, and platform-specific creative requirements. Campaign naming, creative assistance, and optimization now use explicit AI contracts rather than simulated timers or heuristic scores.
-- Failure behavior: development quick-login clearly disables AI controls because it cannot authenticate real AI requests. The app does not present canned output or silently switch to a fake implementation.
+1. Initial browser comparison — `/private/tmp/growdex-ai-campaign-live.png`
+   - Earlier findings: P1 region proportions left too little room for the decision canvas; P2 step labels overlapped; P2 the sticky editor button covered decision content; P2 quick suggestions crowded the completed-draft assistant.
+   - Fixes made: narrowed the campaign tree and assistant tracks, matched the assistant's source bounds, added a compact seven-step tracker, removed the sticky overlay, hid draft-time suggestions, and tightened the decision rows.
+2. Final browser comparison — `/private/tmp/growdex-ai-campaign-comparison.png` and `/private/tmp/growdex-ai-campaign-focused-comparison.png`
+   - Post-fix evidence: the center canvas and assistant now align with the source, every step label is legible without overlap, decision rows scroll naturally, and the editor entry no longer covers content.
 
-**Focused Region Comparison**
+**Primary interactions tested**
 
-- A separate focused crop was not needed for the campaign shell because the connected-account rows, campaign hierarchy, stepper, and review cards are readable in the full-view captures. A focused AI-state comparison would imply false precision until Growdex backend authentication works.
-
-**Comparison History**
-
-- Pass 1 finding: the implementation used a full 256 px global navigation sidebar and a narrow campaign tree, while Version 2 uses an icon rail and a wider campaign hierarchy. This was a P1 composition and density mismatch.
-- Pass 1 fixes: campaign creation now opens with the global navigation collapsed, the campaign hierarchy is widened, the collapsed user and logout controls no longer leak text, and future step buttons are visibly disabled. The mobile tree is hidden.
-- Pass 1 post-fix evidence: `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/78-app-campaign-frame-1920x1024.png` and `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/73-app-campaign-mobile-synced.png`.
-- Pass 2 result: the shell proportions and responsive behavior are corrected.
-- Pass 3 findings: the development social-status response was excluded from the quick-login path, mock account assets had no selectable `id`, the selected default goal still required an invisible confirmation click, and event-source status appeared twice on the event-management screen.
-- Pass 3 fixes: development social status is now loaded intentionally, mock account IDs match the production type, the visible default goal is accepted, and event-source status is rendered once.
-- Pass 3 post-fix evidence: the manual path was completed from setup through review in signed-in Chrome. Review evidence is `/Users/thecyberverse/.codex/visualizations/2026/07/17/019f723d-9fff-7eb3-9a9d-61a40fe73536/version2-parity-audit/80-chrome-manual-review-1920x1024.png`.
-
-**Interactions Tested**
-
-- Campaign name entry.
-- Manual creation selection.
-- Future step lockout and navigation back to completed steps.
-- Connected-account error state.
-- Meta and TikTok account selection and campaign-tree population.
-- Goal, destination, optimization, event-source status, audience, budget, and creative controls.
-- Hosted Meta image and TikTok video previews.
-- Complete manual review state with delivery, audience, budget, and schedule summaries.
-- AI prompt submission and its authenticated-backend failure state.
-- AI controls in development quick-login and the explicit real-authentication requirement.
-- Google sign-in handoff and redirect-URI failure state.
-- Desktop and mobile responsive layout.
-- AI response-contract tests, production compilation, TypeScript validation, and targeted lint checks.
-
-**Open Questions**
-
-- None about product direction. The remaining work is implementing the backend contracts and fixing Growdex OAuth configuration.
+- “Why this?” adds the matching explanation to the assistant.
+- Typing a revision enables the send control; clearing it disables sending again.
+- “Open full editor” explicitly enters the detailed editor.
+- “Return to AI decision review” returns to the dedicated AI workspace.
+- Browser console errors checked: none.
 
 **Implementation Checklist**
 
-- Add `POST /ai/campaign-drafts`, `/answers`, and `/revisions`; `POST /ai/campaign-name`; `POST /ai/campaigns/:id/creative-suggestions`; and the campaign optimization GET, generate, and apply routes to the Growdex backend. Their strict request and response shapes are defined in `lib/campaigns.ts`.
-- Register `http://localhost:3000/auth/google/callback` in the Google OAuth client used by the local backend, or provide another working local Growdex backend login.
-- Restore reachability for `https://api.growdex.ai` if the production backend is the intended test target.
-- Re-run AI generation and a conversions campaign with live event sources, then capture the AI review at the Figma viewport.
+- [x] Dedicated AI workspace instead of automatic manual-editor entry.
+- [x] Source-matched campaign tree, step tracker, decision canvas, and assistant proportions.
+- [x] Real approve, edit, decline, rationale, prompt, clarification, and explicit editor-entry behavior preserved.
+- [x] Desktop browser comparison completed at the source viewport.
+- [x] TypeScript, lint, unit tests, production build, interaction checks, and console check passed.
 
 **Follow-up Polish**
 
-- No P3 polish is proposed until the blocked same-state comparison is available.
+- No P3 polish is required for handoff.
 
-final result: frontend complete; live AI verification blocked by missing backend routes and Growdex authentication
+final result: passed
