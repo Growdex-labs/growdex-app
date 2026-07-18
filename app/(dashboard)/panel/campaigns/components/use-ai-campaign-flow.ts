@@ -5,8 +5,9 @@ import type { CreateCampaignPayload } from "@/lib/campaigns";
 
 export type AiStepId =
   | "setup"
-  | "goals"
   | "platform"
+  | "goals"
+  | "event"
   | "audience"
   | "budget"
   | "creative";
@@ -35,8 +36,9 @@ type StepRationales = {
 
 const DEFAULT_STATUSES: Record<AiStepId, AiStepStatus> = {
   setup: "review",
-  goals: "review",
   platform: "review",
+  goals: "review",
+  event: "review",
   audience: "review",
   budget: "review",
   creative: "review",
@@ -65,16 +67,6 @@ export function useAiCampaignFlow(
         editStep: 0,
       },
       {
-        id: "goals",
-        title: "Set campaign goals",
-        label: "Goal and delivery optimization",
-        reason: rationales.goal,
-        status: statuses.goals,
-        result: `${campaign.campaign.goal.replaceAll("_", " ")} · ${campaign.campaign.configuration.optimizationGoal.replaceAll("_", " ")}`,
-        detail: `Destination: ${campaign.campaign.configuration.destination.replaceAll("_", " ")}`,
-        editStep: 2,
-      },
-      {
         id: "platform",
         title: "Choose platform",
         label: "Advertising platforms",
@@ -85,6 +77,29 @@ export function useAiCampaignFlow(
           .join(" and "),
         detail: "The full editor will confirm the exact connected ad account for each platform.",
         editStep: 1,
+      },
+      {
+        id: "goals",
+        title: "Set campaign goals",
+        label: "Campaign objective",
+        reason: rationales.goal,
+        status: statuses.goals,
+        result: campaign.campaign.goal.replaceAll("_", " "),
+        detail: "The business outcome Growdex AI selected from your request.",
+        editStep: 2,
+      },
+      {
+        id: "event",
+        title: "Event management",
+        label: "Destination and delivery result",
+        reason: rationales.goal,
+        status: statuses.event,
+        result: `${campaign.campaign.configuration.destination.replaceAll("_", " ")} · ${campaign.campaign.configuration.optimizationGoal.replaceAll("_", " ")}`,
+        detail:
+          campaign.campaign.configuration.optimizationGoal === "CONVERSIONS"
+            ? `${Object.values(campaign.campaign.configuration.eventSourceIds ?? {}).filter(Boolean).length} conversion data source${Object.values(campaign.campaign.configuration.eventSourceIds ?? {}).filter(Boolean).length === 1 ? "" : "s"} selected`
+            : "This delivery result does not require a conversion data source.",
+        editStep: 3,
       },
       {
         id: "audience",

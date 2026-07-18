@@ -7,8 +7,10 @@ import { AiStepList } from "./AiStepList";
 import type { AiStep, AiStepId } from "./use-ai-campaign-flow";
 
 const GENERATION_STEPS = [
-  "Understand your request",
-  "Choose the campaign goal and platforms",
+  "Set up the campaign structure",
+  "Choose the advertising platforms",
+  "Set the campaign goal",
+  "Choose the destination and delivery result",
   "Build the audience, budget, and schedule",
   "Write an editable creative draft",
 ];
