@@ -22,12 +22,14 @@ interface CampaignTreeSidebarProps {
   campaignName?: string;
   adGroups?: AdGroup[];
   campaign?: Pick<CreateCampaignPayload, "campaign" | "adContent">;
+  compact?: boolean;
 }
 
 export function CampaignTreeSidebar({
   campaignName = "Untitled Campaign",
   adGroups = [],
   campaign,
+  compact = false,
 }: CampaignTreeSidebarProps) {
   const visibleGroups = useMemo<AdGroup[]>(
     () =>
@@ -45,7 +47,8 @@ export function CampaignTreeSidebar({
                 !campaign.campaign.configuration.accountAssetIds?.[platform],
               adSets: creatives.map((creative, index) => ({
                 id: `${platform}-${index}`,
-                name: creative.headline?.trim() || `${label} creative ${index + 1}`,
+                name:
+                  creative.headline?.trim() || `${label} creative ${index + 1}`,
                 warning: !creative.mediaUrl,
               })),
             };
@@ -62,18 +65,28 @@ export function CampaignTreeSidebar({
     campaignName.length > 18 ? `${campaignName.slice(0, 18)}..` : campaignName;
 
   return (
-    <aside className="hidden h-full w-[27rem] shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white p-4 lg:flex">
+    <aside
+      className={`hidden h-full shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white lg:flex ${
+        compact ? "w-44 p-2" : "w-[27rem] p-4"
+      }`}
+    >
       {/* Back */}
       <Link
         href="/panel/campaigns"
-        className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-50 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+        className={`flex items-center gap-2 rounded-lg bg-gray-50 text-gray-700 transition-colors hover:bg-gray-100 ${
+          compact ? "px-2.5 py-2 text-xs" : "px-4 py-2.5 text-sm font-medium"
+        }`}
       >
         <ChevronLeft className="w-4 h-4" />
         Back
       </Link>
 
       {/* Campaign name */}
-      <div className="mt-6 px-4 py-2.5 rounded-lg bg-khaki-200 text-sm font-semibold text-gray-900 truncate">
+      <div
+        className={`rounded-lg bg-khaki-200 font-semibold text-gray-900 truncate ${
+          compact ? "mt-3 px-2.5 py-2 text-xs" : "mt-6 px-4 py-2.5 text-sm"
+        }`}
+      >
         {truncatedName}
       </div>
 
@@ -84,7 +97,11 @@ export function CampaignTreeSidebar({
           return (
             <div key={group.id}>
               {/* Ad group row */}
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-900 text-khaki-200">
+              <div
+                className={`flex items-center gap-2 rounded-lg bg-gray-900 text-khaki-200 ${
+                  compact ? "px-2 py-2" : "px-3 py-2.5"
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => toggle(group.id)}
@@ -97,7 +114,15 @@ export function CampaignTreeSidebar({
                   />
                 </button>
                 <div className="flex flex-1 items-center gap-1.5">
-                  <span className="text-sm font-semibold">{group.name}</span>
+                  <span
+                    className={
+                      compact
+                        ? "text-[11px] font-semibold"
+                        : "text-sm font-semibold"
+                    }
+                  >
+                    {group.name}
+                  </span>
                   {group.warning && (
                     <TriangleAlert className="w-4 h-4 text-khaki-200" />
                   )}
@@ -113,9 +138,19 @@ export function CampaignTreeSidebar({
                     <div key={adSet.id} className="relative">
                       {/* horizontal connector */}
                       <span className="absolute -left-4 top-1/2 w-4 h-px bg-gray-200" />
-                      <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white">
+                      <div
+                        className={`flex items-center gap-2 rounded-lg border border-gray-200 bg-white ${
+                          compact ? "px-2 py-2" : "px-3 py-2.5"
+                        }`}
+                      >
                         <div className="flex flex-1 items-center gap-1.5">
-                          <span className="text-sm text-gray-700">
+                          <span
+                            className={
+                              compact
+                                ? "text-[11px] text-gray-700"
+                                : "text-sm text-gray-700"
+                            }
+                          >
                             {adSet.name}
                           </span>
                           {adSet.warning && (

@@ -2,11 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
 import { Input } from "@/components/ui/input";
@@ -42,10 +38,9 @@ import { hashFolderName } from "@/lib/encrypt";
 import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
-import { AiCampaignChat } from "../components/AiCampaignChat";
+import { AiCampaignWorkspace } from "../components/AiCampaignWorkspace";
 import type { AiMessage } from "../components/AiSidePanel";
 import { AdCreatedModal } from "../components/AdCreatedModal";
-import { AiWorkingView } from "../components/AiWorkingView";
 import type { AiStep, AiStepStatus } from "../components/use-ai-campaign-flow";
 import { useAiCampaignFlow } from "../components/use-ai-campaign-flow";
 import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
@@ -119,9 +114,13 @@ const toDateTimeLocal = (iso?: string) => {
 const connected = (
   accounts: SocialAccountSetupProps | null,
   platform: CampaignPlatform,
-) => Boolean(accounts?.[platform]?.connected && !accounts[platform]?.needsReauth);
+) =>
+  Boolean(accounts?.[platform]?.connected && !accounts[platform]?.needsReauth);
 
-const aiStepSnapshot = (draft: GeneratedCampaignDraft, step: AiCampaignStepId) => {
+const aiStepSnapshot = (
+  draft: GeneratedCampaignDraft,
+  step: AiCampaignStepId,
+) => {
   switch (step) {
     case "setup":
       return draft.name;
@@ -152,7 +151,9 @@ const campaignToAiDraft = (
   previous: GeneratedCampaignDraft,
 ): GeneratedCampaignDraft => {
   const start = new Date(campaign.budget.startDate);
-  const end = campaign.budget.endDate ? new Date(campaign.budget.endDate) : null;
+  const end = campaign.budget.endDate
+    ? new Date(campaign.budget.endDate)
+    : null;
   const durationDays = end
     ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
     : previous.budget.durationDays;
@@ -179,7 +180,9 @@ const campaignToAiDraft = (
   };
 };
 
-const toUiMessages = (messages: AiCampaignDraftResponse["messages"]): AiMessage[] =>
+const toUiMessages = (
+  messages: AiCampaignDraftResponse["messages"],
+): AiMessage[] =>
   messages.map((message, index) => ({
     id: `session-${index}-${message.role}-${message.content.slice(0, 12)}`,
     sender: message.role === "user" ? "user" : "ai",
@@ -197,7 +200,9 @@ export default function NewCampaignPage() {
   const [method, setMethod] = useState<CreationMethod | null>(null);
   const [goalConfirmed, setGoalConfirmed] = useState(false);
   const [step, setStep] = useState(0);
-  const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(null);
+  const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(
+    null,
+  );
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<CampaignPlatform | null>(null);
@@ -213,16 +218,13 @@ export default function NewCampaignPage() {
     : null;
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
-  const [aiReviewActive, setAiReviewActive] = useState(false);
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
   const [aiDraftId, setAiDraftId] = useState<string | null>(null);
   const [aiDraftRevision, setAiDraftRevision] = useState(0);
   const [aiGeneratedDraft, setAiGeneratedDraft] =
     useState<GeneratedCampaignDraft | null>(null);
   const [aiQuestion, setAiQuestion] = useState<AiCampaignQuestion | null>(null);
-  const [aiStepRationales, setAiStepRationales] = useState(
-    EMPTY_AI_RATIONALES,
-  );
+  const [aiStepRationales, setAiStepRationales] = useState(EMPTY_AI_RATIONALES);
   const [uploading, setUploading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -251,12 +253,14 @@ export default function NewCampaignPage() {
   const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
   const aiApprovalBlocker = aiGeneratedDraft
     ? campaign.campaign.platforms.some(
-        (platform) => !campaign.campaign.configuration.accountAssetIds?.[platform],
+        (platform) =>
+          !campaign.campaign.configuration.accountAssetIds?.[platform],
       )
       ? "Select a connected ad account for every platform before approving the draft."
       : campaign.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
           campaign.campaign.platforms.some(
-            (platform) => !campaign.campaign.configuration.eventSourceIds?.[platform],
+            (platform) =>
+              !campaign.campaign.configuration.eventSourceIds?.[platform],
           )
         ? "Select every required conversion event source before approving the draft."
         : campaign.adContent.creatives.some((creative) => !creative.mediaUrl)
@@ -266,13 +270,16 @@ export default function NewCampaignPage() {
 
   useEffect(() => {
     let active = true;
-    void hydrateSocialAccounts().then((result) => {
-      if (!active) return;
-      if (result.success) setAccounts(result.data ?? {});
-      else setAccountError(result.error ?? "Could not load connected accounts.");
-    }).finally(() => {
-      if (active) setAccountsLoading(false);
-    });
+    void hydrateSocialAccounts()
+      .then((result) => {
+        if (!active) return;
+        if (result.success) setAccounts(result.data ?? {});
+        else
+          setAccountError(result.error ?? "Could not load connected accounts.");
+      })
+      .finally(() => {
+        if (active) setAccountsLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -322,12 +329,13 @@ export default function NewCampaignPage() {
       setAiDraftRevision(value.revision);
       setAiGeneratedDraft(value.generatedDraft ?? null);
       setAiQuestion(value.question ?? null);
-      setAiRationale(value.rationale ?? value.generatedDraft?.rationale ?? null);
+      setAiRationale(
+        value.rationale ?? value.generatedDraft?.rationale ?? null,
+      );
       setAiMessages(value.messages ?? []);
       setSavedCampaignId(value.savedCampaignId ?? null);
       if (value.stepRationales) setAiStepRationales(value.stepRationales);
       if (value.statuses) aiFlow.restoreStatuses(value.statuses);
-      setAiReviewActive(true);
       setStep(0);
     } catch {
       sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
@@ -377,9 +385,7 @@ export default function NewCampaignPage() {
   const patch = (next: Partial<CreateCampaignPayload>) =>
     setCampaign((current) => ({ ...current, ...next }));
 
-  const patchCampaign = (
-    next: Partial<CreateCampaignPayload["campaign"]>,
-  ) =>
+  const patchCampaign = (next: Partial<CreateCampaignPayload["campaign"]>) =>
     setCampaign((current) => ({
       ...current,
       campaign: { ...current.campaign, ...next },
@@ -394,9 +400,7 @@ export default function NewCampaignPage() {
       },
     }));
 
-  const patchAudience = (
-    next: Partial<CreateCampaignPayload["audience"]>,
-  ) => {
+  const patchAudience = (next: Partial<CreateCampaignPayload["audience"]>) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("audience");
     setCampaign((current) => ({
       ...current,
@@ -478,7 +482,9 @@ export default function NewCampaignPage() {
       setAccounts(result.data);
     } catch (failure) {
       setAccountError(
-        failure instanceof Error ? failure.message : `Could not connect ${platform}.`,
+        failure instanceof Error
+          ? failure.message
+          : `Could not connect ${platform}.`,
       );
     } finally {
       setConnecting(null);
@@ -541,7 +547,6 @@ export default function NewCampaignPage() {
       setAiDraftRevision(response.revision);
       setAiMessages(toUiMessages(response.messages));
       setAiQuestion(response.question);
-      setAiReviewActive(true);
       setStep(0);
       return;
     }
@@ -551,16 +556,20 @@ export default function NewCampaignPage() {
       const responseMessages = toUiMessages(response.messages);
       setAiMessages(
         responseMessages.some(
-          (message) => message.sender !== "user" && message.text === response.answer,
+          (message) =>
+            message.sender !== "user" && message.text === response.answer,
         )
           ? responseMessages
           : [
               ...responseMessages,
-              { id: `answer-${response.revision}`, sender: "ai", text: response.answer },
+              {
+                id: `answer-${response.revision}`,
+                sender: "ai",
+                text: response.answer,
+              },
             ],
       );
       setAiQuestion(null);
-      setAiReviewActive(true);
       setStep(0);
       return;
     }
@@ -645,7 +654,6 @@ export default function NewCampaignPage() {
     setAiQuestion(null);
     if (options?.initial) aiFlow.resetReviews();
     else aiFlow.applyRevision(response.changedSteps);
-    setAiReviewActive(true);
     setStep(0);
   };
 
@@ -658,8 +666,13 @@ export default function NewCampaignPage() {
       setError("Wait while Growdex checks your connected ad accounts.");
       return;
     }
-    if (!accounts || (!connected(accounts, "meta") && !connected(accounts, "tiktok"))) {
-      setError("Connect at least one ad account before creating a campaign with AI.");
+    if (
+      !accounts ||
+      (!connected(accounts, "meta") && !connected(accounts, "tiktok"))
+    ) {
+      setError(
+        "Connect at least one ad account before creating a campaign with AI.",
+      );
       return;
     }
     setAiMessages([{ id: `user-${Date.now()}`, sender: "user", text: prompt }]);
@@ -673,9 +686,12 @@ export default function NewCampaignPage() {
       });
       applyAiResponse(response, { requestId, initial: true });
     } catch (failure) {
-      if (requestId !== aiRequestIdRef.current || controller.signal.aborted) return;
+      if (requestId !== aiRequestIdRef.current || controller.signal.aborted)
+        return;
       setError(
-        failure instanceof Error ? failure.message : "Could not start the AI campaign draft.",
+        failure instanceof Error
+          ? failure.message
+          : "Could not start the AI campaign draft.",
       );
     } finally {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
@@ -693,7 +709,10 @@ export default function NewCampaignPage() {
     const userText = options?.userText ?? instruction;
     const requestMessages = [
       ...aiMessages.map((message) => ({
-        role: message.sender === "user" ? ("user" as const) : ("assistant" as const),
+        role:
+          message.sender === "user"
+            ? ("user" as const)
+            : ("assistant" as const),
         content: message.text,
       })),
       { role: "user" as const, content: userText },
@@ -716,12 +735,19 @@ export default function NewCampaignPage() {
         messages: requestMessages,
         signal: controller.signal,
       });
-      applyAiResponse(response, { requestId, lockedSteps, baseDraft: currentDraft });
+      applyAiResponse(response, {
+        requestId,
+        lockedSteps,
+        baseDraft: currentDraft,
+      });
     } catch (failure) {
-      if (requestId !== aiRequestIdRef.current || controller.signal.aborted) return;
+      if (requestId !== aiRequestIdRef.current || controller.signal.aborted)
+        return;
       if (options?.stepId) aiFlow.markReview(options.stepId);
       setError(
-        failure instanceof Error ? failure.message : "Could not revise the AI campaign draft.",
+        failure instanceof Error
+          ? failure.message
+          : "Could not revise the AI campaign draft.",
       );
     } finally {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
@@ -741,16 +767,22 @@ export default function NewCampaignPage() {
       });
       applyAiResponse(response, { requestId, initial: !aiGeneratedDraft });
     } catch (failure) {
-      if (requestId !== aiRequestIdRef.current || controller.signal.aborted) return;
+      if (requestId !== aiRequestIdRef.current || controller.signal.aborted)
+        return;
       setError(
-        failure instanceof Error ? failure.message : "Could not continue the AI campaign draft.",
+        failure instanceof Error
+          ? failure.message
+          : "Could not continue the AI campaign draft.",
       );
     } finally {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
     }
   };
 
-  const patchCreative = (index: number, next: Partial<CampaignCreativeInput>) => {
+  const patchCreative = (
+    index: number,
+    next: Partial<CampaignCreativeInput>,
+  ) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("creative");
     setCampaign((current) => {
       const existing = current.adContent.creatives[index];
@@ -764,10 +796,12 @@ export default function NewCampaignPage() {
         sharedFields.headline = next.headline;
       }
       if (shared && next.cta !== undefined) sharedFields.cta = next.cta;
-      const creatives = current.adContent.creatives.map((creative, creativeIndex) => ({
-        ...creative,
-        ...(creativeIndex === index ? next : sharedFields),
-      }));
+      const creatives = current.adContent.creatives.map(
+        (creative, creativeIndex) => ({
+          ...creative,
+          ...(creativeIndex === index ? next : sharedFields),
+        }),
+      );
       for (const platform of current.campaign.platforms) {
         creativeCache.current.set(
           platform,
@@ -824,7 +858,10 @@ export default function NewCampaignPage() {
       const signRes = await apiFetch("/media/signature-stamp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ public_id: publicId, folder: CLOUDINARY_FOLDER }),
+        body: JSON.stringify({
+          public_id: publicId,
+          folder: CLOUDINARY_FOLDER,
+        }),
       });
       const signature = (await signRes.json().catch(() => ({}))) as {
         message?: string;
@@ -856,7 +893,9 @@ export default function NewCampaignPage() {
       }
       patchCreative(index, { mediaUrl: uploaded.secure_url });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Media upload failed.");
+      setError(
+        failure instanceof Error ? failure.message : "Media upload failed.",
+      );
     } finally {
       setUploading(null);
     }
@@ -997,7 +1036,11 @@ export default function NewCampaignPage() {
       setCompletion({ kind: "draft", campaignId: created.id });
       setSaving(false);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Could not save the campaign.");
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not save the campaign.",
+      );
       setSaving(false);
     }
   };
@@ -1044,7 +1087,11 @@ export default function NewCampaignPage() {
       setCompletion({ kind: "publish", campaignId: saved.id });
       setPublishing(false);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Could not publish the campaign.");
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not publish the campaign.",
+      );
       setPublishing(false);
     }
   };
@@ -1074,7 +1121,8 @@ export default function NewCampaignPage() {
         disabled={uploading !== null || checkingInterests}
         className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 disabled:opacity-50"
       >
-        {checkingInterests ? "Checking interests…" : "Continue"} <ArrowRight className="h-4 w-4" />
+        {checkingInterests ? "Checking interests…" : "Continue"}{" "}
+        <ArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
@@ -1084,298 +1132,387 @@ export default function NewCampaignPage() {
       <div className="relative flex h-full">
         <DottedBackground fade />
         <div className="relative z-10 flex h-full w-full">
-          <CampaignTreeSidebar
-            campaignName={campaign.campaign.name || "Untitled campaign"}
-            campaign={campaign}
-          />
-          <main className="h-full flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-5xl p-4 md:p-8">
-              <div className="mb-8">{stepper}</div>
+          {method === "ai" && step === 0 ? (
+            <>
+              <CampaignTreeSidebar
+                campaignName={campaign.campaign.name || "Untitled campaign"}
+                campaign={campaign}
+                compact
+              />
+              <AiCampaignWorkspace
+                campaignName={campaign.campaign.name}
+                firstName={firstName}
+                steps={aiGeneratedDraft ? aiFlow.steps : undefined}
+                messages={aiMessages}
+                question={aiQuestion}
+                loading={aiLoading}
+                allApproved={aiFlow.allApproved}
+                error={error}
+                approvalBlocker={aiApprovalBlocker}
+                disabledReason={aiDisabledReason}
+                onCampaignNameChange={(name) => {
+                  if (aiGeneratedDraft) aiFlow.markReview("setup");
+                  patchCampaign({ name });
+                  setNameRationale(null);
+                }}
+                onChangeMethod={() => {
+                  setMethod(null);
+                  setError(null);
+                }}
+                onApprove={aiFlow.approve}
+                onApproveAll={aiFlow.approveAll}
+                onAnswer={(optionIds) => void answerAiQuestion(optionIds)}
+                onWhyThis={(reviewStep) =>
+                  setAiMessages((current) => [
+                    ...current,
+                    {
+                      id: `why-user-${reviewStep.id}-${Date.now()}`,
+                      sender: "user",
+                      text: `Why did you choose ${reviewStep.title.toLowerCase()}?`,
+                    },
+                    {
+                      id: `why-ai-${reviewStep.id}-${Date.now()}`,
+                      text: reviewStep.reason,
+                    },
+                  ])
+                }
+                onEdit={(reviewStep) => {
+                  aiFlow.markReview(reviewStep.id);
+                  setStep(reviewStep.editStep);
+                }}
+                onDecline={(reviewStep, instruction) =>
+                  void reviseAiDraft(instruction, {
+                    stepId: reviewStep.id,
+                    userText: instruction,
+                  })
+                }
+                onPrompt={(prompt) =>
+                  void (aiDraftId
+                    ? reviseAiDraft(prompt)
+                    : startAiDraft(prompt))
+                }
+                onContinue={() => {
+                  setStep(1);
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <CampaignTreeSidebar
+                campaignName={campaign.campaign.name || "Untitled campaign"}
+                campaign={campaign}
+              />
+              <main className="h-full flex-1 overflow-y-auto">
+                <div className="mx-auto max-w-5xl p-4 md:p-8">
+                  <div className="mb-8">{stepper}</div>
 
-              {aiRationale && step > 0 && step < 6 && (
-                <div className="mb-6 flex items-start gap-3 rounded-2xl bg-violet-50 p-4 text-sm text-violet-800">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-                  <div className="flex-1">
-                    <p><span className="font-semibold">AI draft:</span> {aiRationale} Review every choice before publishing.</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStep(0);
-                        setAiReviewActive(true);
-                      }}
-                      className="mt-2 text-xs font-semibold text-violet-700 underline"
-                    >
-                      Return to AI decision review
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {error && step < 6 && (
-                <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>
-              )}
-
-              {step === 0 && (
-                <div className="space-y-6">
-                  {!aiReviewActive && (
-                    <CampaignNameCard
-                      value={campaign.campaign.name}
-                      onChange={(name) => {
-                        if (campaign.creationMode === "ai") aiFlow.markReview("setup");
-                        patchCampaign({ name });
-                        setNameRationale(null);
-                      }}
-                      onGenerate={() => void generateCampaignName()}
-                      generating={generatingName}
-                      rationale={nameRationale}
-                      disabledReason={aiDisabledReason}
-                    />
+                  {aiRationale && step > 0 && step < 6 && (
+                    <div className="mb-6 flex items-start gap-3 rounded-2xl bg-violet-50 p-4 text-sm text-violet-800">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="flex-1">
+                        <p>
+                          <span className="font-semibold">AI draft:</span>{" "}
+                          {aiRationale} Review every choice before publishing.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStep(0);
+                          }}
+                          className="mt-2 text-xs font-semibold text-violet-700 underline"
+                        >
+                          Return to AI decision review
+                        </button>
+                      </div>
+                    </div>
                   )}
-                  {method !== "ai" ? (
-                    <CreateMethodBox
-                      value={method}
-                      onSelect={(nextMethod) => {
-                        setMethod(nextMethod);
-                        patch({ creationMode: nextMethod });
-                        setError(null);
-                        if (nextMethod === "manual") {
-                          setGoalConfirmed(true);
-                          setStep(1);
-                        }
-                      }}
-                    />
-                  ) : aiReviewActive ? (
-                    <AiWorkingView
-                      campaignName={campaign.campaign.name}
-                      steps={aiGeneratedDraft ? aiFlow.steps : undefined}
-                      messages={aiMessages}
-                      allApproved={aiFlow.allApproved}
-                      revising={aiLoading}
-                      question={aiQuestion}
-                      error={error}
-                      approvalBlocker={aiApprovalBlocker}
-                      onApprove={aiFlow.approve}
-                      onApproveAll={aiFlow.approveAll}
-                      onAnswer={(optionIds) => void answerAiQuestion(optionIds)}
-                      onWhyThis={(reviewStep) =>
-                        setAiMessages((current) => [
-                          ...current,
-                          {
-                            id: `why-user-${reviewStep.id}-${Date.now()}`,
-                            sender: "user",
-                            text: `Why did you choose ${reviewStep.title.toLowerCase()}?`,
-                          },
-                          {
-                            id: `why-ai-${reviewStep.id}-${Date.now()}`,
-                            text: reviewStep.reason,
-                          },
-                        ])
-                      }
-                      onEdit={(reviewStep) => {
-                        aiFlow.markReview(reviewStep.id);
-                        setAiReviewActive(false);
-                        setStep(reviewStep.editStep);
-                      }}
-                      onDecline={(reviewStep, instruction) =>
-                        void reviseAiDraft(instruction, {
-                          stepId: reviewStep.id,
-                          userText: instruction,
-                        })
-                      }
-                      onPrompt={(prompt) => void reviseAiDraft(prompt)}
-                      onContinue={() => {
-                        setAiReviewActive(false);
-                        setStep(1);
-                      }}
-                    />
-                  ) : aiLoading ? (
-                    <AiWorkingView campaignName={campaign.campaign.name} />
-                  ) : (
-                    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-                      <button
-                        type="button"
-                        onClick={() => setMethod(null)}
-                        className="ml-6 mt-5 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
-                      >
-                        <ArrowLeft className="h-4 w-4" /> Change creation method
-                      </button>
-                      <AiCampaignChat
-                        firstName={firstName}
-                        onSubmit={(prompt) => void startAiDraft(prompt)}
+
+                  {error && step < 6 && (
+                    <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+                      {error}
+                    </p>
+                  )}
+
+                  {step === 0 && (
+                    <div className="space-y-6">
+                      <CampaignNameCard
+                        value={campaign.campaign.name}
+                        onChange={(name) => {
+                          patchCampaign({ name });
+                          setNameRationale(null);
+                        }}
+                        onGenerate={() => void generateCampaignName()}
+                        generating={generatingName}
+                        rationale={nameRationale}
                         disabledReason={aiDisabledReason}
-                        suggestions={[
-                          "Launch a lead campaign for my business in Nigeria",
-                          "Promote a new product to young adults",
-                          "Drive qualified visitors to my website",
-                        ]}
+                      />
+                      <CreateMethodBox
+                        value={method}
+                        onSelect={(nextMethod) => {
+                          setMethod(nextMethod);
+                          patch({ creationMode: nextMethod });
+                          setError(null);
+                          if (nextMethod === "manual") {
+                            setGoalConfirmed(true);
+                            setStep(1);
+                          }
+                        }}
                       />
                     </div>
                   )}
-                </div>
-              )}
 
-              {step === 1 && (
-                <div>
-                  <ManualPlatformScreen
-                    accounts={accounts}
-                    loading={accountsLoading}
-                    connecting={connecting}
-                    platforms={campaign.campaign.platforms}
-                    accountAssetIds={
-                      campaign.campaign.configuration.accountAssetIds ?? {}
-                    }
-                    onChange={setPlatformAccounts}
-                    onConnect={(platform) => void connect(platform)}
-                  />
-                  {accountError && (
-                    <p className="mt-4 text-sm text-red-600">{accountError}</p>
-                  )}
-                </div>
-              )}
-
-              {step === 2 && (
-                <ManualGoalScreen
-                  goal={campaign.campaign.goal}
-                  platforms={campaign.campaign.platforms}
-                  onChange={(goal, next) => {
-                    if (campaign.creationMode === "ai") {
-                      aiFlow.markReview("goals");
-                      aiFlow.markReview("event");
-                    }
-                    patchCampaign({
-                      goal,
-                      configuration: {
-                        ...campaign.campaign.configuration,
-                        ...next,
-                        eventSourceIds: {},
-                      },
-                    });
-                    setError(null);
-                  }}
-                  onConfirmedChange={setGoalConfirmed}
-                />
-              )}
-
-              {step === 3 && (
-                <div className="space-y-6">
-                  <ManualEventManagementScreen
-                    goal={campaign.campaign.goal}
-                    platforms={campaign.campaign.platforms}
-                    configuration={campaign.campaign.configuration}
-                    onChange={(next) => {
-                      if (campaign.creationMode === "ai") aiFlow.markReview("event");
-                      patchConfiguration({
-                        ...next,
-                        ...(next.optimizationGoal !== "CONVERSIONS"
-                          ? { eventSourceIds: {} }
-                          : {}),
-                      });
-                      setError(null);
-                    }}
-                  />
-
-                  <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-                    <h2 className="text-xl font-gilroy-semibold text-gray-900">
-                      Setup event management for your ad
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Connect the platform data source used to measure the result you selected.
-                    </p>
-                    <div className="mt-5">
-                      <ManualEventScreen
+                  {step === 1 && (
+                    <div>
+                      <ManualPlatformScreen
+                        accounts={accounts}
+                        loading={accountsLoading}
+                        connecting={connecting}
                         platforms={campaign.campaign.platforms}
                         accountAssetIds={
                           campaign.campaign.configuration.accountAssetIds ?? {}
                         }
-                        eventSourceIds={
-                          campaign.campaign.configuration.eventSourceIds ?? {}
-                        }
-                        optimizationGoal={
-                          campaign.campaign.configuration.optimizationGoal
-                        }
-                        onChange={(eventSourceIds) =>
-                          {
-                            if (campaign.creationMode === "ai") aiFlow.markReview("event");
-                            patchConfiguration({ eventSourceIds });
-                          }
-                        }
+                        onChange={setPlatformAccounts}
+                        onConnect={(platform) => void connect(platform)}
                       />
+                      {accountError && (
+                        <p className="mt-4 text-sm text-red-600">
+                          {accountError}
+                        </p>
+                      )}
                     </div>
-                  </section>
+                  )}
 
-                  <div>
-                    <div className="mb-4">
-                      <h2 className="text-xl font-gilroy-semibold text-gray-900">
-                        Find your audience
-                      </h2>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Define who should see this campaign across the selected platforms.
-                      </p>
-                    </div>
-                    <AudienceTargetingScreen
+                  {step === 2 && (
+                    <ManualGoalScreen
                       goal={campaign.campaign.goal}
                       platforms={campaign.campaign.platforms}
-                      configuration={campaign.campaign.configuration}
-                      audience={campaign.audience}
-                      accounts={accounts}
-                      unavailableInterests={unavailableInterests}
-                      onChange={patchAudience}
-                      onReplaceInterest={replaceUnavailableInterest}
-                      onClearUnavailableInterests={() => setUnavailableInterests({})}
+                      onChange={(goal, next) => {
+                        if (campaign.creationMode === "ai") {
+                          aiFlow.markReview("goals");
+                          aiFlow.markReview("event");
+                        }
+                        patchCampaign({
+                          goal,
+                          configuration: {
+                            ...campaign.campaign.configuration,
+                            ...next,
+                            eventSourceIds: {},
+                          },
+                        });
+                        setError(null);
+                      }}
+                      onConfirmedChange={setGoalConfirmed}
                     />
-                  </div>
-                  {accountError && <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{accountError}</p>}
+                  )}
+
+                  {step === 3 && (
+                    <div className="space-y-6">
+                      <ManualEventManagementScreen
+                        goal={campaign.campaign.goal}
+                        platforms={campaign.campaign.platforms}
+                        configuration={campaign.campaign.configuration}
+                        onChange={(next) => {
+                          if (campaign.creationMode === "ai")
+                            aiFlow.markReview("event");
+                          patchConfiguration({
+                            ...next,
+                            ...(next.optimizationGoal !== "CONVERSIONS"
+                              ? { eventSourceIds: {} }
+                              : {}),
+                          });
+                          setError(null);
+                        }}
+                      />
+
+                      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 className="text-xl font-gilroy-semibold text-gray-900">
+                          Setup event management for your ad
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Connect the platform data source used to measure the
+                          result you selected.
+                        </p>
+                        <div className="mt-5">
+                          <ManualEventScreen
+                            platforms={campaign.campaign.platforms}
+                            accountAssetIds={
+                              campaign.campaign.configuration.accountAssetIds ??
+                              {}
+                            }
+                            eventSourceIds={
+                              campaign.campaign.configuration.eventSourceIds ??
+                              {}
+                            }
+                            optimizationGoal={
+                              campaign.campaign.configuration.optimizationGoal
+                            }
+                            onChange={(eventSourceIds) => {
+                              if (campaign.creationMode === "ai")
+                                aiFlow.markReview("event");
+                              patchConfiguration({ eventSourceIds });
+                            }}
+                          />
+                        </div>
+                      </section>
+
+                      <div>
+                        <div className="mb-4">
+                          <h2 className="text-xl font-gilroy-semibold text-gray-900">
+                            Find your audience
+                          </h2>
+                          <p className="mt-1 text-sm text-gray-500">
+                            Define who should see this campaign across the
+                            selected platforms.
+                          </p>
+                        </div>
+                        <AudienceTargetingScreen
+                          goal={campaign.campaign.goal}
+                          platforms={campaign.campaign.platforms}
+                          configuration={campaign.campaign.configuration}
+                          audience={campaign.audience}
+                          accounts={accounts}
+                          unavailableInterests={unavailableInterests}
+                          onChange={patchAudience}
+                          onReplaceInterest={replaceUnavailableInterest}
+                          onClearUnavailableInterests={() =>
+                            setUnavailableInterests({})
+                          }
+                        />
+                      </div>
+                      {accountError && (
+                        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+                          {accountError}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {step === 4 && (
+                    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        How much do you want to spend?
+                      </h2>
+                      <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                        <label className="text-sm font-medium text-gray-700">
+                          Amount
+                          <Input
+                            className="mt-2"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={campaign.budget.amount || ""}
+                            onChange={(event) =>
+                              patchBudget({
+                                amount: Number(event.target.value),
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="text-sm font-medium text-gray-700">
+                          Currency
+                          <select
+                            className="mt-2 h-10 w-full rounded-md border bg-white px-3"
+                            value={campaign.budget.currency}
+                            onChange={(event) =>
+                              patchBudget({
+                                currency: event.target.value as "NGN" | "USD",
+                              })
+                            }
+                          >
+                            <option value="NGN">NGN</option>
+                            <option value="USD">USD</option>
+                          </select>
+                        </label>
+                        <label className="text-sm font-medium text-gray-700">
+                          Budget type
+                          <select
+                            className="mt-2 h-10 w-full rounded-md border bg-white px-3"
+                            value={campaign.budget.type}
+                            onChange={(event) =>
+                              patchBudget({
+                                type: event.target.value as
+                                  "daily" | "lifetime",
+                              })
+                            }
+                          >
+                            <option value="daily">Daily</option>
+                            <option value="lifetime">Lifetime</option>
+                          </select>
+                        </label>
+                        <label className="text-sm font-medium text-gray-700">
+                          Start time
+                          <Input
+                            className="mt-2"
+                            type="datetime-local"
+                            value={toDateTimeLocal(campaign.budget.startDate)}
+                            onInput={(event) => {
+                              const value = event.currentTarget.value;
+                              if (value)
+                                patchBudget({
+                                  startDate: new Date(value).toISOString(),
+                                });
+                            }}
+                          />
+                        </label>
+                        <label className="text-sm font-medium text-gray-700">
+                          End time (optional)
+                          <Input
+                            className="mt-2"
+                            type="datetime-local"
+                            value={toDateTimeLocal(campaign.budget.endDate)}
+                            onInput={(event) => {
+                              const value = event.currentTarget.value;
+                              patchBudget({
+                                endDate: value
+                                  ? new Date(value).toISOString()
+                                  : undefined,
+                              });
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </section>
+                  )}
+
+                  {step === 5 && (
+                    <CreativeSetupScreen
+                      goal={campaign.campaign.goal}
+                      platforms={campaign.campaign.platforms}
+                      creatives={campaign.adContent.creatives}
+                      ctaOptions={CTA_OPTIONS}
+                      uploading={uploading}
+                      sameCreativeForAll={
+                        campaign.campaign.configuration.sameCreativeForAll
+                      }
+                      onSameCreativeForAllChange={(sameCreativeForAll) =>
+                        patchConfiguration({ sameCreativeForAll })
+                      }
+                      onChange={patchCreative}
+                      onReplace={replaceCreatives}
+                      onUpload={(index, platform, file) =>
+                        void uploadMedia(index, platform, file)
+                      }
+                    />
+                  )}
+
+                  {step === 6 && (
+                    <ReviewPublishScreen
+                      campaign={campaign}
+                      brandName={brandName}
+                      onBack={() => setStep(5)}
+                      onSaveDraft={() => void createDraft()}
+                      onPublish={() => void createAndPublish()}
+                      saving={saving}
+                      publishing={publishing}
+                      error={error}
+                    />
+                  )}
+
+                  {step > 0 && nav}
                 </div>
-              )}
-
-              {step === 4 && (
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-                  <h2 className="text-xl font-bold text-gray-900">How much do you want to spend?</h2>
-                  <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                    <label className="text-sm font-medium text-gray-700">Amount<Input className="mt-2" type="number" min="0.01" step="0.01" value={campaign.budget.amount || ""} onChange={(event) => patchBudget({ amount: Number(event.target.value) })} /></label>
-                    <label className="text-sm font-medium text-gray-700">Currency<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.currency} onChange={(event) => patchBudget({ currency: event.target.value as "NGN" | "USD" })}><option value="NGN">NGN</option><option value="USD">USD</option></select></label>
-                    <label className="text-sm font-medium text-gray-700">Budget type<select className="mt-2 h-10 w-full rounded-md border bg-white px-3" value={campaign.budget.type} onChange={(event) => patchBudget({ type: event.target.value as "daily" | "lifetime" })}><option value="daily">Daily</option><option value="lifetime">Lifetime</option></select></label>
-                    <label className="text-sm font-medium text-gray-700">Start time<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.startDate)} onInput={(event) => { const value = event.currentTarget.value; if (value) patchBudget({ startDate: new Date(value).toISOString() }); }} /></label>
-                    <label className="text-sm font-medium text-gray-700">End time (optional)<Input className="mt-2" type="datetime-local" value={toDateTimeLocal(campaign.budget.endDate)} onInput={(event) => { const value = event.currentTarget.value; patchBudget({ endDate: value ? new Date(value).toISOString() : undefined }); }} /></label>
-                  </div>
-                </section>
-              )}
-
-              {step === 5 && (
-                <CreativeSetupScreen
-                  goal={campaign.campaign.goal}
-                  platforms={campaign.campaign.platforms}
-                  creatives={campaign.adContent.creatives}
-                  ctaOptions={CTA_OPTIONS}
-                  uploading={uploading}
-                  sameCreativeForAll={
-                    campaign.campaign.configuration.sameCreativeForAll
-                  }
-                  onSameCreativeForAllChange={(sameCreativeForAll) =>
-                    patchConfiguration({ sameCreativeForAll })
-                  }
-                  onChange={patchCreative}
-                  onReplace={replaceCreatives}
-                  onUpload={(index, platform, file) => void uploadMedia(index, platform, file)}
-                />
-              )}
-
-              {step === 6 && (
-                <ReviewPublishScreen
-                  campaign={campaign}
-                  brandName={brandName}
-                  onBack={() => setStep(5)}
-                  onSaveDraft={() => void createDraft()}
-                  onPublish={() => void createAndPublish()}
-                  saving={saving}
-                  publishing={publishing}
-                  error={error}
-                />
-              )}
-
-              {step > 0 && nav}
-            </div>
-          </main>
+              </main>
+            </>
+          )}
         </div>
         <AdCreatedModal
           open={completion !== null}
@@ -1388,7 +1525,9 @@ export default function NewCampaignPage() {
               router.push("/panel/campaigns");
             } else {
               setSaving(true);
-              router.push(`/panel/campaigns/new/publish?id=${encodeURIComponent(completion.campaignId)}`);
+              router.push(
+                `/panel/campaigns/new/publish?id=${encodeURIComponent(completion.campaignId)}`,
+              );
             }
           }}
           onCampaigns={() => {

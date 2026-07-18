@@ -14,6 +14,16 @@ interface AiStepListProps {
   busy?: boolean;
 }
 
+const AI_STEP_ORDER: AiStepId[] = [
+  "setup",
+  "goals",
+  "platform",
+  "event",
+  "audience",
+  "budget",
+  "creative",
+];
+
 export function AiStepList({
   steps,
   onApprove,
@@ -33,39 +43,50 @@ export function AiStepList({
     setInstruction("");
   };
 
+  const orderedSteps = [...steps].sort(
+    (left, right) =>
+      AI_STEP_ORDER.indexOf(left.id) - AI_STEP_ORDER.indexOf(right.id),
+  );
+
   return (
-    <div className="space-y-5">
-      {steps.map((step) => (
-        <article key={step.id} className="rounded-2xl border border-gray-100 p-4">
-          <div className="inline-flex items-center gap-1 text-xs font-medium text-violet-500">
-            <Sparkles className="h-3.5 w-3.5" /> {step.label}
+    <div className="space-y-8 pb-10">
+      {orderedSteps.map((step) => (
+        <article key={step.id} className="min-w-0">
+          <div className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-400">
+            <Sparkles className="h-3 w-3" /> {step.title}
           </div>
-          <h3 className="mt-2 text-sm font-bold text-violet-700">
+          <h3 className="mt-2 truncate text-sm font-semibold text-gray-800">
             {step.result}
           </h3>
-          <div className="mt-2 h-1.5 rounded-full" style={{ background: PURPLE_GRADIENT }} />
+          <div
+            className="mt-2 h-1 rounded-full"
+            style={{ background: PURPLE_GRADIENT }}
+          />
           {step.detail && (
-            <p className="mt-3 rounded-lg bg-violet-50 px-3 py-2 text-xs leading-relaxed text-gray-700">
+            <p className="mt-2 text-xs leading-5 text-gray-500">
               {step.detail}
             </p>
           )}
           {step.chips?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {step.chips.map((chip) => (
-                <span key={chip} className="rounded-md border border-gray-200 px-3 py-1 text-xs capitalize text-gray-600">
+                <span
+                  key={chip}
+                  className="rounded-md border border-gray-200 px-3 py-1 text-xs capitalize text-gray-600"
+                >
                   {chip}
                 </span>
               ))}
             </div>
           ) : null}
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-violet-50 px-3 py-2">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-violet-50/80 px-2.5 py-1.5">
             <button
               type="button"
               onClick={() => onWhyThis(step)}
               disabled={busy}
               style={{ background: PURPLE_GRADIENT }}
-              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Info className="h-3 w-3" /> Why this?
             </button>
@@ -81,19 +102,30 @@ export function AiStepList({
                   disabled={busy}
                   className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Pencil className="h-3.5 w-3.5 text-violet-500" /> Reopen
+                  <Pencil className="h-3.5 w-3.5 text-violet-500" /> Edit
                 </button>
               </div>
             ) : step.status === "revising" ? (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-700">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Revising with AI
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Revising with
+                AI
               </span>
             ) : (
               <div className="flex items-center gap-4 text-xs text-gray-700">
-                <button type="button" disabled={busy} onClick={() => onApprove(step.id)} className="inline-flex items-center gap-1 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onApprove(step.id)}
+                  className="inline-flex items-center gap-1 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
                   <Check className="h-3.5 w-3.5 text-green-500" /> Approve
                 </button>
-                <button type="button" disabled={busy} onClick={() => onEdit(step)} className="inline-flex items-center gap-1 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onEdit(step)}
+                  className="inline-flex items-center gap-1 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
                   <Pencil className="h-3.5 w-3.5 text-violet-500" /> Edit
                 </button>
                 <button
@@ -105,14 +137,14 @@ export function AiStepList({
                   }}
                   className="inline-flex items-center gap-1 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <X className="h-3.5 w-3.5 text-red-500" /> Revise
+                  <X className="h-3.5 w-3.5 text-red-500" /> Decline
                 </button>
               </div>
             )}
           </div>
 
           {decliningId === step.id && (
-            <div className="mt-3 rounded-xl border border-violet-100 p-3">
+            <div className="mt-3 rounded-xl border border-violet-100 bg-white p-3 shadow-sm">
               <label className="text-xs font-medium text-gray-700">
                 What should the AI change?
                 <textarea
@@ -130,12 +162,21 @@ export function AiStepList({
                   type="button"
                   disabled={busy || !instruction.trim()}
                   onClick={() => submitRevision(step)}
-                  style={instruction.trim() ? { background: PURPLE_GRADIENT } : undefined}
+                  style={
+                    instruction.trim()
+                      ? { background: PURPLE_GRADIENT }
+                      : undefined
+                  }
                   className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:bg-gray-200 disabled:text-gray-400"
                 >
                   Regenerate with AI
                 </button>
-                <button type="button" disabled={busy} onClick={() => setDecliningId(null)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-50">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setDecliningId(null)}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
                   Cancel
                 </button>
               </div>
