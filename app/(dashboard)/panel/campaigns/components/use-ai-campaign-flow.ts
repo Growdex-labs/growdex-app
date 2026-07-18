@@ -1,16 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CreateCampaignPayload } from "@/lib/campaigns";
+import {
+  AI_CAMPAIGN_STEP_IDS,
+  type AiCampaignStepId,
+  type CreateCampaignPayload,
+} from "@/lib/campaigns";
 
-export type AiStepId =
-  | "setup"
-  | "platform"
-  | "goals"
-  | "event"
-  | "audience"
-  | "budget"
-  | "creative";
+export type AiStepId = AiCampaignStepId;
 export type AiStepStatus = "review" | "approved" | "revising";
 
 export interface AiStep {
@@ -29,6 +26,7 @@ type StepRationales = {
   setup: string;
   goal: string;
   platforms: string;
+  event: string;
   audience: string;
   budget: string;
   creative: string;
@@ -75,14 +73,19 @@ export function useAiCampaignFlow(
         result: campaign.campaign.platforms
           .map((platform) => (platform === "meta" ? "Meta" : "TikTok"))
           .join(" and "),
-        detail: "The full editor will confirm the exact connected ad account for each platform.",
+        detail: campaign.campaign.platforms
+          .map((platform) => {
+            const accountId = campaign.campaign.configuration.accountAssetIds?.[platform];
+            return `${platform === "meta" ? "Meta" : "TikTok"}: ${accountId || "account selection required"}`;
+          })
+          .join(" · "),
         editStep: 1,
       },
       {
         id: "goals",
         title: "Set campaign goals",
         label: "Campaign objective",
-        reason: rationales.goal,
+        reason: rationales.event,
         status: statuses.goals,
         result: campaign.campaign.goal.replaceAll("_", " "),
         detail: "The business outcome Growdex AI selected from your request.",
@@ -131,10 +134,13 @@ export function useAiCampaignFlow(
         label: "Creative draft",
         reason: rationales.creative,
         status: statuses.creative,
-        result: `${campaign.adContent.creatives.length} editable creative${campaign.adContent.creatives.length === 1 ? "" : "s"}`,
-        detail:
-          campaign.adContent.creatives[0]?.primaryText ||
-          "Creative copy is ready for review.",
+        result: `${campaign.adContent.creatives.length} platform-specific creative${campaign.adContent.creatives.length === 1 ? "" : "s"}`,
+        detail: campaign.adContent.creatives
+          .map(
+            (creative) =>
+              `${creative.platform === "meta" ? "Meta" : "TikTok"}: ${creative.primaryText || "copy required"}${creative.mediaUrl ? " · media ready" : " · media required"}`,
+          )
+          .join(" | "),
         editStep: 5,
       },
     ],
@@ -153,7 +159,17 @@ export function useAiCampaignFlow(
     setStatuses((current) => ({ ...current, [id]: "revising" }));
   const markReview = (id: AiStepId) =>
     setStatuses((current) => ({ ...current, [id]: "review" }));
+  const applyRevision = (changedSteps: AiStepId[]) =>
+    setStatuses((current) => ({
+      ...current,
+      ...Object.fromEntries(changedSteps.map((id) => [id, "review"])),
+    }));
   const resetReviews = () => setStatuses(DEFAULT_STATUSES);
+  const restoreStatuses = (next: Record<AiStepId, AiStepStatus>) =>
+    setStatuses(next);
+  const approvedStepIds = AI_CAMPAIGN_STEP_IDS.filter(
+    (id) => statuses[id] === "approved",
+  );
   const allApproved = Object.values(statuses).every(
     (status) => status === "approved",
   );
@@ -164,7 +180,11 @@ export function useAiCampaignFlow(
     approveAll,
     markRevising,
     markReview,
+    applyRevision,
     resetReviews,
+    restoreStatuses,
+    approvedStepIds,
+    statuses,
     allApproved,
   };
 }

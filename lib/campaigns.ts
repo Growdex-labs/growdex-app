@@ -99,10 +99,7 @@ export interface GeneratedCampaignDraft {
   name: string;
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
-  configuration: Pick<
-    CampaignConfiguration,
-    "destination" | "optimizationGoal"
-  >;
+  configuration: CampaignConfiguration;
   audience: CreateCampaignPayload["audience"];
   budget: {
     amount: number;
@@ -112,19 +109,73 @@ export interface GeneratedCampaignDraft {
     startDateLocal?: string | null;
     endDateLocal?: string | null;
   };
-  creative: Omit<
-    CampaignCreativeInput,
-    "platform" | "mediaUrl" | "landingPageUrl"
-  > & {
-    mediaUrl?: string | null;
-    landingPageUrl?: string | null;
-  };
+  creatives: Array<
+    CampaignCreativeInput & {
+      mediaRequirement: "image" | "video";
+      mediaStatus: "ready" | "required" | "generating";
+    }
+  >;
   rationale: string;
   stepRationales: Record<
-    "setup" | "goal" | "platforms" | "audience" | "budget" | "creative",
+    | "setup"
+    | "goal"
+    | "platforms"
+    | "event"
+    | "audience"
+    | "budget"
+    | "creative",
     string
   >;
 }
+
+export const AI_CAMPAIGN_STEP_IDS = [
+  "setup",
+  "platform",
+  "goals",
+  "event",
+  "audience",
+  "budget",
+  "creative",
+] as const;
+
+export type AiCampaignStepId = (typeof AI_CAMPAIGN_STEP_IDS)[number];
+
+export interface AiCampaignMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface AiCampaignQuestion {
+  id: string;
+  prompt: string;
+  allowMultiple: boolean;
+  options: Array<{
+    id: string;
+    label: string;
+    description?: string;
+  }>;
+}
+
+interface AiCampaignSessionBase {
+  draftId: string;
+  revision: number;
+  messages: AiCampaignMessage[];
+}
+
+export type AiCampaignDraftResponse =
+  | (AiCampaignSessionBase & {
+      status: "needs_input";
+      question: AiCampaignQuestion;
+    })
+  | (AiCampaignSessionBase & {
+      status: "ready";
+      draft: GeneratedCampaignDraft;
+      changedSteps: AiCampaignStepId[];
+    })
+  | (AiCampaignSessionBase & {
+      status: "answer";
+      answer: string;
+    });
 
 export interface CampaignCreativeDto extends CampaignCreativeInput {
   id: string;
@@ -212,34 +263,350 @@ const CAMPAIGN_RATIONALE_KEYS = [
   "setup",
   "goal",
   "platforms",
+  "event",
   "audience",
   "budget",
   "creative",
 ] as const;
 
+const CAMPAIGN_GOALS: CampaignGoal[] = [
+  "AWARENESS",
+  "TRAFFIC",
+  "ENGAGEMENT",
+  "SALES",
+  "LEADS",
+  "APP_PROMOTION",
+];
+const CAMPAIGN_PLATFORMS: CampaignPlatform[] = ["meta", "tiktok"];
+const CAMPAIGN_DESTINATIONS: CampaignDestination[] = [
+  "WEBSITE",
+  "INSTANT_FORM",
+  "WHATSAPP",
+  "MESSENGER",
+  "PROFILE",
+  "VIDEO",
+  "APP",
+];
+const CAMPAIGN_OPTIMIZATIONS: CampaignOptimizationGoal[] = [
+  "REACH",
+  "IMPRESSIONS",
+  "LINK_CLICKS",
+  "LANDING_PAGE_VIEWS",
+  "POST_ENGAGEMENT",
+  "VIDEO_VIEWS",
+  "LEAD_GENERATION",
+  "CONVERSIONS",
+  "APP_INSTALLS",
+  "APP_EVENTS",
+  "FOLLOWERS",
+  "MESSAGES",
+];
+const CAMPAIGN_CTAS: CampaignCta[] = [
+  "LEARN_MORE",
+  "SHOP_NOW",
+  "SIGN_UP",
+  "DOWNLOAD",
+  "BOOK_NOW",
+  "CONTACT_US",
+  "GET_QUOTE",
+  "SUBSCRIBE",
+  "APPLY_NOW",
+  "NO_BUTTON",
+];
+
+const invalidAiResponse = (detail: string): never => {
+  throw new Error(`The AI service returned an invalid campaign draft: ${detail}`);
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === "object" && !Array.isArray(value));
+
+const requiredString = (value: unknown, field: string) => {
+  if (typeof value !== "string" || !value.trim()) {
+    return invalidAiResponse(`${field} is missing.`);
+  }
+  return value.trim();
+};
+
+const optionalString = (value: unknown, field: string) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string") return invalidAiResponse(`${field} must be text.`);
+  return value.trim();
+};
+
+const enumValue = <T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  field: string,
+): T => {
+  if (typeof value !== "string" || !allowed.includes(value as T)) {
+    return invalidAiResponse(`${field} is unsupported.`);
+  }
+  return value as T;
+};
+
+const stringArray = (value: unknown, field: string) => {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    return invalidAiResponse(`${field} must be a list of text values.`);
+  }
+  return value.map((item) => item.trim()).filter(Boolean);
+};
+
 const parseGeneratedCampaignDraft = (
   data: unknown,
 ): GeneratedCampaignDraft => {
-  if (!data || typeof data !== "object") {
-    throw new Error("The AI service returned an invalid campaign draft.");
+  if (!isRecord(data)) return invalidAiResponse("the response is not an object.");
+
+  const goal = enumValue(data.goal, CAMPAIGN_GOALS, "goal");
+  if (!Array.isArray(data.platforms) || !data.platforms.length) {
+    return invalidAiResponse("at least one platform is required.");
+  }
+  const platforms = data.platforms.map((platform) =>
+    enumValue(platform, CAMPAIGN_PLATFORMS, "platform"),
+  );
+  if (new Set(platforms).size !== platforms.length) {
+    return invalidAiResponse("platforms must be unique.");
+  }
+  if (platforms.includes("tiktok") && goal === "APP_PROMOTION") {
+    return invalidAiResponse("TikTok app-promotion campaigns are not supported.");
   }
 
-  const draft = data as Partial<GeneratedCampaignDraft>;
-  const rationales = draft.stepRationales;
+  if (!isRecord(data.configuration)) {
+    return invalidAiResponse("configuration is missing.");
+  }
+  const configuration = data.configuration;
+  const destination = enumValue(
+    configuration.destination,
+    CAMPAIGN_DESTINATIONS,
+    "destination",
+  );
+  const optimizationGoal = enumValue(
+    configuration.optimizationGoal,
+    CAMPAIGN_OPTIMIZATIONS,
+    "optimization goal",
+  );
+  if (platforms.includes("tiktok") && destination === "INSTANT_FORM") {
+    return invalidAiResponse("TikTok instant forms are not supported.");
+  }
+  if (!isRecord(configuration.accountAssetIds)) {
+    return invalidAiResponse("selected ad accounts are missing.");
+  }
+  const configuredAccountIds = configuration.accountAssetIds;
+  const accountAssetIds = Object.fromEntries(
+    platforms.map((platform) => [
+      platform,
+      requiredString(configuredAccountIds[platform], `${platform} ad account`),
+    ]),
+  ) as Partial<Record<CampaignPlatform, string>>;
+  const configuredEventSourceIds = isRecord(configuration.eventSourceIds)
+    ? configuration.eventSourceIds
+    : null;
+  const eventSourceIds = configuredEventSourceIds
+    ? (Object.fromEntries(
+        platforms.flatMap((platform) => {
+          const id = optionalString(
+            configuredEventSourceIds[platform],
+            `${platform} event source`,
+          );
+          return id ? [[platform, id]] : [];
+        }),
+      ) as Partial<Record<CampaignPlatform, string>>)
+    : {};
   if (
-    !rationales ||
-    typeof rationales !== "object" ||
-    CAMPAIGN_RATIONALE_KEYS.some(
-      (key) =>
-        typeof rationales[key] !== "string" || !rationales[key].trim(),
-    )
+    optimizationGoal === "CONVERSIONS" &&
+    platforms.some((platform) => !eventSourceIds[platform])
   ) {
-    throw new Error(
-      "The AI service returned a campaign without the required review explanations. Restart the updated backend and try again.",
-    );
+    return invalidAiResponse("a conversion event source is required for every platform.");
   }
 
-  return data as GeneratedCampaignDraft;
+  if (!isRecord(data.audience)) return invalidAiResponse("audience is missing.");
+  const audience = data.audience;
+  const locations = stringArray(audience.locations, "audience locations");
+  if (!locations.length) return invalidAiResponse("at least one audience location is required.");
+  const ageMin = audience.ageMin ?? 18;
+  const ageMax = audience.ageMax ?? 65;
+  if (
+    typeof ageMin !== "number" ||
+    typeof ageMax !== "number" ||
+    ageMin < 18 ||
+    ageMax > 65 ||
+    ageMin > ageMax
+  ) {
+    return invalidAiResponse("audience ages must stay between 18 and 65.");
+  }
+
+  if (!isRecord(data.budget)) return invalidAiResponse("budget is missing.");
+  if (typeof data.budget.amount !== "number" || data.budget.amount <= 0) {
+    return invalidAiResponse("budget amount must be greater than zero.");
+  }
+  const currency = enumValue(data.budget.currency, ["NGN", "USD"], "currency");
+  const budgetType = enumValue(data.budget.type, ["daily", "lifetime"], "budget type");
+  if (
+    typeof data.budget.durationDays !== "number" ||
+    !Number.isInteger(data.budget.durationDays) ||
+    data.budget.durationDays < 1
+  ) {
+    return invalidAiResponse("campaign duration must be at least one day.");
+  }
+  const startDateLocal = optionalString(data.budget.startDateLocal, "start date");
+  const endDateLocal = optionalString(data.budget.endDateLocal, "end date");
+  if (startDateLocal && Number.isNaN(new Date(startDateLocal).getTime())) {
+    return invalidAiResponse("start date is invalid.");
+  }
+  if (endDateLocal && Number.isNaN(new Date(endDateLocal).getTime())) {
+    return invalidAiResponse("end date is invalid.");
+  }
+
+  if (!Array.isArray(data.creatives) || !data.creatives.length) {
+    return invalidAiResponse("platform-specific creatives are missing.");
+  }
+  const creatives = data.creatives.map((creative, index) => {
+    if (!isRecord(creative)) return invalidAiResponse(`creative ${index + 1} is invalid.`);
+    const platform = enumValue(creative.platform, CAMPAIGN_PLATFORMS, "creative platform");
+    if (!platforms.includes(platform)) {
+      return invalidAiResponse(`creative ${index + 1} uses an unselected platform.`);
+    }
+    const mediaRequirement = enumValue(
+      creative.mediaRequirement,
+      ["image", "video"],
+      "creative media requirement",
+    );
+    if (
+      (platform === "meta" && mediaRequirement !== "image") ||
+      (platform === "tiktok" && mediaRequirement !== "video")
+    ) {
+      return invalidAiResponse(`creative ${index + 1} has the wrong media requirement.`);
+    }
+    const mediaStatus = enumValue(
+      creative.mediaStatus,
+      ["ready", "required", "generating"],
+      "creative media status",
+    );
+    const mediaUrl = optionalString(creative.mediaUrl, "creative media URL") ?? "";
+    if (mediaStatus === "ready" && !mediaUrl) {
+      return invalidAiResponse(`creative ${index + 1} is ready without media.`);
+    }
+    return {
+      platform,
+      primaryText: requiredString(creative.primaryText, "creative primary text"),
+      headline: optionalString(creative.headline, "creative headline"),
+      cta: enumValue(creative.cta, CAMPAIGN_CTAS, "creative CTA"),
+      mediaUrl,
+      landingPageUrl: optionalString(creative.landingPageUrl, "landing page URL"),
+      appId: optionalString(creative.appId, "app ID"),
+      leadFormId: optionalString(creative.leadFormId, "lead form ID"),
+      mediaRequirement,
+      mediaStatus,
+    };
+  });
+  for (const platform of platforms) {
+    if (!creatives.some((creative) => creative.platform === platform)) {
+      return invalidAiResponse(`a ${platform} creative is required.`);
+    }
+  }
+
+  if (!isRecord(data.stepRationales)) {
+    return invalidAiResponse("review explanations are missing.");
+  }
+  const rationales = data.stepRationales;
+  const stepRationales = Object.fromEntries(
+    CAMPAIGN_RATIONALE_KEYS.map((key) => [
+      key,
+      requiredString(rationales[key], `${key} explanation`),
+    ]),
+  ) as GeneratedCampaignDraft["stepRationales"];
+
+  return {
+    name: requiredString(data.name, "campaign name"),
+    goal,
+    platforms,
+    configuration: {
+      destination,
+      optimizationGoal,
+      accountAssetIds,
+      eventSourceIds,
+      sameCreativeForAll: false,
+    },
+    audience: {
+      locations,
+      ageMin,
+      ageMax,
+      gender: enumValue<CampaignGender>(audience.gender ?? "all", ["all", "male", "female"], "gender"),
+      interests: stringArray(audience.interests ?? [], "interests"),
+      includeAudienceIds: stringArray(audience.includeAudienceIds ?? [], "included audiences"),
+      excludeAudienceIds: stringArray(audience.excludeAudienceIds ?? [], "excluded audiences"),
+      languages: stringArray(audience.languages ?? [], "languages"),
+      devices: Array.isArray(audience.devices)
+        ? audience.devices.map((device) => enumValue(device, ["mobile", "desktop"] as const, "device"))
+        : ["mobile"],
+    },
+    budget: {
+      amount: data.budget.amount,
+      currency,
+      type: budgetType,
+      durationDays: data.budget.durationDays,
+      startDateLocal,
+      endDateLocal,
+    },
+    creatives,
+    rationale: requiredString(data.rationale, "campaign rationale"),
+    stepRationales,
+  };
+};
+
+const parseAiMessages = (value: unknown): AiCampaignMessage[] => {
+  if (!Array.isArray(value)) return [];
+  return value.map((message, index) => {
+    if (!isRecord(message)) return invalidAiResponse(`message ${index + 1} is invalid.`);
+    return {
+      role: enumValue(message.role, ["user", "assistant"], "message role"),
+      content: requiredString(message.content, "message content"),
+    };
+  });
+};
+
+export const parseAiCampaignDraftResponse = (data: unknown): AiCampaignDraftResponse => {
+  if (!isRecord(data)) return invalidAiResponse("the session response is not an object.");
+  const draftId = requiredString(data.draftId, "draft session ID");
+  if (typeof data.revision !== "number" || !Number.isInteger(data.revision) || data.revision < 0) {
+    return invalidAiResponse("draft revision is invalid.");
+  }
+  const base = { draftId, revision: data.revision, messages: parseAiMessages(data.messages) };
+  if (data.status === "needs_input") {
+    if (!isRecord(data.question) || !Array.isArray(data.question.options) || !data.question.options.length) {
+      return invalidAiResponse("clarifying question options are missing.");
+    }
+    return {
+      ...base,
+      status: "needs_input",
+      question: {
+        id: requiredString(data.question.id, "question ID"),
+        prompt: requiredString(data.question.prompt, "question prompt"),
+        allowMultiple: data.question.allowMultiple === true,
+        options: data.question.options.map((option, index) => {
+          if (!isRecord(option)) return invalidAiResponse(`question option ${index + 1} is invalid.`);
+          return {
+            id: requiredString(option.id, "question option ID"),
+            label: requiredString(option.label, "question option label"),
+            description: optionalString(option.description, "question option description"),
+          };
+        }),
+      },
+    };
+  }
+  if (data.status === "answer") {
+    return {
+      ...base,
+      status: "answer",
+      answer: requiredString(data.answer, "assistant answer"),
+    };
+  }
+  if (data.status !== "ready") return invalidAiResponse("session status is unsupported.");
+  if (!Array.isArray(data.changedSteps)) return invalidAiResponse("changed steps are missing.");
+  const changedSteps = data.changedSteps.map((step) =>
+    enumValue(step, AI_CAMPAIGN_STEP_IDS, "changed step"),
+  );
+  return { ...base, status: "ready", draft: parseGeneratedCampaignDraft(data.draft), changedSteps };
 };
 
 const futureIso = (minutes: number) =>
@@ -347,21 +714,87 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   return null;
 };
 
-export const generateCampaignDraft = async (input: {
+export const startAiCampaignDraft = async (input: {
   prompt: string;
   brandName: string;
   currency?: CampaignCurrency;
-}): Promise<GeneratedCampaignDraft> => {
-  const res = await apiFetch("/ai/generate-campaign", {
+  signal?: AbortSignal;
+}): Promise<AiCampaignDraftResponse> => {
+  const res = await apiFetch("/ai/campaign-drafts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...input, currency: input.currency ?? "NGN" }),
+    body: JSON.stringify({
+      prompt: input.prompt,
+      brandName: input.brandName,
+      currency: input.currency ?? "NGN",
+    }),
+    signal: input.signal,
   });
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Generate campaign failed (${res.status})`));
+    throw new Error(getApiError(data, `Start AI campaign failed (${res.status})`));
   }
-  return parseGeneratedCampaignDraft(data);
+  return parseAiCampaignDraftResponse(data);
+};
+
+export const answerAiCampaignQuestion = async (input: {
+  draftId: string;
+  revision: number;
+  questionId: string;
+  optionIds: string[];
+  signal?: AbortSignal;
+}): Promise<AiCampaignDraftResponse> => {
+  const res = await apiFetch(
+    `/ai/campaign-drafts/${encodeURIComponent(input.draftId)}/answers`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        revision: input.revision,
+        questionId: input.questionId,
+        optionIds: input.optionIds,
+      }),
+      signal: input.signal,
+    },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Continue AI campaign failed (${res.status})`));
+  }
+  return parseAiCampaignDraftResponse(data);
+};
+
+export const reviseAiCampaignDraft = async (input: {
+  draftId: string;
+  revision: number;
+  currentDraft: GeneratedCampaignDraft;
+  targetStep?: AiCampaignStepId;
+  instruction: string;
+  lockedSteps: AiCampaignStepId[];
+  messages: AiCampaignMessage[];
+  signal?: AbortSignal;
+}): Promise<AiCampaignDraftResponse> => {
+  const res = await apiFetch(
+    `/ai/campaign-drafts/${encodeURIComponent(input.draftId)}/revisions`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        revision: input.revision,
+        currentDraft: input.currentDraft,
+        targetStep: input.targetStep,
+        instruction: input.instruction,
+        lockedSteps: input.lockedSteps,
+        messages: input.messages,
+      }),
+      signal: input.signal,
+    },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Revise AI campaign failed (${res.status})`));
+  }
+  return parseAiCampaignDraftResponse(data);
 };
 
 export const requestCampaignAdvice = async (

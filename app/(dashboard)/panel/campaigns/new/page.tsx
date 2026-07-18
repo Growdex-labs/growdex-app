@@ -15,15 +15,22 @@ import { apiFetch } from "@/lib/auth";
 import {
   createCampaign,
   createInitialCampaignPayload,
-  generateCampaignDraft,
+  answerAiCampaignQuestion,
+  AI_CAMPAIGN_STEP_IDS,
   publishCampaign,
+  reviseAiCampaignDraft,
   searchMetaInterests,
+  startAiCampaignDraft,
   validateCampaignPayload,
+  type AiCampaignDraftResponse,
+  type AiCampaignQuestion,
+  type AiCampaignStepId,
   type CampaignCreativeInput,
   type CampaignConfiguration,
   type CampaignCta,
   type CampaignPlatform,
   type CreateCampaignPayload,
+  type GeneratedCampaignDraft,
   type MetaInterest,
 } from "@/lib/campaigns";
 import { validateFile } from "@/lib/campaign-shared";
@@ -36,7 +43,7 @@ import { AiCampaignChat } from "../components/AiCampaignChat";
 import type { AiMessage } from "../components/AiSidePanel";
 import { AdCreatedModal } from "../components/AdCreatedModal";
 import { AiWorkingView } from "../components/AiWorkingView";
-import type { AiStep } from "../components/use-ai-campaign-flow";
+import type { AiStep, AiStepStatus } from "../components/use-ai-campaign-flow";
 import { useAiCampaignFlow } from "../components/use-ai-campaign-flow";
 import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
 import { CampaignNameCard } from "../components/CampaignNameCard";
@@ -67,10 +74,13 @@ const EMPTY_AI_RATIONALES = {
   setup: "The model has not generated this decision yet.",
   goal: "The model has not generated this decision yet.",
   platforms: "The model has not generated this decision yet.",
+  event: "The model has not generated this decision yet.",
   audience: "The model has not generated this decision yet.",
   budget: "The model has not generated this decision yet.",
   creative: "The model has not generated this decision yet.",
 };
+
+const AI_DRAFT_STORAGE_KEY = "growdex.aiCampaignDraft.v2";
 
 const CTA_OPTIONS: Array<{ value: CampaignCta; label: string }> = [
   { value: "LEARN_MORE", label: "Learn more" },
@@ -107,6 +117,71 @@ const connected = (
   platform: CampaignPlatform,
 ) => Boolean(accounts?.[platform]?.connected && !accounts[platform]?.needsReauth);
 
+const aiStepSnapshot = (draft: GeneratedCampaignDraft, step: AiCampaignStepId) => {
+  switch (step) {
+    case "setup":
+      return draft.name;
+    case "platform":
+      return {
+        platforms: draft.platforms,
+        accountAssetIds: draft.configuration.accountAssetIds,
+      };
+    case "goals":
+      return draft.goal;
+    case "event":
+      return {
+        destination: draft.configuration.destination,
+        optimizationGoal: draft.configuration.optimizationGoal,
+        eventSourceIds: draft.configuration.eventSourceIds,
+      };
+    case "audience":
+      return draft.audience;
+    case "budget":
+      return draft.budget;
+    case "creative":
+      return draft.creatives;
+  }
+};
+
+const campaignToAiDraft = (
+  campaign: CreateCampaignPayload,
+  previous: GeneratedCampaignDraft,
+): GeneratedCampaignDraft => {
+  const start = new Date(campaign.budget.startDate);
+  const end = campaign.budget.endDate ? new Date(campaign.budget.endDate) : null;
+  const durationDays = end
+    ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
+    : previous.budget.durationDays;
+  return {
+    ...previous,
+    name: campaign.campaign.name,
+    goal: campaign.campaign.goal,
+    platforms: campaign.campaign.platforms,
+    configuration: campaign.campaign.configuration,
+    audience: campaign.audience,
+    budget: {
+      amount: campaign.budget.amount,
+      currency: campaign.budget.currency,
+      type: campaign.budget.type,
+      durationDays,
+      startDateLocal: campaign.budget.startDate,
+      endDateLocal: campaign.budget.endDate,
+    },
+    creatives: campaign.adContent.creatives.map((creative) => ({
+      ...creative,
+      mediaRequirement: creative.platform === "meta" ? "image" : "video",
+      mediaStatus: creative.mediaUrl ? "ready" : "required",
+    })),
+  };
+};
+
+const toUiMessages = (messages: AiCampaignDraftResponse["messages"]): AiMessage[] =>
+  messages.map((message, index) => ({
+    id: `session-${index}-${message.role}-${message.content.slice(0, 12)}`,
+    sender: message.role === "user" ? "user" : "ai",
+    text: message.content,
+  }));
+
 export default function NewCampaignPage() {
   const router = useRouter();
   const { me } = useMe();
@@ -125,8 +200,12 @@ export default function NewCampaignPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [aiReviewActive, setAiReviewActive] = useState(false);
-  const [aiOriginalPrompt, setAiOriginalPrompt] = useState("");
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
+  const [aiDraftId, setAiDraftId] = useState<string | null>(null);
+  const [aiDraftRevision, setAiDraftRevision] = useState(0);
+  const [aiGeneratedDraft, setAiGeneratedDraft] =
+    useState<GeneratedCampaignDraft | null>(null);
+  const [aiQuestion, setAiQuestion] = useState<AiCampaignQuestion | null>(null);
   const [aiStepRationales, setAiStepRationales] = useState(
     EMPTY_AI_RATIONALES,
   );
@@ -145,7 +224,24 @@ export default function NewCampaignPage() {
   const creativeCache = useRef(
     new Map<CampaignPlatform, CampaignCreativeInput[]>(),
   );
+  const aiRequestIdRef = useRef(0);
+  const aiAbortRef = useRef<AbortController | null>(null);
+  const aiSessionRestoredRef = useRef(false);
   const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
+  const aiApprovalBlocker = aiGeneratedDraft
+    ? campaign.campaign.platforms.some(
+        (platform) => !campaign.campaign.configuration.accountAssetIds?.[platform],
+      )
+      ? "Select a connected ad account for every platform before approving the draft."
+      : campaign.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
+          campaign.campaign.platforms.some(
+            (platform) => !campaign.campaign.configuration.eventSourceIds?.[platform],
+          )
+        ? "Select every required conversion event source before approving the draft."
+        : campaign.adContent.creatives.some((creative) => !creative.mediaUrl)
+          ? "Add the required Meta images and TikTok videos before approving the full draft."
+          : null
+    : null;
 
   useEffect(() => {
     let active = true;
@@ -160,6 +256,98 @@ export default function NewCampaignPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (aiSessionRestoredRef.current) return;
+    aiSessionRestoredRef.current = true;
+    const saved = sessionStorage.getItem(AI_DRAFT_STORAGE_KEY);
+    if (!saved) return;
+    try {
+      const value = JSON.parse(saved) as {
+        campaign?: CreateCampaignPayload;
+        draftId?: string;
+        revision?: number;
+        generatedDraft?: GeneratedCampaignDraft;
+        question?: AiCampaignQuestion;
+        rationale?: string;
+        messages?: AiMessage[];
+        stepRationales?: typeof EMPTY_AI_RATIONALES;
+        statuses?: Record<AiCampaignStepId, AiStepStatus>;
+      };
+      if (
+        !value.campaign ||
+        value.campaign.creationMode !== "ai" ||
+        typeof value.draftId !== "string" ||
+        typeof value.revision !== "number" ||
+        (!value.generatedDraft && !value.question) ||
+        (value.generatedDraft &&
+          (!value.stepRationales ||
+            !value.statuses ||
+            AI_CAMPAIGN_STEP_IDS.some(
+              (id) =>
+                !["review", "approved", "revising"].includes(
+                  value.statuses?.[id] as string,
+                ),
+            )))
+      ) {
+        sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
+        return;
+      }
+      setCampaign(value.campaign);
+      setMethod("ai");
+      setGoalConfirmed(Boolean(value.generatedDraft));
+      setAiDraftId(value.draftId);
+      setAiDraftRevision(value.revision);
+      setAiGeneratedDraft(value.generatedDraft ?? null);
+      setAiQuestion(value.question ?? null);
+      setAiRationale(value.rationale ?? value.generatedDraft?.rationale ?? null);
+      setAiMessages(value.messages ?? []);
+      if (value.stepRationales) setAiStepRationales(value.stepRationales);
+      if (value.statuses) aiFlow.restoreStatuses(value.statuses);
+      setAiReviewActive(true);
+      setStep(0);
+    } catch {
+      sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
+    }
+  }, [aiFlow]);
+
+  useEffect(() => {
+    if (!aiSessionRestoredRef.current) return;
+    if (
+      !aiDraftId ||
+      (!aiGeneratedDraft && !aiQuestion) ||
+      campaign.creationMode !== "ai"
+    ) {
+      sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
+      return;
+    }
+    sessionStorage.setItem(
+      AI_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        campaign,
+        draftId: aiDraftId,
+        revision: aiDraftRevision,
+        generatedDraft: aiGeneratedDraft
+          ? campaignToAiDraft(campaign, aiGeneratedDraft)
+          : undefined,
+        question: aiQuestion ?? undefined,
+        rationale: aiRationale,
+        messages: aiMessages,
+        stepRationales: aiStepRationales,
+        statuses: aiFlow.statuses,
+      }),
+    );
+  }, [
+    aiDraftId,
+    aiDraftRevision,
+    aiFlow.statuses,
+    aiGeneratedDraft,
+    aiMessages,
+    aiQuestion,
+    aiRationale,
+    aiStepRationales,
+    campaign,
+  ]);
 
   const patch = (next: Partial<CreateCampaignPayload>) =>
     setCampaign((current) => ({ ...current, ...next }));
@@ -183,22 +371,31 @@ export default function NewCampaignPage() {
 
   const patchAudience = (
     next: Partial<CreateCampaignPayload["audience"]>,
-  ) =>
+  ) => {
+    if (campaign.creationMode === "ai") aiFlow.markReview("audience");
     setCampaign((current) => ({
       ...current,
       audience: { ...current.audience, ...next },
     }));
+  };
 
-  const patchBudget = (next: Partial<CreateCampaignPayload["budget"]>) =>
+  const patchBudget = (next: Partial<CreateCampaignPayload["budget"]>) => {
+    if (campaign.creationMode === "ai") aiFlow.markReview("budget");
     setCampaign((current) => ({
       ...current,
       budget: { ...current.budget, ...next },
     }));
+  };
 
   const setPlatformAccounts = (
     platforms: CampaignPlatform[],
     accountAssetIds: Partial<Record<CampaignPlatform, string>>,
   ) => {
+    if (campaign.creationMode === "ai") {
+      aiFlow.markReview("platform");
+      aiFlow.markReview("event");
+      aiFlow.markReview("creative");
+    }
     setCampaign((current) => {
       for (const platform of current.campaign.platforms) {
         creativeCache.current.set(
@@ -263,104 +460,240 @@ export default function NewCampaignPage() {
     }
   };
 
-  const generateWithAi = async (
-    prompt: string,
-    options?: { revision?: boolean; stepId?: AiStep["id"]; userText?: string },
-  ) => {
-    const revision = options?.revision === true;
-    const request = revision
-      ? `${aiOriginalPrompt}\n\nRevision request: ${prompt}`
-      : prompt;
-    if (revision && options.stepId) aiFlow.markRevising(options.stepId);
+  const beginAiRequest = (stepId?: AiStep["id"]) => {
+    aiAbortRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = aiRequestIdRef.current + 1;
+    aiRequestIdRef.current = requestId;
+    aiAbortRef.current = controller;
+    if (stepId) aiFlow.markRevising(stepId);
     setAiLoading(true);
     setError(null);
-    if (!revision) setAiOriginalPrompt(prompt);
-    setAiMessages((current) => [
-      ...current,
-      {
-        id: `user-${Date.now()}`,
-        sender: "user",
-        text: options?.userText ?? prompt,
-      },
-    ]);
-    try {
-      const generated = await generateCampaignDraft({
-        prompt: request,
-        brandName,
-      });
-      const start = generated.budget.startDateLocal
-        ? new Date(generated.budget.startDateLocal)
-        : new Date(Date.now() + 30 * 60_000);
-      const end = generated.budget.endDateLocal
-        ? new Date(generated.budget.endDateLocal)
-        : new Date(start);
-      if (!generated.budget.endDateLocal) {
-        end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
-      }
-      const requestedName = campaign.campaign.name.trim();
-      const accountAssetIds = Object.fromEntries(
-        generated.platforms.flatMap((platform) => {
-          const selected = campaign.campaign.configuration.accountAssetIds?.[platform];
-          const primary = accounts?.[platform]?.assets?.find((asset) => asset.isPrimary)?.id;
-          const first = accounts?.[platform]?.assets?.[0]?.id;
-          const assetId = selected ?? primary ?? first;
-          return assetId ? [[platform, assetId]] : [];
-        }),
-      ) as Partial<Record<CampaignPlatform, string>>;
-      setCampaign({
-        creationMode: "ai",
-        campaign: {
-          name: requestedName || generated.name,
-          goal: generated.goal,
-          platforms: generated.platforms,
-          configuration: {
-            ...generated.configuration,
-            accountAssetIds,
-            eventSourceIds: {},
-            sameCreativeForAll: true,
-          },
-        },
-        audience: generated.audience,
-        budget: {
-          amount: generated.budget.amount,
-          currency: generated.budget.currency,
-          type: generated.budget.type,
-          startDate: start.toISOString(),
-          endDate: end.toISOString(),
-        },
-        adContent: {
-          creatives: generated.platforms.map((platform) => ({
-            ...generated.creative,
-            platform,
-            mediaUrl: generated.creative.mediaUrl ?? "",
-            landingPageUrl: generated.creative.landingPageUrl ?? "",
-          })),
-        },
-      });
-      setGoalConfirmed(true);
-      setAiRationale(generated.rationale);
-      setAiStepRationales(generated.stepRationales);
-      aiFlow.resetReviews();
+    return { controller, requestId };
+  };
+
+  const applyAiResponse = (
+    response: AiCampaignDraftResponse,
+    options?: {
+      requestId: number;
+      lockedSteps?: AiCampaignStepId[];
+      baseDraft?: GeneratedCampaignDraft;
+      initial?: boolean;
+    },
+  ) => {
+    if (options && options.requestId !== aiRequestIdRef.current) return;
+    if (response.status === "needs_input") {
+      setAiDraftId(response.draftId);
+      setAiDraftRevision(response.revision);
+      setAiMessages(toUiMessages(response.messages));
+      setAiQuestion(response.question);
       setAiReviewActive(true);
-      setAiMessages((current) => [
-        ...current,
-        {
-          id: `ai-${Date.now()}`,
-          text: generated.rationale,
-        },
-      ]);
       setStep(0);
+      return;
+    }
+    if (response.status === "answer") {
+      setAiDraftId(response.draftId);
+      setAiDraftRevision(response.revision);
+      const responseMessages = toUiMessages(response.messages);
+      setAiMessages(
+        responseMessages.some(
+          (message) => message.sender !== "user" && message.text === response.answer,
+        )
+          ? responseMessages
+          : [
+              ...responseMessages,
+              { id: `answer-${response.revision}`, sender: "ai", text: response.answer },
+            ],
+      );
+      setAiQuestion(null);
+      setAiReviewActive(true);
+      setStep(0);
+      return;
+    }
+
+    const generated = response.draft;
+    const lockedSteps = options?.lockedSteps ?? [];
+    const baseDraft = options?.baseDraft ?? aiGeneratedDraft;
+    if (baseDraft && lockedSteps.length) {
+      const changedLockedStep = lockedSteps.find(
+        (stepId) =>
+          JSON.stringify(aiStepSnapshot(baseDraft, stepId)) !==
+          JSON.stringify(aiStepSnapshot(generated, stepId)),
+      );
+      if (changedLockedStep) {
+        throw new Error(
+          `Growdex AI changed the approved ${changedLockedStep} decision. The revision was rejected and your current draft was kept.`,
+        );
+      }
+    }
+
+    for (const platform of generated.platforms) {
+      const configuredId = generated.configuration.accountAssetIds?.[platform];
+      const available = accounts?.[platform]?.assets?.some(
+        (asset) => asset.id === configuredId,
+      );
+      if (!configuredId || !available) {
+        throw new Error(
+          `Growdex AI selected a ${platform === "meta" ? "Meta" : "TikTok"} account that is not available. Reconnect the account and try again.`,
+        );
+      }
+    }
+
+    setAiDraftId(response.draftId);
+    setAiDraftRevision(response.revision);
+    setAiMessages(toUiMessages(response.messages));
+
+    const start = generated.budget.startDateLocal
+      ? new Date(generated.budget.startDateLocal)
+      : new Date(Date.now() + 30 * 60_000);
+    const end = generated.budget.endDateLocal
+      ? new Date(generated.budget.endDateLocal)
+      : new Date(start);
+    if (!generated.budget.endDateLocal) {
+      end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
+    }
+    setCampaign({
+      creationMode: "ai",
+      campaign: {
+        name: generated.name,
+        goal: generated.goal,
+        platforms: generated.platforms,
+        configuration: {
+          ...generated.configuration,
+          sameCreativeForAll: false,
+        },
+      },
+      audience: generated.audience,
+      budget: {
+        amount: generated.budget.amount,
+        currency: generated.budget.currency,
+        type: generated.budget.type,
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+      },
+      adContent: {
+        creatives: generated.creatives.map((creative) => ({
+          platform: creative.platform,
+          primaryText: creative.primaryText,
+          headline: creative.headline,
+          cta: creative.cta,
+          mediaUrl: creative.mediaUrl,
+          landingPageUrl: creative.landingPageUrl,
+          appId: creative.appId,
+          leadFormId: creative.leadFormId,
+        })),
+      },
+    });
+    setAiGeneratedDraft(generated);
+    setGoalConfirmed(true);
+    setAiRationale(generated.rationale);
+    setAiStepRationales(generated.stepRationales);
+    setAiQuestion(null);
+    if (options?.initial) aiFlow.resetReviews();
+    else aiFlow.applyRevision(response.changedSteps);
+    setAiReviewActive(true);
+    setStep(0);
+  };
+
+  const startAiDraft = async (prompt: string) => {
+    if (accountsLoading) {
+      setError("Wait while Growdex checks your connected ad accounts.");
+      return;
+    }
+    if (!accounts || (!connected(accounts, "meta") && !connected(accounts, "tiktok"))) {
+      setError("Connect at least one ad account before creating a campaign with AI.");
+      return;
+    }
+    setAiMessages([{ id: `user-${Date.now()}`, sender: "user", text: prompt }]);
+    const { controller, requestId } = beginAiRequest();
+    try {
+      const response = await startAiCampaignDraft({
+        prompt,
+        brandName,
+        currency: campaign.budget.currency,
+        signal: controller.signal,
+      });
+      applyAiResponse(response, { requestId, initial: true });
     } catch (failure) {
-      if (options?.stepId) aiFlow.markReview(options.stepId);
+      if (requestId !== aiRequestIdRef.current || controller.signal.aborted) return;
       setError(
-        failure instanceof Error ? failure.message : "Could not generate the campaign draft.",
+        failure instanceof Error ? failure.message : "Could not start the AI campaign draft.",
       );
     } finally {
-      setAiLoading(false);
+      if (requestId === aiRequestIdRef.current) setAiLoading(false);
+    }
+  };
+
+  const reviseAiDraft = async (
+    instruction: string,
+    options?: { stepId?: AiStep["id"]; userText?: string },
+  ) => {
+    if (!aiDraftId || !aiGeneratedDraft) {
+      setError("The AI draft session is missing. Start a new AI campaign.");
+      return;
+    }
+    const userText = options?.userText ?? instruction;
+    const requestMessages = [
+      ...aiMessages.map((message) => ({
+        role: message.sender === "user" ? ("user" as const) : ("assistant" as const),
+        content: message.text,
+      })),
+      { role: "user" as const, content: userText },
+    ];
+    setAiMessages((current) => [
+      ...current,
+      { id: `user-${Date.now()}`, sender: "user", text: userText },
+    ]);
+    const lockedSteps = aiFlow.approvedStepIds;
+    const currentDraft = campaignToAiDraft(campaign, aiGeneratedDraft);
+    const { controller, requestId } = beginAiRequest(options?.stepId);
+    try {
+      const response = await reviseAiCampaignDraft({
+        draftId: aiDraftId,
+        revision: aiDraftRevision,
+        currentDraft,
+        targetStep: options?.stepId,
+        instruction,
+        lockedSteps,
+        messages: requestMessages,
+        signal: controller.signal,
+      });
+      applyAiResponse(response, { requestId, lockedSteps, baseDraft: currentDraft });
+    } catch (failure) {
+      if (requestId !== aiRequestIdRef.current || controller.signal.aborted) return;
+      if (options?.stepId) aiFlow.markReview(options.stepId);
+      setError(
+        failure instanceof Error ? failure.message : "Could not revise the AI campaign draft.",
+      );
+    } finally {
+      if (requestId === aiRequestIdRef.current) setAiLoading(false);
+    }
+  };
+
+  const answerAiQuestion = async (optionIds: string[]) => {
+    if (!aiDraftId || !aiQuestion) return;
+    const { controller, requestId } = beginAiRequest();
+    try {
+      const response = await answerAiCampaignQuestion({
+        draftId: aiDraftId,
+        revision: aiDraftRevision,
+        questionId: aiQuestion.id,
+        optionIds,
+        signal: controller.signal,
+      });
+      applyAiResponse(response, { requestId, initial: !aiGeneratedDraft });
+    } catch (failure) {
+      if (requestId !== aiRequestIdRef.current || controller.signal.aborted) return;
+      setError(
+        failure instanceof Error ? failure.message : "Could not continue the AI campaign draft.",
+      );
+    } finally {
+      if (requestId === aiRequestIdRef.current) setAiLoading(false);
     }
   };
 
   const patchCreative = (index: number, next: Partial<CampaignCreativeInput>) => {
+    if (campaign.creationMode === "ai") aiFlow.markReview("creative");
     setCampaign((current) => {
       const existing = current.adContent.creatives[index];
       if (!existing) return current;
@@ -388,6 +721,7 @@ export default function NewCampaignPage() {
   };
 
   const replaceCreatives = (creatives: CampaignCreativeInput[]) => {
+    if (campaign.creationMode === "ai") aiFlow.markReview("creative");
     for (const platform of campaign.campaign.platforms) {
       creativeCache.current.set(
         platform,
@@ -704,7 +1038,10 @@ export default function NewCampaignPage() {
                   {!aiReviewActive && (
                     <CampaignNameCard
                       value={campaign.campaign.name}
-                      onChange={(name) => patchCampaign({ name })}
+                      onChange={(name) => {
+                        if (campaign.creationMode === "ai") aiFlow.markReview("setup");
+                        patchCampaign({ name });
+                      }}
                     />
                   )}
                   {method !== "ai" ? (
@@ -723,41 +1060,42 @@ export default function NewCampaignPage() {
                   ) : aiReviewActive ? (
                     <AiWorkingView
                       campaignName={campaign.campaign.name}
-                      steps={aiFlow.steps}
+                      steps={aiGeneratedDraft ? aiFlow.steps : undefined}
                       messages={aiMessages}
                       allApproved={aiFlow.allApproved}
                       revising={aiLoading}
+                      question={aiQuestion}
+                      error={error}
+                      approvalBlocker={aiApprovalBlocker}
                       onApprove={aiFlow.approve}
                       onApproveAll={aiFlow.approveAll}
+                      onAnswer={(optionIds) => void answerAiQuestion(optionIds)}
                       onWhyThis={(reviewStep) =>
                         setAiMessages((current) => [
                           ...current,
                           {
-                            id: `why-${reviewStep.id}-${Date.now()}`,
+                            id: `why-user-${reviewStep.id}-${Date.now()}`,
+                            sender: "user",
+                            text: `Why did you choose ${reviewStep.title.toLowerCase()}?`,
+                          },
+                          {
+                            id: `why-ai-${reviewStep.id}-${Date.now()}`,
                             text: reviewStep.reason,
                           },
                         ])
                       }
                       onEdit={(reviewStep) => {
+                        aiFlow.markReview(reviewStep.id);
                         setAiReviewActive(false);
                         setStep(reviewStep.editStep);
                       }}
                       onDecline={(reviewStep, instruction) =>
-                        void generateWithAi(
-                          `${reviewStep.title}: ${instruction}`,
-                          {
-                            revision: true,
-                            stepId: reviewStep.id,
-                            userText: instruction,
-                          },
-                        )
-                      }
-                      onPrompt={(prompt) =>
-                        void generateWithAi(prompt, {
-                          revision: true,
-                          userText: prompt,
+                        void reviseAiDraft(instruction, {
+                          stepId: reviewStep.id,
+                          userText: instruction,
                         })
                       }
+                      onPrompt={(prompt) => void reviseAiDraft(prompt)}
                       onContinue={() => {
                         setAiReviewActive(false);
                         setStep(1);
@@ -776,7 +1114,7 @@ export default function NewCampaignPage() {
                       </button>
                       <AiCampaignChat
                         firstName={firstName}
-                        onSubmit={(prompt) => void generateWithAi(prompt)}
+                        onSubmit={(prompt) => void startAiDraft(prompt)}
                         suggestions={[
                           "Launch a lead campaign for my business in Nigeria",
                           "Promote a new product to young adults",
@@ -812,6 +1150,10 @@ export default function NewCampaignPage() {
                   goal={campaign.campaign.goal}
                   platforms={campaign.campaign.platforms}
                   onChange={(goal, next) => {
+                    if (campaign.creationMode === "ai") {
+                      aiFlow.markReview("goals");
+                      aiFlow.markReview("event");
+                    }
                     patchCampaign({
                       goal,
                       configuration: {
@@ -833,6 +1175,7 @@ export default function NewCampaignPage() {
                     platforms={campaign.campaign.platforms}
                     configuration={campaign.campaign.configuration}
                     onChange={(next) => {
+                      if (campaign.creationMode === "ai") aiFlow.markReview("event");
                       patchConfiguration({
                         ...next,
                         ...(next.optimizationGoal !== "CONVERSIONS"
@@ -863,7 +1206,10 @@ export default function NewCampaignPage() {
                           campaign.campaign.configuration.optimizationGoal
                         }
                         onChange={(eventSourceIds) =>
-                          patchConfiguration({ eventSourceIds })
+                          {
+                            if (campaign.creationMode === "ai") aiFlow.markReview("event");
+                            patchConfiguration({ eventSourceIds });
+                          }
                         }
                       />
                     </div>

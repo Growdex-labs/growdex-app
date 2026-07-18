@@ -10,11 +10,18 @@ export interface AiMessage {
   sender?: "ai" | "user";
 }
 
+export interface AiSelectableOption {
+  id: string;
+  label: string;
+  description?: string;
+}
+
 interface AiSidePanelProps {
   messages?: AiMessage[];
   /** Question the AI is waiting on; when absent, no options are shown. */
   question?: string;
-  options?: string[];
+  options?: AiSelectableOption[];
+  allowMultiple?: boolean;
   /** Quick-reply chips shown above the input. */
   suggestions?: string[];
   onAnswer?: (selected: string[]) => void;
@@ -27,6 +34,7 @@ export function AiSidePanel({
   messages = [],
   question,
   options = [],
+  allowMultiple = false,
   suggestions = [],
   onAnswer,
   onSubmit,
@@ -45,14 +53,18 @@ export function AiSidePanel({
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, question]);
 
-  const toggleOption = (option: string) =>
-    setSelectedOptions((prev) => ({ ...prev, [option]: !prev[option] }));
+  const toggleOption = (optionId: string) =>
+    setSelectedOptions((prev) =>
+      allowMultiple
+        ? { ...prev, [optionId]: !prev[optionId] }
+        : { [optionId]: !prev[optionId] },
+    );
 
-  const selectedList = options.filter((o) => selectedOptions[o]);
+  const selectedList = options.filter((option) => selectedOptions[option.id]);
 
   const confirmSelection = () => {
     if (selectedList.length === 0) return;
-    onAnswer?.(selectedList);
+    onAnswer?.(selectedList.map((option) => option.id));
   };
 
   const submit = () => {
@@ -92,12 +104,13 @@ export function AiSidePanel({
             </p>
             <div className="space-y-2">
               {options.map((option) => {
-                const checked = Boolean(selectedOptions[option]);
+                const checked = Boolean(selectedOptions[option.id]);
                 return (
                   <button
-                    key={option}
+                    key={option.id}
                     type="button"
-                    onClick={() => toggleOption(option)}
+                    onClick={() => toggleOption(option.id)}
+                    disabled={submitting}
                     className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
                       checked
                         ? "border-violet-300 bg-violet-50/40"
@@ -112,7 +125,12 @@ export function AiSidePanel({
                     >
                       {checked && <Check className="w-3 h-3 text-white" />}
                     </span>
-                    <span className="text-sm text-gray-700">{option}</span>
+                    <span>
+                      <span className="block text-sm text-gray-700">{option.label}</span>
+                      {option.description && (
+                        <span className="mt-0.5 block text-xs text-gray-500">{option.description}</span>
+                      )}
+                    </span>
                   </button>
                 );
               })}
@@ -121,7 +139,7 @@ export function AiSidePanel({
             <button
               type="button"
               onClick={confirmSelection}
-              disabled={selectedList.length === 0}
+              disabled={submitting || selectedList.length === 0}
               style={
                 selectedList.length > 0
                   ? { background: PURPLE_GRADIENT }
@@ -158,8 +176,9 @@ export function AiSidePanel({
               <button
                 key={suggestion}
                 type="button"
-                onClick={() => onSubmit?.(suggestion)}
-                className="rounded-full bg-violet-50 px-3 py-1 text-[11px] text-violet-600 hover:bg-violet-100 transition-colors"
+                  onClick={() => onSubmit?.(suggestion)}
+                  disabled={submitting}
+                  className="rounded-full bg-violet-50 px-3 py-1 text-[11px] text-violet-600 hover:bg-violet-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {suggestion}
               </button>
