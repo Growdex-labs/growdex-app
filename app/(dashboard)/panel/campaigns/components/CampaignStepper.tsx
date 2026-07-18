@@ -21,20 +21,23 @@ export function CampaignStepper({
       {steps.map((step, index) => {
         const isActive = index === current;
         const isDone = index < current;
+        const isUnavailable = index > current;
         return (
           <button
             key={step}
             type="button"
+            disabled={isUnavailable}
+            aria-current={isActive ? "step" : undefined}
             onClick={() => onStepClick?.(index)}
-            className="flex-1 min-w-[92px] flex flex-col gap-2 text-left"
+            className="flex min-w-[108px] flex-1 flex-col gap-2 text-left disabled:cursor-not-allowed md:min-w-20"
           >
             <span
-              className={`text-xs whitespace-nowrap transition-colors ${
+              className={`whitespace-nowrap text-[10px] transition-colors 2xl:text-xs ${
                 isActive
                   ? "font-semibold text-gray-900"
                   : isDone
                     ? "text-gray-600"
-                    : "text-gray-400"
+                    : "text-gray-300"
               }`}
             >
               {step}

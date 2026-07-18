@@ -62,7 +62,7 @@ export function CampaignTreeSidebar({
     campaignName.length > 18 ? `${campaignName.slice(0, 18)}..` : campaignName;
 
   return (
-    <div className="w-64 h-screen flex flex-col bg-white border-r border-gray-200 p-4">
+    <aside className="hidden h-full w-[27rem] shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white p-4 lg:flex">
       {/* Back */}
       <Link
         href="/panel/campaigns"
@@ -131,7 +131,7 @@ export function CampaignTreeSidebar({
           );
         })}
       </div>
-    </div>
+    </aside>
   );
 }
 

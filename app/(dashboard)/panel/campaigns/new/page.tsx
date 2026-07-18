@@ -664,7 +664,7 @@ export default function NewCampaignPage() {
   );
 
   return (
-    <PanelLayout>
+    <PanelLayout defaultSidebarCollapsed>
       <div className="relative flex h-full">
         <DottedBackground fade />
         <div className="relative z-10 flex h-full w-full">
