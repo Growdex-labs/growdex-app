@@ -155,7 +155,7 @@ export default function PaymentHistory({
 
       <section className="mb-6 overflow-hidden rounded-xl border border-[#cba8ed] bg-[#fbf7ff]">
         <div className="flex h-10 items-center gap-2 bg-[#bd72ef] px-4 text-xs font-gilroy-semibold text-white">
-          <TrendingUp className="size-4" /> AI INSIGHTS
+          <TrendingUp className="size-4" /> SPEND INSIGHTS
         </div>
         <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-2xl text-sm text-[#6b4b7c]">
