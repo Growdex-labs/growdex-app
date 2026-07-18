@@ -220,6 +220,27 @@ export interface CampaignAdviceResponse {
   answer: string;
 }
 
+export interface CampaignOptimizationProposal {
+  id: string;
+  title: string;
+  summary: string;
+  evidence: {
+    metric: string;
+    window: string;
+    observation: string;
+  };
+  expectedOutcome: string;
+  risk: string;
+  affectedFields: string[];
+}
+
+export interface CampaignOptimizationResponse {
+  campaignId: string;
+  revision: number;
+  generatedAt: string;
+  proposals: CampaignOptimizationProposal[];
+}
+
 export interface MetaInterest {
   id: string;
   name: string;
@@ -609,6 +630,61 @@ export const parseAiCampaignDraftResponse = (data: unknown): AiCampaignDraftResp
   return { ...base, status: "ready", draft: parseGeneratedCampaignDraft(data.draft), changedSteps };
 };
 
+export const parseCampaignOptimizationResponse = (
+  data: unknown,
+): CampaignOptimizationResponse => {
+  if (!isRecord(data)) {
+    throw new Error("The AI optimization service returned an invalid response.");
+  }
+  if (typeof data.revision !== "number" || !Number.isInteger(data.revision) || data.revision < 0) {
+    throw new Error("The AI optimization service returned an invalid revision.");
+  }
+  const generatedAt = requiredString(data.generatedAt, "optimization timestamp");
+  if (Number.isNaN(new Date(generatedAt).getTime())) {
+    throw new Error("The AI optimization service returned an invalid timestamp.");
+  }
+  if (!Array.isArray(data.proposals)) {
+    throw new Error("The AI optimization service returned invalid proposals.");
+  }
+  return {
+    campaignId: requiredString(data.campaignId, "optimization campaign ID"),
+    revision: data.revision,
+    generatedAt,
+    proposals: data.proposals.map((proposal, index) => {
+      if (!isRecord(proposal) || !isRecord(proposal.evidence)) {
+        throw new Error(`AI optimization proposal ${index + 1} is invalid.`);
+      }
+      const evidence = proposal.evidence;
+      const affectedFields = stringArray(
+        proposal.affectedFields,
+        `optimization proposal ${index + 1} affected fields`,
+      );
+      if (!affectedFields.length) {
+        throw new Error(`AI optimization proposal ${index + 1} has no affected fields.`);
+      }
+      return {
+        id: requiredString(proposal.id, `optimization proposal ${index + 1} ID`),
+        title: requiredString(proposal.title, `optimization proposal ${index + 1} title`),
+        summary: requiredString(proposal.summary, `optimization proposal ${index + 1} summary`),
+        evidence: {
+          metric: requiredString(evidence.metric, "optimization evidence metric"),
+          window: requiredString(evidence.window, "optimization evidence window"),
+          observation: requiredString(
+            evidence.observation,
+            "optimization evidence observation",
+          ),
+        },
+        expectedOutcome: requiredString(
+          proposal.expectedOutcome,
+          "optimization expected outcome",
+        ),
+        risk: requiredString(proposal.risk, "optimization risk"),
+        affectedFields,
+      };
+    }),
+  };
+};
+
 const futureIso = (minutes: number) =>
   new Date(Date.now() + minutes * 60_000).toISOString();
 
@@ -821,6 +897,75 @@ export const requestCampaignAdvice = async (
     throw new Error("The campaign assistant returned an invalid response.");
   }
   return { answer: answer.trim() };
+};
+
+export const fetchCampaignOptimizations = async (
+  campaignId: string,
+  signal?: AbortSignal,
+): Promise<CampaignOptimizationResponse> => {
+  const res = await apiFetch(
+    `/ai/campaigns/${encodeURIComponent(campaignId)}/optimizations`,
+    { method: "GET", signal },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Load campaign optimizations failed (${res.status})`));
+  }
+  return parseCampaignOptimizationResponse(data);
+};
+
+export const requestCampaignOptimizations = async (
+  campaignId: string,
+  prompt: string,
+  signal?: AbortSignal,
+): Promise<CampaignOptimizationResponse> => {
+  const res = await apiFetch(
+    `/ai/campaigns/${encodeURIComponent(campaignId)}/optimizations`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+      signal,
+    },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      getApiError(data, `Generate campaign optimizations failed (${res.status})`),
+    );
+  }
+  return parseCampaignOptimizationResponse(data);
+};
+
+export const applyCampaignOptimizations = async (input: {
+  campaignId: string;
+  revision: number;
+  proposalIds: string[];
+  idempotencyKey: string;
+}): Promise<CampaignDto> => {
+  const res = await apiFetch(
+    `/ai/campaigns/${encodeURIComponent(input.campaignId)}/optimizations/apply`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": input.idempotencyKey,
+      },
+      body: JSON.stringify({
+        revision: input.revision,
+        proposalIds: input.proposalIds,
+      }),
+    },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Apply campaign optimizations failed (${res.status})`));
+  }
+  const campaign = isRecord(data) && isRecord(data.campaign) ? data.campaign : data;
+  if (!isRecord(campaign) || typeof campaign.id !== "string") {
+    throw new Error("Apply campaign optimizations returned an invalid campaign.");
+  }
+  return campaign as unknown as CampaignDto;
 };
 
 export const searchMetaInterests = async (

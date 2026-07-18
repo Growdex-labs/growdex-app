@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseAiCampaignDraftResponse } from "./campaigns";
+import {
+  parseAiCampaignDraftResponse,
+  parseCampaignOptimizationResponse,
+} from "./campaigns";
 
 const readyResponse = () => ({
   status: "ready",
@@ -81,6 +84,42 @@ const readyResponse = () => ({
       creative: "Each platform has its own compatible creative requirement.",
     },
   },
+});
+
+describe("parseCampaignOptimizationResponse", () => {
+  const response = () => ({
+    campaignId: "campaign-1",
+    revision: 3,
+    generatedAt: "2030-01-02T10:00:00.000Z",
+    proposals: [
+      {
+        id: "proposal-1",
+        title: "Narrow the mobile audience",
+        summary: "Shift spend toward the age range with the strongest conversion rate.",
+        evidence: {
+          metric: "Cost per conversion",
+          window: "Last 14 days",
+          observation: "Ages 25–34 converted 38% below the campaign average.",
+        },
+        expectedOutcome: "Lower cost per conversion while keeping reach stable.",
+        risk: "A narrower audience may reduce total impressions.",
+        affectedFields: ["audience.ageMin", "audience.ageMax"],
+      },
+    ],
+  });
+
+  it("accepts evidence-backed proposals", () => {
+    const result = parseCampaignOptimizationResponse(response());
+    expect(result.proposals[0].evidence.window).toBe("Last 14 days");
+  });
+
+  it("rejects proposals without affected fields", () => {
+    const value = response();
+    value.proposals[0].affectedFields = [];
+    expect(() => parseCampaignOptimizationResponse(value)).toThrow(
+      "has no affected fields",
+    );
+  });
 });
 
 describe("parseAiCampaignDraftResponse", () => {

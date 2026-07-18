@@ -1,8 +1,8 @@
 "use client";
 
 import { Campaign } from "@/lib/mock-data";
+import Image from "next/image";
 import {
-  BarChartIcon,
   SparklesIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -41,7 +41,7 @@ export function CampaignHeader({
           <div className="flex items-center gap-2 w-full">
             {/* Budget Burn Badge */}
             <button className="px-4 py-2 flex-1 md:flex-none bg-bisque-50 text-firebrick-500 rounded-lg font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm md:text-xs font-gilroy-bold">
-              <img src="/mdi_fire.png" alt="fire-alt" className="size-7" />
+              <Image src="/mdi_fire.png" alt="" width={28} height={28} className="size-7" />
               Budget Burn
             </button>
 
@@ -51,7 +51,7 @@ export function CampaignHeader({
                 <div key={platform}>
                   {platform === "meta" && (
                     <div className="w-7 h-7 md:w-5 md:h-5 bg-blue-50 rounded-full flex items-center justify-center transition-all">
-                      <img src="/logos_meta-icon.png" alt="meta" className="w-4 h-4 md:w-3 md:h-3 text-white" />
+                      <Image src="/logos_meta-icon.png" alt="Meta" width={16} height={16} className="h-4 w-4 md:h-3 md:w-3" />
                     </div>
                   )}
                   {platform === "tiktok" && (
@@ -98,10 +98,10 @@ export function CampaignHeader({
               {campaign.goal || "No goal specified"}
             </h3>
 
-            <div className="flex items-center gap-2 mb-4">
-              <BarChartIcon className="w-3 h-3 text-orange-500" />
-              <span className="text-xs text-orange-500 font-semibold">
-                {campaign.optimizationPercentage}% optimized
+            <div className="mb-4 flex items-center gap-2">
+              <SparklesIcon className="h-3 w-3 text-violet-500" />
+              <span className="text-xs font-semibold text-violet-600">
+                AI review available
               </span>
             </div>
           </div>

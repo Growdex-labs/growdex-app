@@ -16,11 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertCircle,
-  BellIcon,
   PenBoxIcon,
   PlusIcon,
-  SparklesIcon,
 } from "lucide-react";
 import CreateAdLayout from "../../components/create-ad/create-ad-layout";
 import { CampaignsMobileHeader } from "../../components/campaigns-mobile-header";
@@ -286,7 +283,11 @@ export default function CampaignDetailPage({
                   </div>
                 </div>
 
-                <Overview subTab={activeSubTab} campaign={campaign} />
+                <Overview
+                  subTab={activeSubTab}
+                  campaign={campaign}
+                  onOptimizationClick={() => setIsOptimizationOpen(true)}
+                />
               </div>
             )}
 
@@ -311,8 +312,10 @@ export default function CampaignDetailPage({
 
         {/* Optimization Sidebar */}
         <OptimizationSidebar
+          campaignId={campaignId}
           isOpen={isOptimizationOpen}
           onClose={() => setIsOptimizationOpen(false)}
+          onApplied={(updated) => setCampaign(mapCampaign(updated))}
         />
       </div>
     </PanelLayout>
