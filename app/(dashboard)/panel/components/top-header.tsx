@@ -1,12 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMe } from "@/context/me-context";
-
-const logout = async () => {
-  // TODO: Implement logout logic (e.g., clear session, redirect to login)
-  console.log("Logging out...");
-};
+import { logout } from "@/lib/auth";
 
 export function TopHeader() {
   const { me, isLoading } = useMe();
@@ -15,16 +12,12 @@ export function TopHeader() {
       ? `${me.profile.firstName} ${me.profile.lastName}`
       : (me?.email ?? "Account");
 
-  const handleLogout = async () => {
-    await logout();
-  };
-
   return (
     <header className="bg-white text-gray-900 px-6 py-4  flex items-center justify-between h-16 shadow-md sm:hidden">
       {/* Left: Logo */}
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 shrink-0">
-          <img src="/logo2.png" alt="Growdex logo" className="w-full h-full" />
+          <Image src="/logo2.png" alt="Growdex logo" width={32} height={32} className="size-8" />
         </div>
         <span className="font-semibold text-lg">Growdex</span>
       </div>
@@ -35,15 +28,24 @@ export function TopHeader() {
           <p className="text-xs font-medium">
             {isLoading ? "Loading…" : userName}
           </p>
-          <p className="text-xs text-red-400">Logout</p>
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className="text-xs text-red-500 hover:text-red-700"
+          >
+            Log out
+          </button>
         </div>
 
         {/* Avatar */}
         <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
           <Link href="/panel/profile">
-            <img
+            <Image
               src={me?.avatarUrl ?? "/profile.png"}
-              className="object-cover w-full h-full rounded-full"
+              width={40}
+              height={40}
+              unoptimized
+              className="size-10 rounded-full object-cover"
               alt="profile-icon"
             />
           </Link>

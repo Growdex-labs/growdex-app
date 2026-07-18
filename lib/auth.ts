@@ -494,9 +494,16 @@ export const resetPassword = async (
  * Backend should clear httpOnly cookies
  */
 export const logout = async () => {
-  await apiFetch("/auth/logout", { method: "POST", body: JSON.stringify({}) });
-  clearDevSession();
-  window.location.href = "/login";
+  try {
+    await apiFetch("/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+  } finally {
+    clearDevSession();
+    window.location.href = "/login";
+  }
 };
 
 /**
