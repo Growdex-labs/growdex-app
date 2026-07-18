@@ -801,6 +801,37 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   return null;
 };
 
+export const validateCampaignDraftPayload = (payload: CampaignReviewPayload) => {
+  if (!payload.campaign.name.trim()) return "Enter a campaign name before saving the draft.";
+  if (payload.campaign.platforms.length > 2) return "A campaign can use at most two platforms.";
+  const ageMin = payload.audience.ageMin ?? 18;
+  const ageMax = payload.audience.ageMax ?? 65;
+  if (ageMin < 18 || ageMax > 65 || ageMin > ageMax) {
+    return "Audience age must stay between 18 and 65, with the minimum before the maximum.";
+  }
+  if (!Number.isFinite(payload.budget.amount) || payload.budget.amount < 0) {
+    return "Budget cannot be negative.";
+  }
+  const start = new Date(payload.budget.startDate);
+  if (Number.isNaN(start.getTime())) return "Choose a valid start time.";
+  if (payload.budget.endDate) {
+    const end = new Date(payload.budget.endDate);
+    if (Number.isNaN(end.getTime()) || end <= start) {
+      return "End time must be after the start time.";
+    }
+  }
+  if (payload.adContent.creatives.length > 6) {
+    return "A campaign can contain at most six creatives.";
+  }
+  const invalidCreative = payload.adContent.creatives.find(
+    (creative) => !payload.campaign.platforms.includes(creative.platform),
+  );
+  if (invalidCreative) {
+    return "Every saved creative must belong to a selected platform.";
+  }
+  return null;
+};
+
 export const startAiCampaignDraft = async (input: {
   prompt: string;
   brandName: string;
@@ -1165,10 +1196,16 @@ const serializeCampaignPayload = (
 
 export const createCampaign = async (
   payload: CreateCampaignPayload,
+  options?: { idempotencyKey?: string },
 ): Promise<CampaignDto> => {
   const res = await apiFetch("/campaigns", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.idempotencyKey
+        ? { "Idempotency-Key": options.idempotencyKey }
+        : {}),
+    },
     body: JSON.stringify(serializeCampaignPayload(payload)),
   });
   const data = await readJson(res);
@@ -1244,9 +1281,15 @@ export const updateCampaign = async (
   return data as CampaignDto;
 };
 
-export const publishCampaign = async (id: string): Promise<CampaignDto> => {
+export const publishCampaign = async (
+  id: string,
+  options?: { idempotencyKey?: string },
+): Promise<CampaignDto> => {
   const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}/publish`, {
     method: "POST",
+    headers: options?.idempotencyKey
+      ? { "Idempotency-Key": options.idempotencyKey }
+      : undefined,
   });
   const data = await readJson(res);
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   parseAiCampaignDraftResponse,
   parseCampaignOptimizationResponse,
+  createInitialCampaignPayload,
+  validateCampaignDraftPayload,
 } from "./campaigns";
 
 const readyResponse = () => ({
@@ -119,6 +121,22 @@ describe("parseCampaignOptimizationResponse", () => {
     expect(() => parseCampaignOptimizationResponse(value)).toThrow(
       "has no affected fields",
     );
+  });
+});
+
+describe("validateCampaignDraftPayload", () => {
+  it("allows an incomplete but structurally valid draft", () => {
+    const draft = createInitialCampaignPayload();
+    draft.campaign.name = "Unfinished launch";
+    expect(validateCampaignDraftPayload(draft)).toBeNull();
+  });
+
+  it("still rejects structurally invalid draft data", () => {
+    const draft = createInitialCampaignPayload();
+    draft.campaign.name = "Invalid ages";
+    draft.audience.ageMin = 50;
+    draft.audience.ageMax = 30;
+    expect(validateCampaignDraftPayload(draft)).toContain("Audience age");
   });
 });
 

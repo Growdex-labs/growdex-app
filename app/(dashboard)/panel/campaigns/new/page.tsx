@@ -22,6 +22,8 @@ import {
   requestCampaignName,
   searchMetaInterests,
   startAiCampaignDraft,
+  updateCampaign,
+  validateCampaignDraftPayload,
   validateCampaignPayload,
   type AiCampaignDraftResponse,
   type AiCampaignQuestion,
@@ -216,6 +218,7 @@ export default function NewCampaignPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [savedCampaignId, setSavedCampaignId] = useState<string | null>(null);
   const [completion, setCompletion] = useState<{
     kind: "draft" | "publish";
     campaignId: string;
@@ -229,6 +232,12 @@ export default function NewCampaignPage() {
   );
   const aiRequestIdRef = useRef(0);
   const aiAbortRef = useRef<AbortController | null>(null);
+  const createIdempotencyKeyRef = useRef(crypto.randomUUID());
+  const publishAttemptRef = useRef<{
+    campaignId: string;
+    fingerprint: string;
+    key: string;
+  } | null>(null);
   const aiSessionRestoredRef = useRef(false);
   const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
   const aiApprovalBlocker = aiGeneratedDraft
@@ -276,6 +285,7 @@ export default function NewCampaignPage() {
         messages?: AiMessage[];
         stepRationales?: typeof EMPTY_AI_RATIONALES;
         statuses?: Record<AiCampaignStepId, AiStepStatus>;
+        savedCampaignId?: string;
       };
       if (
         !value.campaign ||
@@ -305,6 +315,7 @@ export default function NewCampaignPage() {
       setAiQuestion(value.question ?? null);
       setAiRationale(value.rationale ?? value.generatedDraft?.rationale ?? null);
       setAiMessages(value.messages ?? []);
+      setSavedCampaignId(value.savedCampaignId ?? null);
       if (value.stepRationales) setAiStepRationales(value.stepRationales);
       if (value.statuses) aiFlow.restoreStatuses(value.statuses);
       setAiReviewActive(true);
@@ -338,6 +349,7 @@ export default function NewCampaignPage() {
         messages: aiMessages,
         stepRationales: aiStepRationales,
         statuses: aiFlow.statuses,
+        savedCampaignId,
       }),
     );
   }, [
@@ -350,6 +362,7 @@ export default function NewCampaignPage() {
     aiRationale,
     aiStepRationales,
     campaign,
+    savedCampaignId,
   ]);
 
   const patch = (next: Partial<CreateCampaignPayload>) =>
@@ -950,7 +963,7 @@ export default function NewCampaignPage() {
   };
 
   const createDraft = async () => {
-    const validation = validateCampaignPayload(campaign);
+    const validation = validateCampaignDraftPayload(campaign);
     if (validation) {
       setError(validation);
       return;
@@ -958,7 +971,12 @@ export default function NewCampaignPage() {
     setSaving(true);
     setError(null);
     try {
-      const created = await createCampaign(campaign);
+      const created = savedCampaignId
+        ? await updateCampaign(savedCampaignId, campaign)
+        : await createCampaign(campaign, {
+            idempotencyKey: createIdempotencyKeyRef.current,
+          });
+      setSavedCampaignId(created.id);
       setCompletion({ kind: "draft", campaignId: created.id });
       setSaving(false);
     } catch (failure) {
@@ -985,9 +1003,28 @@ export default function NewCampaignPage() {
     setPublishing(true);
     setError(null);
     try {
-      const created = await createCampaign(campaign);
-      await publishCampaign(created.id);
-      setCompletion({ kind: "publish", campaignId: created.id });
+      const saved = savedCampaignId
+        ? await updateCampaign(savedCampaignId, campaign)
+        : await createCampaign(campaign, {
+            idempotencyKey: createIdempotencyKeyRef.current,
+          });
+      setSavedCampaignId(saved.id);
+      const fingerprint = JSON.stringify(campaign);
+      if (
+        !publishAttemptRef.current ||
+        publishAttemptRef.current.campaignId !== saved.id ||
+        publishAttemptRef.current.fingerprint !== fingerprint
+      ) {
+        publishAttemptRef.current = {
+          campaignId: saved.id,
+          fingerprint,
+          key: crypto.randomUUID(),
+        };
+      }
+      await publishCampaign(saved.id, {
+        idempotencyKey: publishAttemptRef.current.key,
+      });
+      setCompletion({ kind: "publish", campaignId: saved.id });
       setPublishing(false);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Could not publish the campaign.");
