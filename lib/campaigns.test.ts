@@ -6,6 +6,8 @@ import {
   createInitialCampaignPayload,
   validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
+  validateCampaignPayload,
+  type MetaSpecialAdCategory,
 } from "./campaigns";
 
 describe("parseCampaignNameSuggestion", () => {
@@ -57,6 +59,7 @@ const readyResponse = () => ({
       optimizationGoal: "LINK_CLICKS",
       accountAssetIds: { meta: "meta-account", tiktok: "tiktok-account" },
       eventSourceIds: {},
+      specialAdCategories: [] as MetaSpecialAdCategory[],
       sameCreativeForAll: false,
     },
     audience: {
@@ -165,6 +168,24 @@ describe("validateCampaignDraftPayload", () => {
   });
 });
 
+describe("Meta special ad category validation", () => {
+  it("requires broad targeting for housing campaigns", () => {
+    const campaign = createInitialCampaignPayload();
+    campaign.campaign.name = "Find your next home";
+    campaign.campaign.platforms = ["meta"];
+    campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
+    campaign.campaign.configuration.specialAdCategories = ["HOUSING"];
+    campaign.audience.ageMin = 25;
+    campaign.audience.interests = ["Property investment"];
+    campaign.budget.amount = 5_000;
+    campaign.budget.startDate = "2030-01-01T00:00:00.000Z";
+
+    expect(validateCampaignPayload(campaign)).toContain(
+      "requires ages 18–65",
+    );
+  });
+});
+
 describe("validateCampaignCreativeSetup", () => {
   it("routes incomplete media to creative setup and completed media onward", () => {
     const campaign = createInitialCampaignPayload();
@@ -225,6 +246,26 @@ describe("parseAiCampaignDraftResponse", () => {
     response.draft.configuration.optimizationGoal = "CONVERSIONS";
     expect(() => parseAiCampaignDraftResponse(response)).toThrow(
       "conversion event source is required",
+    );
+  });
+
+  it("accepts compliant AI housing campaigns and rejects restricted interests", () => {
+    const response = readyResponse();
+    response.draft.platforms = ["meta"];
+    response.draft.configuration.accountAssetIds = { meta: "meta-account" };
+    response.draft.configuration.specialAdCategories = ["HOUSING"];
+    Object.assign(response.draft.audience, {
+      ageMin: 18,
+      ageMax: 65,
+      gender: "all",
+      interests: [],
+    });
+
+    expect(parseAiCampaignDraftResponse(response).status).toBe("ready");
+
+    response.draft.audience.interests = ["Property investment"];
+    expect(() => parseAiCampaignDraftResponse(response)).toThrow(
+      "restricted Meta categories require broad",
     );
   });
 

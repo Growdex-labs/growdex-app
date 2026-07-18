@@ -10,6 +10,7 @@ import { apiFetch, isDevelopmentMockSessionActive } from "@/lib/auth";
 import {
   createCampaign,
   createInitialCampaignPayload,
+  hasRestrictedMetaTargeting,
   answerAiCampaignQuestion,
   AI_CAMPAIGN_STEP_IDS,
   publishCampaign,
@@ -31,6 +32,7 @@ import {
   type CreateCampaignPayload,
   type GeneratedCampaignDraft,
   type MetaInterest,
+  type MetaSpecialAdCategory,
 } from "@/lib/campaigns";
 import { validateFile } from "@/lib/campaign-shared";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
@@ -79,7 +81,7 @@ const EMPTY_AI_RATIONALES = {
   creative: "The model has not generated this decision yet.",
 };
 
-const AI_DRAFT_STORAGE_KEY = "growdex.aiCampaignDraft.v2";
+const AI_DRAFT_STORAGE_KEY = "growdex.aiCampaignDraft.v3";
 const subscribeToStaticBrowserState = () => () => undefined;
 
 const CTA_OPTIONS: Array<{ value: CampaignCta; label: string }> = [
@@ -123,7 +125,10 @@ const aiStepSnapshot = (
         accountAssetIds: draft.configuration.accountAssetIds,
       };
     case "goals":
-      return draft.goal;
+      return {
+        goal: draft.goal,
+        specialAdCategories: draft.configuration.specialAdCategories,
+      };
     case "event":
       return {
         destination: draft.configuration.destination,
@@ -449,6 +454,9 @@ export default function NewCampaignPage() {
             platforms.includes(platform as CampaignPlatform),
           ),
         ),
+        specialAdCategories: platforms.includes("meta")
+          ? current.campaign.configuration.specialAdCategories
+          : [],
         ...(resetGoal || resetDestination
           ? {
               destination: "WEBSITE" as const,
@@ -1116,6 +1124,25 @@ export default function NewCampaignPage() {
     setError(null);
   };
 
+  const updateSpecialAdCategories = (
+    specialAdCategories: MetaSpecialAdCategory[],
+  ) => {
+    if (campaign.creationMode === "ai") {
+      aiFlow.markReview("goals");
+      aiFlow.markReview("audience");
+    }
+    patchConfiguration({ specialAdCategories });
+    if (hasRestrictedMetaTargeting(specialAdCategories)) {
+      patchAudience({
+        ageMin: 18,
+        ageMax: 65,
+        gender: "all",
+        interests: [],
+      });
+    }
+    setError(null);
+  };
+
   const updateEventManagement = (
     next: Partial<CampaignConfiguration>,
   ) => {
@@ -1169,7 +1196,11 @@ export default function NewCampaignPage() {
           <ManualGoalScreen
             goal={campaign.campaign.goal}
             platforms={campaign.campaign.platforms}
+            specialAdCategories={
+              campaign.campaign.configuration.specialAdCategories
+            }
             onChange={updateCampaignGoal}
+            onSpecialAdCategoriesChange={updateSpecialAdCategories}
             onConfirmedChange={setGoalConfirmed}
           />
         );
@@ -1442,7 +1473,13 @@ export default function NewCampaignPage() {
                     <ManualGoalScreen
                       goal={campaign.campaign.goal}
                       platforms={campaign.campaign.platforms}
+                      specialAdCategories={
+                        campaign.campaign.configuration.specialAdCategories
+                      }
                       onChange={updateCampaignGoal}
+                      onSpecialAdCategoriesChange={
+                        updateSpecialAdCategories
+                      }
                       onConfirmedChange={setGoalConfirmed}
                     />
                   )}

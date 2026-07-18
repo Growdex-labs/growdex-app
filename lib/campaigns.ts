@@ -13,6 +13,13 @@ export type CampaignCreationMode = "manual" | "ai";
 export type CampaignGender = "all" | "male" | "female";
 export type BudgetType = "daily" | "lifetime";
 export type CampaignCurrency = "NGN" | "USD";
+export type MetaSpecialAdCategory =
+  | "CREDIT"
+  | "EMPLOYMENT"
+  | "FINANCIAL_PRODUCTS_SERVICES"
+  | "HOUSING"
+  | "ISSUES_ELECTIONS_POLITICS"
+  | "ONLINE_GAMBLING_AND_GAMING";
 export type CampaignDestination =
   | "WEBSITE"
   | "INSTANT_FORM"
@@ -39,6 +46,7 @@ export interface CampaignConfiguration {
   optimizationGoal: CampaignOptimizationGoal;
   accountAssetIds?: Partial<Record<CampaignPlatform, string>>;
   eventSourceIds?: Partial<Record<CampaignPlatform, string>>;
+  specialAdCategories: MetaSpecialAdCategory[];
   sameCreativeForAll: boolean;
 }
 export type CampaignCta =
@@ -333,6 +341,24 @@ const CAMPAIGN_OPTIMIZATIONS: CampaignOptimizationGoal[] = [
   "FOLLOWERS",
   "MESSAGES",
 ];
+export const META_SPECIAL_AD_CATEGORIES: MetaSpecialAdCategory[] = [
+  "CREDIT",
+  "EMPLOYMENT",
+  "FINANCIAL_PRODUCTS_SERVICES",
+  "HOUSING",
+  "ISSUES_ELECTIONS_POLITICS",
+  "ONLINE_GAMBLING_AND_GAMING",
+];
+const RESTRICTED_META_TARGETING_CATEGORIES = new Set<MetaSpecialAdCategory>([
+  "CREDIT",
+  "EMPLOYMENT",
+  "FINANCIAL_PRODUCTS_SERVICES",
+  "HOUSING",
+]);
+
+export const hasRestrictedMetaTargeting = (
+  categories: MetaSpecialAdCategory[],
+) => categories.some((category) => RESTRICTED_META_TARGETING_CATEGORIES.has(category));
 const CAMPAIGN_CTAS: CampaignCta[] = [
   "LEARN_MORE",
   "SHOP_NOW",
@@ -444,6 +470,18 @@ const parseGeneratedCampaignDraft = (
         }),
       ) as Partial<Record<CampaignPlatform, string>>)
     : {};
+  const specialAdCategories = stringArray(
+    configuration.specialAdCategories,
+    "special ad categories",
+  ).map((category) =>
+    enumValue(category, META_SPECIAL_AD_CATEGORIES, "special ad category"),
+  );
+  if (specialAdCategories.length > 3) {
+    return invalidAiResponse("at most three special ad categories are allowed.");
+  }
+  if (specialAdCategories.length && !platforms.includes("meta")) {
+    return invalidAiResponse("special ad categories require Meta.");
+  }
   if (
     optimizationGoal === "CONVERSIONS" &&
     platforms.some((platform) => !eventSourceIds[platform])
@@ -457,6 +495,12 @@ const parseGeneratedCampaignDraft = (
   if (!locations.length) return invalidAiResponse("at least one audience location is required.");
   const ageMin = audience.ageMin ?? 18;
   const ageMax = audience.ageMax ?? 65;
+  const gender = enumValue<CampaignGender>(
+    audience.gender ?? "all",
+    ["all", "male", "female"],
+    "gender",
+  );
+  const interests = stringArray(audience.interests ?? [], "interests");
   if (
     typeof ageMin !== "number" ||
     typeof ageMax !== "number" ||
@@ -465,6 +509,14 @@ const parseGeneratedCampaignDraft = (
     ageMin > ageMax
   ) {
     return invalidAiResponse("audience ages must stay between 18 and 65.");
+  }
+  if (
+    hasRestrictedMetaTargeting(specialAdCategories) &&
+    (ageMin !== 18 || ageMax !== 65 || gender !== "all" || interests.length)
+  ) {
+    return invalidAiResponse(
+      "restricted Meta categories require broad age, gender, and interest targeting.",
+    );
   }
 
   if (!isRecord(data.budget)) return invalidAiResponse("budget is missing.");
@@ -557,14 +609,15 @@ const parseGeneratedCampaignDraft = (
       optimizationGoal,
       accountAssetIds,
       eventSourceIds,
+      specialAdCategories,
       sameCreativeForAll: false,
     },
     audience: {
       locations,
       ageMin,
       ageMax,
-      gender: enumValue<CampaignGender>(audience.gender ?? "all", ["all", "male", "female"], "gender"),
-      interests: stringArray(audience.interests ?? [], "interests"),
+      gender,
+      interests,
       includeAudienceIds: stringArray(audience.includeAudienceIds ?? [], "included audiences"),
       excludeAudienceIds: stringArray(audience.excludeAudienceIds ?? [], "excluded audiences"),
       languages: stringArray(audience.languages ?? [], "languages"),
@@ -710,6 +763,7 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
       optimizationGoal: "REACH",
       accountAssetIds: {},
       eventSourceIds: {},
+      specialAdCategories: [],
       sameCreativeForAll: true,
     },
   },
@@ -790,6 +844,17 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   const ageMax = payload.audience.ageMax ?? 65;
   if (ageMin < 18 || ageMax > 65 || ageMin > ageMax) {
     return "Audience age must stay between 18 and 65, with the minimum before the maximum.";
+  }
+  if (
+    hasRestrictedMetaTargeting(
+      payload.campaign.configuration.specialAdCategories,
+    ) &&
+    (ageMin !== 18 ||
+      ageMax !== 65 ||
+      (payload.audience.gender ?? "all") !== "all" ||
+      Boolean(payload.audience.interests?.length))
+  ) {
+    return "This Meta special ad category requires ages 18–65, all genders, and no interest targeting.";
   }
   if (!Number.isFinite(payload.budget.amount) || payload.budget.amount <= 0) {
     return "Enter a budget greater than zero.";
