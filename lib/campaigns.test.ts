@@ -1,10 +1,34 @@
 import { describe, expect, it } from "vitest";
 import {
   parseAiCampaignDraftResponse,
+  parseCampaignNameSuggestion,
   parseCampaignOptimizationResponse,
   createInitialCampaignPayload,
   validateCampaignDraftPayload,
 } from "./campaigns";
+
+describe("parseCampaignNameSuggestion", () => {
+  it("accepts a readable campaign title", () => {
+    expect(
+      parseCampaignNameSuggestion({
+        name: "Find Your Next Home",
+        rationale: "It connects the campaign to a clear customer benefit.",
+      }).name,
+    ).toBe("Find Your Next Home");
+  });
+
+  it.each(["META_LEAD_REALESTATE_CONV_Q1", "META LEAD REAL ESTATE Q1"])(
+    "rejects internal naming syntax: %s",
+    (name) => {
+      expect(() =>
+        parseCampaignNameSuggestion({
+          name,
+          rationale: "Internal taxonomy.",
+        }),
+      ).toThrow("instead of a campaign title");
+    },
+  );
+});
 
 const readyResponse = () => ({
   status: "ready",

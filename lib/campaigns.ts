@@ -956,12 +956,30 @@ export const requestCampaignName = async (input: {
   if (!res.ok) {
     throw new Error(getApiError(data, `Generate campaign name failed (${res.status})`));
   }
+  return parseCampaignNameSuggestion(data);
+};
+
+export const parseCampaignNameSuggestion = (
+  data: unknown,
+): CampaignNameSuggestion => {
   if (!isRecord(data)) {
     throw new Error("The AI naming service returned an invalid response.");
   }
   const name = requiredString(data.name, "campaign name suggestion");
-  if (name.length > 100) {
-    throw new Error("The AI naming service returned a name longer than 100 characters.");
+  if (name.length > 60) {
+    throw new Error(
+      "The AI naming service returned a name longer than 60 characters.",
+    );
+  }
+  if (name.includes("_")) {
+    throw new Error(
+      "The AI naming service returned an internal code instead of a campaign title.",
+    );
+  }
+  if (/[A-Za-z]/.test(name) && name === name.toUpperCase()) {
+    throw new Error(
+      "The AI naming service returned an all-caps label instead of a campaign title.",
+    );
   }
   return {
     name,
