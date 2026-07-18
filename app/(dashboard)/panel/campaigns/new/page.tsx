@@ -43,6 +43,8 @@ import { CampaignNameCard } from "../components/CampaignNameCard";
 import { CampaignStepper } from "../components/CampaignStepper";
 import { CampaignTreeSidebar } from "../components/CampaignTreeSidebar";
 import { CreativeSetupScreen } from "../components/CreativeSetupScreen";
+import { ManualEventManagementScreen } from "../components/ManualEventManagementScreen";
+import { ManualEventScreen } from "../components/ManualEventScreen";
 import { ManualGoalScreen } from "../components/ManualGoalScreen";
 import { ManualPlatformScreen } from "../components/ManualPlatformScreen";
 import {
@@ -55,7 +57,7 @@ const STEPS = [
   "Setup campaign",
   "Choose platform",
   "Set campaign goals",
-  "Target audience",
+  "Event management",
   "Budget and schedule",
   "Creative setup",
   "Review and publish",
@@ -555,6 +557,17 @@ export default function NewCampaignPage() {
       setError("Choose a campaign goal before continuing.");
       return;
     }
+    if (
+      step === 3 &&
+      campaign.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
+      campaign.campaign.platforms.some(
+        (platform) =>
+          !campaign.campaign.configuration.eventSourceIds?.[platform],
+      )
+    ) {
+      setError("Choose a conversion event source for every selected platform.");
+      return;
+    }
     if (step === 3 && !campaign.audience.locations.length) {
       setError("Choose at least one audience location.");
       return;
@@ -797,9 +810,7 @@ export default function NewCampaignPage() {
               {step === 2 && (
                 <ManualGoalScreen
                   goal={campaign.campaign.goal}
-                  configuration={campaign.campaign.configuration}
                   platforms={campaign.campaign.platforms}
-                  confirmed={goalConfirmed}
                   onChange={(goal, next) => {
                     patchCampaign({
                       goal,
@@ -816,19 +827,70 @@ export default function NewCampaignPage() {
               )}
 
               {step === 3 && (
-                <div>
-                  <AudienceTargetingScreen
+                <div className="space-y-6">
+                  <ManualEventManagementScreen
                     goal={campaign.campaign.goal}
                     platforms={campaign.campaign.platforms}
                     configuration={campaign.campaign.configuration}
-                    audience={campaign.audience}
-                    accounts={accounts}
-                    unavailableInterests={unavailableInterests}
-                    onChange={patchAudience}
-                    onConfigurationChange={patchConfiguration}
-                    onReplaceInterest={replaceUnavailableInterest}
-                    onClearUnavailableInterests={() => setUnavailableInterests({})}
+                    onChange={(next) => {
+                      patchConfiguration({
+                        ...next,
+                        ...(next.optimizationGoal !== "CONVERSIONS"
+                          ? { eventSourceIds: {} }
+                          : {}),
+                      });
+                      setError(null);
+                    }}
                   />
+
+                  <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                    <h2 className="text-xl font-gilroy-semibold text-gray-900">
+                      Setup event management for your ad
+                    </h2>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Connect the platform data source used to measure the result you selected.
+                    </p>
+                    <div className="mt-5">
+                      <ManualEventScreen
+                        platforms={campaign.campaign.platforms}
+                        accountAssetIds={
+                          campaign.campaign.configuration.accountAssetIds ?? {}
+                        }
+                        eventSourceIds={
+                          campaign.campaign.configuration.eventSourceIds ?? {}
+                        }
+                        optimizationGoal={
+                          campaign.campaign.configuration.optimizationGoal
+                        }
+                        onChange={(eventSourceIds) =>
+                          patchConfiguration({ eventSourceIds })
+                        }
+                      />
+                    </div>
+                  </section>
+
+                  <div>
+                    <div className="mb-4">
+                      <h2 className="text-xl font-gilroy-semibold text-gray-900">
+                        Find your audience
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Define who should see this campaign across the selected platforms.
+                      </p>
+                    </div>
+                    <AudienceTargetingScreen
+                      goal={campaign.campaign.goal}
+                      platforms={campaign.campaign.platforms}
+                      configuration={campaign.campaign.configuration}
+                      audience={campaign.audience}
+                      accounts={accounts}
+                      unavailableInterests={unavailableInterests}
+                      onChange={patchAudience}
+                      onConfigurationChange={patchConfiguration}
+                      onReplaceInterest={replaceUnavailableInterest}
+                      onClearUnavailableInterests={() => setUnavailableInterests({})}
+                    />
+                  </div>
                   {accountError && <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{accountError}</p>}
                 </div>
               )}
