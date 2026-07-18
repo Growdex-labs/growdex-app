@@ -19,7 +19,6 @@ export interface AiStep {
   result: string;
   detail?: string;
   chips?: string[];
-  editStep: number;
 }
 
 type StepRationales = {
@@ -61,8 +60,8 @@ export function useAiCampaignFlow(
         reason: rationales.setup,
         status: statuses.setup,
         result: campaign.campaign.name || "Untitled campaign",
-        detail: "The name and editable campaign structure created from your request.",
-        editStep: 0,
+        detail:
+          "The name and editable campaign structure created from your request.",
       },
       {
         id: "platform",
@@ -75,11 +74,11 @@ export function useAiCampaignFlow(
           .join(" and "),
         detail: campaign.campaign.platforms
           .map((platform) => {
-            const accountId = campaign.campaign.configuration.accountAssetIds?.[platform];
+            const accountId =
+              campaign.campaign.configuration.accountAssetIds?.[platform];
             return `${platform === "meta" ? "Meta" : "TikTok"}: ${accountId || "account selection required"}`;
           })
           .join(" · "),
-        editStep: 1,
       },
       {
         id: "goals",
@@ -89,7 +88,6 @@ export function useAiCampaignFlow(
         status: statuses.goals,
         result: campaign.campaign.goal.replaceAll("_", " "),
         detail: "The business outcome Growdex AI selected from your request.",
-        editStep: 2,
       },
       {
         id: "event",
@@ -102,7 +100,6 @@ export function useAiCampaignFlow(
           campaign.campaign.configuration.optimizationGoal === "CONVERSIONS"
             ? `${Object.values(campaign.campaign.configuration.eventSourceIds ?? {}).filter(Boolean).length} conversion data source${Object.values(campaign.campaign.configuration.eventSourceIds ?? {}).filter(Boolean).length === 1 ? "" : "s"} selected`
             : "This delivery result does not require a conversion data source.",
-        editStep: 3,
       },
       {
         id: "audience",
@@ -116,7 +113,6 @@ export function useAiCampaignFlow(
           campaign.audience.gender ?? "all",
           ...(campaign.audience.devices ?? ["mobile"]),
         ],
-        editStep: 3,
       },
       {
         id: "budget",
@@ -126,7 +122,6 @@ export function useAiCampaignFlow(
         status: statuses.budget,
         result: `${currencySymbol(campaign.budget.currency)}${campaign.budget.amount.toLocaleString()} ${campaign.budget.type}`,
         detail: `${new Date(campaign.budget.startDate).toLocaleString()}${campaign.budget.endDate ? ` – ${new Date(campaign.budget.endDate).toLocaleString()}` : ""}`,
-        editStep: 4,
       },
       {
         id: "creative",
@@ -141,7 +136,6 @@ export function useAiCampaignFlow(
               `${creative.platform === "meta" ? "Meta" : "TikTok"}: ${creative.primaryText || "copy required"}${creative.mediaUrl ? " · media ready" : " · media required"}`,
           )
           .join(" | "),
-        editStep: 5,
       },
     ],
     [campaign, rationales, statuses],

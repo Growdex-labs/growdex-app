@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import type { AiCampaignQuestion } from "@/lib/campaigns";
 import { AiPromptComposer } from "./AiPromptComposer";
@@ -30,7 +31,7 @@ interface AiCampaignWorkspaceProps {
   loading?: boolean;
   allApproved?: boolean;
   error?: string | null;
-  approvalBlocker?: string | null;
+  readinessNotice?: string | null;
   disabledReason?: string | null;
   generatingName?: boolean;
   nameRationale?: string | null;
@@ -40,6 +41,7 @@ interface AiCampaignWorkspaceProps {
   onApproveAll: () => void;
   onDecline: (step: AiStep, instruction: string) => void;
   onEdit: (step: AiStep) => void;
+  renderInlineEditor: (step: AiStep) => ReactNode;
   onWhyThis: (step: AiStep) => void;
   onPrompt: (prompt: string) => void;
   onAnswer: (optionIds: string[]) => void;
@@ -55,7 +57,7 @@ export function AiCampaignWorkspace({
   loading = false,
   allApproved = false,
   error,
-  approvalBlocker,
+  readinessNotice,
   disabledReason,
   generatingName = false,
   nameRationale,
@@ -65,6 +67,7 @@ export function AiCampaignWorkspace({
   onApproveAll,
   onDecline,
   onEdit,
+  renderInlineEditor,
   onWhyThis,
   onPrompt,
   onAnswer,
@@ -171,25 +174,26 @@ export function AiCampaignWorkspace({
                 onDecline={onDecline}
                 onEdit={onEdit}
                 onWhyThis={onWhyThis}
+                renderEditor={renderInlineEditor}
                 busy={loading}
               />
 
               <div className="flex items-center justify-end gap-3 border-t border-gray-100 py-4">
-                {approvalBlocker && !allApproved && (
+                {readinessNotice && (
                   <p className="mr-auto max-w-sm text-xs leading-5 text-amber-700">
-                    {approvalBlocker}
+                    {readinessNotice}
                   </p>
                 )}
                 <button
                   type="button"
                   onClick={allApproved ? onContinue : onApproveAll}
-                  disabled={
-                    loading || (!allApproved && Boolean(approvalBlocker))
-                  }
+                  disabled={loading}
                   className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-3 text-base font-medium text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:bg-khaki-100 disabled:text-gray-500"
                 >
                   {allApproved && <Check className="h-4 w-4" />}
-                  {allApproved ? "Open full editor" : "Approve all decisions"}
+                  {allApproved
+                    ? "Continue to campaign setup"
+                    : "Approve all decisions"}
                 </button>
               </div>
             </div>

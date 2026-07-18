@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
-import { Input } from "@/components/ui/input";
 import { useMe } from "@/context/me-context";
 import { apiFetch, isDevelopmentMockSessionActive } from "@/lib/auth";
 import {
@@ -44,6 +43,7 @@ import { AdCreatedModal } from "../components/AdCreatedModal";
 import type { AiStep, AiStepStatus } from "../components/use-ai-campaign-flow";
 import { useAiCampaignFlow } from "../components/use-ai-campaign-flow";
 import { AudienceTargetingScreen } from "../components/AudienceTargetingScreen";
+import { CampaignBudgetEditor } from "../components/CampaignBudgetEditor";
 import { CampaignNameCard } from "../components/CampaignNameCard";
 import { CampaignStepper } from "../components/CampaignStepper";
 import { CampaignTreeSidebar } from "../components/CampaignTreeSidebar";
@@ -102,14 +102,6 @@ const emptyCreative = (platform: CampaignPlatform): CampaignCreativeInput => ({
   mediaUrl: "",
   landingPageUrl: "",
 });
-
-const toDateTimeLocal = (iso?: string) => {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
-};
 
 const connected = (
   accounts: SocialAccountSetupProps | null,
@@ -251,20 +243,20 @@ export default function NewCampaignPage() {
   } | null>(null);
   const aiSessionRestoredRef = useRef(false);
   const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
-  const aiApprovalBlocker = aiGeneratedDraft
+  const aiReadinessNotice = aiGeneratedDraft
     ? campaign.campaign.platforms.some(
         (platform) =>
           !campaign.campaign.configuration.accountAssetIds?.[platform],
       )
-      ? "Select a connected ad account for every platform before approving the draft."
+      ? "Select a connected ad account for every platform before publishing."
       : campaign.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
           campaign.campaign.platforms.some(
             (platform) =>
               !campaign.campaign.configuration.eventSourceIds?.[platform],
           )
-        ? "Select every required conversion event source before approving the draft."
+        ? "Select every required conversion event source before publishing."
         : campaign.adContent.creatives.some((creative) => !creative.mediaUrl)
-          ? "Add the required Meta images and TikTok videos before approving the full draft."
+          ? "Add the required Meta images and TikTok videos before publishing."
           : null
     : null;
 
@@ -1096,6 +1088,164 @@ export default function NewCampaignPage() {
     }
   };
 
+  const updateCampaignGoal = (
+    goal: CreateCampaignPayload["campaign"]["goal"],
+    next: Pick<
+      CampaignConfiguration,
+      "destination" | "optimizationGoal"
+    >,
+  ) => {
+    if (campaign.creationMode === "ai") {
+      aiFlow.markReview("goals");
+      aiFlow.markReview("event");
+    }
+    patchCampaign({
+      goal,
+      configuration: {
+        ...campaign.campaign.configuration,
+        ...next,
+        eventSourceIds: {},
+      },
+    });
+    setError(null);
+  };
+
+  const updateEventManagement = (
+    next: Partial<CampaignConfiguration>,
+  ) => {
+    if (campaign.creationMode === "ai") aiFlow.markReview("event");
+    patchConfiguration({
+      ...next,
+      ...(next.optimizationGoal !== "CONVERSIONS"
+        ? { eventSourceIds: {} }
+        : {}),
+    });
+    setError(null);
+  };
+
+  const renderAiInlineEditor = (reviewStep: AiStep) => {
+    switch (reviewStep.id) {
+      case "setup":
+        return (
+          <CampaignNameCard
+            value={campaign.campaign.name}
+            onChange={(name) => {
+              patchCampaign({ name });
+              setNameRationale(null);
+            }}
+            onGenerate={() => void generateCampaignName()}
+            generating={generatingName}
+            rationale={nameRationale}
+            disabledReason={aiDisabledReason}
+          />
+        );
+      case "platform":
+        return (
+          <div>
+            <ManualPlatformScreen
+              accounts={accounts}
+              loading={accountsLoading}
+              connecting={connecting}
+              platforms={campaign.campaign.platforms}
+              accountAssetIds={
+                campaign.campaign.configuration.accountAssetIds ?? {}
+              }
+              onChange={setPlatformAccounts}
+              onConnect={(platform) => void connect(platform)}
+            />
+            {accountError && (
+              <p className="mt-3 text-sm text-red-600">{accountError}</p>
+            )}
+          </div>
+        );
+      case "goals":
+        return (
+          <ManualGoalScreen
+            goal={campaign.campaign.goal}
+            platforms={campaign.campaign.platforms}
+            onChange={updateCampaignGoal}
+            onConfirmedChange={setGoalConfirmed}
+          />
+        );
+      case "event":
+        return (
+          <div className="space-y-4">
+            <ManualEventManagementScreen
+              goal={campaign.campaign.goal}
+              platforms={campaign.campaign.platforms}
+              configuration={campaign.campaign.configuration}
+              onChange={updateEventManagement}
+            />
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h4 className="font-semibold text-gray-900">
+                Conversion data source
+              </h4>
+              <div className="mt-4">
+                <ManualEventScreen
+                  platforms={campaign.campaign.platforms}
+                  accountAssetIds={
+                    campaign.campaign.configuration.accountAssetIds ?? {}
+                  }
+                  eventSourceIds={
+                    campaign.campaign.configuration.eventSourceIds ?? {}
+                  }
+                  optimizationGoal={
+                    campaign.campaign.configuration.optimizationGoal
+                  }
+                  onChange={(eventSourceIds) => {
+                    aiFlow.markReview("event");
+                    patchConfiguration({ eventSourceIds });
+                  }}
+                />
+              </div>
+            </section>
+          </div>
+        );
+      case "audience":
+        return (
+          <AudienceTargetingScreen
+            goal={campaign.campaign.goal}
+            platforms={campaign.campaign.platforms}
+            configuration={campaign.campaign.configuration}
+            audience={campaign.audience}
+            accounts={accounts}
+            unavailableInterests={unavailableInterests}
+            onChange={patchAudience}
+            onReplaceInterest={replaceUnavailableInterest}
+            onClearUnavailableInterests={() => setUnavailableInterests({})}
+          />
+        );
+      case "budget":
+        return (
+          <CampaignBudgetEditor
+            budget={campaign.budget}
+            onChange={patchBudget}
+          />
+        );
+      case "creative":
+        return (
+          <CreativeSetupScreen
+            goal={campaign.campaign.goal}
+            platforms={campaign.campaign.platforms}
+            creatives={campaign.adContent.creatives}
+            ctaOptions={CTA_OPTIONS}
+            uploading={uploading}
+            sameCreativeForAll={
+              campaign.campaign.configuration.sameCreativeForAll
+            }
+            onSameCreativeForAllChange={(sameCreativeForAll) =>
+              patchConfiguration({ sameCreativeForAll })
+            }
+            onChange={patchCreative}
+            onReplace={replaceCreatives}
+            onUpload={(index, platform, file) =>
+              void uploadMedia(index, platform, file)
+            }
+          />
+        );
+    }
+  };
+
   const stepper = (
     <CampaignStepper
       steps={STEPS}
@@ -1148,7 +1298,7 @@ export default function NewCampaignPage() {
                 loading={aiLoading}
                 allApproved={aiFlow.allApproved}
                 error={error}
-                approvalBlocker={aiApprovalBlocker}
+                readinessNotice={aiReadinessNotice}
                 disabledReason={aiDisabledReason}
                 generatingName={generatingName}
                 nameRationale={nameRationale}
@@ -1177,8 +1327,8 @@ export default function NewCampaignPage() {
                 }
                 onEdit={(reviewStep) => {
                   aiFlow.markReview(reviewStep.id);
-                  setStep(reviewStep.editStep);
                 }}
+                renderInlineEditor={renderAiInlineEditor}
                 onDecline={(reviewStep, instruction) =>
                   void reviseAiDraft(instruction, {
                     stepId: reviewStep.id,
@@ -1285,21 +1435,7 @@ export default function NewCampaignPage() {
                     <ManualGoalScreen
                       goal={campaign.campaign.goal}
                       platforms={campaign.campaign.platforms}
-                      onChange={(goal, next) => {
-                        if (campaign.creationMode === "ai") {
-                          aiFlow.markReview("goals");
-                          aiFlow.markReview("event");
-                        }
-                        patchCampaign({
-                          goal,
-                          configuration: {
-                            ...campaign.campaign.configuration,
-                            ...next,
-                            eventSourceIds: {},
-                          },
-                        });
-                        setError(null);
-                      }}
+                      onChange={updateCampaignGoal}
                       onConfirmedChange={setGoalConfirmed}
                     />
                   )}
@@ -1310,17 +1446,7 @@ export default function NewCampaignPage() {
                         goal={campaign.campaign.goal}
                         platforms={campaign.campaign.platforms}
                         configuration={campaign.campaign.configuration}
-                        onChange={(next) => {
-                          if (campaign.creationMode === "ai")
-                            aiFlow.markReview("event");
-                          patchConfiguration({
-                            ...next,
-                            ...(next.optimizationGoal !== "CONVERSIONS"
-                              ? { eventSourceIds: {} }
-                              : {}),
-                          });
-                          setError(null);
-                        }}
+                        onChange={updateEventManagement}
                       />
 
                       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
@@ -1388,88 +1514,10 @@ export default function NewCampaignPage() {
 
                   {step === 4 && (
                     <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-                      <h2 className="text-xl font-bold text-gray-900">
-                        How much do you want to spend?
-                      </h2>
-                      <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                        <label className="text-sm font-medium text-gray-700">
-                          Amount
-                          <Input
-                            className="mt-2"
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={campaign.budget.amount || ""}
-                            onChange={(event) =>
-                              patchBudget({
-                                amount: Number(event.target.value),
-                              })
-                            }
-                          />
-                        </label>
-                        <label className="text-sm font-medium text-gray-700">
-                          Currency
-                          <select
-                            className="mt-2 h-10 w-full rounded-md border bg-white px-3"
-                            value={campaign.budget.currency}
-                            onChange={(event) =>
-                              patchBudget({
-                                currency: event.target.value as "NGN" | "USD",
-                              })
-                            }
-                          >
-                            <option value="NGN">NGN</option>
-                            <option value="USD">USD</option>
-                          </select>
-                        </label>
-                        <label className="text-sm font-medium text-gray-700">
-                          Budget type
-                          <select
-                            className="mt-2 h-10 w-full rounded-md border bg-white px-3"
-                            value={campaign.budget.type}
-                            onChange={(event) =>
-                              patchBudget({
-                                type: event.target.value as
-                                  "daily" | "lifetime",
-                              })
-                            }
-                          >
-                            <option value="daily">Daily</option>
-                            <option value="lifetime">Lifetime</option>
-                          </select>
-                        </label>
-                        <label className="text-sm font-medium text-gray-700">
-                          Start time
-                          <Input
-                            className="mt-2"
-                            type="datetime-local"
-                            value={toDateTimeLocal(campaign.budget.startDate)}
-                            onInput={(event) => {
-                              const value = event.currentTarget.value;
-                              if (value)
-                                patchBudget({
-                                  startDate: new Date(value).toISOString(),
-                                });
-                            }}
-                          />
-                        </label>
-                        <label className="text-sm font-medium text-gray-700">
-                          End time (optional)
-                          <Input
-                            className="mt-2"
-                            type="datetime-local"
-                            value={toDateTimeLocal(campaign.budget.endDate)}
-                            onInput={(event) => {
-                              const value = event.currentTarget.value;
-                              patchBudget({
-                                endDate: value
-                                  ? new Date(value).toISOString()
-                                  : undefined,
-                              });
-                            }}
-                          />
-                        </label>
-                      </div>
+                      <CampaignBudgetEditor
+                        budget={campaign.budget}
+                        onChange={patchBudget}
+                      />
                     </section>
                   )}
 
