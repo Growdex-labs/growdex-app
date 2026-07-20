@@ -15,11 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  PenBoxIcon,
-  PlusIcon,
-} from "lucide-react";
-import CreateAdLayout from "../../components/create-ad/create-ad-layout";
 import { CampaignsMobileHeader } from "../../components/campaigns-mobile-header";
 
 export default function CampaignDetailPage({
@@ -172,19 +167,6 @@ export default function CampaignDetailPage({
                     ))}
                   </div>
                 </div>
-
-                {/* Create Ad Button - Fixed */}
-                <button
-                  onClick={() => setActiveTab("create")}
-                  className={`flex-shrink-0 px-2.5 sm:px-8 py-4 rounded-xl font-semibold transition-colors flex items-center gap-px md:gap-2 whitespace-nowrap ${
-                    activeTab === "create"
-                      ? "bg-khaki-200 text-gray-900"
-                      : "bg-khaki-200/80 text-gray-700 hover:bg-khaki-200"
-                  }`}
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  Create ad
-                </button>
               </div>
             </div>
 
@@ -289,23 +271,6 @@ export default function CampaignDetailPage({
                   onOptimizationClick={() => setIsOptimizationOpen(true)}
                 />
               </div>
-            )}
-
-            {activeTab === "create" && (
-              <>
-                <div className="bg-white p-6 rounded-lg flex items-center gap-4 mb-4">
-                  <PenBoxIcon className="w-12 h-12 text-khaki-300" />
-                  <input
-                    type="text"
-                    placeholder="Untitled Ad"
-                    className="flex-1 border-none text-2xl p-2 focus:outline-none"
-                  />
-                </div>
-
-                <div className="bg-white p-4 rounded-lg relative">
-                  <CreateAdLayout campaignId={campaignId} />
-                </div>
-              </>
             )}
           </div>
         </div>

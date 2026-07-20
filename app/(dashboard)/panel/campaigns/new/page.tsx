@@ -596,6 +596,7 @@ export default function NewCampaignPage() {
       lockedSteps?: AiCampaignStepId[];
       baseDraft?: GeneratedCampaignDraft;
       initial?: boolean;
+      preserveStep?: boolean;
     },
   ) => {
     if (options && options.requestId !== aiRequestIdRef.current) return;
@@ -724,7 +725,7 @@ export default function NewCampaignPage() {
     setAiQuestion(null);
     if (options?.initial) aiFlow.resetReviews();
     else aiFlow.applyRevision(response.changedSteps);
-    setStep(0);
+    if (!options?.preserveStep) setStep(0);
   };
 
   const startAiDraft = async (prompt: string) => {
@@ -770,7 +771,12 @@ export default function NewCampaignPage() {
 
   const reviseAiDraft = async (
     instruction: string,
-    options?: { stepId?: AiStep["id"]; userText?: string },
+    options?: {
+      stepId?: AiStep["id"];
+      userText?: string;
+      lockedSteps?: AiCampaignStepId[];
+      preserveStep?: boolean;
+    },
   ) => {
     if (!aiDraftId || !aiGeneratedDraft) {
       setError("The AI draft session is missing. Start a new AI campaign.");
@@ -791,7 +797,7 @@ export default function NewCampaignPage() {
       ...current,
       { id: `user-${Date.now()}`, sender: "user", text: userText },
     ]);
-    const lockedSteps = aiFlow.approvedStepIds;
+    const lockedSteps = options?.lockedSteps ?? aiFlow.approvedStepIds;
     const currentDraft = campaignToAiDraft(campaign, aiGeneratedDraft);
     const { controller, requestId } = beginAiRequest(options?.stepId);
     try {
@@ -809,6 +815,7 @@ export default function NewCampaignPage() {
         requestId,
         lockedSteps,
         baseDraft: currentDraft,
+        preserveStep: options?.preserveStep,
       });
     } catch (failure) {
       if (requestId !== aiRequestIdRef.current || controller.signal.aborted)
@@ -822,6 +829,25 @@ export default function NewCampaignPage() {
     } finally {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
     }
+  };
+
+  const fixAllAudienceIssuesWithAi = async () => {
+    if (!aiDraftId || !aiGeneratedDraft || campaign.creationMode !== "ai") {
+      throw new Error(
+        "AI audience fixes are available after Growdex AI creates the campaign draft.",
+      );
+    }
+    await reviseAiDraft(
+      "Resolve every audience-readiness issue while keeping the campaign goal, platforms, destination, budget, creative, and account choices unchanged. Broaden targeting only as much as needed to make the audience viable.",
+      {
+        stepId: "audience",
+        userText: "Fix all audience readiness issues with AI",
+        lockedSteps: AI_CAMPAIGN_STEP_IDS.filter(
+          (stepId) => stepId !== "audience",
+        ),
+        preserveStep: true,
+      },
+    );
   };
 
   const answerAiQuestion = async (optionIds: string[]) => {
@@ -1317,6 +1343,13 @@ export default function NewCampaignPage() {
             onChange={patchAudience}
             onReplaceInterest={replaceUnavailableInterest}
             onClearUnavailableInterests={() => setUnavailableInterests({})}
+            onFixAllWithAi={
+              campaign.creationMode === "ai" &&
+              aiDraftId &&
+              aiGeneratedDraft
+                ? fixAllAudienceIssuesWithAi
+                : undefined
+            }
           />
         );
       case "budget":
@@ -1332,6 +1365,11 @@ export default function NewCampaignPage() {
           <CreativeSetupScreen
             goal={campaign.campaign.goal}
             destination={campaign.campaign.configuration.destination}
+            accounts={accounts}
+            accountsLoading={accountsLoading}
+            connecting={connecting}
+            connectionError={accountError}
+            onConnect={(platform) => void connect(platform)}
             metaAssetId={
               campaign.campaign.configuration.accountAssetIds?.meta
             }
@@ -1621,6 +1659,13 @@ export default function NewCampaignPage() {
                           onClearUnavailableInterests={() =>
                             setUnavailableInterests({})
                           }
+                          onFixAllWithAi={
+                            campaign.creationMode === "ai" &&
+                            aiDraftId &&
+                            aiGeneratedDraft
+                              ? fixAllAudienceIssuesWithAi
+                              : undefined
+                          }
                         />
                       </div>
                       {accountError && (
@@ -1645,6 +1690,11 @@ export default function NewCampaignPage() {
                     <CreativeSetupScreen
                       goal={campaign.campaign.goal}
                       destination={campaign.campaign.configuration.destination}
+                      accounts={accounts}
+                      accountsLoading={accountsLoading}
+                      connecting={connecting}
+                      connectionError={accountError}
+                      onConnect={(platform) => void connect(platform)}
                       metaAssetId={
                         campaign.campaign.configuration.accountAssetIds?.meta
                       }
