@@ -11,6 +11,7 @@ import {
 } from "@/lib/campaigns";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { AudienceReachCard } from "./AudienceReachCard";
+import type { AudienceAiFixRequest } from "./AudienceReachCard";
 import { DemographicsForm } from "./DemographicsForm";
 
 type Audience = CreateCampaignPayload["audience"];
@@ -25,6 +26,9 @@ interface AudienceTargetingScreenProps {
   onChange: (next: Partial<Audience>) => void;
   onReplaceInterest: (unavailable: string, replacement: string) => void;
   onClearUnavailableInterests: () => void;
+  onFixAllWithAi?: (
+    request: AudienceAiFixRequest,
+  ) => Promise<void>;
 }
 
 export function AudienceTargetingScreen({
@@ -37,6 +41,7 @@ export function AudienceTargetingScreen({
   onChange,
   onReplaceInterest,
   onClearUnavailableInterests,
+  onFixAllWithAi,
 }: AudienceTargetingScreenProps) {
   const [forecast, setForecast] = useState<Awaited<
     ReturnType<typeof forecastCampaignReach>
@@ -97,7 +102,7 @@ export function AudienceTargetingScreen({
         ad accounts.
       </p>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
           <DemographicsForm
             platforms={platforms}
@@ -111,11 +116,14 @@ export function AudienceTargetingScreen({
         </div>
 
         <AudienceReachCard
+          audience={audience}
           forecast={canForecast ? forecast : null}
           loading={canForecast && forecasting}
           error={canForecast ? forecastError : null}
           metaSelected={metaSelected}
           metaConnected={metaConnected}
+          unavailableInterestCount={Object.keys(unavailableInterests).length}
+          onFixAllWithAi={onFixAllWithAi}
         />
       </div>
     </section>
