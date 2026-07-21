@@ -3,8 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, Lock, Sparkles } from "lucide-react";
-import { getAuthErrorMessage, register } from "@/lib/auth";
+import { Check, Lock } from "lucide-react";
+import {
+  getAuthErrorMessage,
+  register,
+  resendVerification,
+} from "@/lib/auth";
 import { useGoogleAuth } from "@/lib/use-google";
 import { toast } from "sonner";
 
@@ -76,6 +80,9 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { startGoogleAuth, loading: googleLoading } = useGoogleAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,15 +107,8 @@ export default function SignUpPage() {
         return;
       }
 
-      toast.success("Registration successful", {
-        description: "Check your email for verification",
-        duration: 3000,
-      });
-      setTimeout(
-        () =>
-          router.push(response.onboardingCompleted ? "/panel" : "/onboarding"),
-        1500,
-      );
+      setRegistrationComplete(true);
+      setVerificationEmailSent(response.verificationEmailSent === true);
     } catch (err: unknown) {
       setError(
         getAuthErrorMessage(
@@ -118,6 +118,27 @@ export default function SignUpPage() {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setError("");
+    try {
+      await resendVerification(email);
+      setVerificationEmailSent(true);
+      toast.success("Verification email sent", {
+        description: "Check your inbox to finish creating your account.",
+      });
+    } catch (err: unknown) {
+      setError(
+        getAuthErrorMessage(
+          err,
+          "We couldn't send the verification email right now. Please try again later.",
+        ),
+      );
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -289,10 +310,44 @@ export default function SignUpPage() {
             </div>
 
             <h1 className="text-3xl font-gilroy-bold text-gray-900">
-              Sign up to Growdex
+              {registrationComplete ? "Verify your email" : "Sign up to Growdex"}
             </h1>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {registrationComplete ? (
+              <div className="space-y-5">
+                <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
+                  <p className="font-semibold text-gray-900">
+                    {verificationEmailSent
+                      ? "We sent a verification link to:"
+                      : "Your account was created, but we couldn't send its verification email."}
+                  </p>
+                  <p className="mt-2 break-all">{email}</p>
+                  <p className="mt-3 text-gray-500">
+                    Verify this address before signing in. The link expires in one hour.
+                  </p>
+                </div>
+
+                {error && <p className="text-sm text-red-600">{error}</p>}
+
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                  className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResending ? "Sending..." : "Resend verification email"}
+                </button>
+
+                <Link
+                  href="/login"
+                  className="block w-full rounded-xl border border-gray-200 bg-white py-3.5 text-center text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                >
+                  Back to sign in
+                </Link>
+              </div>
+            ) : (
+              <>
+              <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="email"
                 placeholder="Your email"
@@ -330,37 +385,39 @@ export default function SignUpPage() {
               >
                 {isLoading ? "Please wait..." : "Sign up"}
               </button>
-            </form>
+              </form>
 
-            <div className="flex items-center gap-3">
-              <hr className="flex-1 border-gray-200" />
-              <span className="text-sm text-gray-400">Or</span>
-              <hr className="flex-1 border-gray-200" />
-            </div>
+              <div className="flex items-center gap-3">
+                <hr className="flex-1 border-gray-200" />
+                <span className="text-sm text-gray-400">Or</span>
+                <hr className="flex-1 border-gray-200" />
+              </div>
 
-            <button
-              type="button"
-              onClick={startGoogleAuth}
-              disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <img
-                src="/devicon_google.png"
-                alt="Google"
-                className="w-5 h-5 object-contain"
-              />
-              {googleLoading ? "Redirecting..." : "Sign up with Google"}
-            </button>
-
-            <p className="text-center text-sm text-gray-500">
-              Got an account?{" "}
-              <Link
-                href="/login"
-                className="font-semibold text-gray-900 hover:underline"
+              <button
+                type="button"
+                onClick={startGoogleAuth}
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign in
-              </Link>
-            </p>
+                <img
+                  src="/devicon_google.png"
+                  alt="Google"
+                  className="w-5 h-5 object-contain"
+                />
+                {googleLoading ? "Redirecting..." : "Sign up with Google"}
+              </button>
+
+              <p className="text-center text-sm text-gray-500">
+                Got an account?{" "}
+                <Link
+                  href="/login"
+                  className="font-semibold text-gray-900 hover:underline"
+                >
+                  Sign in
+                </Link>
+              </p>
+              </>
+            )}
           </div>
         </div>
       </div>

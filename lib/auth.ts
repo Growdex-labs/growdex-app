@@ -526,8 +526,7 @@ export const resendVerification = async (email: string) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw err;
+    throw await readAuthError(res);
   }
 
   return res.json();
