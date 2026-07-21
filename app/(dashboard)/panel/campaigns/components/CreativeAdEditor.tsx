@@ -101,6 +101,7 @@ export function CreativeAdEditor({
   }
 
   const platform = creative.platform;
+  const requiresVideo = platform === "tiktok" || destination === "VIDEO";
   const samePlatformCount = creatives.filter((item) => item.platform === platform).length;
   const canRemove = samePlatformCount > 1;
 
@@ -204,7 +205,7 @@ export function CreativeAdEditor({
             </label>
           </div>
 
-          {destination !== "INSTANT_FORM" && (
+          {destination === "WEBSITE" && (
             <label className="block text-sm font-gilroy-semibold text-gray-700">
               Landing page URL *
               <Input
@@ -268,12 +269,12 @@ export function CreativeAdEditor({
 
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-700 transition-colors hover:bg-gray-50">
             {uploading === activeIndex ? <Loader2 className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}
-            {uploading === activeIndex ? "Uploading…" : `Replace ${platform === "meta" ? "image" : "video"}`}
+            {uploading === activeIndex ? "Uploading…" : `Replace ${requiresVideo ? "video" : "image"}`}
             <input
               className="hidden"
               type="file"
               disabled={uploading !== null}
-              accept={platform === "meta" ? "image/*" : "video/*"}
+              accept={requiresVideo ? "video/*" : "image/*"}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) onUpload(activeIndex, platform, file);

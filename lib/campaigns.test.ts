@@ -157,6 +157,13 @@ describe("parseCampaignOptimizationResponse", () => {
 });
 
 describe("validateCampaignDraftPayload", () => {
+  it("requires an ad set name", () => {
+    const draft = createInitialCampaignPayload();
+    draft.campaign.name = "Unfinished launch";
+    draft.campaign.configuration.adSetName = "";
+    expect(validateCampaignDraftPayload(draft)).toContain("ad set name");
+  });
+
   it("allows an incomplete but structurally valid draft", () => {
     const draft = createInitialCampaignPayload();
     draft.campaign.name = "Unfinished launch";
@@ -218,6 +225,52 @@ describe("validateCampaignCreativeSetup", () => {
       "https://images.example.com/luxury-home.jpg";
     expect(validateCampaignCreativeSetup(campaign)).toBeNull();
   });
+
+  it("accepts Meta WhatsApp leads without a website URL", () => {
+    const campaign = createInitialCampaignPayload();
+    campaign.campaign.name = "WhatsApp leads";
+    campaign.campaign.goal = "LEADS";
+    campaign.campaign.platforms = ["meta"];
+    campaign.campaign.configuration.destination = "WHATSAPP";
+    campaign.campaign.configuration.optimizationGoal = "MESSAGES";
+    campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
+    campaign.adContent.creatives = [
+      {
+        platform: "meta",
+        primaryText: "Message our team to learn more.",
+        cta: "CONTACT_US",
+        mediaUrl: "https://images.example.com/whatsapp-leads.jpg",
+      },
+    ];
+
+    expect(validateCampaignCreativeSetup(campaign)).toBeNull();
+  });
+
+  it.each(["VIDEO", "PROFILE"] as const)(
+    "accepts an awareness %s destination without a website URL",
+    (destination) => {
+      const campaign = createInitialCampaignPayload();
+      campaign.campaign.name = "Brand awareness";
+      campaign.campaign.platforms = ["meta"];
+      campaign.campaign.configuration.destination = destination;
+      campaign.campaign.configuration.optimizationGoal =
+        destination === "VIDEO" ? "VIDEO_VIEWS" : "FOLLOWERS";
+      campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
+      campaign.adContent.creatives = [
+        {
+          platform: "meta",
+          primaryText: "Discover our brand.",
+          cta: "LEARN_MORE",
+          mediaUrl:
+            destination === "VIDEO"
+              ? "https://media.example.com/awareness.mp4"
+              : "https://media.example.com/awareness.jpg",
+        },
+      ];
+
+      expect(validateCampaignCreativeSetup(campaign)).toBeNull();
+    },
+  );
 });
 
 describe("fetchMetaLeadForms", () => {
@@ -285,6 +338,15 @@ describe("parseAiCampaignDraftResponse", () => {
     response.draft.configuration.destination = "INSTANT_FORM";
     expect(() => parseAiCampaignDraftResponse(response)).toThrow(
       "TikTok instant forms are not supported",
+    );
+  });
+
+  it("rejects WhatsApp destinations when TikTok is selected", () => {
+    const response = readyResponse();
+    response.draft.configuration.destination = "WHATSAPP";
+    response.draft.configuration.optimizationGoal = "MESSAGES";
+    expect(() => parseAiCampaignDraftResponse(response)).toThrow(
+      "TikTok WhatsApp campaigns are not supported",
     );
   });
 

@@ -254,6 +254,9 @@ export function CreativeSetupScreen({
   const visibleAssets = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return library.filter((asset) => {
+      if (destination === "VIDEO" && !isVideoUrl(asset.url)) {
+        return false;
+      }
       if (
         tab === "posts" &&
         !PUBLISHED_CAMPAIGN_STATUSES.has(asset.status.toLowerCase())
@@ -269,7 +272,7 @@ export function CreativeSetupScreen({
         asset.campaignName.toLowerCase().includes(normalizedQuery)
       );
     });
-  }, [library, platformFilter, query, tab]);
+  }, [destination, library, platformFilter, query, tab]);
 
   const selectedAssets = useMemo(
     () => library.filter((asset) => selected.includes(asset.id)),
@@ -346,12 +349,22 @@ export function CreativeSetupScreen({
     setUploadError(null);
     const platform = file.type.startsWith("image/")
       ? "meta"
-      : file.type.startsWith("video/")
-        ? "tiktok"
-        : null;
+      : file.type.startsWith("video/") && destination === "VIDEO"
+        ? platformFilter !== "all"
+          ? platformFilter
+          : platforms.length === 1
+            ? platforms[0]
+            : null
+        : file.type.startsWith("video/")
+          ? "tiktok"
+          : null;
 
     if (!platform) {
-      setUploadError("Choose an image for Meta or a video for TikTok.");
+      setUploadError(
+        destination === "VIDEO" && platforms.length > 1
+          ? "Choose Meta or TikTok in the platform filter before uploading its video."
+          : "Choose an image for Meta or a video for TikTok.",
+      );
       return;
     }
     if (!platforms.includes(platform)) {
@@ -411,7 +424,9 @@ export function CreativeSetupScreen({
   }
 
   const uploadAccept =
-    platforms.length > 1
+    destination === "VIDEO"
+      ? "video/*"
+      : platforms.length > 1
       ? "image/*,video/*"
       : platforms[0] === "meta"
         ? "image/*"

@@ -3,6 +3,9 @@
 import {
   FileText,
   Globe2,
+  MessageCircle,
+  PlayCircle,
+  UserPlus,
 } from "lucide-react";
 import type {
   CampaignConfiguration,
@@ -29,12 +32,30 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
   AWARENESS: [
     {
       value: "WEBSITE",
-      label: "Website",
+      label: "Visit website",
       description: "Build awareness while sending people to your site.",
       icon: Globe2,
       optimizationGoals: [
         { value: "REACH", label: "Reach", description: "Show the campaign to as many different people as possible." },
         { value: "IMPRESSIONS", label: "Impressions", description: "Maximize the total number of times the campaign is shown." },
+      ],
+    },
+    {
+      value: "VIDEO",
+      label: "Watch my video",
+      description: "Show your video to people likely to watch it.",
+      icon: PlayCircle,
+      optimizationGoals: [
+        { value: "VIDEO_VIEWS", label: "Video views", description: "Prioritize people likely to watch your creative." },
+      ],
+    },
+    {
+      value: "PROFILE",
+      label: "Follow my profile",
+      description: "Help more people discover and follow your profile.",
+      icon: UserPlus,
+      optimizationGoals: [
+        { value: "FOLLOWERS", label: "Profile followers", description: "Prioritize people likely to follow your profile." },
       ],
     },
   ],
@@ -93,6 +114,16 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
       metaOnly: true,
       optimizationGoals: [
         { value: "LEAD_GENERATION", label: "Instant-form leads", description: "Prioritize people likely to complete the form." },
+      ],
+    },
+    {
+      value: "WHATSAPP",
+      label: "WhatsApp",
+      description: "Start conversations with leads in WhatsApp.",
+      icon: MessageCircle,
+      metaOnly: true,
+      optimizationGoals: [
+        { value: "MESSAGES", label: "WhatsApp conversations", description: "Prioritize people likely to start a conversation with your business." },
       ],
     },
   ],

@@ -458,8 +458,13 @@ const parseGeneratedCampaignDraft = (
     CAMPAIGN_OPTIMIZATIONS,
     "optimization goal",
   );
-  if (platforms.includes("tiktok") && destination === "INSTANT_FORM") {
-    return invalidAiResponse("TikTok instant forms are not supported.");
+  if (
+    platforms.includes("tiktok") &&
+    ["INSTANT_FORM", "WHATSAPP"].includes(destination)
+  ) {
+    return invalidAiResponse(
+      `TikTok ${destination === "WHATSAPP" ? "WhatsApp campaigns are" : "instant forms are"} not supported.`,
+    );
   }
   if (!isRecord(configuration.accountAssetIds)) {
     return invalidAiResponse("selected ad accounts are missing.");
@@ -573,10 +578,9 @@ const parseGeneratedCampaignDraft = (
       ["image", "video"],
       "creative media requirement",
     );
-    if (
-      (platform === "meta" && mediaRequirement !== "image") ||
-      (platform === "tiktok" && mediaRequirement !== "video")
-    ) {
+    const expectedMediaRequirement =
+      platform === "tiktok" || destination === "VIDEO" ? "video" : "image";
+    if (mediaRequirement !== expectedMediaRequirement) {
       return invalidAiResponse(`creative ${index + 1} has the wrong media requirement.`);
     }
     const mediaStatus = enumValue(
@@ -824,8 +828,15 @@ export const validateCampaignCreativeSetup = (
       if (!creative.primaryText.trim()) return `Enter primary text for ${label}.`;
       if (!creative.mediaUrl.trim()) return `Upload media for ${label}.`;
       if (
+        payload.campaign.configuration.destination === "VIDEO" &&
+        !creative.mediaUrl.includes("/video/upload/") &&
+        !/\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(creative.mediaUrl)
+      ) {
+        return `Upload a video for ${label}.`;
+      }
+      if (
         platform === "meta" &&
-        payload.campaign.configuration.destination !== "INSTANT_FORM" &&
+        payload.campaign.configuration.destination === "WEBSITE" &&
         !creative.landingPageUrl?.trim()
       ) {
         return "Enter a landing page URL for Meta.";
