@@ -2,11 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   ArrowRight,
   Check,
-  ExternalLink,
   Film,
   Grid2X2,
   ImageIcon,
@@ -439,10 +437,11 @@ export function CreativeSetupScreen({
             Your asset library is empty
           </h3>
           <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">
-            Upload the first creative for this campaign or open the asset library to manage saved campaign media.
+            Upload the first creative here. It will stay in this campaign and
+            appear in the embedded library for future campaigns.
           </p>
-          <div className="mt-6 flex w-full max-w-md flex-col gap-3 sm:flex-row">
-            <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-sm font-gilroy-semibold text-white transition-colors hover:bg-gray-800">
+          <div className="mt-6 w-full max-w-md">
+            <label className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-sm font-gilroy-semibold text-white transition-colors hover:bg-gray-800">
               {uploading !== null ? <Loader2 className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}
               {uploading !== null ? "Uploading…" : "Upload from computer"}
               <input
@@ -457,12 +456,6 @@ export function CreativeSetupScreen({
                 }}
               />
             </label>
-            <Link
-              href="/panel/assets"
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-3 text-sm font-gilroy-semibold text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              Go to Asset Library <ExternalLink className="size-4" />
-            </Link>
           </div>
           {uploadError && <p className="mt-4 text-sm text-red-600">{uploadError}</p>}
 
