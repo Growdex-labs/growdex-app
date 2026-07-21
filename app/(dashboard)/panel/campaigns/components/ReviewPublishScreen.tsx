@@ -165,6 +165,12 @@ export function ReviewPublishScreen({
             <h3 className="font-semibold text-gray-900">Delivery settings</h3>
             <dl className="mt-4 space-y-3 text-sm">
               <div>
+                <dt className="text-gray-400">Ad set</dt>
+                <dd className="mt-1 font-medium text-gray-900">
+                  {campaign.campaign.configuration.adSetName}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-gray-400">Destination and optimization</dt>
                 <dd className="mt-1 text-gray-700">
                   {campaign.campaign.configuration.destination.replaceAll("_", " ")} · {campaign.campaign.configuration.optimizationGoal.replaceAll("_", " ")}

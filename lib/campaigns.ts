@@ -42,6 +42,7 @@ export type CampaignOptimizationGoal =
   | "FOLLOWERS"
   | "MESSAGES";
 export interface CampaignConfiguration {
+  adSetName: string;
   destination: CampaignDestination;
   optimizationGoal: CampaignOptimizationGoal;
   accountAssetIds?: Partial<Record<CampaignPlatform, string>>;
@@ -617,11 +618,13 @@ const parseGeneratedCampaignDraft = (
     ]),
   ) as GeneratedCampaignDraft["stepRationales"];
 
+  const name = requiredString(data.name, "campaign name");
   return {
-    name: requiredString(data.name, "campaign name"),
+    name,
     goal,
     platforms,
     configuration: {
+      adSetName: `${name} ad set`,
       destination,
       optimizationGoal,
       accountAssetIds,
@@ -776,6 +779,7 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
     goal: "AWARENESS",
     platforms: [],
     configuration: {
+      adSetName: "Primary ad set",
       destination: "WEBSITE",
       optimizationGoal: "REACH",
       accountAssetIds: {},
@@ -842,6 +846,9 @@ export const validateCampaignCreativeSetup = (
 
 export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name.";
+  if (!payload.campaign.configuration.adSetName.trim()) {
+    return "Enter an ad set name.";
+  }
   if (!payload.campaign.platforms.length) return "Select at least one platform.";
   for (const platform of payload.campaign.platforms) {
     if (!payload.campaign.configuration.accountAssetIds?.[platform]) {
@@ -891,6 +898,9 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
 
 export const validateCampaignDraftPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name before saving the draft.";
+  if (!payload.campaign.configuration.adSetName.trim()) {
+    return "Enter an ad set name before saving the draft.";
+  }
   if (payload.campaign.platforms.length > 2) return "A campaign can use at most two platforms.";
   const ageMin = payload.audience.ageMin ?? 18;
   const ageMax = payload.audience.ageMax ?? 65;
@@ -1331,6 +1341,10 @@ const serializeCampaignPayload = (
   campaign: {
     ...payload.campaign,
     name: payload.campaign.name.trim(),
+    configuration: {
+      ...payload.campaign.configuration,
+      adSetName: payload.campaign.configuration.adSetName.trim(),
+    },
   },
   audience: {
     ...payload.audience,

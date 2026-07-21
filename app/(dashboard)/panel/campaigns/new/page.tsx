@@ -43,6 +43,7 @@ import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts, refreshSocialAccount } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { AiCampaignWorkspace } from "../components/AiCampaignWorkspace";
+import { AdSetIdentityCard } from "../components/AdSetIdentityCard";
 import type { AiMessage } from "../components/AiSidePanel";
 import { AdCreatedModal } from "../components/AdCreatedModal";
 import type { AiStep, AiStepStatus } from "../components/use-ai-campaign-flow";
@@ -68,6 +69,7 @@ const STEPS = [
   "Choose platform",
   "Set campaign goals",
   "Event management",
+  "Target audience",
   "Budget and schedule",
   "Creative setup",
   "Review and publish",
@@ -174,7 +176,11 @@ const campaignToAiDraft = (
     },
     creatives: campaign.adContent.creatives.map((creative) => ({
       ...creative,
-      mediaRequirement: creative.platform === "meta" ? "image" : "video",
+      mediaRequirement:
+        creative.platform === "tiktok" ||
+        campaign.campaign.configuration.destination === "VIDEO"
+          ? "video"
+          : "image",
       mediaStatus: creative.mediaUrl ? "ready" : "required",
     })),
   };
@@ -272,9 +278,9 @@ export default function NewCampaignPage() {
           ? "Add the required Meta images and TikTok videos before publishing."
           : null
     : null;
-  const aiPostReviewStep = validateCampaignCreativeSetup(campaign) ? 5 : 6;
+  const aiPostReviewStep = validateCampaignCreativeSetup(campaign) ? 6 : 7;
   const aiPostReviewLabel =
-    aiPostReviewStep === 5
+    aiPostReviewStep === 6
       ? "Continue to creative setup"
       : "Review and publish";
   const selectedMetaAsset = accounts?.meta?.assets?.find(
@@ -315,7 +321,7 @@ export default function NewCampaignPage() {
         setMethod(payload.creationMode);
         setGoalConfirmed(true);
         setSavedCampaignId(result.id);
-        setStep(5);
+        setStep(6);
       })
       .catch((failure) => {
         if (!active) return;
@@ -507,7 +513,9 @@ export default function NewCampaignPage() {
         tiktokSelected && current.campaign.goal === "APP_PROMOTION";
       const resetDestination =
         tiktokSelected &&
-        current.campaign.configuration.destination === "INSTANT_FORM";
+        ["INSTANT_FORM", "WHATSAPP"].includes(
+          current.campaign.configuration.destination,
+        );
       const goal = resetGoal ? "AWARENESS" : current.campaign.goal;
       const configuration = {
         ...current.campaign.configuration,
@@ -983,12 +991,15 @@ export default function NewCampaignPage() {
       setError(validation.error ?? "Unsupported media file.");
       return;
     }
-    if (platform === "meta" && !file.type.startsWith("image/")) {
-      setError("Meta creative must be an image.");
+    const requiresVideo =
+      platform === "tiktok" ||
+      campaign.campaign.configuration.destination === "VIDEO";
+    if (requiresVideo && !file.type.startsWith("video/")) {
+      setError("This campaign requires a video creative.");
       return;
     }
-    if (platform === "tiktok" && !file.type.startsWith("video/")) {
-      setError("TikTok creative must be a video.");
+    if (!requiresVideo && platform === "meta" && !file.type.startsWith("image/")) {
+      setError("This Meta campaign requires an image creative.");
       return;
     }
 
@@ -1139,6 +1150,10 @@ export default function NewCampaignPage() {
       setError("Choose a campaign goal before continuing.");
       return;
     }
+    if (step === 3 && !campaign.campaign.configuration.adSetName.trim()) {
+      setError("Enter an ad set name before continuing.");
+      return;
+    }
     if (
       step === 3 &&
       campaign.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
@@ -1150,16 +1165,16 @@ export default function NewCampaignPage() {
       setError("Choose a conversion event source for every selected platform.");
       return;
     }
-    if (step === 3 && !campaign.audience.locations.length) {
+    if (step === 4 && !campaign.audience.locations.length) {
       setError("Choose at least one audience location.");
       return;
     }
-    if (step === 3 && !(await validateMetaAudienceInterests())) return;
-    if (step === 4 && campaign.budget.amount <= 0) {
+    if (step === 4 && !(await validateMetaAudienceInterests())) return;
+    if (step === 5 && campaign.budget.amount <= 0) {
       setError("Enter a budget greater than zero.");
       return;
     }
-    if (step === 5) {
+    if (step === 6) {
       const validation = validateCampaignPayload(campaign);
       if (validation) {
         setError(validation);
@@ -1568,7 +1583,7 @@ export default function NewCampaignPage() {
                 <div className="mx-auto max-w-5xl p-4 md:p-8">
                   <div className="mb-8">{stepper}</div>
 
-                  {aiRationale && step > 0 && step < 6 && (
+                  {aiRationale && step > 0 && step < 7 && (
                     <div className="mb-6 flex items-start gap-3 rounded-2xl bg-violet-50 p-4 text-sm text-violet-800">
                       <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
                       <div className="flex-1">
@@ -1589,7 +1604,7 @@ export default function NewCampaignPage() {
                     </div>
                   )}
 
-                  {error && step < 6 && (
+                  {error && step < 7 && (
                     <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">
                       {error}
                     </p>
@@ -1667,6 +1682,12 @@ export default function NewCampaignPage() {
 
                   {step === 3 && (
                     <div className="space-y-6">
+                      <AdSetIdentityCard
+                        value={campaign.campaign.configuration.adSetName}
+                        onChange={(adSetName) =>
+                          patchConfiguration({ adSetName })
+                        }
+                      />
                       <ManualEventManagementScreen
                         goal={campaign.campaign.goal}
                         platforms={campaign.campaign.platforms}
@@ -1705,37 +1726,6 @@ export default function NewCampaignPage() {
                         </div>
                       </section>
 
-                      <div>
-                        <div className="mb-4">
-                          <h2 className="text-xl font-gilroy-semibold text-gray-900">
-                            Find your audience
-                          </h2>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Define who should see this campaign across the
-                            selected platforms.
-                          </p>
-                        </div>
-                        <AudienceTargetingScreen
-                          goal={campaign.campaign.goal}
-                          platforms={campaign.campaign.platforms}
-                          configuration={campaign.campaign.configuration}
-                          audience={campaign.audience}
-                          accounts={accounts}
-                          unavailableInterests={unavailableInterests}
-                          onChange={patchAudience}
-                          onReplaceInterest={replaceUnavailableInterest}
-                          onClearUnavailableInterests={() =>
-                            setUnavailableInterests({})
-                          }
-                          onFixAllWithAi={
-                            campaign.creationMode === "ai" &&
-                            aiDraftId &&
-                            aiGeneratedDraft
-                              ? fixAllAudienceIssuesWithAi
-                              : undefined
-                          }
-                        />
-                      </div>
                       {accountError && (
                         <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
                           {accountError}
@@ -1745,6 +1735,40 @@ export default function NewCampaignPage() {
                   )}
 
                   {step === 4 && (
+                    <div>
+                      <div className="mb-4">
+                        <h2 className="text-xl font-gilroy-semibold text-gray-900">
+                          Find your audience
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Define who should see this ad set across the selected
+                          platforms.
+                        </p>
+                      </div>
+                      <AudienceTargetingScreen
+                        goal={campaign.campaign.goal}
+                        platforms={campaign.campaign.platforms}
+                        configuration={campaign.campaign.configuration}
+                        audience={campaign.audience}
+                        accounts={accounts}
+                        unavailableInterests={unavailableInterests}
+                        onChange={patchAudience}
+                        onReplaceInterest={replaceUnavailableInterest}
+                        onClearUnavailableInterests={() =>
+                          setUnavailableInterests({})
+                        }
+                        onFixAllWithAi={
+                          campaign.creationMode === "ai" &&
+                          aiDraftId &&
+                          aiGeneratedDraft
+                            ? fixAllAudienceIssuesWithAi
+                            : undefined
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {step === 5 && (
                     <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
                       <CampaignBudgetEditor
                         budget={campaign.budget}
@@ -1754,7 +1778,7 @@ export default function NewCampaignPage() {
                     </section>
                   )}
 
-                  {step === 5 && (
+                  {step === 6 && (
                     <CreativeSetupScreen
                       brandName={brandName}
                       goal={campaign.campaign.goal}
@@ -1785,14 +1809,14 @@ export default function NewCampaignPage() {
                     />
                   )}
 
-                  {step === 6 && (
+                  {step === 7 && (
                     <ReviewPublishScreen
                       campaign={campaign}
                       brandName={brandName}
                       accounts={accounts}
                       accountsLoading={accountsLoading}
                       accountsError={accountError}
-                      onBack={() => setStep(5)}
+                      onBack={() => setStep(6)}
                       onSaveDraft={() => void createDraft()}
                       onPublish={() => void createAndPublish()}
                       saving={saving}

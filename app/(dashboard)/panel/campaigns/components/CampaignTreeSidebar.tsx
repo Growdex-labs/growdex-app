@@ -5,33 +5,33 @@ import Link from "next/link";
 import { ChevronLeft, ChevronDown, TriangleAlert } from "lucide-react";
 import type { CreateCampaignPayload } from "@/lib/campaigns";
 
+interface Ad {
+  id: string;
+  name: string;
+  warning?: boolean;
+}
+
 interface AdSet {
   id: string;
   name: string;
   warning?: boolean;
-}
-
-interface AdGroup {
-  id: string;
-  name: string;
-  warning?: boolean;
-  adSets: AdSet[];
+  ads: Ad[];
 }
 
 interface CampaignTreeSidebarProps {
   campaignName?: string;
-  adGroups?: AdGroup[];
+  adSets?: AdSet[];
   campaign?: Pick<CreateCampaignPayload, "campaign" | "adContent">;
   compact?: boolean;
 }
 
 export function CampaignTreeSidebar({
   campaignName = "Untitled Campaign",
-  adGroups = [],
+  adSets = [],
   campaign,
   compact = false,
 }: CampaignTreeSidebarProps) {
-  const visibleGroups = useMemo<AdGroup[]>(
+  const visibleAdSets = useMemo<AdSet[]>(
     () =>
       campaign
         ? campaign.campaign.platforms.map((platform) => {
@@ -42,10 +42,10 @@ export function CampaignTreeSidebar({
 
             return {
               id: platform,
-              name: `${label} ad group`,
+              name: `${campaign.campaign.configuration.adSetName || "Primary ad set"} · ${label}`,
               warning:
                 !campaign.campaign.configuration.accountAssetIds?.[platform],
-              adSets: creatives.map((creative, index) => ({
+              ads: creatives.map((creative, index) => ({
                 id: `${platform}-${index}`,
                 name:
                   creative.headline?.trim() || `${label} creative ${index + 1}`,
@@ -53,8 +53,8 @@ export function CampaignTreeSidebar({
               })),
             };
           })
-        : adGroups,
-    [adGroups, campaign],
+        : adSets,
+    [adSets, campaign],
   );
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -92,19 +92,19 @@ export function CampaignTreeSidebar({
         {truncatedName}
       </div>
 
-      {/* Ad groups tree */}
+      {/* Ad sets tree */}
       <div className="mt-3 space-y-2">
-        {visibleGroups.map((group) => {
-          const isOpen = expanded[group.id] ?? true;
+        {visibleAdSets.map((adSet) => {
+          const isOpen = expanded[adSet.id] ?? true;
           return (
-            <div key={group.id}>
-              {/* Ad group row */}
+            <div key={adSet.id}>
+              {/* Ad set row */}
               <div className="flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2.5 text-khaki-200">
                 <button
                   type="button"
-                  onClick={() => toggle(group.id)}
+                  onClick={() => toggle(adSet.id)}
                   className="shrink-0"
-                  aria-label={isOpen ? "Collapse ad group" : "Expand ad group"}
+                  aria-label={isOpen ? "Collapse ad set" : "Expand ad set"}
                   aria-expanded={isOpen}
                 >
                   <ChevronDown
@@ -119,21 +119,21 @@ export function CampaignTreeSidebar({
                         : "text-sm font-semibold"
                     }
                   >
-                    {group.name}
+                    {adSet.name}
                   </span>
-                  {group.warning && (
+                  {adSet.warning && (
                     <TriangleAlert className="w-4 h-4 text-khaki-200" />
                   )}
                 </div>
               </div>
 
-              {/* Ad sets */}
+              {/* Ads */}
               {isOpen && (
                 <div className="relative ml-3 mt-2 space-y-2 pl-4">
                   {/* vertical tree line */}
                   <span className="absolute left-0 -top-2 bottom-4 w-px bg-gray-200" />
-                  {group.adSets.map((adSet) => (
-                    <div key={adSet.id} className="relative">
+                  {adSet.ads.map((ad) => (
+                    <div key={ad.id} className="relative">
                       {/* horizontal connector */}
                       <span className="absolute -left-4 top-1/2 w-4 h-px bg-gray-200" />
                       <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5">
@@ -145,9 +145,9 @@ export function CampaignTreeSidebar({
                                 : "text-sm text-gray-700"
                             }
                           >
-                            {adSet.name}
+                            {ad.name}
                           </span>
-                          {adSet.warning && (
+                          {ad.warning && (
                             <TriangleAlert className="w-4 h-4 text-khaki-300" />
                           )}
                         </div>
