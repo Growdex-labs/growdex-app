@@ -50,7 +50,7 @@ function CreativePreview({
   const isMeta = creative.platform === "meta";
 
   return (
-    <aside className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <aside className="self-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
         <div>
           <p className="text-xs font-gilroy-semibold uppercase tracking-[0.12em] text-gray-400">
