@@ -208,6 +208,8 @@ export default function NewCampaignPage() {
   const searchParams = useSearchParams();
   const editCampaignId = searchParams.get("id");
   const editStrategyId = searchParams.get("strategy");
+  const editAdIndexParam = searchParams.get("ad");
+  const editAdIndex = editAdIndexParam === null ? null : Number(editAdIndexParam);
   const { me } = useMe();
   const brandName = me?.brand?.name ?? "Your brand";
   const firstName = me?.profile?.firstName ?? "";
@@ -408,7 +410,7 @@ export default function NewCampaignPage() {
         setMethod(payload.creationMode);
         setGoalConfirmed(true);
         setSavedCampaignId(result.id);
-        setStep(editStrategyId ? 3 : 6);
+        setStep(editAdIndex !== null && Number.isInteger(editAdIndex) ? 6 : editStrategyId ? 3 : 6);
       })
       .catch((failure) => {
         if (!active) return;
@@ -425,7 +427,7 @@ export default function NewCampaignPage() {
     return () => {
       active = false;
     };
-  }, [editCampaignId, editStrategyId]);
+  }, [editAdIndex, editCampaignId, editStrategyId]);
 
   useEffect(() => {
     let active = true;
@@ -1969,6 +1971,16 @@ export default function NewCampaignPage() {
                         void uploadMedia(index, platform, file)
                       }
                       onStageChange={setCreativeStage}
+                      initialActiveIndex={
+                        editAdIndex !== null && Number.isInteger(editAdIndex)
+                          ? editAdIndex
+                          : 0
+                      }
+                      initialScreen={
+                        editAdIndex !== null && Number.isInteger(editAdIndex)
+                          ? "editor"
+                          : "library"
+                      }
                     />
                   )}
 

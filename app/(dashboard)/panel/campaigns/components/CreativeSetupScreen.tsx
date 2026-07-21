@@ -58,6 +58,8 @@ interface CreativeSetupScreenProps {
   onReplace: (creatives: CampaignCreativeInput[]) => void;
   onUpload: (index: number, platform: CampaignPlatform, file: File) => void;
   onStageChange?: (stage: "library" | "editor") => void;
+  initialActiveIndex?: number;
+  initialScreen?: "library" | "editor";
 }
 
 const platformName = (platform: CampaignPlatform) =>
@@ -166,6 +168,8 @@ export function CreativeSetupScreen({
   onReplace,
   onUpload,
   onStageChange,
+  initialActiveIndex = 0,
+  initialScreen = "library",
 }: CreativeSetupScreenProps) {
   const [library, setLibrary] = useState<CreativeAsset[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
@@ -175,8 +179,8 @@ export function CreativeSetupScreen({
   const [query, setQuery] = useState("");
   const [platformFilter, setPlatformFilter] = useState<"all" | CampaignPlatform>("all");
   const [selected, setSelected] = useState<string[]>([]);
-  const [screen, setScreen] = useState<"library" | "editor">("library");
-  const [activeCreativeIndex, setActiveCreativeIndex] = useState(0);
+  const [screen, setScreen] = useState<"library" | "editor">(initialScreen);
+  const [activeCreativeIndex, setActiveCreativeIndex] = useState(initialActiveIndex);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [leadFormsResult, setLeadFormsResult] = useState<{
     assetId: string;

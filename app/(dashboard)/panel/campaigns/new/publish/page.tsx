@@ -205,6 +205,11 @@ export default function PublishCampaignPage() {
             campaign={campaign ?? undefined}
             activeStrategyId={activeStrategyId}
             onSelectStrategy={setActiveStrategyId}
+            onSelectAd={(strategyId, adIndex) =>
+              router.push(
+                `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}&strategy=${encodeURIComponent(strategyId)}&ad=${adIndex}`,
+              )
+            }
             onDuplicateStrategy={
               sourceStatus === "draft"
                 ? (strategyId) => void handleDuplicateStrategy(strategyId)
