@@ -167,11 +167,25 @@ export default function FundWalletPage() {
 
     setLoadingPlatform(platform);
     setCardErrors((current) => ({ ...current, [platform]: null }));
-    const anchor = document.createElement("a");
-    anchor.href = billingUrl;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
-    anchor.click();
+    const width = 720;
+    const height = 820;
+    const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+    const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
+    const popup = window.open(
+      billingUrl,
+      `growdex-${platform}-billing`,
+      `popup=yes,width=${width},height=${height},left=${Math.round(left)},top=${Math.round(top)},resizable=yes,scrollbars=yes`,
+    );
+    if (!popup) {
+      setCardErrors((current) => ({
+        ...current,
+        [platform]: "Allow popups for Growdex to open the funding window.",
+      }));
+      setLoadingPlatform(null);
+      return;
+    }
+    popup.opener = null;
+    popup.focus();
     setLoadingPlatform(null);
   };
 
