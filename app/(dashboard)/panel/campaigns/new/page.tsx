@@ -217,6 +217,7 @@ export default function NewCampaignPage() {
   const [method, setMethod] = useState<CreationMethod | null>(null);
   const [goalConfirmed, setGoalConfirmed] = useState(false);
   const [step, setStep] = useState(0);
+  const [creativeStage, setCreativeStage] = useState<"library" | "editor">("library");
   const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(
     null,
   );
@@ -1540,6 +1541,7 @@ export default function NewCampaignPage() {
   );
 
   const nav = step < STEPS.length - 1 &&
+    (step !== 6 || creativeStage === "editor") &&
     (step > 0 || method === "manual") && (
     <div className="mt-6 flex items-center justify-between gap-3">
       <button
@@ -1868,6 +1870,7 @@ export default function NewCampaignPage() {
 
                   {step === 6 && (
                     <CreativeSetupScreen
+                      key={activeStrategy.id}
                       brandName={brandName}
                       goal={campaign.campaign.goal}
                       destination={activeStrategy.configuration.destination}
@@ -1894,6 +1897,7 @@ export default function NewCampaignPage() {
                       onUpload={(index, platform, file) =>
                         void uploadMedia(index, platform, file)
                       }
+                      onStageChange={setCreativeStage}
                     />
                   )}
 

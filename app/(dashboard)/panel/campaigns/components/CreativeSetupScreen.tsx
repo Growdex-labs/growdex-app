@@ -57,6 +57,7 @@ interface CreativeSetupScreenProps {
   onChange: (index: number, next: Partial<CampaignCreativeInput>) => void;
   onReplace: (creatives: CampaignCreativeInput[]) => void;
   onUpload: (index: number, platform: CampaignPlatform, file: File) => void;
+  onStageChange?: (stage: "library" | "editor") => void;
 }
 
 const platformName = (platform: CampaignPlatform) =>
@@ -164,6 +165,7 @@ export function CreativeSetupScreen({
   onChange,
   onReplace,
   onUpload,
+  onStageChange,
 }: CreativeSetupScreenProps) {
   const [library, setLibrary] = useState<CreativeAsset[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
@@ -181,6 +183,10 @@ export function CreativeSetupScreen({
     forms: MetaLeadForm[];
     error: string | null;
   } | null>(null);
+
+  useEffect(() => {
+    onStageChange?.(screen);
+  }, [onStageChange, screen]);
 
   useEffect(() => {
     let active = true;
