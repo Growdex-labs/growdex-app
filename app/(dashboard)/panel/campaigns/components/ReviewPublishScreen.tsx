@@ -148,9 +148,16 @@ export function ReviewPublishScreen({
                 <p className="text-xs font-semibold uppercase tracking-wide text-violet-500">Audience Strategy</p>
                 <h3 className="mt-1 text-lg font-bold text-gray-900">{strategy.name}</h3>
               </div>
-              <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+              <div className="flex flex-wrap items-start gap-4">
                 {strategy.ads.map((creative, index) => (
-                  <article key={`${strategy.id}-${creative.platform}-${index}-${creative.mediaUrl}`} className="self-start overflow-hidden rounded-2xl">
+                  <article
+                    key={`${strategy.id}-${creative.platform}-${index}-${creative.mediaUrl}`}
+                    className={`w-full flex-none self-start overflow-hidden rounded-2xl ${
+                      creative.platform === "meta"
+                        ? "max-w-[30rem]"
+                        : "max-w-[22rem]"
+                    }`}
+                  >
                     <PlatformAdPreview creative={creative} brandName={brandName} />
                   </article>
                 ))}

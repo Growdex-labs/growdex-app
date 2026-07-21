@@ -621,18 +621,23 @@ export default function NewCampaignPage() {
   };
 
   const duplicateAudienceStrategy = (id: string) => {
-    const source = campaign.audienceStrategies.find((strategy) => strategy.id === id);
-    if (!source) return;
-    const duplicate = {
-      ...structuredClone(source),
-      id: crypto.randomUUID(),
-      name: `${source.name} copy`,
-    };
+    const duplicateId = crypto.randomUUID();
     setCampaign((current) => ({
       ...current,
-      audienceStrategies: [...current.audienceStrategies, duplicate],
+      audienceStrategies: current.audienceStrategies.flatMap((strategy) =>
+        strategy.id === id
+          ? [
+              strategy,
+              {
+                ...structuredClone(strategy),
+                id: duplicateId,
+                name: `Copy of ${strategy.name || "Audience Strategy"}`,
+              },
+            ]
+          : [strategy],
+      ),
     }));
-    setActiveStrategyId(duplicate.id);
+    setActiveStrategyId(duplicateId);
     setStep(3);
   };
 
