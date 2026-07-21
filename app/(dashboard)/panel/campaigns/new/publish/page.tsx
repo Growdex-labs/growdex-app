@@ -9,6 +9,7 @@ import {
   campaignDtoToPayload,
   fetchCampaignById,
   publishCampaign,
+  updateCampaignDraft,
   type CampaignReviewPayload,
 } from "@/lib/campaigns";
 import { hydrateSocialAccounts } from "@/lib/social";
@@ -97,6 +98,49 @@ export default function PublishCampaignPage() {
     }
   };
 
+  const handleDuplicateStrategy = async (strategyId: string) => {
+    if (!campaignId || !campaign || sourceStatus !== "draft") return;
+    const creationMode = campaign.creationMode;
+    if (creationMode === "unknown") {
+      setError("This draft does not have a supported setup mode.");
+      return;
+    }
+    const source = campaign.audienceStrategies.find(
+      (strategy) => strategy.id === strategyId,
+    );
+    if (!source) return;
+
+    const duplicate = {
+      ...structuredClone(source),
+      id: crypto.randomUUID(),
+      name: `Copy of ${source.name || "Audience Strategy"}`,
+    };
+    const sourceIndex = campaign.audienceStrategies.findIndex(
+      (strategy) => strategy.id === strategyId,
+    );
+    const nextCampaign = {
+      ...campaign,
+      creationMode,
+      audienceStrategies: campaign.audienceStrategies.toSpliced(
+        sourceIndex + 1,
+        0,
+        duplicate,
+      ),
+    };
+
+    setError(null);
+    try {
+      await updateCampaignDraft(campaignId, nextCampaign);
+      setCampaign(nextCampaign);
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not duplicate the audience strategy.",
+      );
+    }
+  };
+
   return (
     <PanelLayout>
       <div className="relative flex h-full">
@@ -105,6 +149,11 @@ export default function PublishCampaignPage() {
           <CampaignTreeSidebar
             campaignName={campaign?.campaign.name ?? "Campaign review"}
             campaign={campaign ?? undefined}
+            onDuplicateStrategy={
+              sourceStatus === "draft"
+                ? (strategyId) => void handleDuplicateStrategy(strategyId)
+                : undefined
+            }
           />
           <main className="h-full flex-1 overflow-y-auto">
             <div className="mx-auto max-w-5xl p-4 md:p-8">

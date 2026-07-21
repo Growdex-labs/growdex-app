@@ -110,36 +110,42 @@ export function CampaignTreeSidebar({
                 {campaign && strategyNeedsAttention(strategy, campaign.campaign.platforms) && (
                   <TriangleAlert className="size-4 shrink-0 text-khaki-300" />
                 )}
-                <button
-                  type="button"
-                  onClick={() => setOpenMenu(openMenu === strategy.id ? null : strategy.id)}
-                  aria-label={`Actions for ${strategy.name}`}
-                >
-                  <MoreHorizontal className="size-4" />
-                </button>
+                {(onDuplicateStrategy || onDeleteStrategy) && (
+                  <button
+                    type="button"
+                    onClick={() => setOpenMenu(openMenu === strategy.id ? null : strategy.id)}
+                    aria-label={`Actions for ${strategy.name}`}
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </button>
+                )}
                 {openMenu === strategy.id && (
                   <div className="absolute right-2 top-10 z-20 w-40 rounded-xl border border-gray-200 bg-white p-1 text-gray-700 shadow-lg">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onDuplicateStrategy?.(strategy.id);
-                        setOpenMenu(null);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-50"
-                    >
-                      <Copy className="size-4" /> Duplicate
-                    </button>
-                    <button
-                      type="button"
-                      disabled={strategies.length === 1}
-                      onClick={() => {
-                        onDeleteStrategy?.(strategy.id);
-                        setOpenMenu(null);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Trash2 className="size-4" /> Delete
-                    </button>
+                    {onDuplicateStrategy && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDuplicateStrategy(strategy.id);
+                          setOpenMenu(null);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-50"
+                      >
+                        <Copy className="size-4" /> Duplicate
+                      </button>
+                    )}
+                    {onDeleteStrategy && (
+                      <button
+                        type="button"
+                        disabled={strategies.length === 1}
+                        onClick={() => {
+                          onDeleteStrategy(strategy.id);
+                          setOpenMenu(null);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Trash2 className="size-4" /> Delete
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
