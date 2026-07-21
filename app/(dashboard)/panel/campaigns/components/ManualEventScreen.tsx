@@ -87,11 +87,11 @@ export function ManualEventScreen({
     return (
       <div className="rounded-xl border border-green-200 bg-green-50 p-4">
         <p className="text-sm font-medium text-green-900">
-          No event source is required
+          No additional tracking needed
         </p>
         <p className="mt-1 text-xs text-green-700">
-          {optimizationGoal.replaceAll("_", " ").toLowerCase()} uses platform
-          delivery signals and does not need a conversion pixel.
+          Results are collected and measured directly by the ad platform, so
+          you don&apos;t need to connect a website pixel.
         </p>
       </div>
     );
