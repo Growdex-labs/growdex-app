@@ -442,11 +442,15 @@ export function CreativeSetupScreen({
   const uploadAccept =
     destination === "VIDEO"
       ? "video/*"
-      : platforms.length > 1
-      ? "image/*,video/*"
-      : platforms[0] === "meta"
+      : platformFilter === "meta"
         ? "image/*"
-        : "video/*";
+        : platformFilter === "tiktok"
+          ? "video/*"
+      : platforms.length > 1
+        ? "image/*,video/*"
+        : platforms[0] === "meta"
+          ? "image/*"
+          : "video/*";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -474,6 +478,33 @@ export function CreativeSetupScreen({
             Upload the first creative here. It will stay in this campaign and
             appear in the embedded library for future campaigns.
           </p>
+          {platforms.length > 1 && (
+            <fieldset className="mt-6 w-full max-w-md">
+              <legend className="mb-3 text-sm font-gilroy-semibold text-gray-800">
+                Which ad is this asset for?
+              </legend>
+              <div className="grid grid-cols-2 gap-3">
+                {platforms.map((platform) => {
+                  const selected = platformFilter === platform;
+                  return (
+                    <button
+                      key={platform}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setPlatformFilter(platform)}
+                      className={`rounded-xl border px-4 py-3 text-sm font-gilroy-semibold transition-colors ${
+                        selected
+                          ? "border-khaki-300 bg-dimYellow/40 text-gray-950"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      {platform === "meta" ? "Meta image" : "TikTok video"}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
           <div className="mt-6 w-full max-w-md">
             <label className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-sm font-gilroy-semibold text-white transition-colors hover:bg-gray-800">
               {uploading !== null ? <Loader2 className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}
