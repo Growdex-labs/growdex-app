@@ -1116,6 +1116,10 @@ export default function NewCampaignPage() {
 
   const next = async () => {
     setError(null);
+    if (step === 0 && !method) {
+      setError("Choose how you want to create your campaign.");
+      return;
+    }
     if (step === 0 && !campaign.campaign.name.trim()) {
       setError("Enter a campaign name.");
       return;
@@ -1453,7 +1457,8 @@ export default function NewCampaignPage() {
     />
   );
 
-  const nav = step < STEPS.length - 1 && (
+  const nav = step < STEPS.length - 1 &&
+    (step > 0 || method === "manual") && (
     <div className="mt-6 flex items-center justify-between gap-3">
       <button
         type="button"
@@ -1591,29 +1596,32 @@ export default function NewCampaignPage() {
 
                   {step === 0 && (
                     <div className="space-y-6">
-                      <CampaignNameCard
-                        value={campaign.campaign.name}
-                        onChange={(name) => {
-                          patchCampaign({ name });
-                          setNameRationale(null);
-                        }}
-                        onGenerate={() => void generateCampaignName()}
-                        generating={generatingName}
-                        rationale={nameRationale}
-                        disabledReason={aiDisabledReason}
-                      />
-                      <CreateMethodBox
-                        value={method}
-                        onSelect={(nextMethod) => {
-                          setMethod(nextMethod);
-                          patch({ creationMode: nextMethod });
-                          setError(null);
-                          if (nextMethod === "manual") {
-                            setGoalConfirmed(true);
-                            setStep(1);
-                          }
-                        }}
-                      />
+                      {method === "manual" ? (
+                        <CampaignNameCard
+                          value={campaign.campaign.name}
+                          onChange={(name) => {
+                            patchCampaign({ name });
+                            setNameRationale(null);
+                          }}
+                          onGenerate={() => void generateCampaignName()}
+                          generating={generatingName}
+                          rationale={nameRationale}
+                          disabledReason={aiDisabledReason}
+                          prominent
+                        />
+                      ) : (
+                        <CreateMethodBox
+                          value={method}
+                          onSelect={(nextMethod) => {
+                            setMethod(nextMethod);
+                            patch({ creationMode: nextMethod });
+                            setError(null);
+                            if (nextMethod === "manual") {
+                              setGoalConfirmed(true);
+                            }
+                          }}
+                        />
+                      )}
                     </div>
                   )}
 
