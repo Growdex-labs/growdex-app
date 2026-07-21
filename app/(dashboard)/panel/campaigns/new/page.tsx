@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
@@ -10,6 +10,8 @@ import { apiFetch, isDevelopmentMockSessionActive } from "@/lib/auth";
 import {
   createCampaign,
   createInitialCampaignPayload,
+  campaignDtoToPayload,
+  fetchCampaignById,
   hasRestrictedMetaTargeting,
   answerAiCampaignQuestion,
   AI_CAMPAIGN_STEP_IDS,
@@ -189,6 +191,8 @@ const toUiMessages = (
 
 export default function NewCampaignPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editCampaignId = searchParams.get("id");
   const { me } = useMe();
   const brandName = me?.brand?.name ?? "Your brand";
   const firstName = me?.profile?.firstName ?? "";
@@ -228,6 +232,9 @@ export default function NewCampaignPage() {
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [savedCampaignId, setSavedCampaignId] = useState<string | null>(null);
+  const [editingCampaignLoading, setEditingCampaignLoading] = useState(
+    Boolean(editCampaignId),
+  );
   const [completion, setCompletion] = useState<{
     kind: "draft" | "publish";
     campaignId: string;
@@ -285,6 +292,49 @@ export default function NewCampaignPage() {
       : undefined;
 
   useEffect(() => {
+    if (!editCampaignId) {
+      setEditingCampaignLoading(false);
+      return;
+    }
+
+    let active = true;
+    setEditingCampaignLoading(true);
+    setError(null);
+    void fetchCampaignById(editCampaignId)
+      .then((result) => {
+        if (!active) return;
+        const status = (result.status ?? "draft").toLowerCase();
+        if (!["draft", "failed"].includes(status)) {
+          throw new Error("Only draft or failed campaigns can be edited.");
+        }
+        const payload = campaignDtoToPayload(result);
+        if (payload.creationMode === "unknown") {
+          throw new Error("This campaign does not have a supported setup mode.");
+        }
+        setCampaign({ ...payload, creationMode: payload.creationMode });
+        setMethod(payload.creationMode);
+        setGoalConfirmed(true);
+        setSavedCampaignId(result.id);
+        setStep(5);
+      })
+      .catch((failure) => {
+        if (!active) return;
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : "Could not load the campaign for editing.",
+        );
+      })
+      .finally(() => {
+        if (active) setEditingCampaignLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [editCampaignId]);
+
+  useEffect(() => {
     let active = true;
     void hydrateSocialAccounts()
       .then((result) => {
@@ -304,6 +354,7 @@ export default function NewCampaignPage() {
   useEffect(() => {
     if (aiSessionRestoredRef.current) return;
     aiSessionRestoredRef.current = true;
+    if (editCampaignId) return;
     const saved = sessionStorage.getItem(AI_DRAFT_STORAGE_KEY);
     if (!saved) return;
     try {
@@ -357,7 +408,7 @@ export default function NewCampaignPage() {
     } catch {
       sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
     }
-  }, [aiFlow]);
+  }, [aiFlow, editCampaignId]);
 
   useEffect(() => {
     if (!aiSessionRestoredRef.current) return;
@@ -1429,7 +1480,15 @@ export default function NewCampaignPage() {
       <div className="relative flex h-full">
         <DottedBackground fade />
         <div className="relative z-10 flex h-full w-full">
-          {method === "ai" && step === 0 ? (
+          {editingCampaignLoading ? (
+            <main className="h-full flex-1 overflow-y-auto">
+              <div className="mx-auto max-w-5xl p-4 md:p-8">
+                <p className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-600 shadow-sm">
+                  Loading the campaign editor…
+                </p>
+              </div>
+            </main>
+          ) : method === "ai" && step === 0 ? (
             <>
               <CampaignTreeSidebar
                 campaignName={campaign.campaign.name || "Untitled campaign"}

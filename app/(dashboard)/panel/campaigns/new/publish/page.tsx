@@ -103,6 +103,11 @@ export default function PublishCampaignPage() {
                       ? () => router.push("/panel/campaigns")
                       : undefined
                   }
+                  onBack={() =>
+                    router.push(
+                      `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}`,
+                    )
+                  }
                   onPublish={() => void handlePublish()}
                   publishing={isPublishing}
                   error={error}
