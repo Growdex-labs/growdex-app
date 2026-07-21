@@ -41,6 +41,7 @@ import {
   type MetaInterest,
   type MetaSpecialAdCategory,
 } from "@/lib/campaigns";
+import { eventManagementPatch } from "../components/event-management-state";
 import { validateFile } from "@/lib/campaign-shared";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { hashFolderName } from "@/lib/encrypt";
@@ -1440,13 +1441,7 @@ export default function NewCampaignPage() {
     next: Partial<CampaignConfiguration & AudienceStrategyConfiguration>,
   ) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("event");
-    patchStrategyConfiguration({
-      destination: next.destination,
-      optimizationGoal: next.optimizationGoal,
-      ...(next.optimizationGoal !== "CONVERSIONS"
-        ? { eventSourceIds: {} }
-        : {}),
-    });
+    patchStrategyConfiguration(eventManagementPatch(next));
     setError(null);
   };
 
