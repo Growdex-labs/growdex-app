@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AlertCircle, Loader2, Wallet } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
@@ -11,27 +11,39 @@ import { WalletSidebar } from "../components/wallet-sidebar";
 
 type Platform = "meta" | "tiktok";
 
+type BillingOption = {
+  platform: Platform;
+  accountId?: string;
+  accountName?: string;
+  currency?: string | null;
+  billingUrl?: string;
+  error?: string;
+};
+
+const billingOptionKey = (option: BillingOption) =>
+  `${option.platform}:${option.accountId ?? "unavailable"}`;
+
 const PLATFORM_CONFIG = {
   meta: {
     name: "Meta",
-    label: "Fund your Meta Ad Account",
     logo: "/logos_meta-icon.png",
     avatarClass: "bg-blue-600",
   },
   tiktok: {
     name: "TikTok",
-    label: "Fund your TikTok Ad account",
     logo: "/logos_tiktok-icon.png",
     avatarClass: "bg-gray-900",
   },
 } satisfies Record<
   Platform,
-  { name: string; label: string; logo: string; avatarClass: string }
+  { name: string; logo: string; avatarClass: string }
 >;
 
 function FundingCard({
   platform,
   accountName,
+  accountId,
+  currency,
   canFund,
   loading,
   error,
@@ -39,6 +51,8 @@ function FundingCard({
 }: {
   platform: Platform;
   accountName: string;
+  accountId?: string;
+  currency?: string | null;
   canFund: boolean;
   loading: boolean;
   error?: string | null;
@@ -57,7 +71,9 @@ function FundingCard({
           <p className="truncate text-sm font-gilroy-semibold text-gray-900">
             {accountName}
           </p>
-          <p className="text-xs text-gray-400">{config.label}</p>
+          <p className="text-xs text-gray-400">
+            {[config.name, accountId, currency].filter(Boolean).join(" · ")}
+          </p>
         </div>
       </div>
 
@@ -73,7 +89,7 @@ function FundingCard({
       )}
 
       <div className="flex items-center justify-between border-t border-gray-100 px-5 py-4">
-        <span className="text-xs text-gray-500">Growdex Ad Account</span>
+        <span className="text-xs text-gray-500">Connected ad account</span>
         <button
           type="button"
           onClick={onFund}
@@ -89,21 +105,12 @@ function FundingCard({
 }
 
 export default function FundWalletPage() {
-  const { me, isLoading: meLoading } = useMe();
-  const [paymentUrls, setPaymentUrls] = useState<Record<string, string>>({});
+  const { isLoading: meLoading } = useMe();
+  const [billingOptions, setBillingOptions] = useState<BillingOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [cardErrors, setCardErrors] = useState<Record<string, string | null>>({});
-  const [loadingPlatform, setLoadingPlatform] = useState<Platform | null>(null);
-
-  const connectedPlatforms = useMemo<Platform[]>(() => {
-    if (!me?.platformConnections) return [];
-    return me.platformConnections
-      .map((connection) => connection.platform)
-      .filter((platform): platform is Platform =>
-        platform === "meta" || platform === "tiktok",
-      );
-  }, [me?.platformConnections]);
+  const [loadingOption, setLoadingOption] = useState<string | null>(null);
 
   useEffect(() => {
     if (meLoading) return;
@@ -118,22 +125,12 @@ export default function FundWalletPage() {
         if (!response.ok) {
           throw new Error(`Billing options failed (${response.status}).`);
         }
-        const data = (await response.json()) as Array<{
-          platform: string;
-          billingUrl?: string;
-          error?: string;
-        }>;
+        const data = (await response.json()) as BillingOption[];
         if (active) {
-          setPaymentUrls(
-            Object.fromEntries(
-              data.flatMap((item) =>
-                item.billingUrl ? [[item.platform, item.billingUrl]] : [],
-              ),
-            ),
-          );
+          setBillingOptions(data);
           setCardErrors(
             Object.fromEntries(
-              data.map((item) => [item.platform, item.error ?? null]),
+              data.map((item) => [billingOptionKey(item), item.error ?? null]),
             ),
           );
         }
@@ -155,43 +152,40 @@ export default function FundWalletPage() {
     };
   }, [meLoading]);
 
-  const handleFund = (platform: Platform) => {
-    const billingUrl = paymentUrls[platform];
+  const handleFund = (option: BillingOption) => {
+    const key = billingOptionKey(option);
+    const billingUrl = option.billingUrl;
     if (!billingUrl) {
       setCardErrors((current) => ({
         ...current,
-        [platform]: `No billing link is available for ${PLATFORM_CONFIG[platform].name}.`,
+        [key]: `No billing link is available for ${PLATFORM_CONFIG[option.platform].name}.`,
       }));
       return;
     }
 
-    setLoadingPlatform(platform);
-    setCardErrors((current) => ({ ...current, [platform]: null }));
+    setLoadingOption(key);
+    setCardErrors((current) => ({ ...current, [key]: null }));
     const width = 720;
     const height = 820;
     const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
     const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
     const popup = window.open(
       billingUrl,
-      `growdex-${platform}-billing`,
+      `growdex-${option.platform}-${option.accountId ?? "billing"}`,
       `popup=yes,width=${width},height=${height},left=${Math.round(left)},top=${Math.round(top)},resizable=yes,scrollbars=yes`,
     );
     if (!popup) {
       setCardErrors((current) => ({
         ...current,
-        [platform]: "Allow popups for Growdex to open the funding window.",
+        [key]: "Allow popups for Growdex to open the funding window.",
       }));
-      setLoadingPlatform(null);
+      setLoadingOption(null);
       return;
     }
     popup.opener = null;
     popup.focus();
-    setLoadingPlatform(null);
+    setLoadingOption(null);
   };
-
-  const accountName = (platform: Platform) =>
-    me?.platformConnections?.find((connection) => connection.platform === platform)
-      ?.accountName ?? "Growdex Ad Account";
 
   return (
     <PanelLayout>
@@ -217,19 +211,27 @@ export default function FundWalletPage() {
               <div className="mt-8 flex min-h-72 items-center justify-center rounded-2xl border border-gray-200 bg-white">
                 <Loader2 className="size-8 animate-spin text-gray-400" />
               </div>
-            ) : connectedPlatforms.length ? (
+            ) : billingOptions.length ? (
               <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                {connectedPlatforms.map((platform) => (
-                  <FundingCard
-                    key={platform}
-                    platform={platform}
-                    accountName={accountName(platform)}
-                    canFund={Boolean(paymentUrls[platform])}
-                    loading={loadingPlatform === platform}
-                    error={cardErrors[platform]}
-                    onFund={() => handleFund(platform)}
-                  />
-                ))}
+                {billingOptions.map((option) => {
+                  const key = billingOptionKey(option);
+                  return (
+                    <FundingCard
+                      key={key}
+                      platform={option.platform}
+                      accountName={
+                        option.accountName ??
+                        PLATFORM_CONFIG[option.platform].name
+                      }
+                      accountId={option.accountId}
+                      currency={option.currency}
+                      canFund={Boolean(option.billingUrl)}
+                      loading={loadingOption === key}
+                      error={cardErrors[key]}
+                      onFund={() => handleFund(option)}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-10 text-center">

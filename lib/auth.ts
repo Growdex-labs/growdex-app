@@ -189,8 +189,20 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
     data = { success: true };
   } else if (url === "/users/ad-accounts/billing") {
     data = [
-      { platform: "meta", billingUrl: "https://www.facebook.com/ads/manager/billing" },
-      { platform: "tiktok", billingUrl: "https://ads.tiktok.com/i18n/dashboard" }
+      {
+        platform: "meta",
+        accountId: "1234567890",
+        accountName: "Growdex Meta Account",
+        currency: "NGN",
+        billingUrl: "https://www.facebook.com/ads/manager/billing",
+      },
+      {
+        platform: "tiktok",
+        accountId: "9876543210",
+        accountName: "Growdex TikTok Account",
+        currency: "NGN",
+        billingUrl: "https://ads.tiktok.com/i18n/dashboard",
+      },
     ];
   } else if (url === "/wallet") {
     data = {
