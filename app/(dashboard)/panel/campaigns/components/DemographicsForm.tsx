@@ -5,6 +5,7 @@ import { Check, Loader2, Monitor, Search, Smartphone, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { fetchAudiences, type Audience as SavedAudience } from "@/lib/audiences";
 import {
+  searchMetaInterests,
   searchProviderLanguages,
   type CampaignPlatform,
   type CreateCampaignPayload,
@@ -60,6 +61,10 @@ export function DemographicsForm({
   const [languages, setLanguages] = useState<ProviderLanguage[]>([]);
   const [languageLoading, setLanguageLoading] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
+  const [interestQuery, setInterestQuery] = useState("");
+  const [interestResults, setInterestResults] = useState<MetaInterest[]>([]);
+  const [interestLoading, setInterestLoading] = useState(false);
+  const [interestError, setInterestError] = useState<string | null>(null);
   const selectedCountries = useMemo(
     () => new Set(audience.locations),
     [audience.locations],
@@ -91,6 +96,50 @@ export function DemographicsForm({
       active = false;
     };
   };
+
+  useEffect(() => {
+    const query = interestQuery.trim();
+    if (tab !== "interests" || query.length < 2) {
+      return;
+    }
+
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setInterestLoading(true);
+      setInterestError(null);
+      void searchMetaInterests(query)
+        .then((results) => {
+          if (!active) return;
+          const selected = new Set(
+            (audience.interests ?? []).map((interest) =>
+              interest.trim().toLowerCase(),
+            ),
+          );
+          setInterestResults(
+            results.filter(
+              (result) => !selected.has(result.name.trim().toLowerCase()),
+            ).slice(0, 10),
+          );
+        })
+        .catch((failure) => {
+          if (!active) return;
+          setInterestResults([]);
+          setInterestError(
+            failure instanceof Error
+              ? failure.message
+              : "Could not search Meta interests.",
+          );
+        })
+        .finally(() => {
+          if (active) setInterestLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [audience.interests, interestQuery, tab]);
 
   useEffect(() => {
     if (tab !== "demographics" || languageQuery.trim().length < 2) {
@@ -430,26 +479,109 @@ export function DemographicsForm({
 
         {tab === "interests" && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Meta interest names
-              <Input
-                className="mt-2"
-                value={(audience.interests ?? []).join(", ")}
-                onChange={(event) => {
-                  onChange({
-                    interests: event.target.value
-                      .split(",")
-                      .map((item) => item.trim())
-                      .filter(Boolean),
-                  });
-                  onClearUnavailableInterests();
-                }}
-                placeholder="Business, technology"
-              />
+            <label
+              htmlFor="meta-interest-search"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Meta interests
             </label>
+            <div className="relative mt-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  id="meta-interest-search"
+                  className="pl-9 pr-10"
+                  value={interestQuery}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setInterestQuery(value);
+                    if (value.trim().length < 2) {
+                      setInterestResults([]);
+                      setInterestLoading(false);
+                      setInterestError(null);
+                    }
+                  }}
+                  placeholder="Search for an interest"
+                  autoComplete="off"
+                  role="combobox"
+                  aria-expanded={interestResults.length > 0}
+                  aria-controls="meta-interest-results"
+                />
+                {interestLoading && (
+                  <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400" />
+                )}
+              </div>
+
+              {interestResults.length > 0 && (
+                <div
+                  id="meta-interest-results"
+                  role="listbox"
+                  className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg"
+                >
+                  {interestResults.map((interest) => (
+                    <button
+                      key={interest.id}
+                      type="button"
+                      role="option"
+                      aria-selected="false"
+                      onClick={() => {
+                        onChange({
+                          interests: [
+                            ...(audience.interests ?? []),
+                            interest.name,
+                          ],
+                        });
+                        onClearUnavailableInterests();
+                        setInterestQuery("");
+                        setInterestResults([]);
+                      }}
+                      className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <span className="font-medium">{interest.name}</span>
+                      <span className="text-xs text-gray-400">Add</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <p className="mt-2 text-xs text-gray-400">
-              Growdex checks every name against Meta before continuing.
+              Type at least two characters, then choose a Meta interest from
+              the list.
             </p>
+            {interestError && (
+              <p className="mt-2 text-xs text-red-600">{interestError}</p>
+            )}
+
+            {(audience.interests ?? []).length > 0 && (
+              <div
+                className="mt-4 flex flex-wrap gap-2"
+                aria-label="Selected interests"
+              >
+                {(audience.interests ?? []).map((interest) => (
+                  <span
+                    key={interest}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-800"
+                  >
+                    {interest}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onChange({
+                          interests: (audience.interests ?? []).filter(
+                            (selected) => selected !== interest,
+                          ),
+                        });
+                        onClearUnavailableInterests();
+                      }}
+                      aria-label={`Remove ${interest}`}
+                      className="rounded-full text-violet-500 hover:text-violet-800"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             {Object.entries(unavailableInterests).map(
               ([unavailable, suggestions]) => (
                 <div
