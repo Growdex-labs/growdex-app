@@ -215,6 +215,16 @@ export function CreativeSetupScreen({
   useEffect(() => {
     if (destination !== "INSTANT_FORM" || !metaAssetId) return;
 
+    if (accounts?.meta?.permissions?.instantForms === false) {
+      setLeadFormsResult({
+        assetId: metaAssetId,
+        forms: [],
+        error:
+          "Reconnect Meta and approve Page ad permissions before choosing an Instant Form.",
+      });
+      return;
+    }
+
     const controller = new AbortController();
     void fetchMetaLeadForms(metaAssetId, controller.signal)
       .then((response) =>
@@ -237,7 +247,7 @@ export function CreativeSetupScreen({
       });
 
     return () => controller.abort();
-  }, [destination, metaAssetId]);
+  }, [accounts?.meta?.permissions?.instantForms, destination, metaAssetId]);
 
   const leadForms =
     metaAssetId && leadFormsResult?.assetId === metaAssetId

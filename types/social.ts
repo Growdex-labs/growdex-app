@@ -2,6 +2,10 @@ export interface SocialAccountSetupProps {
   meta?: {
     connected: boolean;
     needsReauth?: boolean;
+    permissions?: {
+      instantForms: boolean;
+      missing: string[];
+    };
     assets?: MetaAssetUI[];
   };
   tiktok?: {

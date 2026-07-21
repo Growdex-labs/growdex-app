@@ -1,7 +1,7 @@
 "use client";
 
 import type {
-  CampaignConfiguration,
+  AudienceStrategyConfiguration,
   CampaignDestination,
   CampaignGoal,
   CampaignOptimizationGoal,
@@ -15,7 +15,10 @@ interface ManualGoalScreenProps {
   specialAdCategories: MetaSpecialAdCategory[];
   onChange: (
     goal: CampaignGoal,
-    next: Pick<CampaignConfiguration, "destination" | "optimizationGoal">,
+    next: Pick<
+      AudienceStrategyConfiguration,
+      "destination" | "optimizationGoal"
+    >,
   ) => void;
   onSpecialAdCategoriesChange: (categories: MetaSpecialAdCategory[]) => void;
   onConfirmedChange: (confirmed: boolean) => void;

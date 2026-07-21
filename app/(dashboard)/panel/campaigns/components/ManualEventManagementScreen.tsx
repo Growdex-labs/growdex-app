@@ -27,6 +27,8 @@ type DestinationDefinition = {
     description: string;
   }>;
   metaOnly?: boolean;
+  tiktokOnly?: boolean;
+  unavailableReason?: string;
 };
 
 const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
@@ -46,6 +48,7 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
       label: "Watch my video",
       description: "Show your video to people likely to watch it.",
       icon: PlayCircle,
+      tiktokOnly: true,
       optimizationGoals: [
         { value: "VIDEO_VIEWS", label: "Video views", description: "Prioritize people likely to watch your creative." },
       ],
@@ -55,6 +58,9 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
       label: "Follow my profile",
       description: "Help more people discover and follow your profile.",
       icon: UserPlus,
+      tiktokOnly: true,
+      unavailableReason:
+        "Requires a linked TikTok identity and an authorized Spark Ads post.",
       optimizationGoals: [
         { value: "FOLLOWERS", label: "Profile followers", description: "Prioritize people likely to follow your profile." },
       ],
@@ -143,13 +149,19 @@ export function ManualEventManagementScreen({
   onChange: (next: Partial<CampaignConfiguration & AudienceStrategyConfiguration>) => void;
 }) {
   const metaOnlyCampaign = platforms.length === 1 && platforms[0] === "meta";
+  const tiktokOnlyCampaign = platforms.length === 1 && platforms[0] === "tiktok";
   const destinations = DESTINATIONS[goal].filter(
-    (destination) => !destination.metaOnly || metaOnlyCampaign,
+    (destination) =>
+      (!destination.metaOnly || metaOnlyCampaign) &&
+      (!destination.tiktokOnly || tiktokOnlyCampaign),
+  );
+  const availableDestinations = destinations.filter(
+    (destination) => !destination.unavailableReason,
   );
   const selectedDestination =
-    destinations.find(
+    availableDestinations.find(
       (destination) => destination.value === configuration.destination,
-    ) ?? destinations[0];
+    ) ?? availableDestinations[0];
   const selectedOptimization =
     selectedDestination.optimizationGoals.find(
       (optimization) =>
@@ -169,12 +181,14 @@ export function ManualEventManagementScreen({
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {destinations.map((destination) => {
           const Icon = destination.icon;
+          const unavailable = Boolean(destination.unavailableReason);
           const selected = destination.value === selectedDestination.value;
           return (
             <button
               key={destination.value}
               type="button"
               aria-pressed={selected}
+              disabled={unavailable}
               onClick={() =>
                 onChange({
                   destination: destination.value,
@@ -184,7 +198,9 @@ export function ManualEventManagementScreen({
               className={`rounded-xl border p-4 text-left transition ${
                 selected
                   ? "border-khaki-300 bg-dimYellow/30"
-                  : "border-gray-200 hover:border-gray-300"
+                  : unavailable
+                    ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
+                    : "border-gray-200 hover:border-gray-300"
               }`}
             >
               <span className="flex size-9 items-center justify-center rounded-lg bg-gray-50 text-gray-700">
@@ -194,7 +210,7 @@ export function ManualEventManagementScreen({
                 {destination.label}
               </span>
               <span className="mt-1 block text-xs leading-relaxed text-gray-500">
-                {destination.description}
+                {destination.unavailableReason ?? destination.description}
               </span>
             </button>
           );
