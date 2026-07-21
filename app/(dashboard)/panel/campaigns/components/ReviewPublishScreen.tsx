@@ -167,7 +167,7 @@ export function ReviewPublishScreen({
               <div>
                 <dt className="text-gray-400">Ad set</dt>
                 <dd className="mt-1 font-medium text-gray-900">
-                  {campaign.campaign.configuration.adSetName}
+                  {campaign.campaign.configuration.adSetName || "Not set"}
                 </dd>
               </div>
               <div>

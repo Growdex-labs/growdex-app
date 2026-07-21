@@ -857,7 +857,7 @@ export const validateCampaignCreativeSetup = (
 
 export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name.";
-  if (!payload.campaign.configuration.adSetName.trim()) {
+  if (!payload.campaign.configuration.adSetName?.trim()) {
     return "Enter an ad set name.";
   }
   if (!payload.campaign.platforms.length) return "Select at least one platform.";
@@ -909,7 +909,7 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
 
 export const validateCampaignDraftPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name before saving the draft.";
-  if (!payload.campaign.configuration.adSetName.trim()) {
+  if (!payload.campaign.configuration.adSetName?.trim()) {
     return "Enter an ad set name before saving the draft.";
   }
   if (payload.campaign.platforms.length > 2) return "A campaign can use at most two platforms.";
@@ -1347,38 +1347,42 @@ export const searchProviderLanguages = async (
 
 const serializeCampaignPayload = (
   payload: CreateCampaignPayload,
-): CreateCampaignPayload => ({
-  ...payload,
-  campaign: {
-    ...payload.campaign,
-    name: payload.campaign.name.trim(),
-    configuration: {
-      ...payload.campaign.configuration,
-      adSetName: payload.campaign.configuration.adSetName.trim(),
+): CreateCampaignPayload => {
+  const adSetName = payload.campaign.configuration.adSetName?.trim();
+  if (!adSetName) throw new Error("Enter an ad set name.");
+  return {
+    ...payload,
+    campaign: {
+      ...payload.campaign,
+      name: payload.campaign.name.trim(),
+      configuration: {
+        ...payload.campaign.configuration,
+        adSetName,
+      },
     },
-  },
-  audience: {
-    ...payload.audience,
-    locations: [...new Set(payload.audience.locations.map((item) => item.trim()))].filter(Boolean),
-    interests: [...new Set((payload.audience.interests ?? []).map((item) => item.trim()))].filter(Boolean),
-    languages: [...new Set((payload.audience.languages ?? []).map((item) => item.trim()))].filter(Boolean),
-  },
-  budget: {
-    ...payload.budget,
-    endDate: payload.budget.endDate || undefined,
-  },
-  adContent: {
-    creatives: payload.adContent.creatives.map((creative) => ({
-      ...creative,
-      primaryText: creative.primaryText.trim(),
-      headline: creative.headline?.trim() || undefined,
-      mediaUrl: creative.mediaUrl.trim(),
-      landingPageUrl: creative.landingPageUrl?.trim() || undefined,
-      appId: creative.appId?.trim() || undefined,
-      leadFormId: creative.leadFormId?.trim() || undefined,
-    })),
-  },
-});
+    audience: {
+      ...payload.audience,
+      locations: [...new Set(payload.audience.locations.map((item) => item.trim()))].filter(Boolean),
+      interests: [...new Set((payload.audience.interests ?? []).map((item) => item.trim()))].filter(Boolean),
+      languages: [...new Set((payload.audience.languages ?? []).map((item) => item.trim()))].filter(Boolean),
+    },
+    budget: {
+      ...payload.budget,
+      endDate: payload.budget.endDate || undefined,
+    },
+    adContent: {
+      creatives: payload.adContent.creatives.map((creative) => ({
+        ...creative,
+        primaryText: creative.primaryText.trim(),
+        headline: creative.headline?.trim() || undefined,
+        mediaUrl: creative.mediaUrl.trim(),
+        landingPageUrl: creative.landingPageUrl?.trim() || undefined,
+        appId: creative.appId?.trim() || undefined,
+        leadFormId: creative.leadFormId?.trim() || undefined,
+      })),
+    },
+  };
+};
 
 export const createCampaign = async (
   payload: CreateCampaignPayload,

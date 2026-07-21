@@ -157,6 +157,20 @@ describe("parseCampaignOptimizationResponse", () => {
 });
 
 describe("validateCampaignDraftPayload", () => {
+  it("reports a missing ad set name instead of crashing on older campaign data", () => {
+    const draft = createInitialCampaignPayload();
+    draft.campaign.name = "Existing campaign";
+    delete (
+      draft.campaign.configuration as Partial<
+        typeof draft.campaign.configuration
+      >
+    ).adSetName;
+
+    expect(validateCampaignDraftPayload(draft)).toBe(
+      "Enter an ad set name before saving the draft.",
+    );
+  });
+
   it("requires an ad set name", () => {
     const draft = createInitialCampaignPayload();
     draft.campaign.name = "Unfinished launch";

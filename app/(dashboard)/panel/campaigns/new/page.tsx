@@ -1150,7 +1150,7 @@ export default function NewCampaignPage() {
       setError("Choose a campaign goal before continuing.");
       return;
     }
-    if (step === 3 && !campaign.campaign.configuration.adSetName.trim()) {
+    if (step === 3 && !campaign.campaign.configuration.adSetName?.trim()) {
       setError("Enter an ad set name before continuing.");
       return;
     }
@@ -1683,7 +1683,7 @@ export default function NewCampaignPage() {
                   {step === 3 && (
                     <div className="space-y-6">
                       <AdSetIdentityCard
-                        value={campaign.campaign.configuration.adSetName}
+                        value={campaign.campaign.configuration.adSetName ?? ""}
                         onChange={(adSetName) =>
                           patchConfiguration({ adSetName })
                         }
