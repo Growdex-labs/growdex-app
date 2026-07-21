@@ -1375,6 +1375,27 @@ export const createCampaign = async (
   return data as CampaignDto;
 };
 
+export const createCampaignDraft = async (
+  payload: CreateCampaignPayload,
+  options?: { idempotencyKey?: string },
+): Promise<CampaignDto> => {
+  const res = await apiFetch("/campaigns/drafts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.idempotencyKey
+        ? { "Idempotency-Key": options.idempotencyKey }
+        : {}),
+    },
+    body: JSON.stringify(serializeCampaignPayload(payload)),
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Save campaign draft failed (${res.status})`));
+  }
+  return data as CampaignDto;
+};
+
 export const fetchCampaigns = async (): Promise<CampaignDto[]> => {
   const res = await apiFetch("/campaigns", { method: "GET" });
   const data = await readJson(res);
@@ -1436,6 +1457,22 @@ export const updateCampaign = async (
     throw new Error(getApiError(data, `Update campaign failed (${res.status})`));
   }
 
+  return data as CampaignDto;
+};
+
+export const updateCampaignDraft = async (
+  id: string,
+  payload: CreateCampaignPayload,
+): Promise<CampaignDto> => {
+  const res = await apiFetch(`/campaigns/drafts/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(serializeCampaignPayload(payload)),
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Save campaign draft failed (${res.status})`));
+  }
   return data as CampaignDto;
 };
 

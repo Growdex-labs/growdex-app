@@ -9,6 +9,7 @@ import { useMe } from "@/context/me-context";
 import { apiFetch, isDevelopmentMockSessionActive } from "@/lib/auth";
 import {
   createCampaign,
+  createCampaignDraft,
   createAudienceStrategy,
   createInitialCampaignPayload,
   campaignDtoToPayload,
@@ -22,6 +23,7 @@ import {
   searchMetaInterests,
   startAiCampaignDraft,
   updateCampaign,
+  updateCampaignDraft,
   validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
   validateCampaignPayload,
@@ -245,6 +247,7 @@ export default function NewCampaignPage() {
   const [aiStepRationales, setAiStepRationales] = useState(EMPTY_AI_RATIONALES);
   const [uploading, setUploading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autosaveError, setAutosaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [savedCampaignId, setSavedCampaignId] = useState<string | null>(null);
@@ -267,6 +270,14 @@ export default function NewCampaignPage() {
     fingerprint: string;
     key: string;
   } | null>(null);
+  const latestCampaignRef = useRef(campaign);
+  const savedCampaignIdRef = useRef<string | null>(null);
+  const autosaveCreatedIdRef = useRef<string | null>(null);
+  const autosaveRef = useRef({
+    running: false,
+    requested: false,
+    lastFingerprint: "",
+  });
   const aiSessionRestoredRef = useRef(false);
   const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
   const aiReadinessNotice = aiGeneratedDraft
@@ -307,7 +318,67 @@ export default function NewCampaignPage() {
       : undefined;
 
   useEffect(() => {
+    latestCampaignRef.current = campaign;
+  }, [campaign]);
+
+  useEffect(() => {
+    savedCampaignIdRef.current = savedCampaignId;
+  }, [savedCampaignId]);
+
+  useEffect(() => {
+    if (editingCampaignLoading || !method || !campaign.campaign.name.trim()) return;
+    if (validateCampaignDraftPayload(campaign)) return;
+
+    autosaveRef.current.requested = true;
+    const flush = async () => {
+      if (autosaveRef.current.running) return;
+      autosaveRef.current.running = true;
+      try {
+        while (autosaveRef.current.requested) {
+          autosaveRef.current.requested = false;
+          const payload = latestCampaignRef.current;
+          const fingerprint = JSON.stringify(payload);
+          if (fingerprint === autosaveRef.current.lastFingerprint) continue;
+          try {
+            const existingCampaignId = savedCampaignIdRef.current;
+            const saved = existingCampaignId
+              ? await updateCampaignDraft(existingCampaignId, payload)
+              : await createCampaignDraft(payload, {
+                  idempotencyKey: createIdempotencyKeyRef.current,
+                });
+            if (!existingCampaignId) autosaveCreatedIdRef.current = saved.id;
+            savedCampaignIdRef.current = saved.id;
+            setSavedCampaignId(saved.id);
+            autosaveRef.current.lastFingerprint = fingerprint;
+            setAutosaveError(null);
+            const url = new URL(window.location.href);
+            if (url.searchParams.get("id") !== saved.id) {
+              url.searchParams.set("id", saved.id);
+              window.history.replaceState(window.history.state, "", url);
+            }
+          } catch (failure) {
+            setAutosaveError(
+              failure instanceof Error
+                ? `Growdex could not protect your latest changes: ${failure.message}`
+                : "Growdex could not protect your latest changes.",
+            );
+          }
+        }
+      } finally {
+        autosaveRef.current.running = false;
+      }
+    };
+
+    const timer = window.setTimeout(() => void flush(), 900);
+    return () => window.clearTimeout(timer);
+  }, [campaign, editingCampaignLoading, method]);
+
+  useEffect(() => {
     if (!editCampaignId) {
+      setEditingCampaignLoading(false);
+      return;
+    }
+    if (editCampaignId === autosaveCreatedIdRef.current) {
       setEditingCampaignLoading(false);
       return;
     }
@@ -1333,7 +1404,7 @@ export default function NewCampaignPage() {
   const updateCampaignGoal = (
     goal: CreateCampaignPayload["campaign"]["goal"],
     next: Pick<
-      CampaignConfiguration,
+      AudienceStrategyConfiguration,
       "destination" | "optimizationGoal"
     >,
   ) => {
@@ -1341,14 +1412,8 @@ export default function NewCampaignPage() {
       aiFlow.markReview("goals");
       aiFlow.markReview("event");
     }
-    patchCampaign({
-      goal,
-      configuration: {
-        ...campaign.campaign.configuration,
-        ...next,
-        eventSourceIds: {},
-      },
-    });
+    patchCampaign({ goal });
+    patchStrategyConfiguration({ ...next, eventSourceIds: {} });
     setError(null);
   };
 
@@ -1696,9 +1761,9 @@ export default function NewCampaignPage() {
                     </div>
                   )}
 
-                  {error && step < 7 && (
+                  {(error || autosaveError) && step < 7 && (
                     <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-                      {error}
+                      {error ?? autosaveError}
                     </p>
                   )}
 
