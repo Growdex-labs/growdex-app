@@ -101,13 +101,13 @@ function MetaAdPreview({
           {creative.primaryText || "Your primary text will appear here."}
         </p>
 
-        <div className="flex max-h-[420px] min-h-56 items-center justify-center overflow-hidden bg-[#e4e7ec]">
+        <div className="aspect-square w-full overflow-hidden bg-[#e4e7ec]">
           <PreviewMedia
             creative={creative}
             className={
               creative.mediaUrl
-                ? "block h-auto max-h-[420px] w-auto max-w-full object-contain"
-                : "min-h-56 w-full"
+                ? "block h-full w-full object-cover"
+                : "h-full w-full"
             }
           />
         </div>
