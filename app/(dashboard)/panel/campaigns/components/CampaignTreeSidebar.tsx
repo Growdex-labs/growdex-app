@@ -56,7 +56,7 @@ export function CampaignTreeSidebar({
   return (
     <aside
       className={`hidden h-full shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white lg:flex ${
-        compact ? "w-52 p-3 xl:w-60 xl:p-4" : "w-[27rem] p-4"
+        compact ? "w-52 p-3 xl:w-60 xl:p-4" : "w-[20.25rem] p-4"
       }`}
     >
       <Link
