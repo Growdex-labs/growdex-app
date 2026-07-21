@@ -101,7 +101,7 @@ function MetaAdPreview({
           {creative.primaryText || "Your primary text will appear here."}
         </p>
 
-        <div className="aspect-square w-full overflow-hidden bg-[#e4e7ec]">
+        <div className="aspect-[1200/628] w-full overflow-hidden bg-[#e4e7ec]">
           <PreviewMedia
             creative={creative}
             className={

@@ -207,6 +207,7 @@ export default function NewCampaignPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editCampaignId = searchParams.get("id");
+  const editStrategyId = searchParams.get("strategy");
   const { me } = useMe();
   const brandName = me?.brand?.name ?? "Your brand";
   const firstName = me?.profile?.firstName ?? "";
@@ -399,10 +400,15 @@ export default function NewCampaignPage() {
           throw new Error("This campaign does not have a supported setup mode.");
         }
         setCampaign({ ...payload, creationMode: payload.creationMode });
+        setActiveStrategyId(
+          payload.audienceStrategies.some(({ id }) => id === editStrategyId)
+            ? editStrategyId
+            : payload.audienceStrategies[0]?.id ?? null,
+        );
         setMethod(payload.creationMode);
         setGoalConfirmed(true);
         setSavedCampaignId(result.id);
-        setStep(6);
+        setStep(editStrategyId ? 3 : 6);
       })
       .catch((failure) => {
         if (!active) return;
@@ -419,7 +425,7 @@ export default function NewCampaignPage() {
     return () => {
       active = false;
     };
-  }, [editCampaignId]);
+  }, [editCampaignId, editStrategyId]);
 
   useEffect(() => {
     let active = true;
