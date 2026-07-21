@@ -7,12 +7,16 @@ import {
   validateCampaignPayload,
 } from "@/lib/campaigns";
 import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
+import type { SocialAccountSetupProps } from "@/types/social";
 import { PlatformAdPreview } from "./PlatformAdPreview";
 
 interface ReviewPublishScreenProps {
   stepper?: ReactNode;
   campaign: CampaignReviewPayload;
   brandName?: string;
+  accounts?: SocialAccountSetupProps | null;
+  accountsLoading?: boolean;
+  accountsError?: string | null;
   onPublish: () => void;
   onSaveDraft?: () => void;
   onBack?: () => void;
@@ -43,6 +47,9 @@ export function ReviewPublishScreen({
   stepper,
   campaign,
   brandName = "Your brand",
+  accounts,
+  accountsLoading = false,
+  accountsError,
   onPublish,
   onSaveDraft,
   onBack,
@@ -53,6 +60,16 @@ export function ReviewPublishScreen({
 }: ReviewPublishScreenProps) {
   const validationError = validateCampaignPayload(campaign);
   const busy = publishing || saving;
+  const accountName = (
+    platform: CampaignReviewPayload["campaign"]["platforms"][number],
+  ) => {
+    const assetId = campaign.campaign.configuration.accountAssetIds?.[platform];
+    if (platform === "meta") {
+      return accounts?.meta?.assets?.find((asset) => asset.id === assetId)
+        ?.adAccountName;
+    }
+    return accounts?.tiktok?.assets?.find((asset) => asset.id === assetId)?.name;
+  };
 
   return (
     <>
@@ -156,8 +173,12 @@ export function ReviewPublishScreen({
               {campaign.campaign.platforms.map((platform) => (
                 <div key={platform}>
                   <dt className="capitalize text-gray-400">{platform} account</dt>
-                  <dd className="mt-1 break-all text-gray-700">
-                    {campaign.campaign.configuration.accountAssetIds?.[platform]}
+                  <dd className="mt-1 text-gray-700">
+                    {accountsLoading
+                      ? "Loading connected account…"
+                      : accountName(platform) ??
+                        accountsError ??
+                        "Connected account not found"}
                     {campaign.campaign.configuration.eventSourceIds?.[platform]
                       ? ` · Pixel ${campaign.campaign.configuration.eventSourceIds[platform]}`
                       : ""}

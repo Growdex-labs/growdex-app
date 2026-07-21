@@ -1787,6 +1787,9 @@ export default function NewCampaignPage() {
                     <ReviewPublishScreen
                       campaign={campaign}
                       brandName={brandName}
+                      accounts={accounts}
+                      accountsLoading={accountsLoading}
+                      accountsError={accountError}
                       onBack={() => setStep(5)}
                       onSaveDraft={() => void createDraft()}
                       onPublish={() => void createAndPublish()}

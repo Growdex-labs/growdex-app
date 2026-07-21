@@ -11,6 +11,8 @@ import {
   publishCampaign,
   type CampaignReviewPayload,
 } from "@/lib/campaigns";
+import { hydrateSocialAccounts } from "@/lib/social";
+import type { SocialAccountSetupProps } from "@/types/social";
 import { CampaignTreeSidebar } from "../../components/CampaignTreeSidebar";
 import { ReviewPublishScreen } from "../../components/ReviewPublishScreen";
 
@@ -24,6 +26,28 @@ export default function PublishCampaignPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sourceStatus, setSourceStatus] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(null);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [accountsError, setAccountsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void hydrateSocialAccounts()
+      .then((result) => {
+        if (!active) return;
+        if (result.success) {
+          setAccounts(result.data ?? {});
+          return;
+        }
+        setAccountsError(result.error ?? "Could not load connected accounts.");
+      })
+      .finally(() => {
+        if (active) setAccountsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!campaignId) {
@@ -98,6 +122,9 @@ export default function PublishCampaignPage() {
                 <ReviewPublishScreen
                   campaign={campaign}
                   brandName={me?.brand?.name ?? "Your brand"}
+                  accounts={accounts}
+                  accountsLoading={accountsLoading}
+                  accountsError={accountsError}
                   onSaveDraft={
                     sourceStatus === "draft"
                       ? () => router.push("/panel/campaigns")
