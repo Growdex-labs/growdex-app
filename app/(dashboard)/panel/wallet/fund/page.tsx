@@ -32,12 +32,14 @@ const PLATFORM_CONFIG = {
 function FundingCard({
   platform,
   accountName,
+  canFund,
   loading,
   error,
   onFund,
 }: {
   platform: Platform;
   accountName: string;
+  canFund: boolean;
   loading: boolean;
   error?: string | null;
   onFund: () => void;
@@ -75,7 +77,7 @@ function FundingCard({
         <button
           type="button"
           onClick={onFund}
-          disabled={loading}
+          disabled={loading || !canFund}
           className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2 text-xs font-gilroy-semibold text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
@@ -118,11 +120,21 @@ export default function FundWalletPage() {
         }
         const data = (await response.json()) as Array<{
           platform: string;
-          billingUrl: string;
+          billingUrl?: string;
+          error?: string;
         }>;
         if (active) {
           setPaymentUrls(
-            Object.fromEntries(data.map((item) => [item.platform, item.billingUrl])),
+            Object.fromEntries(
+              data.flatMap((item) =>
+                item.billingUrl ? [[item.platform, item.billingUrl]] : [],
+              ),
+            ),
+          );
+          setCardErrors(
+            Object.fromEntries(
+              data.map((item) => [item.platform, item.error ?? null]),
+            ),
           );
         }
       } catch (failure) {
@@ -198,6 +210,7 @@ export default function FundWalletPage() {
                     key={platform}
                     platform={platform}
                     accountName={accountName(platform)}
+                    canFund={Boolean(paymentUrls[platform])}
                     loading={loadingPlatform === platform}
                     error={cardErrors[platform]}
                     onFund={() => handleFund(platform)}
