@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   ArrowLeft,
   Film,
@@ -10,7 +9,6 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { isVideoUrl } from "@/lib/campaign-shared";
 import type {
   CampaignCreativeInput,
   CampaignCta,
@@ -19,6 +17,7 @@ import type {
   CampaignPlatform,
   MetaLeadForm,
 } from "@/lib/campaigns";
+import { PlatformAdPreview } from "./PlatformAdPreview";
 
 interface CreativeAdEditorProps {
   goal: CampaignGoal;
@@ -59,58 +58,7 @@ function CreativePreview({ creative }: { creative: CampaignCreativeInput }) {
         </span>
       </div>
 
-      <div className={isMeta ? "p-4" : "bg-[#151515] p-5"}>
-        <div
-          className={
-            isMeta
-              ? "overflow-hidden rounded-xl border border-gray-200 bg-white"
-              : "mx-auto max-w-[260px] overflow-hidden rounded-[28px] border-[6px] border-gray-950 bg-gray-950 shadow-xl"
-          }
-        >
-          <div className={`flex items-center gap-2 ${isMeta ? "p-3" : "bg-white p-3"}`}>
-            <span className="flex size-8 items-center justify-center rounded-full bg-khaki-200 text-xs font-gilroy-bold text-black-800">
-              G
-            </span>
-            <span>
-              <span className="block text-xs font-gilroy-semibold text-gray-900">Your brand</span>
-              <span className="block text-[10px] text-gray-400">Sponsored</span>
-            </span>
-          </div>
-          <p className={`text-sm leading-5 text-gray-700 ${isMeta ? "px-3 pb-3" : "bg-white px-3 pb-3"}`}>
-            {creative.primaryText || "Your primary text will appear here."}
-          </p>
-          {creative.mediaUrl ? (
-            isVideoUrl(creative.mediaUrl) ? (
-              <video
-                className={isMeta ? "aspect-video w-full bg-gray-100 object-cover" : "aspect-9/16 w-full bg-gray-900 object-cover"}
-                src={creative.mediaUrl}
-                controls
-              />
-            ) : (
-              <Image
-                className={isMeta ? "aspect-video w-full bg-gray-100 object-cover" : "aspect-9/16 w-full bg-gray-900 object-cover"}
-                src={creative.mediaUrl}
-                alt={`${platformName(creative.platform)} creative preview`}
-                width={640}
-                height={isMeta ? 360 : 1138}
-                unoptimized
-              />
-            )
-          ) : (
-            <div className={`flex items-center justify-center bg-gray-100 text-center text-xs text-gray-400 ${isMeta ? "aspect-video" : "aspect-9/16"}`}>
-              Upload {isMeta ? "an image" : "a video"} to preview it
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-3 bg-white p-3">
-            <p className="min-w-0 truncate text-sm font-gilroy-semibold text-gray-900">
-              {creative.headline || "Ad headline"}
-            </p>
-            <span className="shrink-0 rounded-md border border-gray-200 px-2.5 py-1 text-[10px] font-gilroy-semibold text-gray-600">
-              {creative.cta.replaceAll("_", " ")}
-            </span>
-          </div>
-        </div>
-      </div>
+      <PlatformAdPreview creative={creative} />
     </aside>
   );
 }

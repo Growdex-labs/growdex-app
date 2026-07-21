@@ -1,14 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
   type CampaignReviewPayload,
   validateCampaignPayload,
 } from "@/lib/campaigns";
-import { isVideoUrl } from "@/lib/campaign-shared";
 import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
+import { PlatformAdPreview } from "./PlatformAdPreview";
 
 interface ReviewPublishScreenProps {
   stepper?: ReactNode;
@@ -130,42 +129,14 @@ export function ReviewPublishScreen({
             {campaign.adContent.creatives.map((creative, index) => {
               const platform = creative.platform;
               return (
-                <article key={`${platform}-${index}-${creative.mediaUrl}`} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                  <div className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
-                        {brandName.slice(0, 1).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{brandName}</p>
-                        <p className="text-xs text-gray-400 capitalize">Sponsored on {platform}</p>
-                      </div>
-                    </div>
-                    <p className="mt-3 text-sm text-gray-700">{creative?.primaryText}</p>
-                  </div>
-                  {creative?.mediaUrl && (
-                    isVideoUrl(creative.mediaUrl) ? (
-                      <video className="aspect-video w-full bg-gray-100 object-cover" src={creative.mediaUrl} controls />
-                    ) : (
-                      <Image
-                        className="aspect-video w-full bg-gray-100 object-cover"
-                        src={creative.mediaUrl}
-                        alt={`${platform} creative preview`}
-                        width={720}
-                        height={405}
-                        unoptimized
-                      />
-                    )
-                  )}
-                  <div className="flex items-center justify-between gap-3 border-t border-gray-100 p-4">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-gray-900">{creative?.headline}</p>
-                      <p className="truncate text-xs text-gray-400">{creative?.landingPageUrl}</p>
-                    </div>
-                    <span className="shrink-0 rounded-md border px-3 py-1 text-xs font-medium text-gray-700">
-                      {(creative?.cta ?? "LEARN_MORE").replaceAll("_", " ")}
-                    </span>
-                  </div>
+                <article
+                  key={`${platform}-${index}-${creative.mediaUrl}`}
+                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                >
+                  <PlatformAdPreview
+                    creative={creative}
+                    brandName={brandName}
+                  />
                 </article>
               );
             })}
