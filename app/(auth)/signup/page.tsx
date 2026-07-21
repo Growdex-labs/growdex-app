@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, Lock, Sparkles } from "lucide-react";
-import { register } from "@/lib/auth";
+import { getAuthErrorMessage, register } from "@/lib/auth";
 import { useGoogleAuth } from "@/lib/use-google";
 import { toast } from "sonner";
 
@@ -109,14 +109,13 @@ export default function SignUpPage() {
           router.push(response.onboardingCompleted ? "/panel" : "/onboarding"),
         1500,
       );
-    } catch (err: any) {
-      if (err.formErrors?.length > 0) {
-        setError(err.formErrors[0]);
-      } else {
-        setError(
-          err.message || "Registration failed. Please check your details.",
-        );
-      }
+    } catch (err: unknown) {
+      setError(
+        getAuthErrorMessage(
+          err,
+          "We couldn't create your account right now. Please try again later.",
+        ),
+      );
     } finally {
       setIsLoading(false);
     }

@@ -16,6 +16,66 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export class AuthRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly details?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "AuthRequestError";
+  }
+}
+
+const readAuthError = async (response: Response): Promise<AuthRequestError> => {
+  let details: Record<string, unknown> | undefined;
+
+  try {
+    const body: unknown = await response.json();
+    if (body && typeof body === "object" && !Array.isArray(body)) {
+      details = body as Record<string, unknown>;
+    }
+  } catch {
+    // An empty or non-JSON error response still has useful HTTP status context.
+  }
+
+  const serverMessage = details?.message;
+  const message =
+    typeof serverMessage === "string" && serverMessage.trim()
+      ? serverMessage
+      : `Request failed with status ${response.status}`;
+
+  return new AuthRequestError(message, response.status, details);
+};
+
+export const getAuthErrorMessage = (
+  error: unknown,
+  serviceFailureMessage: string,
+): string => {
+  if (error instanceof AuthRequestError) {
+    if (error.status >= 500) return serviceFailureMessage;
+
+    const responseMessage = error.details?.message;
+    const validationDetails =
+      responseMessage &&
+      typeof responseMessage === "object" &&
+      !Array.isArray(responseMessage)
+        ? (responseMessage as Record<string, unknown>)
+        : error.details;
+    const formErrors = validationDetails?.formErrors;
+    if (Array.isArray(formErrors)) {
+      const firstError = formErrors.find(
+        (entry): entry is string => typeof entry === "string" && !!entry.trim(),
+      );
+      if (firstError) return firstError;
+    }
+
+    return error.message;
+  }
+
+  return serviceFailureMessage;
+};
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 const compactOptionalFields = <T extends Record<string, unknown>>(value: T): T => {
@@ -449,8 +509,7 @@ export const register = async (email: string, password: string) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw err;
+    throw await readAuthError(res);
   }
 
   return res.json();
@@ -486,8 +545,7 @@ export const forgotPassword = async (email: string) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw err;
+    throw await readAuthError(res);
   }
 
   return res.json();
