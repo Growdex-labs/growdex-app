@@ -58,7 +58,10 @@ export function useAiCampaignFlow(
     useState<Record<AiStepId, AiStepStatus>>(DEFAULT_STATUSES);
 
   const steps = useMemo<AiStep[]>(
-    () => [
+    () => {
+      const strategy = campaign.audienceStrategies[0];
+      if (!strategy) return [];
+      return [
       {
         id: "setup",
         title: "Setup campaign",
@@ -101,10 +104,10 @@ export function useAiCampaignFlow(
         label: "Destination and delivery result",
         reason: rationales.event,
         status: statuses.event,
-        result: `${campaign.campaign.configuration.destination.replaceAll("_", " ")} · ${campaign.campaign.configuration.optimizationGoal.replaceAll("_", " ")}`,
+        result: `${strategy.configuration.destination.replaceAll("_", " ")} · ${strategy.configuration.optimizationGoal.replaceAll("_", " ")}`,
         detail:
-          campaign.campaign.configuration.optimizationGoal === "CONVERSIONS"
-            ? `${Object.values(campaign.campaign.configuration.eventSourceIds ?? {}).filter(Boolean).length} conversion data source${Object.values(campaign.campaign.configuration.eventSourceIds ?? {}).filter(Boolean).length === 1 ? "" : "s"} selected`
+          strategy.configuration.optimizationGoal === "CONVERSIONS"
+            ? `${Object.values(strategy.configuration.eventSourceIds ?? {}).filter(Boolean).length} conversion data source${Object.values(strategy.configuration.eventSourceIds ?? {}).filter(Boolean).length === 1 ? "" : "s"} selected`
             : "This delivery result does not require a conversion data source.",
       },
       {
@@ -113,11 +116,11 @@ export function useAiCampaignFlow(
         label: "Audience recommendation",
         reason: rationales.audience,
         status: statuses.audience,
-        result: `${campaign.audience.locations.join(", ")} · ages ${campaign.audience.ageMin ?? 18}–${campaign.audience.ageMax ?? 65}`,
-        detail: `${campaign.audience.interests?.length ?? 0} interests · ${campaign.audience.languages?.length ? campaign.audience.languages.join(", ") : "all languages"}`,
+        result: `${strategy.audience.locations.join(", ")} · ages ${strategy.audience.ageMin ?? 18}–${strategy.audience.ageMax ?? 65}`,
+        detail: `${strategy.audience.interests?.length ?? 0} interests · ${strategy.audience.languages?.length ? strategy.audience.languages.join(", ") : "all languages"}`,
         chips: [
-          campaign.audience.gender ?? "all",
-          ...(campaign.audience.devices ?? ["mobile"]),
+          strategy.audience.gender ?? "all",
+          ...(strategy.audience.devices ?? ["mobile"]),
         ],
       },
       {
@@ -126,8 +129,8 @@ export function useAiCampaignFlow(
         label: "Budget recommendation",
         reason: rationales.budget,
         status: statuses.budget,
-        result: `${currencySymbol(campaign.budget.currency)}${campaign.budget.amount.toLocaleString()} ${campaign.budget.type}`,
-        detail: `${new Date(campaign.budget.startDate).toLocaleString()}${campaign.budget.endDate ? ` – ${new Date(campaign.budget.endDate).toLocaleString()}` : ""}`,
+        result: `${currencySymbol(strategy.budget.currency)}${strategy.budget.amount.toLocaleString()} ${strategy.budget.type}`,
+        detail: `${new Date(strategy.budget.startDate).toLocaleString()}${strategy.budget.endDate ? ` – ${new Date(strategy.budget.endDate).toLocaleString()}` : ""}`,
       },
       {
         id: "creative",
@@ -135,15 +138,16 @@ export function useAiCampaignFlow(
         label: "Creative draft",
         reason: rationales.creative,
         status: statuses.creative,
-        result: `${campaign.adContent.creatives.length} platform-specific creative${campaign.adContent.creatives.length === 1 ? "" : "s"}`,
-        detail: campaign.adContent.creatives
+        result: `${strategy.ads.length} platform-specific ad${strategy.ads.length === 1 ? "" : "s"}`,
+        detail: strategy.ads
           .map(
             (creative) =>
               `${creative.platform === "meta" ? "Meta" : "TikTok"}: ${creative.primaryText || "copy required"}${creative.mediaUrl ? " · media ready" : " · media required"}`,
           )
           .join(" | "),
       },
-    ],
+      ];
+    },
     [campaign, rationales, statuses],
   );
 

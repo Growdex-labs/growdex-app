@@ -2,9 +2,9 @@
 
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import type { CreateCampaignPayload } from "@/lib/campaigns";
+import type { AudienceStrategy } from "@/lib/campaigns";
 
-type CampaignBudget = CreateCampaignPayload["budget"];
+type CampaignBudget = AudienceStrategy["budget"];
 
 interface CampaignBudgetEditorProps {
   budget: CampaignBudget;

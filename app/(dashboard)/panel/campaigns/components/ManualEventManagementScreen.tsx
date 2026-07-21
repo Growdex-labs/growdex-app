@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type {
   CampaignConfiguration,
+  AudienceStrategyConfiguration,
   CampaignDestination,
   CampaignGoal,
   CampaignOptimizationGoal,
@@ -138,8 +139,8 @@ export function ManualEventManagementScreen({
 }: {
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
-  configuration: CampaignConfiguration;
-  onChange: (next: Partial<CampaignConfiguration>) => void;
+  configuration: CampaignConfiguration & AudienceStrategyConfiguration;
+  onChange: (next: Partial<CampaignConfiguration & AudienceStrategyConfiguration>) => void;
 }) {
   const metaOnlyCampaign = platforms.length === 1 && platforms[0] === "meta";
   const destinations = DESTINATIONS[goal].filter(

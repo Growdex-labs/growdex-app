@@ -9,6 +9,7 @@ import { useMe } from "@/context/me-context";
 import { apiFetch, isDevelopmentMockSessionActive } from "@/lib/auth";
 import {
   createCampaign,
+  createAudienceStrategy,
   createInitialCampaignPayload,
   campaignDtoToPayload,
   fetchCampaignById,
@@ -29,6 +30,8 @@ import {
   type AiCampaignStepId,
   type CampaignCreativeInput,
   type CampaignConfiguration,
+  type AudienceStrategy,
+  type AudienceStrategyConfiguration,
   type CampaignCta,
   type CampaignPlatform,
   type CreateCampaignPayload,
@@ -43,7 +46,7 @@ import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts, refreshSocialAccount } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { AiCampaignWorkspace } from "../components/AiCampaignWorkspace";
-import { AdSetIdentityCard } from "../components/AdSetIdentityCard";
+import { AudienceStrategyIdentityCard } from "../components/AudienceStrategyIdentityCard";
 import type { AiMessage } from "../components/AiSidePanel";
 import { AdCreatedModal } from "../components/AdCreatedModal";
 import type { AiStep, AiStepStatus } from "../components/use-ai-campaign-flow";
@@ -68,10 +71,10 @@ const STEPS = [
   "Setup campaign",
   "Choose platform",
   "Set campaign goals",
-  "Event management",
-  "Target audience",
+  "Strategy delivery",
+  "Audience targeting",
   "Budget and schedule",
-  "Creative setup",
+  "Ads",
   "Review and publish",
 ];
 
@@ -152,9 +155,11 @@ const campaignToAiDraft = (
   campaign: CreateCampaignPayload,
   previous: GeneratedCampaignDraft,
 ): GeneratedCampaignDraft => {
-  const start = new Date(campaign.budget.startDate);
-  const end = campaign.budget.endDate
-    ? new Date(campaign.budget.endDate)
+  const strategy = campaign.audienceStrategies[0];
+  if (!strategy) throw new Error("The AI campaign has no audience strategy.");
+  const start = new Date(strategy.budget.startDate);
+  const end = strategy.budget.endDate
+    ? new Date(strategy.budget.endDate)
     : null;
   const durationDays = end
     ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
@@ -164,21 +169,21 @@ const campaignToAiDraft = (
     name: campaign.campaign.name,
     goal: campaign.campaign.goal,
     platforms: campaign.campaign.platforms,
-    configuration: campaign.campaign.configuration,
-    audience: campaign.audience,
+    configuration: { ...campaign.campaign.configuration, ...strategy.configuration },
+    audience: strategy.audience,
     budget: {
-      amount: campaign.budget.amount,
-      currency: campaign.budget.currency,
-      type: campaign.budget.type,
+      amount: strategy.budget.amount,
+      currency: strategy.budget.currency,
+      type: strategy.budget.type,
       durationDays,
-      startDateLocal: campaign.budget.startDate,
-      endDateLocal: campaign.budget.endDate,
+      startDateLocal: strategy.budget.startDate,
+      endDateLocal: strategy.budget.endDate,
     },
-    creatives: campaign.adContent.creatives.map((creative) => ({
+    creatives: strategy.ads.map((creative) => ({
       ...creative,
       mediaRequirement:
         creative.platform === "tiktok" ||
-        campaign.campaign.configuration.destination === "VIDEO"
+        strategy.configuration.destination === "VIDEO"
           ? "video"
           : "image",
       mediaStatus: creative.mediaUrl ? "ready" : "required",
@@ -205,6 +210,10 @@ export default function NewCampaignPage() {
   const [campaign, setCampaign] = useState<CreateCampaignPayload>(() =>
     createInitialCampaignPayload(),
   );
+  const [activeStrategyId, setActiveStrategyId] = useState<string | null>(null);
+  const activeStrategy =
+    campaign.audienceStrategies.find(({ id }) => id === activeStrategyId) ??
+    campaign.audienceStrategies[0]!;
   const [method, setMethod] = useState<CreationMethod | null>(null);
   const [goalConfirmed, setGoalConfirmed] = useState(false);
   const [step, setStep] = useState(0);
@@ -249,9 +258,6 @@ export default function NewCampaignPage() {
   const [unavailableInterests, setUnavailableInterests] = useState<
     Record<string, MetaInterest[]>
   >({});
-  const creativeCache = useRef(
-    new Map<CampaignPlatform, CampaignCreativeInput[]>(),
-  );
   const aiRequestIdRef = useRef(0);
   const aiAbortRef = useRef<AbortController | null>(null);
   const createIdempotencyKeyRef = useRef(crypto.randomUUID());
@@ -268,13 +274,15 @@ export default function NewCampaignPage() {
           !campaign.campaign.configuration.accountAssetIds?.[platform],
       )
       ? "Select a connected ad account for every platform before publishing."
-      : campaign.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
+      : activeStrategy?.configuration.optimizationGoal === "CONVERSIONS" &&
           campaign.campaign.platforms.some(
             (platform) =>
-              !campaign.campaign.configuration.eventSourceIds?.[platform],
+              !activeStrategy.configuration.eventSourceIds?.[platform],
           )
         ? "Select every required conversion event source before publishing."
-        : campaign.adContent.creatives.some((creative) => !creative.mediaUrl)
+        : campaign.audienceStrategies.some((strategy) =>
+            strategy.ads.some((ad) => !ad.mediaUrl),
+          )
           ? "Add the required Meta images and TikTok videos before publishing."
           : null
     : null;
@@ -474,20 +482,94 @@ export default function NewCampaignPage() {
       },
     }));
 
-  const patchAudience = (next: Partial<CreateCampaignPayload["audience"]>) => {
-    if (campaign.creationMode === "ai") aiFlow.markReview("audience");
+  const patchActiveStrategy = (next: Partial<AudienceStrategy>) =>
     setCampaign((current) => ({
       ...current,
-      audience: { ...current.audience, ...next },
+      audienceStrategies: current.audienceStrategies.map((strategy) =>
+        strategy.id === (activeStrategyId ?? current.audienceStrategies[0]?.id)
+          ? { ...strategy, ...next }
+          : strategy,
+      ),
+    }));
+
+  const patchStrategyConfiguration = (
+    next: Partial<AudienceStrategyConfiguration>,
+  ) => {
+    if (campaign.creationMode === "ai") aiFlow.markReview("event");
+    setCampaign((current) => ({
+      ...current,
+      audienceStrategies: current.audienceStrategies.map((strategy) =>
+        strategy.id === (activeStrategyId ?? current.audienceStrategies[0]?.id)
+          ? { ...strategy, configuration: { ...strategy.configuration, ...next } }
+          : strategy,
+      ),
     }));
   };
 
-  const patchBudget = (next: Partial<CreateCampaignPayload["budget"]>) => {
+  const patchAudience = (next: Partial<AudienceStrategy["audience"]>) => {
+    if (campaign.creationMode === "ai") aiFlow.markReview("audience");
+    setCampaign((current) => ({
+      ...current,
+      audienceStrategies: current.audienceStrategies.map((strategy) =>
+        strategy.id === (activeStrategyId ?? current.audienceStrategies[0]?.id)
+          ? { ...strategy, audience: { ...strategy.audience, ...next } }
+          : strategy,
+      ),
+    }));
+  };
+
+  const patchBudget = (next: Partial<AudienceStrategy["budget"]>) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("budget");
     setCampaign((current) => ({
       ...current,
-      budget: { ...current.budget, ...next },
+      audienceStrategies: current.audienceStrategies.map((strategy) =>
+        strategy.id === (activeStrategyId ?? current.audienceStrategies[0]?.id)
+          ? { ...strategy, budget: { ...strategy.budget, ...next } }
+          : strategy,
+      ),
     }));
+  };
+
+  const addAudienceStrategy = () => {
+    const source = activeStrategy ?? campaign.audienceStrategies[0];
+    const next = source
+      ? {
+          ...structuredClone(source),
+          id: crypto.randomUUID(),
+          name: `${source.name || "Audience Strategy"} copy`,
+        }
+      : createAudienceStrategy();
+    setCampaign((current) => ({
+      ...current,
+      audienceStrategies: [...current.audienceStrategies, next],
+    }));
+    setActiveStrategyId(next.id);
+    setStep(3);
+  };
+
+  const duplicateAudienceStrategy = (id: string) => {
+    const source = campaign.audienceStrategies.find((strategy) => strategy.id === id);
+    if (!source) return;
+    const duplicate = {
+      ...structuredClone(source),
+      id: crypto.randomUUID(),
+      name: `${source.name} copy`,
+    };
+    setCampaign((current) => ({
+      ...current,
+      audienceStrategies: [...current.audienceStrategies, duplicate],
+    }));
+    setActiveStrategyId(duplicate.id);
+    setStep(3);
+  };
+
+  const deleteAudienceStrategy = (id: string) => {
+    if (campaign.audienceStrategies.length === 1) return;
+    const remaining = campaign.audienceStrategies.filter((strategy) => strategy.id !== id);
+    setCampaign((current) => ({ ...current, audienceStrategies: remaining }));
+    if ((activeStrategyId ?? campaign.audienceStrategies[0]?.id) === id) {
+      setActiveStrategyId(remaining[0]?.id ?? null);
+    }
   };
 
   const setPlatformAccounts = (
@@ -500,69 +582,44 @@ export default function NewCampaignPage() {
       aiFlow.markReview("creative");
     }
     setCampaign((current) => {
-      for (const platform of current.campaign.platforms) {
-        creativeCache.current.set(
-          platform,
-          current.adContent.creatives.filter(
-            (creative) => creative.platform === platform,
-          ),
-        );
-      }
       const tiktokSelected = platforms.includes("tiktok");
       const resetGoal =
         tiktokSelected && current.campaign.goal === "APP_PROMOTION";
-      const resetDestination =
-        tiktokSelected &&
-        ["INSTANT_FORM", "WHATSAPP"].includes(
-          current.campaign.configuration.destination,
-        );
       const goal = resetGoal ? "AWARENESS" : current.campaign.goal;
       const configuration = {
         ...current.campaign.configuration,
         accountAssetIds,
-        eventSourceIds: Object.fromEntries(
-          Object.entries(
-            current.campaign.configuration.eventSourceIds ?? {},
-          ).filter(([platform]) =>
-            platforms.includes(platform as CampaignPlatform),
-          ),
-        ),
         specialAdCategories: platforms.includes("meta")
           ? current.campaign.configuration.specialAdCategories
           : [],
-        ...(resetGoal || resetDestination
-          ? {
-              destination: "WEBSITE" as const,
-              optimizationGoal: "REACH" as const,
-            }
-          : {}),
       };
       const selectedMetaAsset = accounts?.meta?.assets?.find(
         (asset) => asset.id === accountAssetIds.meta,
       );
-      const budget =
-        selectedMetaAsset?.readyForCampaigns &&
-        selectedMetaAsset.currency &&
-        typeof selectedMetaAsset.minDailyBudgetMinor === "number"
-          ? {
-              ...current.budget,
-              currency: selectedMetaAsset.currency,
-              amount: Math.max(
-                current.budget.amount,
-                selectedMetaAsset.minDailyBudgetMinor / 100,
-              ),
-            }
-          : current.budget;
+      const audienceStrategies = current.audienceStrategies.map((strategy) => {
+        const resetDestination = tiktokSelected && ["INSTANT_FORM", "WHATSAPP"].includes(strategy.configuration.destination);
+        const budget = selectedMetaAsset?.readyForCampaigns && selectedMetaAsset.currency && typeof selectedMetaAsset.minDailyBudgetMinor === "number"
+          ? { ...strategy.budget, currency: selectedMetaAsset.currency, amount: Math.max(strategy.budget.amount, selectedMetaAsset.minDailyBudgetMinor / 100) }
+          : strategy.budget;
+        const ads = platforms.flatMap((platform) => {
+          const existing = strategy.ads.filter((ad) => ad.platform === platform);
+          return existing.length ? existing : [emptyCreative(platform)];
+        });
+        return {
+          ...strategy,
+          configuration: {
+            ...strategy.configuration,
+            eventSourceIds: Object.fromEntries(Object.entries(strategy.configuration.eventSourceIds ?? {}).filter(([platform]) => platforms.includes(platform as CampaignPlatform))),
+            ...(resetGoal || resetDestination ? { destination: "WEBSITE" as const, optimizationGoal: "REACH" as const } : {}),
+          },
+          budget,
+          ads,
+        };
+      });
       return {
         ...current,
         campaign: { ...current.campaign, platforms, goal, configuration },
-        budget,
-        adContent: {
-          creatives: platforms.flatMap((platform) => {
-            const cached = creativeCache.current.get(platform);
-            return cached?.length ? cached : [emptyCreative(platform)];
-          }),
-        },
+        audienceStrategies,
       };
     });
   };
@@ -752,20 +809,29 @@ export default function NewCampaignPage() {
         goal: generated.goal,
         platforms: generated.platforms,
         configuration: {
-          ...generated.configuration,
+          accountAssetIds: generated.configuration.accountAssetIds,
+          specialAdCategories: generated.configuration.specialAdCategories,
           sameCreativeForAll: false,
+          budgetOptimization: generated.configuration.budgetOptimization,
         },
       },
-      audience: generated.audience,
-      budget: {
-        amount: generated.budget.amount,
-        currency: generated.budget.currency,
-        type: generated.budget.type,
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-      },
-      adContent: {
-        creatives: generated.creatives.map((creative) => ({
+      audienceStrategies: [{
+        id: crypto.randomUUID(),
+        name: generated.name.includes(" ") ? `${generated.name} audience` : "Primary audience",
+        configuration: {
+          destination: generated.configuration.destination,
+          optimizationGoal: generated.configuration.optimizationGoal,
+          eventSourceIds: generated.configuration.eventSourceIds,
+        },
+        audience: generated.audience,
+        budget: {
+          amount: generated.budget.amount,
+          currency: generated.budget.currency,
+          type: generated.budget.type,
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+        },
+        ads: generated.creatives.map((creative) => ({
           platform: creative.platform,
           primaryText: creative.primaryText,
           headline: creative.headline,
@@ -775,7 +841,7 @@ export default function NewCampaignPage() {
           appId: creative.appId,
           leadFormId: creative.leadFormId,
         })),
-      },
+      }],
     });
     setAiGeneratedDraft(generated);
     setGoalConfirmed(true);
@@ -811,7 +877,7 @@ export default function NewCampaignPage() {
       const response = await startAiCampaignDraft({
         prompt,
         brandName,
-        currency: campaign.budget.currency,
+        currency: activeStrategy.budget.currency,
         signal: controller.signal,
       });
       applyAiResponse(response, { requestId, initial: true });
@@ -940,7 +1006,9 @@ export default function NewCampaignPage() {
   ) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("creative");
     setCampaign((current) => {
-      const existing = current.adContent.creatives[index];
+      const strategyId = activeStrategyId ?? current.audienceStrategies[0]?.id;
+      const strategy = current.audienceStrategies.find(({ id }) => id === strategyId);
+      const existing = strategy?.ads[index];
       if (!existing) return current;
       const shared = current.campaign.configuration.sameCreativeForAll;
       const sharedFields: Partial<CampaignCreativeInput> = {};
@@ -951,33 +1019,30 @@ export default function NewCampaignPage() {
         sharedFields.headline = next.headline;
       }
       if (shared && next.cta !== undefined) sharedFields.cta = next.cta;
-      const creatives = current.adContent.creatives.map(
+      const creatives = strategy.ads.map(
         (creative, creativeIndex) => ({
           ...creative,
           ...(creativeIndex === index ? next : sharedFields),
         }),
       );
-      for (const platform of current.campaign.platforms) {
-        creativeCache.current.set(
-          platform,
-          creatives.filter((creative) => creative.platform === platform),
-        );
-      }
-      return { ...current, adContent: { creatives } };
+      return {
+        ...current,
+        audienceStrategies: current.audienceStrategies.map((candidate) =>
+          candidate.id === strategyId ? { ...candidate, ads: creatives } : candidate,
+        ),
+      };
     });
   };
 
   const replaceCreatives = (creatives: CampaignCreativeInput[]) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("creative");
-    for (const platform of campaign.campaign.platforms) {
-      creativeCache.current.set(
-        platform,
-        creatives.filter((creative) => creative.platform === platform),
-      );
-    }
     setCampaign((current) => ({
       ...current,
-      adContent: { creatives },
+      audienceStrategies: current.audienceStrategies.map((strategy) =>
+        strategy.id === (activeStrategyId ?? current.audienceStrategies[0]?.id)
+          ? { ...strategy, ads: creatives }
+          : strategy,
+      ),
     }));
   };
 
@@ -993,7 +1058,7 @@ export default function NewCampaignPage() {
     }
     const requiresVideo =
       platform === "tiktok" ||
-      campaign.campaign.configuration.destination === "VIDEO";
+      activeStrategy.configuration.destination === "VIDEO";
     if (requiresVideo && !file.type.startsWith("video/")) {
       setError("This campaign requires a video creative.");
       return;
@@ -1060,7 +1125,7 @@ export default function NewCampaignPage() {
   };
 
   const validateMetaAudienceInterests = async () => {
-    const interests = campaign.audience.interests ?? [];
+    const interests = activeStrategy.audience.interests ?? [];
     if (!campaign.campaign.platforms.includes("meta") || !interests.length) {
       setUnavailableInterests({});
       return true;
@@ -1111,7 +1176,7 @@ export default function NewCampaignPage() {
     replacement: string,
   ) => {
     patchAudience({
-      interests: (campaign.audience.interests ?? []).map((interest) =>
+      interests: (activeStrategy.audience.interests ?? []).map((interest) =>
         interest.toLowerCase() === unavailable.toLowerCase()
           ? replacement
           : interest,
@@ -1150,27 +1215,27 @@ export default function NewCampaignPage() {
       setError("Choose a campaign goal before continuing.");
       return;
     }
-    if (step === 3 && !campaign.campaign.configuration.adSetName?.trim()) {
-      setError("Enter an ad set name before continuing.");
+    if (step === 3 && !activeStrategy.name.trim()) {
+      setError("Enter an audience strategy name before continuing.");
       return;
     }
     if (
       step === 3 &&
-      campaign.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
+      activeStrategy.configuration.optimizationGoal === "CONVERSIONS" &&
       campaign.campaign.platforms.some(
         (platform) =>
-          !campaign.campaign.configuration.eventSourceIds?.[platform],
+          !activeStrategy.configuration.eventSourceIds?.[platform],
       )
     ) {
       setError("Choose a conversion event source for every selected platform.");
       return;
     }
-    if (step === 4 && !campaign.audience.locations.length) {
+    if (step === 4 && !activeStrategy.audience.locations.length) {
       setError("Choose at least one audience location.");
       return;
     }
     if (step === 4 && !(await validateMetaAudienceInterests())) return;
-    if (step === 5 && campaign.budget.amount <= 0) {
+    if (step === 5 && activeStrategy.budget.amount <= 0) {
       setError("Enter a budget greater than zero.");
       return;
     }
@@ -1306,11 +1371,12 @@ export default function NewCampaignPage() {
   };
 
   const updateEventManagement = (
-    next: Partial<CampaignConfiguration>,
+    next: Partial<CampaignConfiguration & AudienceStrategyConfiguration>,
   ) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("event");
-    patchConfiguration({
-      ...next,
+    patchStrategyConfiguration({
+      destination: next.destination,
+      optimizationGoal: next.optimizationGoal,
       ...(next.optimizationGoal !== "CONVERSIONS"
         ? { eventSourceIds: {} }
         : {}),
@@ -1373,7 +1439,7 @@ export default function NewCampaignPage() {
             <ManualEventManagementScreen
               goal={campaign.campaign.goal}
               platforms={campaign.campaign.platforms}
-              configuration={campaign.campaign.configuration}
+              configuration={{ ...campaign.campaign.configuration, ...activeStrategy.configuration }}
               onChange={updateEventManagement}
             />
             <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -1387,14 +1453,14 @@ export default function NewCampaignPage() {
                     campaign.campaign.configuration.accountAssetIds ?? {}
                   }
                   eventSourceIds={
-                    campaign.campaign.configuration.eventSourceIds ?? {}
+                    activeStrategy.configuration.eventSourceIds ?? {}
                   }
                   optimizationGoal={
-                    campaign.campaign.configuration.optimizationGoal
+                    activeStrategy.configuration.optimizationGoal
                   }
                   onChange={(eventSourceIds) => {
                     aiFlow.markReview("event");
-                    patchConfiguration({ eventSourceIds });
+                    patchStrategyConfiguration({ eventSourceIds });
                   }}
                 />
               </div>
@@ -1406,8 +1472,8 @@ export default function NewCampaignPage() {
           <AudienceTargetingScreen
             goal={campaign.campaign.goal}
             platforms={campaign.campaign.platforms}
-            configuration={campaign.campaign.configuration}
-            audience={campaign.audience}
+            configuration={{ ...campaign.campaign.configuration, ...activeStrategy.configuration }}
+            audience={activeStrategy.audience}
             accounts={accounts}
             unavailableInterests={unavailableInterests}
             onChange={patchAudience}
@@ -1425,7 +1491,7 @@ export default function NewCampaignPage() {
       case "budget":
         return (
           <CampaignBudgetEditor
-            budget={campaign.budget}
+            budget={activeStrategy.budget}
             onChange={patchBudget}
             accountRules={selectedMetaAccountRules}
           />
@@ -1435,7 +1501,7 @@ export default function NewCampaignPage() {
           <CreativeSetupScreen
             brandName={brandName}
             goal={campaign.campaign.goal}
-            destination={campaign.campaign.configuration.destination}
+            destination={activeStrategy.configuration.destination}
             accounts={accounts}
             accountsLoading={accountsLoading}
             connecting={connecting}
@@ -1445,7 +1511,7 @@ export default function NewCampaignPage() {
               campaign.campaign.configuration.accountAssetIds?.meta
             }
             platforms={campaign.campaign.platforms}
-            creatives={campaign.adContent.creatives}
+            creatives={activeStrategy.ads}
             ctaOptions={CTA_OPTIONS}
             uploading={uploading}
             sameCreativeForAll={
@@ -1514,7 +1580,19 @@ export default function NewCampaignPage() {
               <CampaignTreeSidebar
                 campaignName={campaign.campaign.name || "Untitled campaign"}
                 campaign={campaign}
+                activeStrategyId={activeStrategy?.id}
                 compact
+                onSelectStrategy={(id) => {
+                  setActiveStrategyId(id);
+                  setStep(3);
+                }}
+                onAddStrategy={addAudienceStrategy}
+                onDuplicateStrategy={duplicateAudienceStrategy}
+                onDeleteStrategy={deleteAudienceStrategy}
+                onSelectAd={(strategyId) => {
+                  setActiveStrategyId(strategyId);
+                  setStep(6);
+                }}
               />
               <AiCampaignWorkspace
                 campaignName={campaign.campaign.name}
@@ -1578,6 +1656,18 @@ export default function NewCampaignPage() {
               <CampaignTreeSidebar
                 campaignName={campaign.campaign.name || "Untitled campaign"}
                 campaign={campaign}
+                activeStrategyId={activeStrategy?.id}
+                onSelectStrategy={(id) => {
+                  setActiveStrategyId(id);
+                  setStep(3);
+                }}
+                onAddStrategy={addAudienceStrategy}
+                onDuplicateStrategy={duplicateAudienceStrategy}
+                onDeleteStrategy={deleteAudienceStrategy}
+                onSelectAd={(strategyId) => {
+                  setActiveStrategyId(strategyId);
+                  setStep(6);
+                }}
               />
               <main className="h-full flex-1 overflow-y-auto">
                 <div className="mx-auto max-w-5xl p-4 md:p-8">
@@ -1682,16 +1772,14 @@ export default function NewCampaignPage() {
 
                   {step === 3 && (
                     <div className="space-y-6">
-                      <AdSetIdentityCard
-                        value={campaign.campaign.configuration.adSetName ?? ""}
-                        onChange={(adSetName) =>
-                          patchConfiguration({ adSetName })
-                        }
+                      <AudienceStrategyIdentityCard
+                        value={activeStrategy.name}
+                        onChange={(name) => patchActiveStrategy({ name })}
                       />
                       <ManualEventManagementScreen
                         goal={campaign.campaign.goal}
                         platforms={campaign.campaign.platforms}
-                        configuration={campaign.campaign.configuration}
+                        configuration={{ ...campaign.campaign.configuration, ...activeStrategy.configuration }}
                         onChange={updateEventManagement}
                       />
 
@@ -1711,16 +1799,16 @@ export default function NewCampaignPage() {
                               {}
                             }
                             eventSourceIds={
-                              campaign.campaign.configuration.eventSourceIds ??
+                              activeStrategy.configuration.eventSourceIds ??
                               {}
                             }
                             optimizationGoal={
-                              campaign.campaign.configuration.optimizationGoal
+                              activeStrategy.configuration.optimizationGoal
                             }
                             onChange={(eventSourceIds) => {
                               if (campaign.creationMode === "ai")
                                 aiFlow.markReview("event");
-                              patchConfiguration({ eventSourceIds });
+                              patchStrategyConfiguration({ eventSourceIds });
                             }}
                           />
                         </div>
@@ -1741,15 +1829,15 @@ export default function NewCampaignPage() {
                           Find your audience
                         </h2>
                         <p className="mt-1 text-sm text-gray-500">
-                          Define who should see this ad set across the selected
+                          Define who should see this audience strategy across the selected
                           platforms.
                         </p>
                       </div>
                       <AudienceTargetingScreen
                         goal={campaign.campaign.goal}
                         platforms={campaign.campaign.platforms}
-                        configuration={campaign.campaign.configuration}
-                        audience={campaign.audience}
+                        configuration={{ ...campaign.campaign.configuration, ...activeStrategy.configuration }}
+                        audience={activeStrategy.audience}
                         accounts={accounts}
                         unavailableInterests={unavailableInterests}
                         onChange={patchAudience}
@@ -1771,7 +1859,7 @@ export default function NewCampaignPage() {
                   {step === 5 && (
                     <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
                       <CampaignBudgetEditor
-                        budget={campaign.budget}
+                        budget={activeStrategy.budget}
                         onChange={patchBudget}
                         accountRules={selectedMetaAccountRules}
                       />
@@ -1782,7 +1870,7 @@ export default function NewCampaignPage() {
                     <CreativeSetupScreen
                       brandName={brandName}
                       goal={campaign.campaign.goal}
-                      destination={campaign.campaign.configuration.destination}
+                      destination={activeStrategy.configuration.destination}
                       accounts={accounts}
                       accountsLoading={accountsLoading}
                       connecting={connecting}
@@ -1792,7 +1880,7 @@ export default function NewCampaignPage() {
                         campaign.campaign.configuration.accountAssetIds?.meta
                       }
                       platforms={campaign.campaign.platforms}
-                      creatives={campaign.adContent.creatives}
+                      creatives={activeStrategy.ads}
                       ctaOptions={CTA_OPTIONS}
                       uploading={uploading}
                       sameCreativeForAll={

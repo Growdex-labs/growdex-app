@@ -31,9 +31,9 @@ const statusClass = (status?: string) => {
 const formatMoney = (campaign: CampaignDto) =>
   new Intl.NumberFormat(undefined, {
     style: "currency",
-    currency: campaign.budget.currency,
+    currency: campaign.audienceStrategies[0]?.budget.currency ?? "NGN",
     maximumFractionDigits: 2,
-  }).format(campaign.budget.amount);
+  }).format(campaign.audienceStrategies.reduce((total, strategy) => total + strategy.budget.amount, 0));
 
 export function CampaignCard({ campaign, href }: CampaignCardProps) {
   return (
@@ -68,7 +68,7 @@ export function CampaignCard({ campaign, href }: CampaignCardProps) {
 
       <div className="mt-5 border-t border-gray-100 pt-4">
         <p className="text-xs text-gray-400">
-          {campaign.budget.type === "daily" ? "Daily budget" : "Lifetime budget"}
+          {campaign.audienceStrategies.length === 1 ? "Audience budget" : "Combined audience budgets"}
         </p>
         <p className="mt-1 font-semibold text-gray-900">
           {formatMoney(campaign)}

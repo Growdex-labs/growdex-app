@@ -10,12 +10,12 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import type {
+  AudienceStrategy,
   AudienceReachForecast,
-  CreateCampaignPayload,
 } from "@/lib/campaigns";
 import { CampaignSkeleton } from "./CampaignSkeleton";
 
-type Audience = CreateCampaignPayload["audience"];
+type Audience = AudienceStrategy["audience"];
 
 export type AudienceReadinessIssueCode =
   | "missing-location"

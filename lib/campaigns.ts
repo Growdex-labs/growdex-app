@@ -42,13 +42,16 @@ export type CampaignOptimizationGoal =
   | "FOLLOWERS"
   | "MESSAGES";
 export interface CampaignConfiguration {
-  adSetName: string;
-  destination: CampaignDestination;
-  optimizationGoal: CampaignOptimizationGoal;
   accountAssetIds?: Partial<Record<CampaignPlatform, string>>;
-  eventSourceIds?: Partial<Record<CampaignPlatform, string>>;
   specialAdCategories: MetaSpecialAdCategory[];
   sameCreativeForAll: boolean;
+  budgetOptimization: "campaign" | "audience_strategy";
+}
+
+export interface AudienceStrategyConfiguration {
+  destination: CampaignDestination;
+  optimizationGoal: CampaignOptimizationGoal;
+  eventSourceIds?: Partial<Record<CampaignPlatform, string>>;
 }
 export type CampaignCta =
   | "LEARN_MORE"
@@ -95,6 +98,13 @@ export interface CreateCampaignPayload {
     platforms: CampaignPlatform[];
     configuration: CampaignConfiguration;
   };
+  audienceStrategies: AudienceStrategy[];
+}
+
+export interface AudienceStrategy {
+  id: string;
+  name: string;
+  configuration: AudienceStrategyConfiguration;
   audience: {
     locations: string[];
     ageMin?: number;
@@ -113,17 +123,15 @@ export interface CreateCampaignPayload {
     startDate: string;
     endDate?: string;
   };
-  adContent: {
-    creatives: CampaignCreativeInput[];
-  };
+  ads: CampaignCreativeInput[];
 }
 
 export interface GeneratedCampaignDraft {
   name: string;
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
-  configuration: CampaignConfiguration;
-  audience: CreateCampaignPayload["audience"];
+  configuration: CampaignConfiguration & AudienceStrategyConfiguration;
+  audience: AudienceStrategy["audience"];
   budget: {
     amount: number;
     currency: CampaignCurrency;
@@ -202,6 +210,7 @@ export type AiCampaignDraftResponse =
 
 export interface CampaignCreativeDto extends CampaignCreativeInput {
   id: string;
+  audienceStrategyId: string;
   reviewStatus?: "pending" | "approved" | "rejected";
   createdAt?: string;
 }
@@ -213,8 +222,7 @@ export interface CampaignDto {
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
   configuration: CampaignConfiguration;
-  targeting: CreateCampaignPayload["audience"];
-  budget: CreateCampaignPayload["budget"];
+  audienceStrategies: Array<Omit<AudienceStrategy, "ads">>;
   creatives?: CampaignCreativeDto[];
   status?: string;
   publishError?: string | null;
@@ -628,13 +636,13 @@ const parseGeneratedCampaignDraft = (
     goal,
     platforms,
     configuration: {
-      adSetName: `${name} ad set`,
       destination,
       optimizationGoal,
       accountAssetIds,
       eventSourceIds,
       specialAdCategories,
       sameCreativeForAll: false,
+      budgetOptimization: "audience_strategy",
     },
     audience: {
       locations,
@@ -783,14 +791,24 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
     goal: "AWARENESS",
     platforms: [],
     configuration: {
-      adSetName: "Primary ad set",
-      destination: "WEBSITE",
-      optimizationGoal: "REACH",
       accountAssetIds: {},
-      eventSourceIds: {},
       specialAdCategories: [],
       sameCreativeForAll: true,
+      budgetOptimization: "audience_strategy",
     },
+  },
+  audienceStrategies: [createAudienceStrategy()],
+});
+
+export const createAudienceStrategy = (
+  name = "Audience Strategy 1",
+): AudienceStrategy => ({
+  id: crypto.randomUUID(),
+  name,
+  configuration: {
+    destination: "WEBSITE",
+    optimizationGoal: "REACH",
+    eventSourceIds: {},
   },
   audience: {
     locations: ["NG"],
@@ -809,46 +827,33 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
     type: "daily",
     startDate: futureIso(30),
   },
-  adContent: { creatives: [] },
+  ads: [],
 });
 
 export const validateCampaignCreativeSetup = (
   payload: CampaignReviewPayload,
 ) => {
-  if (payload.adContent.creatives.length > 6) {
-    return "A campaign can contain at most six creatives.";
-  }
-  for (const platform of payload.campaign.platforms) {
-    const platformCreatives = payload.adContent.creatives.filter(
-      (creative) => creative.platform === platform,
-    );
-    const label = platform === "meta" ? "Meta" : "TikTok";
-    if (!platformCreatives.length) return `Add at least one ${label} creative.`;
-    for (const creative of platformCreatives) {
-      if (!creative.primaryText.trim()) return `Enter primary text for ${label}.`;
-      if (!creative.mediaUrl.trim()) return `Upload media for ${label}.`;
-      if (
-        payload.campaign.configuration.destination === "VIDEO" &&
-        !creative.mediaUrl.includes("/video/upload/") &&
-        !/\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(creative.mediaUrl)
-      ) {
-        return `Upload a video for ${label}.`;
-      }
-      if (
-        platform === "meta" &&
-        payload.campaign.configuration.destination === "WEBSITE" &&
-        !creative.landingPageUrl?.trim()
-      ) {
-        return "Enter a landing page URL for Meta.";
-      }
-      if (
-        payload.campaign.configuration.destination === "INSTANT_FORM" &&
-        !creative.leadFormId?.trim()
-      ) {
-        return `Enter a lead form ID for ${label}.`;
-      }
-      if (payload.campaign.goal === "APP_PROMOTION" && !creative.appId?.trim()) {
-        return `Enter an app ID for ${label}.`;
+  for (const strategy of payload.audienceStrategies) {
+    if (strategy.ads.length > 6) return `${strategy.name} can contain at most six ads.`;
+    for (const platform of payload.campaign.platforms) {
+      const ads = strategy.ads.filter((ad) => ad.platform === platform);
+      const label = platform === "meta" ? "Meta" : "TikTok";
+      if (!ads.length) return `Add at least one ${label} ad to ${strategy.name}.`;
+      for (const ad of ads) {
+        if (!ad.primaryText.trim()) return `Enter primary text for ${label}.`;
+        if (!ad.mediaUrl.trim()) return `Upload media for ${label}.`;
+        if (
+          strategy.configuration.destination === "VIDEO" &&
+          !ad.mediaUrl.includes("/video/upload/") &&
+          !/\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(ad.mediaUrl)
+        ) return `Upload a video for ${label}.`;
+        if (platform === "meta" && strategy.configuration.destination === "WEBSITE" && !ad.landingPageUrl?.trim()) {
+          return "Enter a landing page URL for Meta.";
+        }
+        if (strategy.configuration.destination === "INSTANT_FORM" && !ad.leadFormId?.trim()) {
+          return `Enter a lead form ID for ${label}.`;
+        }
+        if (payload.campaign.goal === "APP_PROMOTION" && !ad.appId?.trim()) return `Enter an app ID for ${label}.`;
       }
     }
   }
@@ -857,51 +862,32 @@ export const validateCampaignCreativeSetup = (
 
 export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name.";
-  if (!payload.campaign.configuration.adSetName?.trim()) {
-    return "Enter an ad set name.";
-  }
   if (!payload.campaign.platforms.length) return "Select at least one platform.";
+  if (!payload.audienceStrategies.length) return "Add an audience strategy.";
   for (const platform of payload.campaign.platforms) {
     if (!payload.campaign.configuration.accountAssetIds?.[platform]) {
       return `Select a ${platform === "meta" ? "Meta" : "TikTok"} ad account.`;
     }
   }
-  if (
-    payload.campaign.configuration.optimizationGoal === "CONVERSIONS" &&
-    payload.campaign.platforms.some(
-      (platform) => !payload.campaign.configuration.eventSourceIds?.[platform],
-    )
-  ) {
-    return "Select an event source for every conversion platform.";
-  }
-  if (!payload.audience.locations.length) return "Select at least one country.";
-  const ageMin = payload.audience.ageMin ?? 18;
-  const ageMax = payload.audience.ageMax ?? 65;
-  if (ageMin < 18 || ageMax > 65 || ageMin > ageMax) {
-    return "Audience age must stay between 18 and 65, with the minimum before the maximum.";
-  }
-  if (
-    hasRestrictedMetaTargeting(
-      payload.campaign.configuration.specialAdCategories,
-    ) &&
-    (ageMin !== 18 ||
-      ageMax !== 65 ||
-      (payload.audience.gender ?? "all") !== "all" ||
-      Boolean(payload.audience.interests?.length))
-  ) {
-    return "This Meta special ad category requires ages 18–65, all genders, and no interest targeting.";
-  }
-  if (!Number.isFinite(payload.budget.amount) || payload.budget.amount <= 0) {
-    return "Enter a budget greater than zero.";
-  }
-  const start = new Date(payload.budget.startDate);
-  if (Number.isNaN(start.getTime()) || start.getTime() < Date.now()) {
-    return "Choose a start time in the future.";
-  }
-  if (payload.budget.endDate) {
-    const end = new Date(payload.budget.endDate);
-    if (Number.isNaN(end.getTime()) || end <= start) {
-      return "End time must be after the start time.";
+  for (const strategy of payload.audienceStrategies) {
+    if (!strategy.name.trim()) return "Name every audience strategy.";
+    if (strategy.configuration.optimizationGoal === "CONVERSIONS" && payload.campaign.platforms.some(
+      (platform) => !strategy.configuration.eventSourceIds?.[platform],
+    )) return `Select an event source for every platform in ${strategy.name}.`;
+    if (!strategy.audience.locations.length) return `Select at least one country for ${strategy.name}.`;
+    const ageMin = strategy.audience.ageMin ?? 18;
+    const ageMax = strategy.audience.ageMax ?? 65;
+    if (ageMin < 18 || ageMax > 65 || ageMin > ageMax) return "Audience age must stay between 18 and 65, with the minimum before the maximum.";
+    if (hasRestrictedMetaTargeting(payload.campaign.configuration.specialAdCategories) &&
+      (ageMin !== 18 || ageMax !== 65 || (strategy.audience.gender ?? "all") !== "all" || Boolean(strategy.audience.interests?.length))) {
+      return "This Meta special ad category requires ages 18–65, all genders, and no interest targeting.";
+    }
+    if (!Number.isFinite(strategy.budget.amount) || strategy.budget.amount <= 0) return `Enter a budget greater than zero for ${strategy.name}.`;
+    const start = new Date(strategy.budget.startDate);
+    if (Number.isNaN(start.getTime()) || start.getTime() < Date.now()) return `Choose a future start time for ${strategy.name}.`;
+    if (strategy.budget.endDate) {
+      const end = new Date(strategy.budget.endDate);
+      if (Number.isNaN(end.getTime()) || end <= start) return `Choose an end time after the start time for ${strategy.name}.`;
     }
   }
   return validateCampaignCreativeSetup(payload);
@@ -909,34 +895,22 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
 
 export const validateCampaignDraftPayload = (payload: CampaignReviewPayload) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name before saving the draft.";
-  if (!payload.campaign.configuration.adSetName?.trim()) {
-    return "Enter an ad set name before saving the draft.";
-  }
+  if (!payload.audienceStrategies.length) return "Add an audience strategy before saving the draft.";
   if (payload.campaign.platforms.length > 2) return "A campaign can use at most two platforms.";
-  const ageMin = payload.audience.ageMin ?? 18;
-  const ageMax = payload.audience.ageMax ?? 65;
-  if (ageMin < 18 || ageMax > 65 || ageMin > ageMax) {
-    return "Audience age must stay between 18 and 65, with the minimum before the maximum.";
-  }
-  if (!Number.isFinite(payload.budget.amount) || payload.budget.amount < 0) {
-    return "Budget cannot be negative.";
-  }
-  const start = new Date(payload.budget.startDate);
-  if (Number.isNaN(start.getTime())) return "Choose a valid start time.";
-  if (payload.budget.endDate) {
-    const end = new Date(payload.budget.endDate);
-    if (Number.isNaN(end.getTime()) || end <= start) {
-      return "End time must be after the start time.";
+  for (const strategy of payload.audienceStrategies) {
+    if (!strategy.name.trim()) return "Name every audience strategy before saving the draft.";
+    const ageMin = strategy.audience.ageMin ?? 18;
+    const ageMax = strategy.audience.ageMax ?? 65;
+    if (ageMin < 18 || ageMax > 65 || ageMin > ageMax) return "Audience age must stay between 18 and 65, with the minimum before the maximum.";
+    if (!Number.isFinite(strategy.budget.amount) || strategy.budget.amount < 0) return "Budget cannot be negative.";
+    const start = new Date(strategy.budget.startDate);
+    if (Number.isNaN(start.getTime())) return "Choose a valid start time.";
+    if (strategy.budget.endDate) {
+      const end = new Date(strategy.budget.endDate);
+      if (Number.isNaN(end.getTime()) || end <= start) return "End time must be after the start time.";
     }
-  }
-  if (payload.adContent.creatives.length > 6) {
-    return "A campaign can contain at most six creatives.";
-  }
-  const invalidCreative = payload.adContent.creatives.find(
-    (creative) => !payload.campaign.platforms.includes(creative.platform),
-  );
-  if (invalidCreative) {
-    return "Every saved creative must belong to a selected platform.";
+    if (strategy.ads.length > 6) return `${strategy.name} can contain at most six ads.`;
+    if (strategy.ads.some((ad) => !payload.campaign.platforms.includes(ad.platform))) return "Every saved ad must belong to a selected platform.";
   }
   return null;
 };
@@ -1281,7 +1255,7 @@ export const searchMetaInterests = async (
 export const forecastCampaignReach = async (input: {
   goal: CampaignGoal;
   accountAssetId?: string;
-  audience: CreateCampaignPayload["audience"];
+  audience: AudienceStrategy["audience"];
 }): Promise<AudienceReachForecast> => {
   const res = await apiFetch("/campaigns/reach-forecast", {
     method: "POST",
@@ -1348,39 +1322,33 @@ export const searchProviderLanguages = async (
 const serializeCampaignPayload = (
   payload: CreateCampaignPayload,
 ): CreateCampaignPayload => {
-  const adSetName = payload.campaign.configuration.adSetName?.trim();
-  if (!adSetName) throw new Error("Enter an ad set name.");
   return {
     ...payload,
     campaign: {
       ...payload.campaign,
       name: payload.campaign.name.trim(),
-      configuration: {
-        ...payload.campaign.configuration,
-        adSetName,
+      configuration: payload.campaign.configuration,
+    },
+    audienceStrategies: payload.audienceStrategies.map((strategy) => ({
+      ...strategy,
+      name: strategy.name.trim(),
+      audience: {
+        ...strategy.audience,
+        locations: [...new Set(strategy.audience.locations.map((item) => item.trim()))].filter(Boolean),
+        interests: [...new Set((strategy.audience.interests ?? []).map((item) => item.trim()))].filter(Boolean),
+        languages: [...new Set((strategy.audience.languages ?? []).map((item) => item.trim()))].filter(Boolean),
       },
-    },
-    audience: {
-      ...payload.audience,
-      locations: [...new Set(payload.audience.locations.map((item) => item.trim()))].filter(Boolean),
-      interests: [...new Set((payload.audience.interests ?? []).map((item) => item.trim()))].filter(Boolean),
-      languages: [...new Set((payload.audience.languages ?? []).map((item) => item.trim()))].filter(Boolean),
-    },
-    budget: {
-      ...payload.budget,
-      endDate: payload.budget.endDate || undefined,
-    },
-    adContent: {
-      creatives: payload.adContent.creatives.map((creative) => ({
-        ...creative,
-        primaryText: creative.primaryText.trim(),
-        headline: creative.headline?.trim() || undefined,
-        mediaUrl: creative.mediaUrl.trim(),
-        landingPageUrl: creative.landingPageUrl?.trim() || undefined,
-        appId: creative.appId?.trim() || undefined,
-        leadFormId: creative.leadFormId?.trim() || undefined,
+      budget: { ...strategy.budget, endDate: strategy.budget.endDate || undefined },
+      ads: strategy.ads.map((ad) => ({
+        ...ad,
+        primaryText: ad.primaryText.trim(),
+        headline: ad.headline?.trim() || undefined,
+        mediaUrl: ad.mediaUrl.trim(),
+        landingPageUrl: ad.landingPageUrl?.trim() || undefined,
+        appId: ad.appId?.trim() || undefined,
+        leadFormId: ad.leadFormId?.trim() || undefined,
       })),
-    },
+    })),
   };
 };
 
@@ -1500,18 +1468,17 @@ export const campaignDtoToPayload = (
     platforms: campaign.platforms,
     configuration: campaign.configuration,
   },
-  audience: campaign.targeting,
-  budget: campaign.budget,
-  adContent: {
-    creatives: (campaign.creatives ?? []).map((creative) => ({
-      platform: creative.platform,
-      primaryText: creative.primaryText,
-      headline: creative.headline,
-      cta: creative.cta,
-      mediaUrl: creative.mediaUrl,
-      landingPageUrl: creative.landingPageUrl,
-      appId: creative.appId,
-      leadFormId: creative.leadFormId,
+  audienceStrategies: campaign.audienceStrategies.map((strategy) => ({
+    ...strategy,
+    ads: (campaign.creatives ?? []).filter((ad) => ad.audienceStrategyId === strategy.id).map((ad) => ({
+      platform: ad.platform,
+      primaryText: ad.primaryText,
+      headline: ad.headline,
+      cta: ad.cta,
+      mediaUrl: ad.mediaUrl,
+      landingPageUrl: ad.landingPageUrl,
+      appId: ad.appId,
+      leadFormId: ad.leadFormId,
     })),
-  },
+  })),
 });

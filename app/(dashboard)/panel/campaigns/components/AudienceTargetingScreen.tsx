@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   forecastCampaignReach,
+  type AudienceStrategy,
   type CampaignConfiguration,
   type CampaignGoal,
   type CampaignPlatform,
-  type CreateCampaignPayload,
   type MetaInterest,
 } from "@/lib/campaigns";
 import type { SocialAccountSetupProps } from "@/types/social";
@@ -14,7 +14,7 @@ import { AudienceReachCard } from "./AudienceReachCard";
 import type { AudienceAiFixRequest } from "./AudienceReachCard";
 import { DemographicsForm } from "./DemographicsForm";
 
-type Audience = CreateCampaignPayload["audience"];
+type Audience = AudienceStrategy["audience"];
 
 interface AudienceTargetingScreenProps {
   goal: CampaignGoal;

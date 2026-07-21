@@ -7,14 +7,14 @@ import { fetchAudiences, type Audience as SavedAudience } from "@/lib/audiences"
 import {
   searchMetaInterests,
   searchProviderLanguages,
+  type AudienceStrategy,
   type CampaignPlatform,
-  type CreateCampaignPayload,
   type MetaInterest,
   type ProviderLanguage,
 } from "@/lib/campaigns";
 import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
 
-type Audience = CreateCampaignPayload["audience"];
+type Audience = AudienceStrategy["audience"];
 type Tab = "demographics" | "audiences" | "interests" | "devices" | "advanced";
 
 interface DemographicsFormProps {

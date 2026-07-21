@@ -319,8 +319,8 @@ function mapCampaign(campaign: CampaignDto): Campaign {
             : "scheduled",
     goal: campaign.goal,
     description:
-      campaign.targeting?.locations?.length
-        ? `Targeting ${campaign.targeting.locations.join(", ")}`
+      campaign.audienceStrategies.length
+        ? `${campaign.audienceStrategies.length} Audience Strateg${campaign.audienceStrategies.length === 1 ? "y" : "ies"}`
         : "No description provided.",
     optimizationPercentage: 0,
   };

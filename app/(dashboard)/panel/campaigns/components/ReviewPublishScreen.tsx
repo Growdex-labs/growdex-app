@@ -142,40 +142,27 @@ export function ReviewPublishScreen({
             </div>
           </section>
 
-          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
-            {campaign.adContent.creatives.map((creative, index) => {
-              const platform = creative.platform;
-              return (
-                <article
-                  key={`${platform}-${index}-${creative.mediaUrl}`}
-                  className="self-start overflow-hidden rounded-2xl"
-                >
-                  <PlatformAdPreview
-                    creative={creative}
-                    brandName={brandName}
-                  />
-                </article>
-              );
-            })}
-          </div>
+          {campaign.audienceStrategies.map((strategy) => (
+            <section key={strategy.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="mb-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-500">Audience Strategy</p>
+                <h3 className="mt-1 text-lg font-bold text-gray-900">{strategy.name}</h3>
+              </div>
+              <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+                {strategy.ads.map((creative, index) => (
+                  <article key={`${strategy.id}-${creative.platform}-${index}-${creative.mediaUrl}`} className="self-start overflow-hidden rounded-2xl">
+                    <PlatformAdPreview creative={creative} brandName={brandName} />
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
 
         <aside className="space-y-4">
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900">Delivery settings</h3>
+            <h3 className="font-semibold text-gray-900">Connected accounts</h3>
             <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="text-gray-400">Ad set</dt>
-                <dd className="mt-1 font-medium text-gray-900">
-                  {campaign.campaign.configuration.adSetName || "Not set"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-gray-400">Destination and optimization</dt>
-                <dd className="mt-1 text-gray-700">
-                  {campaign.campaign.configuration.destination.replaceAll("_", " ")} · {campaign.campaign.configuration.optimizationGoal.replaceAll("_", " ")}
-                </dd>
-              </div>
               {campaign.campaign.platforms.map((platform) => (
                 <div key={platform}>
                   <dt className="capitalize text-gray-400">{platform} account</dt>
@@ -185,22 +172,21 @@ export function ReviewPublishScreen({
                       : accountName(platform) ??
                         accountsError ??
                         "Connected account not found"}
-                    {campaign.campaign.configuration.eventSourceIds?.[platform]
-                      ? ` · Pixel ${campaign.campaign.configuration.eventSourceIds[platform]}`
-                      : ""}
                   </dd>
                 </div>
               ))}
             </dl>
           </section>
 
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900">Audience</h3>
+          {campaign.audienceStrategies.map((strategy) => (
+          <section key={strategy.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="font-semibold text-gray-900">{strategy.name}</h3>
+            <p className="mt-1 text-xs text-gray-400">{strategy.configuration.destination.replaceAll("_", " ")} · {strategy.configuration.optimizationGoal.replaceAll("_", " ")}</p>
             <dl className="mt-4 space-y-3 text-sm">
               <div>
                 <dt className="text-gray-400">Locations</dt>
                 <dd className="mt-1 text-gray-700">
-                  {campaign.audience.locations.map((code) =>
+                  {strategy.audience.locations.map((code) =>
                     metaSpecialAdLocations[code as keyof typeof metaSpecialAdLocations] ?? code,
                   ).join(", ")}
                 </dd>
@@ -208,37 +194,35 @@ export function ReviewPublishScreen({
               <div>
                 <dt className="text-gray-400">Age and gender</dt>
                 <dd className="mt-1 capitalize text-gray-700">
-                  {campaign.audience.ageMin}–{campaign.audience.ageMax}, {campaign.audience.gender}
+                  {strategy.audience.ageMin}–{strategy.audience.ageMax}, {strategy.audience.gender}
                 </dd>
               </div>
               <div>
                 <dt className="text-gray-400">Interests</dt>
                 <dd className="mt-1 text-gray-700">
-                  {campaign.audience.interests?.filter(Boolean).join(", ") || "Broad audience"}
+                  {strategy.audience.interests?.filter(Boolean).join(", ") || "Broad audience"}
                 </dd>
               </div>
               <div>
                 <dt className="text-gray-400">Languages and devices</dt>
                 <dd className="mt-1 capitalize text-gray-700">
-                  {campaign.audience.languages?.join(", ") || "All languages"} · {(campaign.audience.devices ?? ["mobile"]).join(", ")}
+                  {strategy.audience.languages?.join(", ") || "All languages"} · {(strategy.audience.devices ?? ["mobile"]).join(", ")}
                 </dd>
               </div>
             </dl>
-          </section>
-
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900">Budget and schedule</h3>
+            <h4 className="mt-5 border-t border-gray-100 pt-4 font-semibold text-gray-900">Budget and schedule</h4>
             <p className="mt-3 text-2xl font-bold text-gray-900">
               {new Intl.NumberFormat(undefined, {
                 style: "currency",
-                currency: campaign.budget.currency,
+                currency: strategy.budget.currency,
                 maximumFractionDigits: 2,
-              }).format(campaign.budget.amount)}
-              <span className="ml-1 text-sm font-normal text-gray-400">/{campaign.budget.type}</span>
+              }).format(strategy.budget.amount)}
+              <span className="ml-1 text-sm font-normal text-gray-400">/{strategy.budget.type}</span>
             </p>
-            <p className="mt-3 text-sm text-gray-600">Starts {formatDate(campaign.budget.startDate)}</p>
-            <p className="mt-1 text-sm text-gray-600">Ends {formatDate(campaign.budget.endDate)}</p>
+            <p className="mt-3 text-sm text-gray-600">Starts {formatDate(strategy.budget.startDate)}</p>
+            <p className="mt-1 text-sm text-gray-600">Ends {formatDate(strategy.budget.endDate)}</p>
           </section>
+          ))}
         </aside>
       </div>
     </>
