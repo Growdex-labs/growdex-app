@@ -142,13 +142,13 @@ export function ReviewPublishScreen({
             </div>
           </section>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
             {campaign.adContent.creatives.map((creative, index) => {
               const platform = creative.platform;
               return (
                 <article
                   key={`${platform}-${index}-${creative.mediaUrl}`}
-                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                  className="self-start overflow-hidden rounded-2xl"
                 >
                   <PlatformAdPreview
                     creative={creative}
