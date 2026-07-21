@@ -80,7 +80,7 @@ function MetaAdPreview({
     : "yourbrand.com";
 
   return (
-    <div className="bg-[#eef1f5] px-4 py-5 sm:px-6">
+    <div className="w-full">
       <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-xl bg-white shadow-[0_10px_35px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
         <div className="flex items-center gap-3 px-4 pb-3 pt-4">
           <span className="flex size-10 items-center justify-center rounded-full bg-[#111827] text-sm font-gilroy-bold text-white ring-2 ring-white shadow-sm">
@@ -149,7 +149,7 @@ function TikTokAdPreview({
   const username = brandName.replaceAll(" ", "").toLowerCase();
 
   return (
-    <div className="bg-[#f5f5f5] px-4 py-6 sm:px-6">
+    <div className="w-full">
       <div className="relative mx-auto aspect-[9/18.6] w-full max-w-[280px] overflow-hidden rounded-[32px] border-[6px] border-[#111] bg-[#080808] shadow-[0_24px_56px_rgba(15,23,42,0.24),inset_0_0_0_1px_rgba(255,255,255,0.1)] ring-1 ring-black/30">
         <PreviewMedia
           creative={creative}
