@@ -39,6 +39,7 @@ import {
 } from "./creative-setup-state";
 
 interface CreativeSetupScreenProps {
+  brandName: string;
   goal: CampaignGoal;
   destination: CampaignDestination;
   metaAssetId?: string;
@@ -145,6 +146,7 @@ function PlatformConnectionGate({
 }
 
 export function CreativeSetupScreen({
+  brandName,
   goal,
   destination,
   metaAssetId,
@@ -389,6 +391,7 @@ export function CreativeSetupScreen({
     );
     return (
       <CreativeAdEditor
+        brandName={brandName}
         goal={goal}
         destination={destination}
         creatives={creatives}

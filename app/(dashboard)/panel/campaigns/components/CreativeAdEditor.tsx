@@ -20,6 +20,7 @@ import type {
 import { PlatformAdPreview } from "./PlatformAdPreview";
 
 interface CreativeAdEditorProps {
+  brandName: string;
   goal: CampaignGoal;
   destination: CampaignDestination;
   creatives: CampaignCreativeInput[];
@@ -39,7 +40,13 @@ interface CreativeAdEditorProps {
 const platformName = (platform: CampaignPlatform) =>
   platform === "meta" ? "Meta" : "TikTok";
 
-function CreativePreview({ creative }: { creative: CampaignCreativeInput }) {
+function CreativePreview({
+  creative,
+  brandName,
+}: {
+  creative: CampaignCreativeInput;
+  brandName: string;
+}) {
   const isMeta = creative.platform === "meta";
 
   return (
@@ -58,12 +65,13 @@ function CreativePreview({ creative }: { creative: CampaignCreativeInput }) {
         </span>
       </div>
 
-      <PlatformAdPreview creative={creative} />
+      <PlatformAdPreview creative={creative} brandName={brandName} />
     </aside>
   );
 }
 
 export function CreativeAdEditor({
+  brandName,
   goal,
   destination,
   creatives,
@@ -275,7 +283,7 @@ export function CreativeAdEditor({
           </label>
         </fieldset>
 
-        <CreativePreview creative={creative} />
+        <CreativePreview creative={creative} brandName={brandName} />
       </div>
     </section>
   );

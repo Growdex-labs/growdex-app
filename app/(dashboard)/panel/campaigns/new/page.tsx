@@ -1418,6 +1418,7 @@ export default function NewCampaignPage() {
       case "creative":
         return (
           <CreativeSetupScreen
+            brandName={brandName}
             goal={campaign.campaign.goal}
             destination={campaign.campaign.configuration.destination}
             accounts={accounts}
@@ -1755,6 +1756,7 @@ export default function NewCampaignPage() {
 
                   {step === 5 && (
                     <CreativeSetupScreen
+                      brandName={brandName}
                       goal={campaign.campaign.goal}
                       destination={campaign.campaign.configuration.destination}
                       accounts={accounts}
