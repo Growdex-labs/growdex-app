@@ -1801,7 +1801,7 @@ export default function NewCampaignPage() {
                     />
                   )}
 
-                  {step > 0 && nav}
+                  {nav}
                 </div>
               </main>
             </>
