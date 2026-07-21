@@ -144,7 +144,7 @@ function TikTokAdPreview({
 
   return (
     <div className="bg-[#f5f5f5] px-4 py-6 sm:px-6">
-      <div className="relative mx-auto aspect-[9/18.6] w-full max-w-[326px] overflow-hidden rounded-[38px] border-[7px] border-[#111] bg-[#080808] shadow-[0_28px_70px_rgba(15,23,42,0.28),inset_0_0_0_1px_rgba(255,255,255,0.1)] ring-1 ring-black/30">
+      <div className="relative mx-auto aspect-[9/18.6] w-full max-w-[280px] overflow-hidden rounded-[32px] border-[6px] border-[#111] bg-[#080808] shadow-[0_24px_56px_rgba(15,23,42,0.24),inset_0_0_0_1px_rgba(255,255,255,0.1)] ring-1 ring-black/30">
         <PreviewMedia
           creative={creative}
           className="absolute inset-0 h-full w-full bg-gray-950 object-cover text-gray-300"
@@ -164,31 +164,31 @@ function TikTokAdPreview({
           <Search className="absolute right-5 top-4 size-5 drop-shadow-md" />
         </div>
 
-        <div className="absolute bottom-[76px] right-3.5 flex flex-col items-center gap-3.5 text-white drop-shadow-lg">
-          <span className="relative mb-1 flex size-11 items-center justify-center rounded-full border-2 border-white bg-[#151515] text-sm font-gilroy-bold shadow-md">
+        <div className="absolute bottom-[70px] right-3 flex flex-col items-center gap-2.5 text-white drop-shadow-lg">
+          <span className="relative mb-1 flex size-9 items-center justify-center rounded-full border-2 border-white bg-[#151515] text-xs font-gilroy-bold shadow-md">
             {brandName.slice(0, 1).toUpperCase()}
             <span className="absolute -bottom-2 flex size-4 items-center justify-center rounded-full bg-[#fe2c55] text-[12px] leading-none text-white">
               +
             </span>
           </span>
           <span className="flex flex-col items-center gap-0.5">
-            <Heart className="size-7 fill-white stroke-[1.5]" />
-            <span className="text-[9px] font-gilroy-semibold">99.1K</span>
+            <Heart className="size-5 fill-white stroke-[1.5]" />
+            <span className="text-[8px] font-gilroy-semibold">99.1K</span>
           </span>
           <span className="flex flex-col items-center gap-0.5">
-            <MessageCircle className="size-7 fill-white stroke-[1.5] text-white" />
-            <span className="text-[9px] font-gilroy-semibold">3,456</span>
+            <MessageCircle className="size-5 fill-white stroke-[1.5] text-white" />
+            <span className="text-[8px] font-gilroy-semibold">3,456</span>
           </span>
           <span className="flex flex-col items-center gap-0.5">
-            <Bookmark className="size-7 fill-white stroke-[1.5]" />
-            <span className="text-[9px] font-gilroy-semibold">1,256</span>
+            <Bookmark className="size-5 fill-white stroke-[1.5]" />
+            <span className="text-[8px] font-gilroy-semibold">1,256</span>
           </span>
           <span className="flex flex-col items-center gap-0.5">
-            <Share2 className="size-7 fill-white stroke-[1.5]" />
-            <span className="text-[9px] font-gilroy-semibold">1,256</span>
+            <Share2 className="size-5 fill-white stroke-[1.5]" />
+            <span className="text-[8px] font-gilroy-semibold">1,256</span>
           </span>
-          <span className="mt-1 flex size-10 items-center justify-center rounded-full bg-[radial-gradient(circle_at_center,#555_0_25%,#111_27%_100%)] ring-1 ring-white/20">
-            <Music2 className="size-3.5" />
+          <span className="mt-1 flex size-8 items-center justify-center rounded-full bg-[radial-gradient(circle_at_center,#555_0_25%,#111_27%_100%)] ring-1 ring-white/20">
+            <Music2 className="size-3" />
           </span>
         </div>
 
@@ -215,7 +215,7 @@ function TikTokAdPreview({
           ].map(({ label, Icon, active, create }) => (
             <span key={label} className="flex flex-col items-center gap-0.5 text-[8px] font-gilroy-semibold">
               <span className={create ? "flex h-7 w-10 items-center justify-center rounded-lg bg-[linear-gradient(90deg,#25f4ee_0_18%,white_18%_82%,#fe2c55_82%)] text-black" : ""}>
-                <Icon className={`size-5 ${active ? "fill-white" : ""}`} />
+                <Icon className={`size-4 ${active ? "fill-white" : ""}`} />
               </span>
               <span>{label}</span>
             </span>
