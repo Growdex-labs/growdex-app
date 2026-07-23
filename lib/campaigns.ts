@@ -994,6 +994,36 @@ export const startAiCampaignDraft = async (input: {
   return parseAiCampaignDraftResponse(data);
 };
 
+export const resumeAiCampaignDraft = async (input: {
+  campaignId: string;
+  currentDraft: GeneratedCampaignDraft;
+  availableMedia: Array<{
+    id: string;
+    name: string;
+    url: string;
+    platform: CampaignPlatform;
+    mediaType: "image" | "video";
+    source: "asset" | "post";
+  }>;
+  signal?: AbortSignal;
+}): Promise<AiCampaignDraftResponse> => {
+  const res = await apiFetch("/ai/campaign-drafts/resume", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      campaignId: input.campaignId,
+      currentDraft: input.currentDraft,
+      availableMedia: input.availableMedia,
+    }),
+    signal: input.signal,
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(getApiError(data, `Resume AI campaign failed (${res.status})`));
+  }
+  return parseAiCampaignDraftResponse(data);
+};
+
 export const answerAiCampaignQuestion = async (input: {
   draftId: string;
   revision: number;

@@ -22,6 +22,7 @@ import {
   requestCampaignName,
   searchMetaInterests,
   requestAudienceInterestSuggestions,
+  resumeAiCampaignDraft,
   startAiCampaignDraft,
   updateCampaign,
   updateCampaignDraft,
@@ -158,8 +159,10 @@ const aiStepSnapshot = (
 
 const campaignToAiDraft = (
   campaign: CreateCampaignPayload,
-  previous: GeneratedCampaignDraft,
+  previous?: GeneratedCampaignDraft,
 ): GeneratedCampaignDraft => {
+  const savedDecisionReason =
+    "This decision was restored from the saved AI campaign and remains editable.";
   return {
     ...previous,
     name: campaign.campaign.name,
@@ -181,7 +184,7 @@ const campaignToAiDraft = (
           type: strategy.budget.type,
           durationDays: end
             ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
-            : previous.audienceStrategies[index]?.budget.durationDays ?? 7,
+            : previous?.audienceStrategies[index]?.budget.durationDays ?? 7,
           startDateLocal: strategy.budget.startDate,
           endDateLocal: strategy.budget.endDate,
         },
@@ -196,8 +199,49 @@ const campaignToAiDraft = (
         })),
       };
     }),
+    rationale:
+      previous?.rationale ??
+      "Your saved AI campaign is ready for review and further AI-assisted editing.",
+    stepRationales:
+      previous?.stepRationales ?? {
+        setup: savedDecisionReason,
+        goal: savedDecisionReason,
+        platforms: savedDecisionReason,
+        event: savedDecisionReason,
+        audience: savedDecisionReason,
+        budget: savedDecisionReason,
+        creative: savedDecisionReason,
+      },
   };
 };
+
+const loadAvailableCampaignMedia = async (
+  setup: SocialAccountSetupProps,
+) =>
+  (
+    await Promise.all([
+      fetchCreativeAssets(),
+      ...(setup.meta?.assets ?? []).map((asset) =>
+        fetchMetaSocialPosts(asset.id),
+      ),
+    ])
+  )
+    .flat()
+    .filter(
+      (media, index, catalog) =>
+        catalog.findIndex((candidate) => candidate.url === media.url) === index,
+    )
+    .slice(0, 100)
+    .map((media) => ({
+      id: media.id,
+      name: media.name,
+      url: media.url,
+      platform: media.platform,
+      mediaType: /\.(mp4|mov|webm)(\?|$)/i.test(media.url)
+        ? ("video" as const)
+        : ("image" as const),
+      source: media.kind,
+    }));
 
 const toUiMessages = (
   messages: AiCampaignDraftResponse["messages"],
@@ -396,7 +440,7 @@ export default function NewCampaignPage() {
     setEditingCampaignLoading(true);
     setError(null);
     void fetchCampaignById(editCampaignId)
-      .then((result) => {
+      .then(async (result) => {
         if (!active) return;
         const status = (result.status ?? "draft").toLowerCase();
         if (!["draft", "failed"].includes(status)) {
@@ -406,7 +450,11 @@ export default function NewCampaignPage() {
         if (payload.creationMode === "unknown") {
           throw new Error("This campaign does not have a supported setup mode.");
         }
-        setCampaign({ ...payload, creationMode: payload.creationMode });
+        const editablePayload: CreateCampaignPayload = {
+          ...payload,
+          creationMode: payload.creationMode,
+        };
+        setCampaign(editablePayload);
         setActiveStrategyId(
           payload.audienceStrategies.some(({ id }) => id === editStrategyId)
             ? editStrategyId
@@ -415,7 +463,39 @@ export default function NewCampaignPage() {
         setMethod(payload.creationMode);
         setGoalConfirmed(true);
         setSavedCampaignId(result.id);
-        setStep(editAdIndex !== null && Number.isInteger(editAdIndex) ? 6 : editStrategyId ? 3 : 6);
+        if (payload.creationMode === "ai") {
+          const socialSetup = await hydrateSocialAccounts();
+          if (!socialSetup.success || !socialSetup.data) {
+            throw new Error(
+              socialSetup.error ??
+                "Could not load connected accounts for AI editing.",
+            );
+          }
+          const currentDraft = campaignToAiDraft(editablePayload);
+          const resumed = await resumeAiCampaignDraft({
+            campaignId: result.id,
+            currentDraft,
+            availableMedia: await loadAvailableCampaignMedia(socialSetup.data),
+          });
+          if (resumed.status !== "ready") {
+            throw new Error("The saved AI campaign could not be resumed.");
+          }
+          setAiDraftId(resumed.draftId);
+          setAiDraftRevision(resumed.revision);
+          setAiGeneratedDraft(resumed.draft);
+          setAiMessages(toUiMessages(resumed.messages));
+          setAiRationale(resumed.draft.rationale);
+          setAiStepRationales(resumed.draft.stepRationales);
+          setStep(0);
+        } else {
+          setStep(
+            editAdIndex !== null && Number.isInteger(editAdIndex)
+              ? 6
+              : editStrategyId
+                ? 3
+                : 6,
+          );
+        }
       })
       .catch((failure) => {
         if (!active) return;
@@ -973,31 +1053,7 @@ export default function NewCampaignPage() {
         prompt,
         brandName,
         currency: activeStrategy.budget.currency,
-        availableMedia: (
-          await Promise.all([
-            fetchCreativeAssets(),
-            ...(accounts.meta?.assets ?? []).map((asset) =>
-              fetchMetaSocialPosts(asset.id),
-            ),
-          ])
-        )
-          .flat()
-          .filter(
-            (media, index, catalog) =>
-              catalog.findIndex((candidate) => candidate.url === media.url) ===
-              index,
-          )
-          .slice(0, 100)
-          .map((media) => ({
-            id: media.id,
-            name: media.name,
-            url: media.url,
-            platform: media.platform,
-            mediaType: /\.(mp4|mov|webm)(\?|$)/i.test(media.url)
-              ? ("video" as const)
-              : ("image" as const),
-            source: media.kind,
-          })),
+        availableMedia: await loadAvailableCampaignMedia(accounts),
         signal: controller.signal,
       });
       applyAiResponse(response, { requestId, initial: true });

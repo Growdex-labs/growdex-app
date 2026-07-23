@@ -20,10 +20,11 @@ import { PanelLayout } from "../components/panel-layout";
 import { isVideoUrl } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
-  PUBLISHED_CAMPAIGN_STATUSES,
+  fetchMetaSocialPosts,
   type CreativeAsset,
 } from "@/lib/assets";
 import type { CampaignPlatform } from "@/lib/campaigns";
+import { hydrateSocialAccounts } from "@/lib/social";
 
 type LibraryTab = "assets" | "posts";
 type LibraryView = "grid" | "list";
@@ -43,9 +44,32 @@ export default function AssetsPage() {
 
   useEffect(() => {
     let active = true;
-    void fetchCreativeAssets()
-      .then((result) => {
-        if (active) setAssets(result);
+    void Promise.all([fetchCreativeAssets(), hydrateSocialAccounts()])
+      .then(async ([campaignAssets, socialSetup]) => {
+        if (!socialSetup.success || !socialSetup.data) {
+          throw new Error(
+            socialSetup.error ?? "Could not load connected social accounts.",
+          );
+        }
+        const posts = (
+          await Promise.all(
+            (socialSetup.data.meta?.assets ?? []).map((asset) =>
+              fetchMetaSocialPosts(asset.id),
+            ),
+          )
+        ).flat();
+        if (active) {
+          setAssets(
+            [...campaignAssets, ...posts].filter(
+              (asset, index, library) =>
+                library.findIndex(
+                  (candidate) =>
+                    candidate.kind === asset.kind &&
+                    candidate.url === asset.url,
+                ) === index,
+            ),
+          );
+        }
       })
       .catch((failure) => {
         if (active) {
@@ -68,12 +92,8 @@ export default function AssetsPage() {
     const normalized = query.trim().toLowerCase();
     return assets.filter((asset) => {
       if (platform !== "all" && asset.platform !== platform) return false;
-      if (
-        tab === "posts" &&
-        !PUBLISHED_CAMPAIGN_STATUSES.has(asset.status.toLowerCase())
-      ) {
-        return false;
-      }
+      if (tab === "posts" && asset.kind !== "post") return false;
+      if (tab === "assets" && asset.kind !== "asset") return false;
       return (
         !normalized ||
         asset.name.toLowerCase().includes(normalized) ||
