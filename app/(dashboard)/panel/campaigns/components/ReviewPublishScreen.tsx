@@ -8,6 +8,7 @@ import {
   Languages,
   Loader2,
   MapPin,
+  Pencil,
   Smartphone,
   Target,
   Users,
@@ -30,6 +31,7 @@ interface ReviewPublishScreenProps {
   onPublish: () => void;
   onSaveDraft?: () => void;
   onBack?: () => void;
+  onEditStrategy?: (strategyId: string) => void;
   publishing?: boolean;
   saving?: boolean;
   error?: string | null;
@@ -63,6 +65,7 @@ export function ReviewPublishScreen({
   onPublish,
   onSaveDraft,
   onBack,
+  onEditStrategy,
   publishing = false,
   saving = false,
   error,
@@ -244,20 +247,33 @@ export function ReviewPublishScreen({
                       .toLowerCase()}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-gray-950 px-5 py-3 text-white">
-                  <p className="flex items-center gap-2 text-xs text-white/50">
-                    <Banknote className="size-3.5" /> Budget
-                  </p>
-                  <p className="mt-1 text-xl font-gilroy-bold">
-                    {new Intl.NumberFormat(undefined, {
-                      style: "currency",
-                      currency: strategy.budget.currency,
-                      maximumFractionDigits: 2,
-                    }).format(strategy.budget.amount)}
-                    <span className="ml-1 text-xs font-gilroy-regular text-white/50">
-                      /{strategy.budget.type}
-                    </span>
-                  </p>
+                <div className="flex items-stretch gap-2">
+                  {onEditStrategy && (
+                    <button
+                      type="button"
+                      onClick={() => onEditStrategy(strategy.id)}
+                      disabled={busy}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 text-sm font-gilroy-semibold text-gray-800 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Pencil className="size-4" />
+                      Edit strategy
+                    </button>
+                  )}
+                  <div className="rounded-2xl bg-gray-950 px-5 py-3 text-white">
+                    <p className="flex items-center gap-2 text-xs text-white/50">
+                      <Banknote className="size-3.5" /> Budget
+                    </p>
+                    <p className="mt-1 text-xl font-gilroy-bold">
+                      {new Intl.NumberFormat(undefined, {
+                        style: "currency",
+                        currency: strategy.budget.currency,
+                        maximumFractionDigits: 2,
+                      }).format(strategy.budget.amount)}
+                      <span className="ml-1 text-xs font-gilroy-regular text-white/50">
+                        /{strategy.budget.type}
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </header>
 

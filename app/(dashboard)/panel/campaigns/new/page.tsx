@@ -497,7 +497,7 @@ export default function NewCampaignPage() {
           setAiMessages(toUiMessages(resumed.messages));
           setAiRationale(resumed.draft.rationale);
           setAiStepRationales(resumed.draft.stepRationales);
-          setStep(0);
+          setStep(editStrategyId ? 3 : 0);
         } else {
           setStep(
             editAdIndex !== null && Number.isInteger(editAdIndex)
@@ -2114,6 +2114,7 @@ export default function NewCampaignPage() {
                       accountsLoading={accountsLoading}
                       accountsError={accountError}
                       onBack={() => setStep(6)}
+                      onEditStrategy={openStrategyEditor}
                       onSaveDraft={() => void createDraft()}
                       onPublish={() => void createAndPublish()}
                       saving={saving}

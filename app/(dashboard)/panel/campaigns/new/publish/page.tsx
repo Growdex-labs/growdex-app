@@ -250,6 +250,11 @@ export default function PublishCampaignPage() {
                       `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}`,
                     )
                   }
+                  onEditStrategy={(strategyId) =>
+                    router.push(
+                      `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}&strategy=${encodeURIComponent(strategyId)}`,
+                    )
+                  }
                   onPublish={() => void handlePublish()}
                   publishing={isPublishing}
                   error={error}
