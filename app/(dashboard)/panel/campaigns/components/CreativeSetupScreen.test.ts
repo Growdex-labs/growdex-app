@@ -27,6 +27,7 @@ const asset = (
   campaignName: "Campaign one",
   status: "draft",
   createdAt: "2026-07-20T10:00:00.000Z",
+  kind: "asset",
 });
 
 describe("mergeSelectedAssets", () => {

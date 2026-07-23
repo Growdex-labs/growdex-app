@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { isVideoUrl } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
-  PUBLISHED_CAMPAIGN_STATUSES,
+  fetchMetaSocialPosts,
   type CreativeAsset,
 } from "@/lib/assets";
 import {
@@ -196,17 +196,34 @@ export function CreativeSetupScreen({
 
   useEffect(() => {
     let active = true;
-    void fetchCreativeAssets({ platforms })
-      .then((assets) => {
+    const requests: Array<Promise<CreativeAsset[]>> = [
+      fetchCreativeAssets({ platforms }),
+    ];
+    if (platforms.includes("meta") && metaAssetId) {
+      requests.push(fetchMetaSocialPosts(metaAssetId));
+    }
+    void Promise.allSettled(requests)
+      .then((results) => {
         if (!active) return;
-        setLibrary(assets);
-      })
-      .catch((failure) => {
-        if (!active) return;
+        setLibrary(
+          results.flatMap((result) =>
+            result.status === "fulfilled" ? result.value : [],
+          ),
+        );
+        const failures = results.filter(
+          (result): result is PromiseRejectedResult =>
+            result.status === "rejected",
+        );
         setLibraryError(
-          failure instanceof Error
-            ? failure.message
-            : "Could not load the creative library.",
+          failures.length
+            ? failures
+                .map((failure) =>
+                  failure.reason instanceof Error
+                    ? failure.reason.message
+                    : "Could not load creative media.",
+                )
+                .join(" ")
+            : null,
         );
       })
       .finally(() => {
@@ -216,7 +233,7 @@ export function CreativeSetupScreen({
     return () => {
       active = false;
     };
-  }, [platforms]);
+  }, [metaAssetId, platforms]);
 
   useEffect(() => {
     if (destination !== "INSTANT_FORM" || !metaAssetId) return;
@@ -275,8 +292,8 @@ export function CreativeSetupScreen({
         return false;
       }
       if (
-        tab === "posts" &&
-        !PUBLISHED_CAMPAIGN_STATUSES.has(asset.status.toLowerCase())
+        (tab === "posts" && asset.kind !== "post") ||
+        (tab === "assets" && asset.kind !== "asset")
       ) {
         return false;
       }

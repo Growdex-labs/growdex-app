@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/auth";
 import { fetchCampaigns, type CampaignPlatform } from "@/lib/campaigns";
 
 export interface CreativeAsset {
@@ -9,6 +10,8 @@ export interface CreativeAsset {
   campaignName: string;
   status: string;
   createdAt: string;
+  kind: "asset" | "post";
+  network?: "facebook" | "instagram";
 }
 
 export const PUBLISHED_CAMPAIGN_STATUSES = new Set([
@@ -46,6 +49,7 @@ export const fetchCreativeAssets = async (options?: {
         campaignName: campaign.name,
         status: campaign.status ?? "draft",
         createdAt: creative.createdAt ?? campaign.createdAt ?? "",
+        kind: "asset",
       });
     }
   }
@@ -55,3 +59,51 @@ export const fetchCreativeAssets = async (options?: {
   );
 };
 
+export const fetchMetaSocialPosts = async (
+  assetId: string,
+): Promise<CreativeAsset[]> => {
+  const response = await apiFetch(
+    `/campaigns/social-posts?assetId=${encodeURIComponent(assetId)}`,
+  );
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(
+      typeof body.message === "string"
+        ? body.message
+        : `Could not load Meta posts (${response.status}).`,
+    );
+  }
+  if (!Array.isArray(body.posts)) {
+    throw new Error("Meta posts returned an invalid response.");
+  }
+
+  return (body.posts as unknown[])
+    .filter(
+      (post: unknown): post is Record<string, unknown> =>
+        Boolean(
+          post &&
+            typeof post === "object" &&
+            typeof (post as Record<string, unknown>).id === "string" &&
+            typeof (post as Record<string, unknown>).mediaUrl === "string",
+        ),
+    )
+    .map((post) => ({
+      id: String(post.id),
+      name:
+        typeof post.name === "string" && post.name.trim()
+          ? post.name
+          : "Meta post",
+      url: String(post.mediaUrl),
+      platform: "meta" as const,
+      campaignId: "",
+      campaignName:
+        post.network === "instagram" ? "Instagram post" : "Facebook post",
+      status: "published",
+      createdAt: typeof post.createdAt === "string" ? post.createdAt : "",
+      kind: "post" as const,
+      network:
+        post.network === "instagram"
+          ? ("instagram" as const)
+          : ("facebook" as const),
+    }));
+};
