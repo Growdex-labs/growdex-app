@@ -235,7 +235,7 @@ export function CreativeAdEditor({
                   ) : (
                     <Sparkles className="size-3.5" />
                   )}
-                  {generatingHeadline ? "Generating…" : "Generate with AI"}
+                  {generatingHeadline ? "Working…" : "Use AI"}
                 </button>
               </span>
               <Input
