@@ -229,6 +229,7 @@ export function ReviewPublishScreen({
           return (
             <section
               key={strategy.id}
+              id={`review-strategy-${strategy.id}`}
               className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm"
             >
               <header className="flex flex-col justify-between gap-4 border-b border-gray-100 bg-[#fbfbf8] p-6 md:flex-row md:items-end md:px-8">

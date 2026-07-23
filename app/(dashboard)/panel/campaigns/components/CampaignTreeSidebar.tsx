@@ -19,7 +19,9 @@ interface CampaignTreeSidebarProps {
   campaign?: Pick<CreateCampaignPayload, "campaign" | "audienceStrategies">;
   activeStrategyId?: string | null;
   compact?: boolean;
+  activeStrategyLabel?: string;
   onSelectStrategy?: (id: string) => void;
+  onEditStrategy?: (id: string) => void;
   onAddStrategy?: () => void;
   onDuplicateStrategy?: (id: string) => void;
   onDeleteStrategy?: (id: string) => void;
@@ -42,7 +44,9 @@ export function CampaignTreeSidebar({
   campaign,
   activeStrategyId,
   compact = false,
+  activeStrategyLabel = "Editing",
   onSelectStrategy,
+  onEditStrategy,
   onAddStrategy,
   onDuplicateStrategy,
   onDeleteStrategy,
@@ -124,12 +128,14 @@ export function CampaignTreeSidebar({
                 </button>
                 {isActive && (
                   <span className="rounded-full bg-khaki-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-900">
-                    Editing
+                    {activeStrategyLabel}
                   </span>
                 )}
                 <button
                   type="button"
-                  onClick={() => onSelectStrategy?.(strategy.id)}
+                  onClick={() =>
+                    (onEditStrategy ?? onSelectStrategy)?.(strategy.id)
+                  }
                   className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
                     isActive
                       ? "bg-white/10 text-white hover:bg-white/20"

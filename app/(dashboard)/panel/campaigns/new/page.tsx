@@ -45,7 +45,11 @@ import {
 } from "@/lib/campaigns";
 import { eventManagementPatch } from "../components/event-management-state";
 import { validateFile } from "@/lib/campaign-shared";
-import { fetchCreativeAssets, fetchMetaSocialPosts } from "@/lib/assets";
+import {
+  fetchCreativeAssets,
+  fetchMetaSocialPosts,
+  fetchTikTokCreativeAssets,
+} from "@/lib/assets";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { hashFolderName } from "@/lib/encrypt";
 import { connectSocialAccount } from "@/lib/oauth";
@@ -224,6 +228,9 @@ const loadAvailableCampaignMedia = async (
       ...(setup.meta?.assets ?? []).map((asset) =>
         fetchMetaSocialPosts(asset.id),
       ),
+      ...(setup.tiktok?.assets ?? []).map((asset) =>
+        fetchTikTokCreativeAssets(asset.id),
+      ),
     ])
   )
     .flat()
@@ -341,6 +348,14 @@ export default function NewCampaignPage() {
           .getElementById("campaign-editor-main")
           ?.scrollTo({ top: 0, behavior: "smooth" });
       });
+    });
+  };
+  const scrollToReviewStrategy = (id: string) => {
+    setActiveStrategyId(id);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(`review-strategy-${id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
   const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
@@ -1769,6 +1784,7 @@ export default function NewCampaignPage() {
                 activeStrategyId={activeStrategy?.id}
                 compact
                 onSelectStrategy={openStrategyEditor}
+                onEditStrategy={openStrategyEditor}
                 onAddStrategy={addAudienceStrategy}
                 onDuplicateStrategy={duplicateAudienceStrategy}
                 onDeleteStrategy={deleteAudienceStrategy}
@@ -1840,7 +1856,11 @@ export default function NewCampaignPage() {
                 campaignName={campaign.campaign.name || "Untitled campaign"}
                 campaign={campaign}
                 activeStrategyId={activeStrategy?.id}
-                onSelectStrategy={openStrategyEditor}
+                onSelectStrategy={
+                  step === 7 ? scrollToReviewStrategy : openStrategyEditor
+                }
+                onEditStrategy={openStrategyEditor}
+                activeStrategyLabel={step === 7 ? "Selected" : "Editing"}
                 onAddStrategy={addAudienceStrategy}
                 onDuplicateStrategy={duplicateAudienceStrategy}
                 onDeleteStrategy={deleteAudienceStrategy}

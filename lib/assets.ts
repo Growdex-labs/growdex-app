@@ -107,3 +107,48 @@ export const fetchMetaSocialPosts = async (
           : ("facebook" as const),
     }));
 };
+
+export const fetchTikTokCreativeAssets = async (
+  assetId: string,
+): Promise<CreativeAsset[]> => {
+  const response = await apiFetch(
+    `/campaigns/tiktok-creative-assets?assetId=${encodeURIComponent(assetId)}`,
+  );
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(
+      typeof body.message === "string"
+        ? body.message
+        : `Could not load TikTok assets (${response.status}).`,
+    );
+  }
+  if (!Array.isArray(body.assets)) {
+    throw new Error("TikTok assets returned an invalid response.");
+  }
+
+  return (body.assets as unknown[])
+    .filter(
+      (asset: unknown): asset is Record<string, unknown> =>
+        Boolean(
+          asset &&
+            typeof asset === "object" &&
+            typeof (asset as Record<string, unknown>).id === "string" &&
+            typeof (asset as Record<string, unknown>).mediaUrl === "string",
+        ),
+    )
+    .map((asset) => ({
+      id: String(asset.id),
+      name:
+        typeof asset.name === "string" && asset.name.trim()
+          ? asset.name
+          : "TikTok video",
+      url: String(asset.mediaUrl),
+      platform: "tiktok" as const,
+      campaignId: "",
+      campaignName: "TikTok creative library",
+      status: "available",
+      createdAt: typeof asset.createdAt === "string" ? asset.createdAt : "",
+      kind: "asset" as const,
+      network: undefined,
+    }));
+};

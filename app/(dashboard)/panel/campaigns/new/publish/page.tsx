@@ -101,6 +101,15 @@ export default function PublishCampaignPage() {
     }
   };
 
+  const scrollToStrategy = (strategyId: string) => {
+    setActiveStrategyId(strategyId);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(`review-strategy-${strategyId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const handleDuplicateStrategy = async (strategyId: string) => {
     if (!campaignId || !campaign || sourceStatus !== "draft") return;
     const creationMode = campaign.creationMode;
@@ -204,7 +213,13 @@ export default function PublishCampaignPage() {
             campaignName={campaign?.campaign.name ?? "Campaign review"}
             campaign={campaign ?? undefined}
             activeStrategyId={activeStrategyId}
-            onSelectStrategy={setActiveStrategyId}
+            activeStrategyLabel="Selected"
+            onSelectStrategy={scrollToStrategy}
+            onEditStrategy={(strategyId) =>
+              router.push(
+                `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}&strategy=${encodeURIComponent(strategyId)}`,
+              )
+            }
             onSelectAd={(strategyId, adIndex) =>
               router.push(
                 `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}&strategy=${encodeURIComponent(strategyId)}&ad=${adIndex}`,

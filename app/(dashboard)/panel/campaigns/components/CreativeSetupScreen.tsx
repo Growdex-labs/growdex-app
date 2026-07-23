@@ -20,6 +20,7 @@ import { isVideoUrl } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
+  fetchTikTokCreativeAssets,
   type CreativeAsset,
 } from "@/lib/assets";
 import {
@@ -202,6 +203,11 @@ export function CreativeSetupScreen({
     if (platforms.includes("meta") && metaAssetId) {
       requests.push(fetchMetaSocialPosts(metaAssetId));
     }
+    if (platforms.includes("tiktok")) {
+      for (const asset of accounts?.tiktok?.assets ?? []) {
+        requests.push(fetchTikTokCreativeAssets(asset.id));
+      }
+    }
     void Promise.allSettled(requests)
       .then((results) => {
         if (!active) return;
@@ -233,7 +239,7 @@ export function CreativeSetupScreen({
     return () => {
       active = false;
     };
-  }, [metaAssetId, platforms]);
+  }, [accounts?.tiktok?.assets, metaAssetId, platforms]);
 
   useEffect(() => {
     if (destination !== "INSTANT_FORM" || !metaAssetId) return;

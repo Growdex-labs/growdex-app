@@ -21,6 +21,7 @@ import { isVideoUrl } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
+  fetchTikTokCreativeAssets,
   type CreativeAsset,
 } from "@/lib/assets";
 import type { CampaignPlatform } from "@/lib/campaigns";
@@ -51,16 +52,21 @@ export default function AssetsPage() {
             socialSetup.error ?? "Could not load connected social accounts.",
           );
         }
-        const posts = (
+        const providerMedia = (
           await Promise.all(
-            (socialSetup.data.meta?.assets ?? []).map((asset) =>
-              fetchMetaSocialPosts(asset.id),
-            ),
+            [
+              ...(socialSetup.data.meta?.assets ?? []).map((asset) =>
+                fetchMetaSocialPosts(asset.id),
+              ),
+              ...(socialSetup.data.tiktok?.assets ?? []).map((asset) =>
+                fetchTikTokCreativeAssets(asset.id),
+              ),
+            ],
           )
         ).flat();
         if (active) {
           setAssets(
-            [...campaignAssets, ...posts].filter(
+            [...campaignAssets, ...providerMedia].filter(
               (asset, index, library) =>
                 library.findIndex(
                   (candidate) =>
