@@ -96,7 +96,7 @@ export default function PaymentHistory({
       ?.currency ?? "NGN";
 
   const exportTransactions = () =>
-    downloadCsv("growdex-wallet-transactions.csv", [
+    downloadCsv("growdex-funding-transactions.csv", [
       ["Transaction ID", "Date", "Type", "Merchant", "Amount", "Currency", "Status"],
       ...filtered.map((transaction) => [
         transaction.id,
@@ -274,7 +274,7 @@ export default function PaymentHistory({
                 No transactions found
               </p>
               <p className="mt-1 max-w-sm text-sm text-gray-500">
-                Change the search or time period to see more wallet activity.
+                Change the search or time period to see more funding activity.
               </p>
             </div>
           )}

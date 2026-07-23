@@ -20,7 +20,7 @@ export function WalletHeader(): JSX.Element {
   const navItems = [
     { label: "Balance", href: "/panel/wallet" },
     { label: "Transactions", href: "/panel/wallet/transactions" },
-    { label: "Fund wallet", href: "/panel/wallet/fund" },
+    { label: "Add funding", href: "/panel/wallet/fund" },
     { label: "Budget", href: "/panel/wallet/budget" },
   ];
 
@@ -33,7 +33,7 @@ export function WalletHeader(): JSX.Element {
 
   const getActiveLabel = () => {
     const activeItem = navItems.find((item) => isActive(item.href));
-    return activeItem?.label || "Wallet";
+    return activeItem?.label || "Funding";
   };
 
   return (

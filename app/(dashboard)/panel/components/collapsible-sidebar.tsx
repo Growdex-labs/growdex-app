@@ -53,7 +53,7 @@ export function CollapsibleSidebar({
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/panel" },
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
-    { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
+    { icon: Wallet, label: "Funding", href: "/panel/wallet" },
     { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
     ...(me?.isAdmin

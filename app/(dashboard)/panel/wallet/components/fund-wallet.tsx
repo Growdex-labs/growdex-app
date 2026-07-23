@@ -17,12 +17,12 @@ export default function FundWallet() {
             <SheetTrigger asChild>
                 <button className="w-full sm:w-[90%] bg-khaki-200 hover:bg-khaki-300 text-gray-900 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
                     <DepositIcon />
-                    Fund Wallet
+                    Add Funding
                 </button>
             </SheetTrigger>
             <SheetContent>
                 <SheetHeader>
-                <SheetTitle>Fund wallet</SheetTitle>
+                <SheetTitle>Add funding</SheetTitle>
                 <SheetDescription>
                     Easily manage and store your funds in one secure place.
                 </SheetDescription>
@@ -94,7 +94,7 @@ export default function FundWallet() {
                 <SheetFooter>
                 <button className="bg-khaki-200 hover:bg-khaki-300 text-gray-900 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
                     <DepositIcon />
-                    Fund Wallet
+                    Add Funding
                 </button>
                 <button>Save card</button>
                 <SheetClose asChild className='md:hidden'>

@@ -28,7 +28,7 @@ export function BottomNavigation() {
 
   // Right items (2 items)
   const rightItems: NavItem[] = [
-    { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
+    { icon: Wallet, label: "Funding", href: "/panel/wallet" },
     { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
   ];

@@ -32,7 +32,7 @@ export default function WalletTransactionsPage() {
           setError(
             failure instanceof Error
               ? failure.message
-              : "Could not load wallet transactions.",
+              : "Could not load funding transactions.",
           );
         }
       });

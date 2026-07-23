@@ -36,7 +36,7 @@ const readJson = async (response: Response): Promise<unknown> => {
   try {
     return JSON.parse(text) as unknown;
   } catch {
-    throw new Error("Wallet data was not valid JSON.");
+    throw new Error("Funding data was not valid JSON.");
   }
 };
 
@@ -61,12 +61,12 @@ const isTransaction = (value: unknown): value is WalletTransaction => {
 
 export const parseWalletOverview = (value: unknown): WalletOverview => {
   if (!value || typeof value !== "object") {
-    throw new Error("Wallet overview returned an invalid response.");
+    throw new Error("Funding overview returned an invalid response.");
   }
 
   const source = "data" in value ? (value as { data?: unknown }).data : value;
   if (!source || typeof source !== "object") {
-    throw new Error("Wallet overview returned an invalid response.");
+    throw new Error("Funding overview returned an invalid response.");
   }
 
   const overview = source as Partial<WalletOverview>;
@@ -93,7 +93,7 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
     !Array.isArray(overview.transactions) ||
     !overview.transactions.every(isTransaction)
   ) {
-    throw new Error("Wallet overview returned an invalid response shape.");
+    throw new Error("Funding overview returned an invalid response shape.");
   }
 
   return overview as WalletOverview;
@@ -106,7 +106,7 @@ export const fetchWalletOverview = async (): Promise<WalletOverview> => {
     const message =
       data && typeof data === "object" && "message" in data
         ? String((data as { message: unknown }).message)
-        : `Wallet overview failed (${response.status}).`;
+        : `Funding overview failed (${response.status}).`;
     throw new Error(message);
   }
   return parseWalletOverview(data);

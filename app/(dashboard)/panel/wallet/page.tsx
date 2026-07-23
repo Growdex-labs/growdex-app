@@ -53,7 +53,7 @@ function SpendingChart({ overview }: { overview: WalletOverview }) {
             </p>
             <p className="mt-1 max-w-sm text-xs leading-5 text-gray-400">
               Spending insights will appear after a campaign starts using your
-              wallet.
+              funding account.
             </p>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function WalletOverviewPage() {
           setError(
             failure instanceof Error
               ? failure.message
-              : "Could not load the wallet overview.",
+              : "Could not load the funding overview.",
           );
         }
       });
@@ -159,7 +159,7 @@ export default function WalletOverviewPage() {
           <div className="mx-auto max-w-6xl space-y-5">
             <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
-                <p className="text-sm text-gray-400">Wallet</p>
+                <p className="text-sm text-gray-400">Funding</p>
                 <h1 className="mt-1 text-2xl font-gilroy-bold text-gray-950">
                   Good morning, {firstName}!
                 </h1>
@@ -169,7 +169,7 @@ export default function WalletOverviewPage() {
                   href="/panel/wallet/fund"
                   className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-khaki-300"
                 >
-                  <Plus className="size-4" /> Fund wallet
+                  <Plus className="size-4" /> Add funding
                 </Link>
                 <Link
                   href="/panel/wallet/fund?method=card"
@@ -184,7 +184,7 @@ export default function WalletOverviewPage() {
               <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
                 <AlertCircle className="mt-0.5 size-5 shrink-0" />
                 <div>
-                  <p className="font-gilroy-semibold">Wallet unavailable</p>
+                  <p className="font-gilroy-semibold">Funding unavailable</p>
                   <p className="mt-1">{error}</p>
                 </div>
               </div>
@@ -198,7 +198,7 @@ export default function WalletOverviewPage() {
                   <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <WalletCards className="size-4" /> Wallet balance
+                        <WalletCards className="size-4" /> Funding balance
                       </div>
                       <div className="flex rounded-lg bg-gray-100 p-1 text-xs">
                         {(["NGN", "USD"] as const).map((item) => (
@@ -277,7 +277,7 @@ export default function WalletOverviewPage() {
                         Recent transactions
                       </h2>
                       <p className="mt-1 text-xs text-gray-400">
-                        Latest wallet activity
+                        Latest funding activity
                       </p>
                     </div>
                     <Link
@@ -292,7 +292,7 @@ export default function WalletOverviewPage() {
                     {overview.transactions.length === 0 ? (
                       <div className="px-5 py-10 text-center lg:px-6">
                         <p className="text-sm font-gilroy-semibold text-gray-700">
-                          No wallet activity yet
+                          No funding activity yet
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
                           Your deposits and campaign charges will appear here.

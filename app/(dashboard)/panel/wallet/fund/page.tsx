@@ -176,7 +176,7 @@ export default function FundWalletPage() {
           <WalletHeader />
           <div className="mx-auto max-w-5xl">
             <h1 className="text-2xl font-gilroy-bold text-gray-950">
-              Fund your ad wallet
+              Add campaign funding
             </h1>
             <p className="mt-2 text-sm text-gray-500">
               Choose an account, then continue securely on the platform’s
