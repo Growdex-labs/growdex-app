@@ -43,6 +43,20 @@ export default function AssetsPage() {
   const [view, setView] = useState<LibraryView>("grid");
   const [selected, setSelected] = useState<CreativeAsset | null>(null);
 
+  const selectTab = (nextTab: LibraryTab) => {
+    setTab(nextTab);
+    if (nextTab === "posts" && platform === "tiktok") {
+      setPlatform("all");
+    }
+  };
+
+  const selectPlatform = (nextPlatform: "all" | CampaignPlatform) => {
+    setPlatform(nextPlatform);
+    if (nextPlatform === "tiktok" && tab === "posts") {
+      setTab("assets");
+    }
+  };
+
   useEffect(() => {
     let active = true;
     void Promise.all([fetchCreativeAssets(), hydrateSocialAccounts()])
@@ -179,7 +193,7 @@ export default function AssetsPage() {
                   <button
                     key={item}
                     type="button"
-                    onClick={() => setTab(item)}
+                    onClick={() => selectTab(item)}
                     className={`flex-1 rounded-lg px-4 py-1.5 text-sm capitalize transition-colors ${
                       tab === item
                         ? "bg-white font-gilroy-semibold text-gray-900 shadow-sm"
@@ -194,7 +208,9 @@ export default function AssetsPage() {
               <select
                 value={platform}
                 onChange={(event) =>
-                  setPlatform(event.target.value as "all" | CampaignPlatform)
+                  selectPlatform(
+                    event.target.value as "all" | CampaignPlatform,
+                  )
                 }
                 className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-600"
               >
