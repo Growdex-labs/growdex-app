@@ -59,8 +59,13 @@ export function useAiCampaignFlow(
 
   const steps = useMemo<AiStep[]>(
     () => {
-      const strategy = campaign.audienceStrategies[0];
+      const strategies = campaign.audienceStrategies;
+      const strategy = strategies[0];
       if (!strategy) return [];
+      const totalAds = strategies.reduce(
+        (count, current) => count + current.ads.length,
+        0,
+      );
       return [
       {
         id: "setup",
@@ -116,12 +121,14 @@ export function useAiCampaignFlow(
         label: "Audience recommendation",
         reason: rationales.audience,
         status: statuses.audience,
-        result: `${strategy.audience.locations.join(", ")} · ages ${strategy.audience.ageMin ?? 18}–${strategy.audience.ageMax ?? 65}`,
-        detail: `${strategy.audience.interests?.length ?? 0} interests · ${strategy.audience.languages?.length ? strategy.audience.languages.join(", ") : "all languages"}`,
-        chips: [
-          strategy.audience.gender ?? "all",
-          ...(strategy.audience.devices ?? ["mobile"]),
-        ],
+        result: `${strategies.length} audience ${strategies.length === 1 ? "strategy" : "strategies"}`,
+        detail: strategies
+          .map(
+            (current) =>
+              `${current.name}: ${current.audience.locations.join(", ")} · ages ${current.audience.ageMin ?? 18}–${current.audience.ageMax ?? 65}`,
+          )
+          .join(" | "),
+        chips: strategies.map((current) => current.name),
       },
       {
         id: "budget",
@@ -129,8 +136,16 @@ export function useAiCampaignFlow(
         label: "Budget recommendation",
         reason: rationales.budget,
         status: statuses.budget,
-        result: `${currencySymbol(strategy.budget.currency)}${strategy.budget.amount.toLocaleString()} ${strategy.budget.type}`,
-        detail: `${new Date(strategy.budget.startDate).toLocaleString()}${strategy.budget.endDate ? ` – ${new Date(strategy.budget.endDate).toLocaleString()}` : ""}`,
+        result:
+          strategies.length === 1
+            ? `${currencySymbol(strategy.budget.currency)}${strategy.budget.amount.toLocaleString()} ${strategy.budget.type}`
+            : `${strategies.length} strategy budgets`,
+        detail: strategies
+          .map(
+            (current) =>
+              `${current.name}: ${currencySymbol(current.budget.currency)}${current.budget.amount.toLocaleString()} ${current.budget.type}`,
+          )
+          .join(" | "),
       },
       {
         id: "creative",
@@ -138,11 +153,13 @@ export function useAiCampaignFlow(
         label: "Creative draft",
         reason: rationales.creative,
         status: statuses.creative,
-        result: `${strategy.ads.length} platform-specific ad${strategy.ads.length === 1 ? "" : "s"}`,
-        detail: strategy.ads
-          .map(
-            (creative) =>
-              `${creative.platform === "meta" ? "Meta" : "TikTok"}: ${creative.primaryText || "copy required"}${creative.mediaUrl ? " · media ready" : " · media required"}`,
+        result: `${totalAds} platform-specific ad${totalAds === 1 ? "" : "s"} across ${strategies.length} ${strategies.length === 1 ? "strategy" : "strategies"}`,
+        detail: strategies
+          .flatMap((current) =>
+            current.ads.map(
+              (creative) =>
+                `${current.name} · ${creative.platform === "meta" ? "Meta" : "TikTok"}: ${creative.primaryText || "copy required"}${creative.mediaUrl ? " · media ready" : " · media required"}`,
+            ),
           )
           .join(" | "),
       },

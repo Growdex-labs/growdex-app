@@ -66,47 +66,50 @@ const readyResponse = () => ({
       specialAdCategories: [] as MetaSpecialAdCategory[],
       sameCreativeForAll: false,
     },
-    audience: {
-      locations: ["NG"],
-      ageMin: 21,
-      ageMax: 45,
-      gender: "all",
-      interests: ["Business"],
-      includeAudienceIds: [],
-      excludeAudienceIds: [],
-      languages: ["English"],
-      devices: ["mobile"],
-    },
-    budget: {
-      amount: 50_000,
-      currency: "NGN",
-      type: "daily",
-      durationDays: 7,
-      startDateLocal: "2030-01-01T09:00:00.000Z",
-      endDateLocal: "2030-01-08T09:00:00.000Z",
-    },
-    creatives: [
-      {
-        platform: "meta",
-        primaryText: "Meet your next growth partner.",
-        headline: "Grow in Nigeria",
-        cta: "LEARN_MORE",
-        mediaUrl: "https://cdn.example.com/meta.png",
-        landingPageUrl: "https://example.com",
-        mediaRequirement: "image",
-        mediaStatus: "ready",
+    audienceStrategies: [{
+      name: "Founders",
+      audience: {
+        locations: ["NG"],
+        ageMin: 21,
+        ageMax: 45,
+        gender: "all",
+        interests: ["Business"],
+        includeAudienceIds: [],
+        excludeAudienceIds: [],
+        languages: ["English"],
+        devices: ["mobile"],
       },
-      {
-        platform: "tiktok",
-        primaryText: "A faster way to grow.",
-        headline: "Grow in Nigeria",
-        cta: "LEARN_MORE",
-        mediaUrl: "",
-        landingPageUrl: "https://example.com",
-        mediaRequirement: "video",
-        mediaStatus: "required",
+      budget: {
+        amount: 50_000,
+        currency: "NGN",
+        type: "daily",
+        durationDays: 7,
+        startDateLocal: "2030-01-01T09:00:00.000Z",
+        endDateLocal: "2030-01-08T09:00:00.000Z",
       },
-    ],
+      creatives: [
+        {
+          platform: "meta",
+          primaryText: "Meet your next growth partner.",
+          headline: "Grow in Nigeria",
+          cta: "LEARN_MORE",
+          mediaUrl: "https://cdn.example.com/meta.png",
+          landingPageUrl: "https://example.com",
+          mediaRequirement: "image",
+          mediaStatus: "ready",
+        },
+        {
+          platform: "tiktok",
+          primaryText: "A faster way to grow.",
+          headline: "Grow in Nigeria",
+          cta: "LEARN_MORE",
+          mediaUrl: "",
+          landingPageUrl: "https://example.com",
+          mediaRequirement: "video",
+          mediaStatus: "required",
+        },
+      ],
+    }],
     rationale: "Traffic is the clearest match for the launch brief.",
     stepRationales: {
       setup: "A clear campaign name was generated from the launch market.",
@@ -327,8 +330,30 @@ describe("parseAiCampaignDraftResponse", () => {
     const result = parseAiCampaignDraftResponse(readyResponse());
     expect(result.status).toBe("ready");
     if (result.status !== "ready") throw new Error("Expected a ready response");
-    expect(result.draft.creatives).toHaveLength(2);
+    expect(result.draft.audienceStrategies[0].creatives).toHaveLength(2);
     expect(result.draft.stepRationales.event).toContain("Link clicks");
+  });
+
+  it("accepts multiple AI-created audience strategies", () => {
+    const response = readyResponse();
+    response.draft.audienceStrategies.push({
+      ...structuredClone(response.draft.audienceStrategies[0]),
+      name: "Established teams",
+      audience: {
+        ...structuredClone(response.draft.audienceStrategies[0].audience),
+        ageMin: 30,
+        interests: ["Business software"],
+      },
+    });
+
+    const result = parseAiCampaignDraftResponse(response);
+
+    expect(result.status).toBe("ready");
+    if (result.status !== "ready") throw new Error("Expected a ready response");
+    expect(result.draft.audienceStrategies.map(({ name }) => name)).toEqual([
+      "Founders",
+      "Established teams",
+    ]);
   });
 
   it("rejects a draft without an event-management explanation", () => {
@@ -367,7 +392,8 @@ describe("parseAiCampaignDraftResponse", () => {
   it("accepts compliant AI housing campaigns and rejects restricted interests", () => {
     const response = readyResponse();
     response.draft.platforms = ["meta"];
-    response.draft.creatives = response.draft.creatives.filter(
+    response.draft.audienceStrategies[0].creatives =
+      response.draft.audienceStrategies[0].creatives.filter(
       (creative) => creative.platform === "meta",
     );
     delete (
@@ -376,7 +402,7 @@ describe("parseAiCampaignDraftResponse", () => {
       >
     ).tiktok;
     response.draft.configuration.specialAdCategories = ["HOUSING"];
-    Object.assign(response.draft.audience, {
+    Object.assign(response.draft.audienceStrategies[0].audience, {
       ageMin: 18,
       ageMax: 65,
       gender: "all",
@@ -385,7 +411,7 @@ describe("parseAiCampaignDraftResponse", () => {
 
     expect(parseAiCampaignDraftResponse(response).status).toBe("ready");
 
-    response.draft.audience.interests = ["Property investment"];
+    response.draft.audienceStrategies[0].audience.interests = ["Property investment"];
     expect(() => parseAiCampaignDraftResponse(response)).toThrow(
       "restricted Meta categories require broad",
     );
@@ -393,7 +419,7 @@ describe("parseAiCampaignDraftResponse", () => {
 
   it("rejects creatives marked ready without hosted media", () => {
     const response = readyResponse();
-    response.draft.creatives[1].mediaStatus = "ready";
+    response.draft.audienceStrategies[0].creatives[1].mediaStatus = "ready";
     expect(() => parseAiCampaignDraftResponse(response)).toThrow(
       "ready without media",
     );

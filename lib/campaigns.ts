@@ -131,21 +131,24 @@ export interface GeneratedCampaignDraft {
   goal: CampaignGoal;
   platforms: CampaignPlatform[];
   configuration: CampaignConfiguration & AudienceStrategyConfiguration;
-  audience: AudienceStrategy["audience"];
-  budget: {
-    amount: number;
-    currency: CampaignCurrency;
-    type: BudgetType;
-    durationDays: number;
-    startDateLocal?: string | null;
-    endDateLocal?: string | null;
-  };
-  creatives: Array<
-    CampaignCreativeInput & {
-      mediaRequirement: "image" | "video";
-      mediaStatus: "ready" | "required" | "generating";
-    }
-  >;
+  audienceStrategies: Array<{
+    name: string;
+    audience: AudienceStrategy["audience"];
+    budget: {
+      amount: number;
+      currency: CampaignCurrency;
+      type: BudgetType;
+      durationDays: number;
+      startDateLocal?: string | null;
+      endDateLocal?: string | null;
+    };
+    creatives: Array<
+      CampaignCreativeInput & {
+        mediaRequirement: "image" | "video";
+        mediaStatus: "ready" | "required" | "generating";
+      }
+    >;
+  }>;
   rationale: string;
   stepRationales: Record<
     | "setup"
@@ -522,65 +525,42 @@ const parseGeneratedCampaignDraft = (
     return invalidAiResponse("a conversion event source is required for every platform.");
   }
 
-  if (!isRecord(data.audience)) return invalidAiResponse("audience is missing.");
-  const audience = data.audience;
-  const locations = stringArray(audience.locations, "audience locations");
-  if (!locations.length) return invalidAiResponse("at least one audience location is required.");
-  const ageMin = audience.ageMin ?? 18;
-  const ageMax = audience.ageMax ?? 65;
-  const gender = enumValue<CampaignGender>(
-    audience.gender ?? "all",
-    ["all", "male", "female"],
-    "gender",
-  );
-  const interests = stringArray(audience.interests ?? [], "interests");
-  if (
-    typeof ageMin !== "number" ||
-    typeof ageMax !== "number" ||
-    ageMin < 18 ||
-    ageMax > 65 ||
-    ageMin > ageMax
-  ) {
-    return invalidAiResponse("audience ages must stay between 18 and 65.");
+  if (!Array.isArray(data.audienceStrategies) || !data.audienceStrategies.length) {
+    return invalidAiResponse("at least one audience strategy is required.");
   }
-  if (
-    hasRestrictedMetaTargeting(specialAdCategories) &&
-    (ageMin !== 18 || ageMax !== 65 || gender !== "all" || interests.length)
-  ) {
-    return invalidAiResponse(
-      "restricted Meta categories require broad age, gender, and interest targeting.",
-    );
-  }
-
-  if (!isRecord(data.budget)) return invalidAiResponse("budget is missing.");
-  if (typeof data.budget.amount !== "number" || data.budget.amount <= 0) {
-    return invalidAiResponse("budget amount must be greater than zero.");
-  }
-  const currency = requiredString(data.budget.currency, "currency");
-  if (!/^[A-Z]{3}$/.test(currency)) {
-    return invalidAiResponse("currency must be an uppercase ISO 4217 code.");
-  }
-  const budgetType = enumValue(data.budget.type, ["daily", "lifetime"], "budget type");
-  if (
-    typeof data.budget.durationDays !== "number" ||
-    !Number.isInteger(data.budget.durationDays) ||
-    data.budget.durationDays < 1
-  ) {
-    return invalidAiResponse("campaign duration must be at least one day.");
-  }
-  const startDateLocal = optionalString(data.budget.startDateLocal, "start date");
-  const endDateLocal = optionalString(data.budget.endDateLocal, "end date");
-  if (startDateLocal && Number.isNaN(new Date(startDateLocal).getTime())) {
-    return invalidAiResponse("start date is invalid.");
-  }
-  if (endDateLocal && Number.isNaN(new Date(endDateLocal).getTime())) {
-    return invalidAiResponse("end date is invalid.");
-  }
-
-  if (!Array.isArray(data.creatives) || !data.creatives.length) {
-    return invalidAiResponse("platform-specific creatives are missing.");
-  }
-  const creatives = data.creatives.map((creative, index) => {
+  const audienceStrategies = data.audienceStrategies.map((rawStrategy, strategyIndex) => {
+    if (!isRecord(rawStrategy)) return invalidAiResponse(`strategy ${strategyIndex + 1} is invalid.`);
+    if (!isRecord(rawStrategy.audience)) return invalidAiResponse(`strategy ${strategyIndex + 1} audience is missing.`);
+    const audience = rawStrategy.audience;
+    const locations = stringArray(audience.locations, "audience locations");
+    if (!locations.length) return invalidAiResponse("at least one audience location is required.");
+    const ageMin = audience.ageMin ?? 18;
+    const ageMax = audience.ageMax ?? 65;
+    const gender = enumValue<CampaignGender>(audience.gender ?? "all", ["all", "male", "female"], "gender");
+    const interests = stringArray(audience.interests ?? [], "interests");
+    if (typeof ageMin !== "number" || typeof ageMax !== "number" || ageMin < 18 || ageMax > 65 || ageMin > ageMax) {
+      return invalidAiResponse("audience ages must stay between 18 and 65.");
+    }
+    if (hasRestrictedMetaTargeting(specialAdCategories) && (ageMin !== 18 || ageMax !== 65 || gender !== "all" || interests.length)) {
+      return invalidAiResponse("restricted Meta categories require broad age, gender, and interest targeting.");
+    }
+    if (!isRecord(rawStrategy.budget) || typeof rawStrategy.budget.amount !== "number" || rawStrategy.budget.amount <= 0) {
+      return invalidAiResponse("budget amount must be greater than zero.");
+    }
+    const currency = requiredString(rawStrategy.budget.currency, "currency");
+    const budgetType = enumValue(rawStrategy.budget.type, ["daily", "lifetime"], "budget type");
+    if (!/^[A-Z]{3}$/.test(currency) || typeof rawStrategy.budget.durationDays !== "number" || !Number.isInteger(rawStrategy.budget.durationDays) || rawStrategy.budget.durationDays < 1) {
+      return invalidAiResponse("strategy budget or duration is invalid.");
+    }
+    const startDateLocal = optionalString(rawStrategy.budget.startDateLocal, "start date");
+    const endDateLocal = optionalString(rawStrategy.budget.endDateLocal, "end date");
+    if ((startDateLocal && Number.isNaN(new Date(startDateLocal).getTime())) || (endDateLocal && Number.isNaN(new Date(endDateLocal).getTime()))) {
+      return invalidAiResponse("strategy schedule is invalid.");
+    }
+    if (!Array.isArray(rawStrategy.creatives) || !rawStrategy.creatives.length) {
+      return invalidAiResponse(`strategy ${strategyIndex + 1} creatives are missing.`);
+    }
+    const creatives = rawStrategy.creatives.map((creative, index) => {
     if (!isRecord(creative)) return invalidAiResponse(`creative ${index + 1} is invalid.`);
     const platform = enumValue(creative.platform, CAMPAIGN_PLATFORMS, "creative platform");
     if (!platforms.includes(platform)) {
@@ -617,12 +597,40 @@ const parseGeneratedCampaignDraft = (
       mediaRequirement,
       mediaStatus,
     };
-  });
-  for (const platform of platforms) {
-    if (!creatives.some((creative) => creative.platform === platform)) {
-      return invalidAiResponse(`a ${platform} creative is required.`);
+    });
+    for (const platform of platforms) {
+      if (!creatives.some((creative) => creative.platform === platform)) {
+        return invalidAiResponse(`a ${platform} creative is required for every strategy.`);
+      }
     }
-  }
+    return {
+      name: requiredString(rawStrategy.name, "strategy name"),
+      audience: {
+        locations, ageMin, ageMax, gender, interests,
+        includeAudienceIds: stringArray(audience.includeAudienceIds ?? [], "included audiences"),
+        excludeAudienceIds: stringArray(audience.excludeAudienceIds ?? [], "excluded audiences"),
+        languages: stringArray(audience.languages ?? [], "languages"),
+        devices: Array.isArray(audience.devices)
+          ? audience.devices.map((device) =>
+              enumValue<"mobile" | "desktop">(
+                device,
+                ["mobile", "desktop"],
+                "device",
+              ),
+            )
+          : (["mobile"] as Array<"mobile" | "desktop">),
+      },
+      budget: {
+        amount: rawStrategy.budget.amount,
+        currency,
+        type: budgetType,
+        durationDays: rawStrategy.budget.durationDays,
+        startDateLocal,
+        endDateLocal,
+      },
+      creatives,
+    };
+  });
 
   if (!isRecord(data.stepRationales)) {
     return invalidAiResponse("review explanations are missing.");
@@ -649,28 +657,7 @@ const parseGeneratedCampaignDraft = (
       sameCreativeForAll: false,
       budgetOptimization: "audience_strategy",
     },
-    audience: {
-      locations,
-      ageMin,
-      ageMax,
-      gender,
-      interests,
-      includeAudienceIds: stringArray(audience.includeAudienceIds ?? [], "included audiences"),
-      excludeAudienceIds: stringArray(audience.excludeAudienceIds ?? [], "excluded audiences"),
-      languages: stringArray(audience.languages ?? [], "languages"),
-      devices: Array.isArray(audience.devices)
-        ? audience.devices.map((device) => enumValue(device, ["mobile", "desktop"] as const, "device"))
-        : ["mobile"],
-    },
-    budget: {
-      amount: data.budget.amount,
-      currency,
-      type: budgetType,
-      durationDays: data.budget.durationDays,
-      startDateLocal,
-      endDateLocal,
-    },
-    creatives,
+    audienceStrategies,
     rationale: requiredString(data.rationale, "campaign rationale"),
     stepRationales,
   };
@@ -979,6 +966,14 @@ export const startAiCampaignDraft = async (input: {
   prompt: string;
   brandName: string;
   currency?: CampaignCurrency;
+  availableMedia?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    platform: CampaignPlatform;
+    mediaType: "image" | "video";
+    source: "asset" | "post";
+  }>;
   signal?: AbortSignal;
 }): Promise<AiCampaignDraftResponse> => {
   const res = await apiFetch("/ai/campaign-drafts", {
@@ -988,6 +983,7 @@ export const startAiCampaignDraft = async (input: {
       prompt: input.prompt,
       brandName: input.brandName,
       currency: input.currency ?? "NGN",
+      availableMedia: input.availableMedia ?? [],
     }),
     signal: input.signal,
   });

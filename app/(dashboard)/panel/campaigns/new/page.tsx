@@ -44,6 +44,7 @@ import {
 } from "@/lib/campaigns";
 import { eventManagementPatch } from "../components/event-management-state";
 import { validateFile } from "@/lib/campaign-shared";
+import { fetchCreativeAssets, fetchMetaSocialPosts } from "@/lib/assets";
 import { CLOUDINARY_FOLDER } from "@/lib/constants";
 import { hashFolderName } from "@/lib/encrypt";
 import { connectSocialAccount } from "@/lib/oauth";
@@ -147,11 +148,11 @@ const aiStepSnapshot = (
         eventSourceIds: draft.configuration.eventSourceIds,
       };
     case "audience":
-      return draft.audience;
+      return draft.audienceStrategies.map(({ name, audience }) => ({ name, audience }));
     case "budget":
-      return draft.budget;
+      return draft.audienceStrategies.map(({ name, budget }) => ({ name, budget }));
     case "creative":
-      return draft.creatives;
+      return draft.audienceStrategies.map(({ name, creatives }) => ({ name, creatives }));
   }
 };
 
@@ -159,39 +160,42 @@ const campaignToAiDraft = (
   campaign: CreateCampaignPayload,
   previous: GeneratedCampaignDraft,
 ): GeneratedCampaignDraft => {
-  const strategy = campaign.audienceStrategies[0];
-  if (!strategy) throw new Error("The AI campaign has no audience strategy.");
-  const start = new Date(strategy.budget.startDate);
-  const end = strategy.budget.endDate
-    ? new Date(strategy.budget.endDate)
-    : null;
-  const durationDays = end
-    ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
-    : previous.budget.durationDays;
   return {
     ...previous,
     name: campaign.campaign.name,
     goal: campaign.campaign.goal,
     platforms: campaign.campaign.platforms,
-    configuration: { ...campaign.campaign.configuration, ...strategy.configuration },
-    audience: strategy.audience,
-    budget: {
-      amount: strategy.budget.amount,
-      currency: strategy.budget.currency,
-      type: strategy.budget.type,
-      durationDays,
-      startDateLocal: strategy.budget.startDate,
-      endDateLocal: strategy.budget.endDate,
+    configuration: {
+      ...campaign.campaign.configuration,
+      ...campaign.audienceStrategies[0]?.configuration,
     },
-    creatives: strategy.ads.map((creative) => ({
-      ...creative,
-      mediaRequirement:
-        creative.platform === "tiktok" ||
-        strategy.configuration.destination === "VIDEO"
-          ? "video"
-          : "image",
-      mediaStatus: creative.mediaUrl ? "ready" : "required",
-    })),
+    audienceStrategies: campaign.audienceStrategies.map((strategy, index) => {
+      const start = new Date(strategy.budget.startDate);
+      const end = strategy.budget.endDate ? new Date(strategy.budget.endDate) : null;
+      return {
+        name: strategy.name,
+        audience: strategy.audience,
+        budget: {
+          amount: strategy.budget.amount,
+          currency: strategy.budget.currency,
+          type: strategy.budget.type,
+          durationDays: end
+            ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
+            : previous.audienceStrategies[index]?.budget.durationDays ?? 7,
+          startDateLocal: strategy.budget.startDate,
+          endDateLocal: strategy.budget.endDate,
+        },
+        creatives: strategy.ads.map((creative) => ({
+          ...creative,
+          mediaRequirement:
+            creative.platform === "tiktok" ||
+            strategy.configuration.destination === "VIDEO"
+              ? "video" as const
+              : "image" as const,
+          mediaStatus: creative.mediaUrl ? "ready" as const : "required" as const,
+        })),
+      };
+    }),
   };
 };
 
@@ -864,11 +868,13 @@ export default function NewCampaignPage() {
       if (
         platform === "meta" &&
         "currency" in selectedAsset &&
-        (generated.budget.currency !== selectedAsset.currency ||
-          (generated.budget.type === "daily" &&
+        generated.audienceStrategies.some((strategy) =>
+          strategy.budget.currency !== selectedAsset.currency ||
+          (strategy.budget.type === "daily" &&
             typeof selectedAsset.minDailyBudgetMinor === "number" &&
-            generated.budget.amount * 100 <
-              selectedAsset.minDailyBudgetMinor))
+            strategy.budget.amount * 100 <
+              selectedAsset.minDailyBudgetMinor),
+        )
       ) {
         throw new Error(
           "Growdex AI returned a budget that does not match the selected Meta account currency and minimum. The draft was rejected.",
@@ -880,15 +886,7 @@ export default function NewCampaignPage() {
     setAiDraftRevision(response.revision);
     setAiMessages(toUiMessages(response.messages));
 
-    const start = generated.budget.startDateLocal
-      ? new Date(generated.budget.startDateLocal)
-      : new Date(Date.now() + 30 * 60_000);
-    const end = generated.budget.endDateLocal
-      ? new Date(generated.budget.endDateLocal)
-      : new Date(start);
-    if (!generated.budget.endDateLocal) {
-      end.setUTCDate(end.getUTCDate() + generated.budget.durationDays);
-    }
+    const strategyIds = generated.audienceStrategies.map(() => crypto.randomUUID());
     setCampaign({
       creationMode: "ai",
       campaign: {
@@ -902,34 +900,44 @@ export default function NewCampaignPage() {
           budgetOptimization: generated.configuration.budgetOptimization,
         },
       },
-      audienceStrategies: [{
-        id: crypto.randomUUID(),
-        name: generated.name.includes(" ") ? `${generated.name} audience` : "Primary audience",
-        configuration: {
-          destination: generated.configuration.destination,
-          optimizationGoal: generated.configuration.optimizationGoal,
-          eventSourceIds: generated.configuration.eventSourceIds,
-        },
-        audience: generated.audience,
-        budget: {
-          amount: generated.budget.amount,
-          currency: generated.budget.currency,
-          type: generated.budget.type,
-          startDate: start.toISOString(),
-          endDate: end.toISOString(),
-        },
-        ads: generated.creatives.map((creative) => ({
-          platform: creative.platform,
-          primaryText: creative.primaryText,
-          headline: creative.headline,
-          cta: creative.cta,
-          mediaUrl: creative.mediaUrl,
-          landingPageUrl: creative.landingPageUrl,
-          appId: creative.appId,
-          leadFormId: creative.leadFormId,
-        })),
-      }],
+      audienceStrategies: generated.audienceStrategies.map((strategy, index) => {
+        const start = strategy.budget.startDateLocal
+          ? new Date(strategy.budget.startDateLocal)
+          : new Date(Date.now() + 30 * 60_000);
+        const end = strategy.budget.endDateLocal
+          ? new Date(strategy.budget.endDateLocal)
+          : new Date(start);
+        if (!strategy.budget.endDateLocal) end.setUTCDate(end.getUTCDate() + strategy.budget.durationDays);
+        return {
+          id: strategyIds[index],
+          name: strategy.name,
+          configuration: {
+            destination: generated.configuration.destination,
+            optimizationGoal: generated.configuration.optimizationGoal,
+            eventSourceIds: generated.configuration.eventSourceIds,
+          },
+          audience: strategy.audience,
+          budget: {
+            amount: strategy.budget.amount,
+            currency: strategy.budget.currency,
+            type: strategy.budget.type,
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+          },
+          ads: strategy.creatives.map((creative) => ({
+            platform: creative.platform,
+            primaryText: creative.primaryText,
+            headline: creative.headline,
+            cta: creative.cta,
+            mediaUrl: creative.mediaUrl,
+            landingPageUrl: creative.landingPageUrl,
+            appId: creative.appId,
+            leadFormId: creative.leadFormId,
+          })),
+        };
+      }),
     });
+    setActiveStrategyId(strategyIds[0] ?? null);
     setAiGeneratedDraft(generated);
     setGoalConfirmed(true);
     setAiRationale(generated.rationale);
@@ -965,6 +973,31 @@ export default function NewCampaignPage() {
         prompt,
         brandName,
         currency: activeStrategy.budget.currency,
+        availableMedia: (
+          await Promise.all([
+            fetchCreativeAssets(),
+            ...(accounts.meta?.assets ?? []).map((asset) =>
+              fetchMetaSocialPosts(asset.id),
+            ),
+          ])
+        )
+          .flat()
+          .filter(
+            (media, index, catalog) =>
+              catalog.findIndex((candidate) => candidate.url === media.url) ===
+              index,
+          )
+          .slice(0, 100)
+          .map((media) => ({
+            id: media.id,
+            name: media.name,
+            url: media.url,
+            platform: media.platform,
+            mediaType: /\.(mp4|mov|webm)(\?|$)/i.test(media.url)
+              ? ("video" as const)
+              : ("image" as const),
+            source: media.kind,
+          })),
         signal: controller.signal,
       });
       applyAiResponse(response, { requestId, initial: true });

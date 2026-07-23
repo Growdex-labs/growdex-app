@@ -107,6 +107,11 @@ export function CampaignTreeSidebar({
                 >
                   {strategy.name || `Audience Strategy ${strategyIndex + 1}`}
                 </button>
+                {isActive && (
+                  <span className="rounded-full bg-khaki-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-900">
+                    Editing
+                  </span>
+                )}
                 {campaign && strategyNeedsAttention(strategy, campaign.campaign.platforms) && (
                   <TriangleAlert className="size-4 shrink-0 text-khaki-300" />
                 )}
