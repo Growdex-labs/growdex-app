@@ -34,6 +34,9 @@ type LibraryView = "grid" | "list";
 const statusLabel = (status: string) =>
   status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+const isVideoAsset = (asset: CreativeAsset) =>
+  asset.mediaType === "video" || isVideoUrl(asset.url);
+
 export default function AssetsPage() {
   const [assets, setAssets] = useState<CreativeAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -250,11 +253,16 @@ export default function AssetsPage() {
                       }`}
                     >
                       <span className={`relative block shrink-0 overflow-hidden bg-gray-100 ${view === "grid" ? "aspect-4/3 w-full" : "h-20 w-28 rounded-lg"}`}>
-                        {isVideoUrl(asset.url) ? (
-                          <video src={asset.url} muted className="h-full w-full object-cover" />
+                        {isVideoAsset(asset) && !asset.thumbnailUrl ? (
+                          <video
+                            src={asset.url}
+                            muted
+                            preload="metadata"
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <Image
-                            src={asset.url}
+                            src={asset.thumbnailUrl ?? asset.url}
                             alt=""
                             fill
                             sizes={view === "grid" ? "360px" : "112px"}
@@ -312,8 +320,14 @@ export default function AssetsPage() {
                 </button>
               </div>
               <div className="flex max-h-[70vh] min-h-80 items-center justify-center bg-gray-950">
-                {isVideoUrl(selected.url) ? (
-                  <video src={selected.url} controls className="max-h-[70vh] max-w-full" />
+                {isVideoAsset(selected) ? (
+                  <video
+                    src={selected.url}
+                    poster={selected.thumbnailUrl}
+                    controls
+                    playsInline
+                    className="max-h-[70vh] max-w-full"
+                  />
                 ) : (
                   <div className="relative h-[60vh] w-full">
                     <Image src={selected.url} alt={selected.name} fill sizes="900px" className="object-contain" unoptimized />

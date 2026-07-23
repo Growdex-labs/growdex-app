@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/auth";
 import { fetchCampaigns, type CampaignPlatform } from "@/lib/campaigns";
+import { isVideoUrl } from "@/lib/campaign-shared";
 
 export interface CreativeAsset {
   id: string;
@@ -12,6 +13,8 @@ export interface CreativeAsset {
   createdAt: string;
   kind: "asset" | "post";
   network?: "facebook" | "instagram" | "tiktok";
+  mediaType?: "image" | "video";
+  thumbnailUrl?: string;
 }
 
 export const PUBLISHED_CAMPAIGN_STATUSES = new Set([
@@ -49,7 +52,8 @@ export const fetchCreativeAssets = async (options?: {
         campaignName: campaign.name,
         status: campaign.status ?? "draft",
         createdAt: creative.createdAt ?? campaign.createdAt ?? "",
-        kind: "asset",
+      kind: "asset",
+      mediaType: isVideoUrl(creative.mediaUrl) ? "video" : "image",
       });
     }
   }
@@ -101,6 +105,13 @@ export const fetchMetaSocialPosts = async (
       status: "published",
       createdAt: typeof post.createdAt === "string" ? post.createdAt : "",
       kind: "post" as const,
+      mediaType:
+        typeof post.mediaType === "string" &&
+        post.mediaType.toLowerCase() === "video"
+          ? ("video" as const)
+          : ("image" as const),
+      thumbnailUrl:
+        typeof post.thumbnailUrl === "string" ? post.thumbnailUrl : undefined,
       network:
         post.network === "instagram"
           ? ("instagram" as const)
@@ -150,6 +161,11 @@ export const fetchTikTokCreativeAssets = async (
       createdAt: typeof asset.createdAt === "string" ? asset.createdAt : "",
       kind: "asset" as const,
       network: undefined,
+      mediaType: "video" as const,
+      thumbnailUrl:
+        typeof asset.thumbnailUrl === "string"
+          ? asset.thumbnailUrl
+          : undefined,
     }));
 };
 
@@ -195,5 +211,8 @@ export const fetchTikTokSocialPosts = async (
       createdAt: typeof post.createdAt === "string" ? post.createdAt : "",
       kind: "post" as const,
       network: "tiktok" as const,
+      mediaType: "video" as const,
+      thumbnailUrl:
+        typeof post.thumbnailUrl === "string" ? post.thumbnailUrl : undefined,
     }));
 };
