@@ -54,7 +54,7 @@ function CreativePreview({
   const isMeta = creative.platform === "meta";
 
   return (
-    <aside className="self-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <aside className="self-start overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white shadow-sm xl:sticky xl:top-6">
       <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
         <div>
           <p className="text-xs font-gilroy-semibold uppercase tracking-[0.12em] text-gray-400">
@@ -69,7 +69,9 @@ function CreativePreview({
         </span>
       </div>
 
-      <PlatformAdPreview creative={creative} brandName={brandName} />
+      <div className="bg-[radial-gradient(circle_at_top,#ffffff_0%,#f5f5f1_72%)] p-4 sm:p-6">
+        <PlatformAdPreview creative={creative} brandName={brandName} />
+      </div>
     </aside>
   );
 }
@@ -201,7 +203,7 @@ export function CreativeAdEditor({
         </div>
       </header>
 
-      <div className="grid gap-6 p-5 md:p-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid items-start gap-6 p-5 md:p-8 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
         <fieldset className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
           <legend className="sr-only">{platformName(platform)} ad details</legend>
           <label className="block text-sm font-gilroy-semibold text-gray-700">

@@ -80,10 +80,10 @@ function MetaAdPreview({
     : "yourbrand.com";
 
   return (
-    <div className="w-full">
-      <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-xl bg-white shadow-[0_10px_35px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
-        <div className="flex items-center gap-3 px-4 pb-3 pt-4">
-          <span className="flex size-10 items-center justify-center rounded-full bg-[#111827] text-sm font-gilroy-bold text-white ring-2 ring-white shadow-sm">
+    <div className="w-full py-1 sm:py-2">
+      <div className="mx-auto w-full max-w-[500px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_48px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
+        <div className="flex items-center gap-3 px-4 pb-3 pt-4 sm:px-5 sm:pb-4 sm:pt-5">
+          <span className="flex size-10 items-center justify-center rounded-full bg-[#111827] text-sm font-gilroy-bold text-white shadow-sm ring-2 ring-white sm:size-11">
             {brandName.slice(0, 1).toUpperCase()}
           </span>
           <span className="min-w-0 flex-1">
@@ -97,7 +97,7 @@ function MetaAdPreview({
           <MoreHorizontal className="size-5 text-[#667085]" />
         </div>
 
-        <p className="line-clamp-3 px-4 pb-3 text-[13px] leading-[1.45] text-[#344054]">
+        <p className="line-clamp-3 px-4 pb-3 text-[13px] leading-[1.5] text-[#344054] sm:px-5 sm:pb-4 sm:text-sm">
           {creative.primaryText || "Your primary text will appear here."}
         </p>
 
@@ -112,7 +112,7 @@ function MetaAdPreview({
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3 bg-[#f8f9fb] px-4 py-3.5">
+        <div className="flex items-center justify-between gap-3 bg-[#f8f9fb] px-4 py-3.5 sm:px-5 sm:py-4">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[10px] uppercase tracking-[0.08em] text-[#667085]">
               {destination}
@@ -126,7 +126,7 @@ function MetaAdPreview({
           </span>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[#eaecf0] px-4 py-2 text-[#667085]">
+        <div className="flex items-center justify-between border-t border-[#eaecf0] px-4 py-2.5 text-[#667085] sm:px-5">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-gilroy-semibold">
             <ThumbsUp className="size-4" /> Like
           </span>
