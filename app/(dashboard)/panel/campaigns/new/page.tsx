@@ -332,6 +332,17 @@ export default function NewCampaignPage() {
     lastFingerprint: "",
   });
   const aiSessionRestoredRef = useRef(false);
+  const openStrategyEditor = (id: string) => {
+    setActiveStrategyId(id);
+    setStep(3);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById("campaign-editor-main")
+          ?.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+  };
   const aiFlow = useAiCampaignFlow(campaign, aiStepRationales);
   const aiReadinessNotice = aiGeneratedDraft
     ? campaign.campaign.platforms.some(
@@ -1757,10 +1768,7 @@ export default function NewCampaignPage() {
                 campaign={campaign}
                 activeStrategyId={activeStrategy?.id}
                 compact
-                onSelectStrategy={(id) => {
-                  setActiveStrategyId(id);
-                  setStep(3);
-                }}
+                onSelectStrategy={openStrategyEditor}
                 onAddStrategy={addAudienceStrategy}
                 onDuplicateStrategy={duplicateAudienceStrategy}
                 onDeleteStrategy={deleteAudienceStrategy}
@@ -1832,10 +1840,7 @@ export default function NewCampaignPage() {
                 campaignName={campaign.campaign.name || "Untitled campaign"}
                 campaign={campaign}
                 activeStrategyId={activeStrategy?.id}
-                onSelectStrategy={(id) => {
-                  setActiveStrategyId(id);
-                  setStep(3);
-                }}
+                onSelectStrategy={openStrategyEditor}
                 onAddStrategy={addAudienceStrategy}
                 onDuplicateStrategy={duplicateAudienceStrategy}
                 onDeleteStrategy={deleteAudienceStrategy}
@@ -1844,7 +1849,10 @@ export default function NewCampaignPage() {
                   setStep(6);
                 }}
               />
-              <main className="h-full flex-1 overflow-y-auto">
+              <main
+                id="campaign-editor-main"
+                className="h-full flex-1 overflow-y-auto"
+              >
                 <div className="mx-auto max-w-5xl p-4 md:p-8">
                   <div className="mb-8">{stepper}</div>
 

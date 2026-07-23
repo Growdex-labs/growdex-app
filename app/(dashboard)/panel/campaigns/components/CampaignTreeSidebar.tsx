@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
   ChevronLeft,
   Copy,
   MoreHorizontal,
+  Pencil,
   Plus,
   Trash2,
   TriangleAlert,
@@ -50,8 +51,16 @@ export function CampaignTreeSidebar({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const strategies = campaign?.audienceStrategies ?? [];
+  const activeId = activeStrategyId ?? strategies[0]?.id;
+  const strategyRefs = useRef(new Map<string, HTMLDivElement>());
   const truncatedName =
     campaignName.length > 18 ? `${campaignName.slice(0, 18)}..` : campaignName;
+
+  useEffect(() => {
+    strategyRefs.current
+      .get(activeId ?? "")
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [activeId]);
 
   return (
     <aside
@@ -75,12 +84,18 @@ export function CampaignTreeSidebar({
       <div className="mt-3 space-y-2">
         {strategies.map((strategy, strategyIndex) => {
           const isOpen = expanded[strategy.id] ?? true;
-          const isActive = strategy.id === (activeStrategyId ?? strategies[0]?.id);
+          const isActive = strategy.id === activeId;
           const visibleAds = campaign?.campaign.configuration.sameCreativeForAll
             ? strategy.ads.slice(0, 1)
             : strategy.ads;
           return (
-            <div key={strategy.id}>
+            <div
+              key={strategy.id}
+              ref={(node) => {
+                if (node) strategyRefs.current.set(strategy.id, node);
+                else strategyRefs.current.delete(strategy.id);
+              }}
+            >
               <div
                 className={`relative flex items-center gap-2 rounded-lg border px-3 py-2.5 transition ${
                   isActive
@@ -112,6 +127,19 @@ export function CampaignTreeSidebar({
                     Editing
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => onSelectStrategy?.(strategy.id)}
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
+                    isActive
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                      : "bg-gray-100 text-gray-700 hover:bg-khaki-100"
+                  }`}
+                  aria-label={`Edit ${strategy.name || `Audience Strategy ${strategyIndex + 1}`}`}
+                >
+                  <Pencil className="size-3" />
+                  <span className="hidden xl:inline">Edit</span>
+                </button>
                 {campaign && strategyNeedsAttention(strategy, campaign.campaign.platforms) && (
                   <TriangleAlert className="size-4 shrink-0 text-khaki-300" />
                 )}
