@@ -164,6 +164,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
       email: "devtest@growdex.io",
       avatarUrl: mockAvatar,
       onboardingCompleted: true,
+      isAdmin: true,
       profile: mockProfileStr ? JSON.parse(mockProfileStr) : {
         id: "mock-id",
         firstName: "Dev",

@@ -15,6 +15,7 @@ import {
   Plus,
   Bell,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useMe } from "@/context/me-context";
@@ -55,6 +56,9 @@ export function CollapsibleSidebar({
     { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
     { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
+    ...(me?.isAdmin
+      ? [{ icon: ShieldCheck, label: "Admin", href: "/panel/admin" }]
+      : []),
   ];
 
   const isActive = (href: string) => {

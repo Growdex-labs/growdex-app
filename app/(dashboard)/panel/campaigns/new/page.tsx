@@ -21,6 +21,7 @@ import {
   reviseAiCampaignDraft,
   requestCampaignName,
   searchMetaInterests,
+  requestAudienceInterestSuggestions,
   startAiCampaignDraft,
   updateCampaign,
   updateCampaignDraft,
@@ -1553,6 +1554,15 @@ export default function NewCampaignPage() {
             onChange={patchAudience}
             onReplaceInterest={replaceUnavailableInterest}
             onClearUnavailableInterests={() => setUnavailableInterests({})}
+            onGenerateInterests={
+              savedCampaignId
+                ? () =>
+                    requestAudienceInterestSuggestions(savedCampaignId, {
+                      strategyId: activeStrategy.id,
+                      currentInterests: activeStrategy.audience.interests ?? [],
+                    })
+                : undefined
+            }
             onFixAllWithAi={
               campaign.creationMode === "ai" &&
               aiDraftId &&
@@ -1573,6 +1583,7 @@ export default function NewCampaignPage() {
       case "creative":
         return (
           <CreativeSetupScreen
+            campaignId={savedCampaignId}
             brandName={brandName}
             goal={campaign.campaign.goal}
             destination={activeStrategy.configuration.destination}
@@ -1920,6 +1931,19 @@ export default function NewCampaignPage() {
                         onClearUnavailableInterests={() =>
                           setUnavailableInterests({})
                         }
+                        onGenerateInterests={
+                          savedCampaignId
+                            ? () =>
+                                requestAudienceInterestSuggestions(
+                                  savedCampaignId,
+                                  {
+                                    strategyId: activeStrategy.id,
+                                    currentInterests:
+                                      activeStrategy.audience.interests ?? [],
+                                  },
+                                )
+                            : undefined
+                        }
                         onFixAllWithAi={
                           campaign.creationMode === "ai" &&
                           aiDraftId &&
@@ -1943,6 +1967,7 @@ export default function NewCampaignPage() {
 
                   {step === 6 && (
                     <CreativeSetupScreen
+                      campaignId={savedCampaignId}
                       key={activeStrategy.id}
                       brandName={brandName}
                       goal={campaign.campaign.goal}

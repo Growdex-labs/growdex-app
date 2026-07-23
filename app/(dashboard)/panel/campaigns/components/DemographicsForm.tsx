@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Monitor, Search, Smartphone, X } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  Monitor,
+  Search,
+  Sparkles,
+  Smartphone,
+  X,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { fetchAudiences, type Audience as SavedAudience } from "@/lib/audiences";
 import {
   searchMetaInterests,
   searchProviderLanguages,
   type AudienceStrategy,
+  type AudienceInterestSuggestion,
   type CampaignPlatform,
   type MetaInterest,
   type ProviderLanguage,
@@ -25,6 +34,7 @@ interface DemographicsFormProps {
   onChange: (next: Partial<Audience>) => void;
   onReplaceInterest: (unavailable: string, replacement: string) => void;
   onClearUnavailableInterests: () => void;
+  onGenerateInterests?: () => Promise<AudienceInterestSuggestion>;
 }
 
 const TABS: Array<{ id: Tab; label: string }> = [
@@ -52,6 +62,7 @@ export function DemographicsForm({
   onChange,
   onReplaceInterest,
   onClearUnavailableInterests,
+  onGenerateInterests,
 }: DemographicsFormProps) {
   const [tab, setTab] = useState<Tab>("demographics");
   const [savedAudiences, setSavedAudiences] = useState<SavedAudience[]>([]);
@@ -65,6 +76,10 @@ export function DemographicsForm({
   const [interestResults, setInterestResults] = useState<MetaInterest[]>([]);
   const [interestLoading, setInterestLoading] = useState(false);
   const [interestError, setInterestError] = useState<string | null>(null);
+  const [generatingInterests, setGeneratingInterests] = useState(false);
+  const [interestRationale, setInterestRationale] = useState<string | null>(
+    null,
+  );
   const selectedCountries = useMemo(
     () => new Set(audience.locations),
     [audience.locations],
@@ -479,12 +494,46 @@ export function DemographicsForm({
 
         {tab === "interests" && (
           <div>
-            <label
-              htmlFor="meta-interest-search"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Meta interests
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label
+                htmlFor="meta-interest-search"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Meta interests
+              </label>
+              {onGenerateInterests && (
+                <button
+                  type="button"
+                  disabled={generatingInterests}
+                  onClick={() => {
+                    setGeneratingInterests(true);
+                    setInterestError(null);
+                    void onGenerateInterests()
+                      .then((suggestion) => {
+                        onChange({ interests: suggestion.interests });
+                        onClearUnavailableInterests();
+                        setInterestRationale(suggestion.rationale);
+                      })
+                      .catch((failure) => {
+                        setInterestError(
+                          failure instanceof Error
+                            ? failure.message
+                            : "Could not generate audience interests.",
+                        );
+                      })
+                      .finally(() => setGeneratingInterests(false));
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-gilroy-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {generatingInterests ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
+                  {generatingInterests ? "Finding interests…" : "Suggest with AI"}
+                </button>
+              )}
+            </div>
             <div className="relative mt-2">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -548,6 +597,11 @@ export function DemographicsForm({
               Type at least two characters, then choose a Meta interest from
               the list.
             </p>
+            {interestRationale && (
+              <p className="mt-2 rounded-lg bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-700">
+                Why these interests: {interestRationale}
+              </p>
+            )}
             {interestError && (
               <p className="mt-2 text-xs text-red-600">{interestError}</p>
             )}

@@ -101,11 +101,20 @@ export const disconnectSocialAccount = async (
   platform: SocialPlatform
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const res = await apiFetch(`/users/onboarding/disconnect/${platform}`, {
-      method: 'POST',
+    const res = await apiFetch(`/users/onboarding/connections/${platform}`, {
+      method: 'DELETE',
     });
 
-    if (!res.ok) throw new Error('Failed to disconnect');
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as {
+        message?: unknown;
+      };
+      throw new Error(
+        typeof body.message === "string" && body.message.trim()
+          ? body.message
+          : `Could not disconnect ${platform === "meta" ? "Meta" : "TikTok"} (${res.status}).`,
+      );
+    }
 
     return { success: true };
   } catch (err) {

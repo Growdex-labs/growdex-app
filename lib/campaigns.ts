@@ -283,6 +283,11 @@ export interface CampaignCreativeSuggestion {
   rationale: string;
 }
 
+export interface AudienceInterestSuggestion {
+  interests: string[];
+  rationale: string;
+}
+
 export interface MetaInterest {
   id: string;
   name: string;
@@ -1163,6 +1168,42 @@ export const requestCampaignCreativeSuggestion = async (
     field,
     value,
     rationale: requiredString(data.rationale, "creative suggestion rationale"),
+  };
+};
+
+export const requestAudienceInterestSuggestions = async (
+  campaignId: string,
+  input: {
+    strategyId: string;
+    currentInterests: string[];
+  },
+): Promise<AudienceInterestSuggestion> => {
+  const res = await apiFetch(
+    `/ai/campaigns/${encodeURIComponent(campaignId)}/audience-interest-suggestions`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      getApiError(data, `Generate audience interests failed (${res.status})`),
+    );
+  }
+  if (
+    !isRecord(data) ||
+    !Array.isArray(data.interests) ||
+    !data.interests.every(
+      (interest) => typeof interest === "string" && interest.trim(),
+    )
+  ) {
+    throw new Error("The AI interest service returned an invalid response.");
+  }
+  return {
+    interests: [...new Set(data.interests.map((interest) => interest.trim()))],
+    rationale: requiredString(data.rationale, "audience interest rationale"),
   };
 };
 

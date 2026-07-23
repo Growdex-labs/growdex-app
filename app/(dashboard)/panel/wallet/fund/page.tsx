@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { AlertCircle, Loader2, Wallet } from "lucide-react";
+import { AlertCircle, Loader2, Wallet, X } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import { apiFetch } from "@/lib/auth";
 import { useMe } from "@/context/me-context";
@@ -110,7 +110,8 @@ export default function FundWalletPage() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [cardErrors, setCardErrors] = useState<Record<string, string | null>>({});
-  const [loadingOption, setLoadingOption] = useState<string | null>(null);
+  const [activeFundingOption, setActiveFundingOption] =
+    useState<BillingOption | null>(null);
 
   useEffect(() => {
     if (meLoading) return;
@@ -163,29 +164,14 @@ export default function FundWalletPage() {
       return;
     }
 
-    setLoadingOption(key);
     setCardErrors((current) => ({ ...current, [key]: null }));
-    const width = 720;
-    const height = 820;
-    const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
-    const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
-    const popup = window.open(
-      billingUrl,
-      `growdex-${option.platform}-${option.accountId ?? "billing"}`,
-      `popup=yes,width=${width},height=${height},left=${Math.round(left)},top=${Math.round(top)},resizable=yes,scrollbars=yes`,
-    );
-    if (!popup) {
-      setCardErrors((current) => ({
-        ...current,
-        [key]: "Allow popups for Growdex to open the funding window.",
-      }));
-      setLoadingOption(null);
-      return;
-    }
-    popup.opener = null;
-    popup.focus();
-    setLoadingOption(null);
+    setActiveFundingOption(option);
   };
+
+  const activeFundingUrl = activeFundingOption?.billingUrl;
+  const activeFundingPlatform = activeFundingOption
+    ? PLATFORM_CONFIG[activeFundingOption.platform]
+    : null;
 
   return (
     <PanelLayout>
@@ -226,7 +212,7 @@ export default function FundWalletPage() {
                       accountId={option.accountId}
                       currency={option.currency}
                       canFund={Boolean(option.billingUrl)}
-                      loading={loadingOption === key}
+                      loading={false}
                       error={cardErrors[key]}
                       onFund={() => handleFund(option)}
                     />
@@ -247,6 +233,56 @@ export default function FundWalletPage() {
           </div>
         </main>
       </div>
+
+      {activeFundingOption && activeFundingUrl && activeFundingPlatform && (
+        <div
+          className="fixed inset-0 z-50 flex bg-gray-950/55 p-3 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="fund-account-title"
+        >
+          <section className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-white/20 bg-white shadow-2xl">
+            <header className="flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-5 py-4 sm:px-7">
+              <div className="min-w-0">
+                <p className="text-xs font-gilroy-semibold uppercase tracking-[0.14em] text-violet-500">
+                  Secure account funding
+                </p>
+                <h2
+                  id="fund-account-title"
+                  className="mt-1 truncate text-lg font-gilroy-bold text-gray-950"
+                >
+                  Fund {activeFundingOption.accountName ?? activeFundingPlatform.name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveFundingOption(null)}
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-100 hover:text-gray-950"
+                aria-label="Close funding"
+              >
+                <X className="size-5" />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 bg-gray-100">
+              <iframe
+                key={activeFundingUrl}
+                src={activeFundingUrl}
+                title={`${activeFundingPlatform.name} account funding`}
+                className="h-full w-full border-0 bg-white"
+                allow="payment"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+
+            <footer className="border-t border-gray-200 bg-white px-5 py-3 text-xs text-gray-500 sm:px-7">
+              You are funding the connected {activeFundingPlatform.name} ad
+              account without leaving Growdex. Close this view when the
+              platform confirms the payment.
+            </footer>
+          </section>
+        </div>
+      )}
     </PanelLayout>
   );
 }

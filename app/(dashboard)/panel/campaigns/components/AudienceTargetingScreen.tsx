@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   forecastCampaignReach,
   type AudienceStrategy,
+  type AudienceInterestSuggestion,
   type CampaignConfiguration,
   type CampaignGoal,
   type CampaignPlatform,
@@ -29,6 +30,7 @@ interface AudienceTargetingScreenProps {
   onFixAllWithAi?: (
     request: AudienceAiFixRequest,
   ) => Promise<void>;
+  onGenerateInterests?: () => Promise<AudienceInterestSuggestion>;
 }
 
 export function AudienceTargetingScreen({
@@ -42,6 +44,7 @@ export function AudienceTargetingScreen({
   onReplaceInterest,
   onClearUnavailableInterests,
   onFixAllWithAi,
+  onGenerateInterests,
 }: AudienceTargetingScreenProps) {
   const [forecast, setForecast] = useState<Awaited<
     ReturnType<typeof forecastCampaignReach>
@@ -112,6 +115,7 @@ export function AudienceTargetingScreen({
             onChange={onChange}
             onReplaceInterest={onReplaceInterest}
             onClearUnavailableInterests={onClearUnavailableInterests}
+            onGenerateInterests={onGenerateInterests}
           />
         </div>
 

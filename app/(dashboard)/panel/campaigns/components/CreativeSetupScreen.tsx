@@ -52,6 +52,7 @@ interface CreativeSetupScreenProps {
   accountsLoading: boolean;
   connecting: CampaignPlatform | null;
   connectionError: string | null;
+  campaignId?: string | null;
   onConnect: (platform: CampaignPlatform) => void;
   onSameCreativeForAllChange: (checked: boolean) => void;
   onChange: (index: number, next: Partial<CampaignCreativeInput>) => void;
@@ -162,6 +163,7 @@ export function CreativeSetupScreen({
   accountsLoading,
   connecting,
   connectionError,
+  campaignId,
   onConnect,
   onSameCreativeForAllChange,
   onChange,
@@ -219,15 +221,7 @@ export function CreativeSetupScreen({
   useEffect(() => {
     if (destination !== "INSTANT_FORM" || !metaAssetId) return;
 
-    if (accounts?.meta?.permissions?.instantForms === false) {
-      setLeadFormsResult({
-        assetId: metaAssetId,
-        forms: [],
-        error:
-          "Reconnect Meta and approve Page ad permissions before choosing an Instant Form.",
-      });
-      return;
-    }
+    if (accounts?.meta?.permissions?.instantForms === false) return;
 
     const controller = new AbortController();
     void fetchMetaLeadForms(metaAssetId, controller.signal)
@@ -258,12 +252,15 @@ export function CreativeSetupScreen({
       ? leadFormsResult.forms
       : [];
   const leadFormsError =
-    metaAssetId && leadFormsResult?.assetId === metaAssetId
+    accounts?.meta?.permissions?.instantForms === false
+      ? "Reconnect Meta and approve Page ad permissions before choosing an Instant Form."
+      : metaAssetId && leadFormsResult?.assetId === metaAssetId
       ? leadFormsResult.error
       : null;
   const leadFormsLoading =
     destination === "INSTANT_FORM" &&
     Boolean(metaAssetId) &&
+    accounts?.meta?.permissions?.instantForms !== false &&
     leadFormsResult?.assetId !== metaAssetId;
 
   const disconnected = platforms.filter(
@@ -434,6 +431,7 @@ export function CreativeSetupScreen({
         leadForms={leadForms}
         leadFormsLoading={leadFormsLoading}
         leadFormsError={leadFormsError}
+        campaignId={campaignId}
         onActiveIndexChange={setActiveCreativeIndex}
         onBack={() => setScreen("library")}
         onChange={onChange}

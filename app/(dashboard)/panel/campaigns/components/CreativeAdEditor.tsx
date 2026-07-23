@@ -1,14 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import {
   ArrowLeft,
   Film,
   ImageIcon,
   Loader2,
+  Sparkles,
   Trash2,
   UploadCloud,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { requestCampaignCreativeSuggestion } from "@/lib/campaigns";
 import type {
   CampaignCreativeInput,
   CampaignCta,
@@ -30,6 +33,7 @@ interface CreativeAdEditorProps {
   leadForms: MetaLeadForm[];
   leadFormsLoading: boolean;
   leadFormsError: string | null;
+  campaignId?: string | null;
   onActiveIndexChange: (index: number) => void;
   onBack: () => void;
   onChange: (index: number, next: Partial<CampaignCreativeInput>) => void;
@@ -86,7 +90,13 @@ export function CreativeAdEditor({
   onChange,
   onRemove,
   onUpload,
+  campaignId,
 }: CreativeAdEditorProps) {
+  const [generatingHeadline, setGeneratingHeadline] = useState(false);
+  const [headlineRationale, setHeadlineRationale] = useState<string | null>(
+    null,
+  );
+  const [headlineError, setHeadlineError] = useState<string | null>(null);
   const creative = creatives[activeIndex];
 
   if (!creative) {
@@ -104,6 +114,34 @@ export function CreativeAdEditor({
   const requiresVideo = platform === "tiktok" || destination === "VIDEO";
   const samePlatformCount = creatives.filter((item) => item.platform === platform).length;
   const canRemove = samePlatformCount > 1;
+  const generateHeadline = async () => {
+    if (!campaignId) {
+      setHeadlineError("Save the campaign draft before generating a headline.");
+      return;
+    }
+
+    setGeneratingHeadline(true);
+    setHeadlineError(null);
+    try {
+      const suggestion = await requestCampaignCreativeSuggestion(campaignId, {
+        platform,
+        field: "headline",
+        currentValue: creative.headline ?? "",
+        headline: creative.headline,
+        caption: creative.primaryText,
+      });
+      onChange(activeIndex, { headline: suggestion.value });
+      setHeadlineRationale(suggestion.rationale);
+    } catch (failure) {
+      setHeadlineError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not generate a headline.",
+      );
+    } finally {
+      setGeneratingHeadline(false);
+    }
+  };
 
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-[#fafafa] shadow-sm">
@@ -182,7 +220,22 @@ export function CreativeAdEditor({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-gilroy-semibold text-gray-700">
-              Headline
+              <span className="flex items-center justify-between gap-3">
+                Headline
+                <button
+                  type="button"
+                  onClick={() => void generateHeadline()}
+                  disabled={generatingHeadline || !campaignId}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-gilroy-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {generatingHeadline ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
+                  {generatingHeadline ? "Generating…" : "Generate with AI"}
+                </button>
+              </span>
               <Input
                 className="mt-2 h-11 rounded-xl border-gray-200"
                 maxLength={40}
@@ -190,6 +243,16 @@ export function CreativeAdEditor({
                 onChange={(event) => onChange(activeIndex, { headline: event.target.value })}
                 placeholder="Add a clear headline"
               />
+              {headlineRationale && (
+                <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-violet-600">
+                  Why this works: {headlineRationale}
+                </span>
+              )}
+              {headlineError && (
+                <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-red-600">
+                  {headlineError}
+                </span>
+              )}
             </label>
             <label className="text-sm font-gilroy-semibold text-gray-700">
               Call to action

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { CreateCampaignPayload } from "@/lib/campaigns";
+import type { AudienceStrategy } from "@/lib/campaigns";
 import { getAudienceReadiness } from "./AudienceReachCard";
 
-type Audience = CreateCampaignPayload["audience"];
+type Audience = AudienceStrategy["audience"];
 
 const readyAudience = (): Audience => ({
   locations: ["NG"],

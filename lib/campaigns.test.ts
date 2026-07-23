@@ -157,25 +157,13 @@ describe("parseCampaignOptimizationResponse", () => {
 });
 
 describe("validateCampaignDraftPayload", () => {
-  it("reports a missing ad set name instead of crashing on older campaign data", () => {
-    const draft = createInitialCampaignPayload();
-    draft.campaign.name = "Existing campaign";
-    delete (
-      draft.campaign.configuration as Partial<
-        typeof draft.campaign.configuration
-      >
-    ).adSetName;
-
-    expect(validateCampaignDraftPayload(draft)).toBe(
-      "Enter an ad set name before saving the draft.",
-    );
-  });
-
-  it("requires an ad set name", () => {
+  it("requires an audience strategy name", () => {
     const draft = createInitialCampaignPayload();
     draft.campaign.name = "Unfinished launch";
-    draft.campaign.configuration.adSetName = "";
-    expect(validateCampaignDraftPayload(draft)).toContain("ad set name");
+    draft.audienceStrategies[0].name = "";
+    expect(validateCampaignDraftPayload(draft)).toContain(
+      "audience strategy",
+    );
   });
 
   it("allows an incomplete but structurally valid draft", () => {
@@ -187,8 +175,8 @@ describe("validateCampaignDraftPayload", () => {
   it("still rejects structurally invalid draft data", () => {
     const draft = createInitialCampaignPayload();
     draft.campaign.name = "Invalid ages";
-    draft.audience.ageMin = 50;
-    draft.audience.ageMax = 30;
+    draft.audienceStrategies[0].audience.ageMin = 50;
+    draft.audienceStrategies[0].audience.ageMax = 30;
     expect(validateCampaignDraftPayload(draft)).toContain("Audience age");
   });
 });
@@ -200,10 +188,13 @@ describe("Meta special ad category validation", () => {
     campaign.campaign.platforms = ["meta"];
     campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
     campaign.campaign.configuration.specialAdCategories = ["HOUSING"];
-    campaign.audience.ageMin = 25;
-    campaign.audience.interests = ["Property investment"];
-    campaign.budget.amount = 5_000;
-    campaign.budget.startDate = "2030-01-01T00:00:00.000Z";
+    campaign.audienceStrategies[0].audience.ageMin = 25;
+    campaign.audienceStrategies[0].audience.interests = [
+      "Property investment",
+    ];
+    campaign.audienceStrategies[0].budget.amount = 5_000;
+    campaign.audienceStrategies[0].budget.startDate =
+      "2030-01-01T00:00:00.000Z";
 
     expect(validateCampaignPayload(campaign)).toContain(
       "requires ages 18–65",
@@ -217,10 +208,11 @@ describe("validateCampaignCreativeSetup", () => {
     campaign.campaign.name = "Luxury leads";
     campaign.campaign.goal = "LEADS";
     campaign.campaign.platforms = ["meta"];
-    campaign.campaign.configuration.destination = "INSTANT_FORM";
     campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
-    campaign.budget.startDate = "2020-01-01T00:00:00.000Z";
-    campaign.adContent.creatives = [
+    campaign.audienceStrategies[0].configuration.destination = "INSTANT_FORM";
+    campaign.audienceStrategies[0].budget.startDate =
+      "2020-01-01T00:00:00.000Z";
+    campaign.audienceStrategies[0].ads = [
       {
         platform: "meta",
         primaryText: "Discover premium homes in Lagos.",
@@ -235,7 +227,7 @@ describe("validateCampaignCreativeSetup", () => {
       "Upload media for Meta.",
     );
 
-    campaign.adContent.creatives[0].mediaUrl =
+    campaign.audienceStrategies[0].ads[0].mediaUrl =
       "https://images.example.com/luxury-home.jpg";
     expect(validateCampaignCreativeSetup(campaign)).toBeNull();
   });
@@ -245,10 +237,10 @@ describe("validateCampaignCreativeSetup", () => {
     campaign.campaign.name = "WhatsApp leads";
     campaign.campaign.goal = "LEADS";
     campaign.campaign.platforms = ["meta"];
-    campaign.campaign.configuration.destination = "WHATSAPP";
-    campaign.campaign.configuration.optimizationGoal = "MESSAGES";
     campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
-    campaign.adContent.creatives = [
+    campaign.audienceStrategies[0].configuration.destination = "WHATSAPP";
+    campaign.audienceStrategies[0].configuration.optimizationGoal = "MESSAGES";
+    campaign.audienceStrategies[0].ads = [
       {
         platform: "meta",
         primaryText: "Message our team to learn more.",
@@ -266,11 +258,11 @@ describe("validateCampaignCreativeSetup", () => {
       const campaign = createInitialCampaignPayload();
       campaign.campaign.name = "Brand awareness";
       campaign.campaign.platforms = ["meta"];
-      campaign.campaign.configuration.destination = destination;
-      campaign.campaign.configuration.optimizationGoal =
+      campaign.audienceStrategies[0].configuration.destination = destination;
+      campaign.audienceStrategies[0].configuration.optimizationGoal =
         destination === "VIDEO" ? "VIDEO_VIEWS" : "FOLLOWERS";
       campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
-      campaign.adContent.creatives = [
+      campaign.audienceStrategies[0].ads = [
         {
           platform: "meta",
           primaryText: "Discover our brand.",
@@ -378,7 +370,11 @@ describe("parseAiCampaignDraftResponse", () => {
     response.draft.creatives = response.draft.creatives.filter(
       (creative) => creative.platform === "meta",
     );
-    delete response.draft.configuration.accountAssetIds.tiktok;
+    delete (
+      response.draft.configuration.accountAssetIds as Partial<
+        typeof response.draft.configuration.accountAssetIds
+      >
+    ).tiktok;
     response.draft.configuration.specialAdCategories = ["HOUSING"];
     Object.assign(response.draft.audience, {
       ageMin: 18,
