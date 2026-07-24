@@ -1,0 +1,232 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import type { AiCampaignQuestion } from "@/lib/campaigns";
+import { AiPromptComposer } from "./AiPromptComposer";
+import { AiSidePanel, type AiMessage } from "./AiSidePanel";
+import { AiStepList } from "./AiStepList";
+import { CampaignNameCard } from "./CampaignNameCard";
+import { CampaignSkeleton } from "./CampaignSkeleton";
+import { CampaignStepper } from "./CampaignStepper";
+import { GradientSparkle } from "./GradientSparkle";
+import type { AiStep, AiStepId } from "./use-ai-campaign-flow";
+
+const AI_STEPS = [
+  "Setup campaign",
+  "Set campaign goals",
+  "Choose platform",
+  "Event management",
+  "Budget and schedule",
+  "Creative setup",
+  "Review and publish",
+];
+
+interface AiCampaignWorkspaceProps {
+  campaignName: string;
+  firstName?: string;
+  steps?: AiStep[];
+  messages: AiMessage[];
+  question?: AiCampaignQuestion | null;
+  loading?: boolean;
+  allApproved?: boolean;
+  error?: string | null;
+  readinessNotice?: string | null;
+  disabledReason?: string | null;
+  generatingName?: boolean;
+  nameRationale?: string | null;
+  onCampaignNameChange: (name: string) => void;
+  onGenerateName: () => void;
+  onApprove: (id: AiStepId) => void;
+  onApproveAll: () => void;
+  onDecline: (step: AiStep, instruction: string) => void;
+  onEdit: (step: AiStep) => void;
+  renderInlineEditor: (step: AiStep) => ReactNode;
+  onWhyThis: (step: AiStep) => void;
+  onPrompt: (prompt: string) => void;
+  onAnswer: (optionIds: string[]) => void;
+  continueLabel: string;
+  onContinue: () => void;
+}
+
+export function AiCampaignWorkspace({
+  campaignName,
+  firstName,
+  steps,
+  messages,
+  question,
+  loading = false,
+  allApproved = false,
+  error,
+  readinessNotice,
+  disabledReason,
+  generatingName = false,
+  nameRationale,
+  onCampaignNameChange,
+  onGenerateName,
+  onApprove,
+  onApproveAll,
+  onDecline,
+  onEdit,
+  renderInlineEditor,
+  onWhyThis,
+  onPrompt,
+  onAnswer,
+  continueLabel,
+  onContinue,
+}: AiCampaignWorkspaceProps) {
+  const hasDraft = Boolean(steps?.length);
+  const showAssistant =
+    hasDraft || loading || Boolean(question) || messages.length > 0;
+
+  return (
+    <main
+      className={
+        showAssistant
+          ? "grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-1 xl:grid-cols-[minmax(0,1fr)_28rem] 2xl:grid-cols-[minmax(0,1fr)_30rem]"
+          : "h-full min-w-0 flex-1 overflow-hidden"
+      }
+    >
+      <section className="min-w-0 overflow-y-auto px-5 py-4 md:py-6 md:pl-14 md:pr-6">
+        <div className="mx-auto max-w-5xl">
+          <div>
+            <CampaignStepper
+              steps={AI_STEPS}
+              current={0}
+              activeGradient
+              compact
+            />
+          </div>
+
+          <div className="mt-5">
+            <CampaignNameCard
+              value={campaignName}
+              onChange={onCampaignNameChange}
+              onGenerate={onGenerateName}
+              generating={generatingName}
+              rationale={nameRationale}
+              disabledReason={disabledReason}
+              prominent
+            />
+          </div>
+
+          {error && (
+            <p className="mt-4 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
+
+          {!hasDraft && !loading && !question && (
+            <div className="flex min-h-[calc(100vh-13rem)] flex-col items-center justify-center px-6 pb-20 text-center">
+              <GradientSparkle className="h-16 w-16" />
+              <h1 className="mt-7 text-3xl font-semibold text-gray-800 md:text-4xl">
+                Hello{firstName ? ` ${firstName}` : ""}, let&apos;s create your
+                campaign
+              </h1>
+              <div className="mt-10 flex w-full justify-center">
+                <AiPromptComposer
+                  variant="welcome"
+                  suggestions={[
+                    "Campaign for Real Estate",
+                    "Re-targeting campaign",
+                    "Lead generation campaign for newsletter",
+                  ]}
+                  onSubmit={onPrompt}
+                  submitting={loading}
+                  error={error}
+                  disabledReason={disabledReason}
+                />
+              </div>
+            </div>
+          )}
+
+          {!hasDraft && loading && (
+            <div className="mt-9 space-y-8" aria-live="polite">
+              <div className="inline-flex items-center gap-2 text-sm font-medium text-violet-600">
+                <Loader2 className="h-4 w-4 animate-spin" /> Growdex AI is
+                building your campaign
+              </div>
+              <CampaignSkeleton className="h-24 w-full" />
+              <CampaignSkeleton className="h-24 w-full" />
+              <CampaignSkeleton className="h-24 w-4/5" />
+            </div>
+          )}
+
+          {!hasDraft && question && (
+            <div className="mt-10 max-w-2xl">
+              <div className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400">
+                <Sparkles className="h-3.5 w-3.5" /> Campaign setup paused
+              </div>
+              <h2 className="mt-3 text-2xl font-semibold text-gray-800">
+                Growdex AI needs one decision before it can continue
+              </h2>
+              <div className="mt-4 h-1 rounded-full bg-violet-200" />
+              <p className="mt-3 text-base leading-7 text-gray-500">
+                Choose an option in the assistant. The same saved draft will
+                continue without restarting your campaign.
+              </p>
+            </div>
+          )}
+
+          {hasDraft && steps && (
+            <div className="mt-5">
+              <AiStepList
+                steps={steps}
+                onApprove={onApprove}
+                onDecline={onDecline}
+                onEdit={onEdit}
+                onWhyThis={onWhyThis}
+                renderEditor={renderInlineEditor}
+                busy={loading}
+              />
+
+              <div className="flex items-center justify-end gap-3 border-t border-gray-100 py-4">
+                {readinessNotice && (
+                  <p className="mr-auto max-w-sm text-xs leading-5 text-amber-700">
+                    {readinessNotice}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={allApproved ? onContinue : onApproveAll}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-3 text-base font-medium text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:bg-khaki-100 disabled:text-gray-500"
+                >
+                  {allApproved && <Check className="h-4 w-4" />}
+                  {allApproved ? continueLabel : "Approve all decisions"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {showAssistant && (
+        <aside className="h-[22.5rem] min-w-0 border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:p-4 xl:px-4 xl:py-8">
+          <AiSidePanel
+            messages={messages}
+            question={question?.prompt}
+            options={question?.options}
+            allowMultiple={question?.allowMultiple}
+            suggestions={
+              hasDraft
+                ? []
+                : [
+                    "Launch a lead campaign in Nigeria",
+                    "Promote a new product",
+                    "Drive visitors to my website",
+                  ]
+            }
+            onAnswer={onAnswer}
+            onSubmit={onPrompt}
+            submitting={loading}
+            error={error}
+            disabledReason={disabledReason}
+          />
+        </aside>
+      )}
+    </main>
+  );
+}
+
+export default AiCampaignWorkspace;

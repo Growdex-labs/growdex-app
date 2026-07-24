@@ -1,120 +1,87 @@
 "use client";
 
-import {
-  TrendingDown,
-  MoreVertical,
-  Sparkles,
-  Image as ImageIcon,
-  Pencil,
-  Users,
-  Settings2,
-} from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
+import type { CampaignDto } from "@/lib/campaigns";
 
-export interface CampaignCardData {
-  id: string;
-  name: string;
-  amount: string;
-  status: string; // "Fabulous run!" | "Budget Burn"
-  variant: "top" | "burn";
-  ctr: string; // "35.7%"
-  cpc: string; // "N350.89"
-  cost: string; // "N1,300.80"
-  priority: string; // "High priority"
+interface CampaignCardProps {
+  campaign: CampaignDto;
+  href: string;
 }
 
-const REC_ICONS = [
-  { bg: "bg-rose-500", Icon: ImageIcon },
-  { bg: "bg-green-500", Icon: Pencil },
-  { bg: "bg-indigo-500", Icon: Users },
-  { bg: "bg-teal-500", Icon: Settings2 },
-];
+const statusLabel = (status?: string) => {
+  const value = (status ?? "draft").replaceAll("_", " ");
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
 
-export function CampaignCard({ data }: { data: CampaignCardData }) {
-  const isTop = data.variant === "top";
-  const accent = isTop ? "text-green-600" : "text-red-500";
+const statusClass = (status?: string) => {
+  switch ((status ?? "draft").toLowerCase()) {
+    case "active":
+      return "border-green-200 bg-green-50 text-green-700";
+    case "failed":
+    case "rejected":
+      return "border-red-200 bg-red-50 text-red-700";
+    case "paused":
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    default:
+      return "border-violet-200 bg-violet-50 text-violet-700";
+  }
+};
 
+const formatMoney = (campaign: CampaignDto) =>
+  new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: campaign.audienceStrategies[0]?.budget.currency ?? "NGN",
+    maximumFractionDigits: 2,
+  }).format(campaign.audienceStrategies.reduce((total, strategy) => total + strategy.budget.amount, 0));
+
+export function CampaignCard({ campaign, href }: CampaignCardProps) {
   return (
-    <div
-      className={`rounded-xl border p-4 ${
-        isTop ? "border-green-200 bg-green-50/40" : "border-gray-200 bg-white"
-      }`}
+    <Link
+      href={href}
+      className="block rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
-      {/* Status + menu */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="truncate text-lg font-bold text-gray-900">
+          {campaign.name}
+        </h2>
         <span
-          className={`inline-flex items-center gap-1.5 text-sm font-medium ${accent}`}
+          className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusClass(campaign.status)}`}
         >
-          <img
-            src={isTop ? "/mdi_greenfire.png" : "/mdi_fire.png"}
-            alt=""
-            className="w-4 h-4"
-          />
-          {data.status}
-        </span>
-        <button
-          type="button"
-          className="text-gray-400 hover:text-gray-600"
-          aria-label="Campaign options"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Name + amount */}
-      <div className="mt-1 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold text-gray-900 truncate">
-          {data.name}
-        </h3>
-        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 shrink-0">
-          <img src="/cash.png" alt="" className="w-4 h-4" />
-          {data.amount}
+          {statusLabel(campaign.status)}
         </span>
       </div>
 
-      {/* Metrics */}
-      <div
-        className={`mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${accent}`}
-      >
-        <span className="inline-flex items-center gap-1">
-          <TrendingDown className="w-3.5 h-3.5" /> CTR {data.ctr}
-        </span>
-        <span className="text-gray-300">•</span>
-        <span className="inline-flex items-center gap-1">
-          <TrendingDown className="w-3.5 h-3.5" /> CPC {data.cpc}
-        </span>
-        <span className="text-gray-300">•</span>
-        <span className="inline-flex items-center gap-1">
-          <TrendingDown className="w-3.5 h-3.5" /> {data.cost}
-        </span>
-      </div>
-
-      <hr className="my-3 border-gray-200" />
-
-      {/* Footer */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex items-center">
-            <Sparkles className="w-4 h-4 text-violet-500 mr-1" />
-            <div className="flex -space-x-1.5">
-              {REC_ICONS.map(({ bg, Icon }, i) => (
-                <span
-                  key={i}
-                  className={`flex items-center justify-center w-5 h-5 rounded-full ring-2 ring-white ${bg}`}
-                >
-                  <Icon className="w-2.5 h-2.5 text-white" />
-                </span>
-              ))}
-            </div>
-          </div>
-          <span className="text-xs text-gray-500 truncate">
-            Recommendations available
+      <div className="mt-4 flex flex-wrap gap-2">
+        {campaign.platforms.map((platform) => (
+          <span
+            key={platform}
+            className="rounded-full bg-gray-100 px-2.5 py-1 text-xs capitalize text-gray-600"
+          >
+            {platform}
           </span>
-        </div>
-        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-medium text-amber-700">
-          {data.priority}
+        ))}
+        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
+          {campaign.goal.replaceAll("_", " ")}
         </span>
       </div>
-    </div>
+
+      <div className="mt-5 border-t border-gray-100 pt-4">
+        <p className="text-xs text-gray-400">
+          {campaign.audienceStrategies.length === 1 ? "Audience budget" : "Combined audience budgets"}
+        </p>
+        <p className="mt-1 font-semibold text-gray-900">
+          {formatMoney(campaign)}
+        </p>
+      </div>
+
+      {campaign.publishError && (
+        <div className="mt-4 flex gap-2 rounded-xl bg-red-50 p-3 text-xs leading-5 text-red-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>{campaign.publishError}</p>
+        </div>
+      )}
+    </Link>
   );
 }
 

@@ -1,10 +1,12 @@
 "use client";
 
 import { Campaign } from "@/lib/mock-data";
+import Image from "next/image";
 import { PerformanceChart } from "./performance-chart";
 import {
   Facebook,
   MoreVertical,
+  Sparkles,
   TrendingDownIcon,
   Users,
 } from "lucide-react";
@@ -12,6 +14,7 @@ import {
 interface OverviewProps {
   campaign: Campaign;
   subTab: string;
+  onOptimizationClick?: () => void;
 }
 
 // Mock chart data
@@ -23,9 +26,9 @@ const chartData = [
   { date: "21/09/2025", facebook: 12500, instagram: 4700, tiktok: 3700 },
 ];
 
-export function Overview({ campaign, subTab }: OverviewProps) {
+export function Overview({ campaign, subTab, onOptimizationClick }: OverviewProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-view={subTab}>
       <PerformanceChart data={chartData} totalSpent="N56,980.98" />
 
       {/* Stats Cards */}
@@ -100,7 +103,7 @@ export function Overview({ campaign, subTab }: OverviewProps) {
           <div className="flex items-center gap-4 md:gap-6 overflow-x-auto hide-scrollbar">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                <img src="/logos_meta-icon.png" alt="meta" className="w-3.5 h-3.5 text-white" />
+                <Image src="/logos_meta-icon.png" alt="Meta" width={14} height={14} className="h-3.5 w-3.5" />
               </div>
               <span className="text-lg font-semibold text-gray-900">
                 23,900
@@ -148,10 +151,14 @@ export function Overview({ campaign, subTab }: OverviewProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs md:text-sm text-[#B8A247]">
-            <span className="text-base md:text-lg">✨</span>
-            <span>Optimize for campaign goal</span>
-          </div>
+          <button
+            type="button"
+            onClick={onOptimizationClick}
+            aria-label={`Optimize ${campaign.name} cost per conversion with AI`}
+            className="flex items-center gap-2 text-xs text-[#B8A247] hover:text-[#8f7d2e] md:text-sm"
+          >
+            <Sparkles className="h-4 w-4" /> Optimize for campaign goal
+          </button>
         </div>
 
         {/* Cost Per Click (CPC) */}
@@ -175,10 +182,14 @@ export function Overview({ campaign, subTab }: OverviewProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs md:text-sm text-[#B8A247]">
-            <span className="text-base md:text-lg">✨</span>
-            <span>Optimize for campaign goal</span>
-          </div>
+          <button
+            type="button"
+            onClick={onOptimizationClick}
+            aria-label={`Optimize ${campaign.name} cost per click with AI`}
+            className="flex items-center gap-2 text-xs text-[#B8A247] hover:text-[#8f7d2e] md:text-sm"
+          >
+            <Sparkles className="h-4 w-4" /> Optimize for campaign goal
+          </button>
         </div>
 
         {/* Audience Reception */}
@@ -205,10 +216,14 @@ export function Overview({ campaign, subTab }: OverviewProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs md:text-sm text-[#B8A247]">
-            <span className="text-base md:text-lg">✨</span>
-            <span>Optimize for campaign goal</span>
-          </div>
+          <button
+            type="button"
+            onClick={onOptimizationClick}
+            aria-label={`Optimize ${campaign.name} audience reception with AI`}
+            className="flex items-center gap-2 text-xs text-[#B8A247] hover:text-[#8f7d2e] md:text-sm"
+          >
+            <Sparkles className="h-4 w-4" /> Optimize for campaign goal
+          </button>
         </div>
       </div>
     </div>

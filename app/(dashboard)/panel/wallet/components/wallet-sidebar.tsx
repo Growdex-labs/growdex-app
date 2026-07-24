@@ -8,7 +8,9 @@ export function WalletSidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: 'Fund wallet', href: '/panel/wallet' },
+    { label: 'Balance', href: '/panel/wallet' },
+    { label: 'Transactions', href: '/panel/wallet/transactions' },
+    { label: 'Add funding', href: '/panel/wallet/fund' },
     { label: 'Budget', href: '/panel/wallet/budget' },
   ];
 
@@ -22,7 +24,7 @@ export function WalletSidebar() {
   return (
     <div className="w-64 h-screen flex flex-col justify-between bg-white border-r border-gray-200 p-6">
       <div className="space-y-2 mb-8">
-        <h2 className="text-lg lg:text-2xl font-gilroy-semibold mb-4">Wallet</h2>
+        <h2 className="text-lg lg:text-2xl font-gilroy-semibold mb-4">Funding</h2>
         {navItems.map((item) => (
           <Link
             key={item.href}

@@ -78,7 +78,7 @@ export default function EditBudgetPage() {
                   href="/panel/wallet"
                   className="text-gray-600 hover:text-gray-900 transition-colors text-xs"
                 >
-                  Wallet
+                  Funding
                 </Link>
                 <span className="text-xs">&gt;&gt;</span>
                 <Link

@@ -2,27 +2,35 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Megaphone,
   Wallet,
+  Images,
   Settings,
   ChevronLeft,
   ChevronRight,
   Plus,
   Bell,
+  LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useMe } from "@/context/me-context";
 import { useSocket } from "@/context/socket-context";
 
 interface CollapsibleSidebarProps {
+  defaultCollapsed?: boolean;
   onNotificationClick?: () => void;
 }
 
-export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export function CollapsibleSidebar({
+  defaultCollapsed = false,
+  onNotificationClick,
+}: CollapsibleSidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const pathname = usePathname();
   const { me, isLoading } = useMe();
   const { unreadCount } = useSocket();
@@ -45,8 +53,12 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/panel" },
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
-    { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
+    { icon: Wallet, label: "Funding", href: "/panel/wallet" },
+    { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
+    ...(me?.isAdmin
+      ? [{ icon: ShieldCheck, label: "Admin", href: "/panel/admin" }]
+      : []),
   ];
 
   const isActive = (href: string) => {
@@ -67,7 +79,13 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 shrink-0">
-              <img src="/logo.png" alt="logo" />
+              <Image
+                src="/logo.png"
+                alt="Growdex"
+                width={40}
+                height={40}
+                className="size-10 object-contain"
+              />
             </div>
             {!isCollapsed && (
               <span className="font-semibold text-xl">Growdex</span>
@@ -75,19 +93,21 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
           </div>
 
           {/* Notification Button */}
-          <button
-            type="button"
-            onClick={onNotificationClick}
-            aria-label="Open notifications"
-            className="flex gap-2 relative shrink-0 cursor-pointer bg-transparent border-none p-0"
-          >
-            <Bell className="text-khaki-300 size-6" />
-            {unreadCount > 0 && (
-              <div className="w-5 h-5 bg-khaki-300 rounded-full absolute -top-2 -right-3 flex items-center justify-center text-xs text-gray-900 font-bold">
-                {unreadCount}
-              </div>
-            )}
-          </button>
+          {!isCollapsed && (
+            <button
+              type="button"
+              onClick={onNotificationClick}
+              aria-label="Open notifications"
+              className="relative flex shrink-0 cursor-pointer gap-2 border-none bg-transparent p-0"
+            >
+              <Bell className="size-6 text-khaki-300" />
+              {unreadCount > 0 && (
+                <div className="absolute -right-3 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-khaki-300 text-xs font-bold text-gray-900">
+                  {unreadCount}
+                </div>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -145,12 +165,17 @@ export function CollapsibleSidebar({ onNotificationClick }: CollapsibleSidebarPr
             </div>
           )}
         </div>
-        <div
-          onClick={logout}
-          className="mt-2 flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-red-500 hover:bg-red-500 hover:text-white cursor-pointer"
+        <button
+          type="button"
+          onClick={() => void logout()}
+          aria-label="Log out"
+          className={`mt-2 flex w-full items-center gap-3 rounded-lg px-4 py-3 text-red-500 transition-colors hover:bg-red-500 hover:text-white ${
+            isCollapsed ? "justify-center" : ""
+          }`}
         >
-          Log out
-        </div>
+          <LogOut className="size-5 shrink-0" />
+          {!isCollapsed && <span>Log out</span>}
+        </button>
       </div>
 
       {/* Collapse Button */}

@@ -11,8 +11,14 @@ import { TopPerformingCard } from "./components/top-performing-card";
 import { CampaignPerformanceCard } from "./components/campaign-performance-card";
 import { MetaIcon, TikTokIcon } from "./components/platform-icons";
 import { DashboardEmptyState } from "./components/dashboard-empty-state";
-import { Users, TrendingDown, MoreVertical } from "lucide-react";
+import { DashboardAiBar } from "./components/dashboard-ai-bar";
+import {
+  DashboardAiPanel,
+  type AiMessage,
+} from "./components/dashboard-ai-panel";
+import { Users, TrendingDown } from "lucide-react";
 import { fetchPanelMetrics } from "@/lib/panel";
+import { fetchCampaigns, requestCampaignAdvice } from "@/lib/campaigns";
 
 type DashboardMetrics = {
   totalSpent: number;
@@ -73,9 +79,6 @@ function SideMetricCard({
     <div className="bg-bisque-50/25 rounded-xl p-4 flex-1 flex flex-col justify-center gap-3">
       <div className="flex items-center justify-between">
         <span className="text-xs text-gray-400 font-gilroy-light">{label}</span>
-        <button className="text-gray-400 hover:text-gray-600" aria-label="Options">
-          <MoreVertical className="w-4 h-4" />
-        </button>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         {children}
@@ -88,12 +91,38 @@ function SideMetricCard({
 export default function PanelPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics>(ZERO_METRICS);
   const [isLoading, setIsLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState<Array<{ id: string; name: string }>>(
+    [],
+  );
+  const [selectedCampaignId, setSelectedCampaignId] = useState("");
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<AiMessage[]>([]);
 
   useEffect(() => {
-    const loadDashboardMetrics = async () => {
-      try {
-        const result = await fetchPanelMetrics();
+    let active = true;
+    const loadDashboard = async () => {
+      const [metricsResult, campaignsResult] = await Promise.allSettled([
+        fetchPanelMetrics(),
+        fetchCampaigns(),
+      ]);
+      if (!active) return;
 
+      if (campaignsResult.status === "fulfilled") {
+        setCampaigns(
+          campaignsResult.value.map(({ id, name }) => ({ id, name })),
+        );
+      } else {
+        setAssistantError(
+          campaignsResult.reason instanceof Error
+            ? campaignsResult.reason.message
+            : "Could not load campaigns for the assistant.",
+        );
+      }
+
+      if (metricsResult.status === "fulfilled") {
+        const result = metricsResult.value;
         if (result) {
           setMetrics({
             totalSpent:
@@ -104,11 +133,11 @@ export default function PanelPage() {
                 : 0,
             costPerConversion: {
               value: typeof result.cpa === "number" ? result.cpa : 0,
-              trend: result.cpaTrend ?? 35.7,
+              trend: result.cpaTrend ?? 0,
             },
             costPerClick: {
               value: typeof result.cpc === "number" ? result.cpc : 0,
-              trend: result.cpcTrend ?? 35.7,
+              trend: result.cpcTrend ?? 0,
             },
             clickThroughRate: {
               meta:
@@ -119,14 +148,14 @@ export default function PanelPage() {
                 typeof result.byPlatform?.tiktok?.ctr === "number"
                   ? result.byPlatform.tiktok.ctr
                   : 0,
-              trend: result.ctrTrend ?? 35.7,
+              trend: result.ctrTrend ?? 0,
             },
             audienceReception: {
               value:
                 typeof result.audienceReception === "string"
                   ? result.audienceReception
                   : "0",
-              trend: result.audienceTrend ?? 35.7,
+              trend: result.audienceTrend ?? 0,
             },
             impressionsByPlatform: {
               meta: result.impressionsByPlatform?.meta ?? 0,
@@ -150,16 +179,58 @@ export default function PanelPage() {
         } else {
           setMetrics(ZERO_METRICS);
         }
-      } catch (error) {
-        console.error("Error loading dashboard metrics:", error);
+      } else {
+        console.error("Error loading dashboard metrics:", metricsResult.reason);
         setMetrics(ZERO_METRICS);
-      } finally {
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
 
-    loadDashboardMetrics();
+    void loadDashboard();
+    return () => {
+      active = false;
+    };
   }, []);
+
+  const sendAssistantMessage = async (text: string) => {
+    if (!selectedCampaignId || assistantLoading) {
+      if (!selectedCampaignId) setAssistantError("Select a campaign first.");
+      return;
+    }
+
+    const userMessage: AiMessage = {
+      id: crypto.randomUUID(),
+      sender: "user",
+      text,
+    };
+    setMessages((current) => [...current, userMessage]);
+    setAssistantOpen(true);
+    setAssistantLoading(true);
+    setAssistantError(null);
+
+    try {
+      const response = await requestCampaignAdvice(
+        selectedCampaignId,
+        text,
+        messages.map((message) => ({
+          role: message.sender === "user" ? "user" : "assistant",
+          content: message.text,
+        })),
+      );
+      setMessages((current) => [
+        ...current,
+        { id: crypto.randomUUID(), sender: "ai", text: response.answer },
+      ]);
+    } catch (failure) {
+      setAssistantError(
+        failure instanceof Error
+          ? failure.message
+          : "The campaign assistant could not answer right now.",
+      );
+    } finally {
+      setAssistantLoading(false);
+    }
+  };
 
   const hasData =
     metrics.totalSpent > 0 ||
@@ -172,7 +243,8 @@ export default function PanelPage() {
   return (
     <PanelLayout>
       <div className="p-4 bg-[#f2f2f2] min-h-full">
-        <div className="bg-white rounded-xl p-4 md:p-6 flex flex-col gap-4 min-h-[calc(100vh-2rem)]">
+        <div className="flex flex-col items-start gap-4 lg:flex-row">
+          <div className="min-h-[calc(100vh-2rem)] min-w-0 flex-1 flex-col gap-4 rounded-xl bg-white p-4 md:flex md:p-6">
           <DashboardHeader />
 
           {isLoading ? null : !hasData ? (
@@ -224,9 +296,6 @@ export default function PanelPage() {
                 <span className="text-sm text-[#4d4d4d] font-gilroy-regular">
                   Click-Through Rate
                 </span>
-                <button className="text-gray-400 hover:text-gray-600" aria-label="Options">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
               </div>
 
               <div className="flex items-center gap-4 flex-wrap">
@@ -255,9 +324,6 @@ export default function PanelPage() {
                 <span className="text-sm text-[#4d4d4d] font-gilroy-regular">
                   Total Impressions
                 </span>
-                <button className="text-gray-400 hover:text-gray-600" aria-label="Options">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
               </div>
 
               <div className="text-2xl md:text-[28px] text-gray-800 font-gilroy-semibold mb-6">
@@ -286,6 +352,30 @@ export default function PanelPage() {
             </div>
           </div>
             </>
+          )}
+          {!assistantOpen && (
+            <DashboardAiBar
+              campaigns={campaigns}
+              selectedCampaignId={selectedCampaignId}
+              onSelectCampaign={(campaignId) => {
+                if (campaignId !== selectedCampaignId) setMessages([]);
+                setSelectedCampaignId(campaignId);
+                setAssistantError(null);
+              }}
+              onSend={(text) => void sendAssistantMessage(text)}
+              loading={assistantLoading}
+              error={assistantError}
+            />
+          )}
+          </div>
+          {assistantOpen && (
+            <DashboardAiPanel
+              messages={messages}
+              onSend={(text) => void sendAssistantMessage(text)}
+              onClose={() => setAssistantOpen(false)}
+              loading={assistantLoading}
+              error={assistantError}
+            />
           )}
         </div>
       </div>

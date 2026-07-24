@@ -78,7 +78,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { startGoogleAuth, loading: googleLoading } = useGoogleAuth();
+  const {
+    startGoogleAuth,
+    loading: googleLoading,
+    error: googleError,
+    enabled: googleAuthEnabled,
+  } = useGoogleAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,12 +116,16 @@ export default function LoginPage() {
           router.push(response.onboardingCompleted ? "/panel" : "/onboarding"),
         1500,
       );
-    } catch (err: any) {
-      if (err.formErrors?.length > 0) {
-        setError(err.formErrors[0]);
+    } catch (err: unknown) {
+      const loginError = err as {
+        formErrors?: string[];
+        message?: string;
+      };
+      if (loginError.formErrors?.length) {
+        setError(loginError.formErrors[0]);
       } else {
         setError(
-          err.message || "Login failed. Please check your credentials.",
+          loginError.message || "Login failed. Please check your credentials.",
         );
       }
     } finally {
@@ -375,7 +384,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={startGoogleAuth}
-              disabled={googleLoading}
+              disabled={googleLoading || !googleAuthEnabled}
               className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <img
@@ -383,8 +392,19 @@ export default function LoginPage() {
                 alt="Google"
                 className="w-5 h-5 object-contain"
               />
-              {googleLoading ? "Redirecting..." : "Sign in with Google"}
+              {googleLoading
+                ? "Redirecting..."
+                : googleAuthEnabled
+                  ? "Sign in with Google"
+                  : "Google sign-in unavailable"}
             </button>
+
+            {!googleAuthEnabled && (
+              <p className="-mt-3 text-center text-xs text-amber-700">
+                {googleError ??
+                  "Google sign-in needs a registered callback for this environment. Use email and password."}
+              </p>
+            )}
 
             <p className="text-center text-sm text-gray-500">
               New here?{" "}

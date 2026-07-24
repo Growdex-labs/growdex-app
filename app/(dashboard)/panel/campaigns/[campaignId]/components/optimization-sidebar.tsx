@@ -1,161 +1,275 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetFooter,
 } from "@/components/ui/sheet";
 import {
-  AlertCircle,
-  CheckCircle,
-  SparklesIcon,
-  BellIcon,
-  SendHorizonalIcon,
+  applyCampaignOptimizations,
+  fetchCampaignOptimizations,
+  requestCampaignOptimizations,
+  type CampaignDto,
+  type CampaignOptimizationProposal,
+} from "@/lib/campaigns";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  SendHorizontal,
+  Sparkles,
+  TrendingUp,
 } from "lucide-react";
 
 interface OptimizationSidebarProps {
+  campaignId: string;
   isOpen: boolean;
   onClose: () => void;
+  onApplied?: (campaign: CampaignDto) => void;
 }
 
 export function OptimizationSidebar({
+  campaignId,
   isOpen,
   onClose,
+  onApplied,
 }: OptimizationSidebarProps) {
-  const optimizations = [
-    {
-      id: 1,
-      title: "Audience can be better optimized",
-      description: "2 changes discovered for Ad copy.",
-      action: "See changes",
-      hasRecommendation: true,
-    },
-    {
-      id: 2,
-      title: "Audience can be better optimized",
-      description: "2 changes discovered for Ad copy.",
-      action: "See changes",
-      hasRecommendation: true,
-    },
-  ];
+  const [proposals, setProposals] = useState<CampaignOptimizationProposal[]>([]);
+  const [revision, setRevision] = useState(0);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
+
+  const storeResponse = (response: {
+    revision: number;
+    proposals: CampaignOptimizationProposal[];
+  }) => {
+    setRevision(response.revision);
+    setProposals(response.proposals);
+    setSelected(
+      Object.fromEntries(response.proposals.map((proposal) => [proposal.id, true])),
+    );
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    void fetchCampaignOptimizations(campaignId, controller.signal)
+      .then(storeResponse)
+      .catch((failure) => {
+        if (!controller.signal.aborted) {
+          setError(
+            failure instanceof Error
+              ? failure.message
+              : "Could not load campaign optimizations.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [campaignId, isOpen]);
+
+  const requestNewOptimizations = async () => {
+    const instruction = prompt.trim();
+    if (!instruction || loading || applying) return;
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await requestCampaignOptimizations(
+        campaignId,
+        instruction,
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      storeResponse(response);
+      setPrompt("");
+    } catch (failure) {
+      if (!controller.signal.aborted) {
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : "Could not generate campaign optimizations.",
+        );
+      }
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
+  };
+
+  const selectedIds = proposals
+    .filter((proposal) => selected[proposal.id])
+    .map((proposal) => proposal.id);
+
+  const applySelected = async () => {
+    if (!selectedIds.length || applying || loading) return;
+    setApplying(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await applyCampaignOptimizations({
+        campaignId,
+        revision,
+        proposalIds: selectedIds,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      onApplied?.(updated);
+      setProposals((current) =>
+        current.filter((proposal) => !selectedIds.includes(proposal.id)),
+      );
+      setSelected({});
+      setSuccess(
+        `${selectedIds.length} approved change${selectedIds.length === 1 ? " was" : "s were"} applied.`,
+      );
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not apply the selected optimizations.",
+      );
+    } finally {
+      setApplying(false);
+    }
+  };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[400px] sm:w-[400px] bg-linear-to-br from-[#332C00] to-[#998400] text-white border-none">
-        {/* Header */}
-        <SheetHeader className="space-y-4">
-          <div className="flex items-center gap-2 mt-4">
-            <SparklesIcon className="w-5 h-5 text-khaki-200" fill="#ffe95c" />
-          </div>
-          <SheetTitle className="text-white text-xl">
-            Optimize your campaign
-          </SheetTitle>
-          <div className="flex items-center gap-3 bg-khaki-200/70 p-3 rounded-lg">
-            <div className="bg-red-500 rounded-full p-1.5">
-              <BellIcon className="w-4 h-4 text-gray-100" />
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="flex w-full flex-col border-none bg-linear-to-br from-[#332C00] to-[#786800] text-white sm:max-w-[440px]">
+        <SheetHeader className="space-y-4 pt-4">
+          <Sparkles className="h-5 w-5 text-khaki-200" />
+          <SheetTitle className="text-xl text-white">Optimize your campaign</SheetTitle>
+          <p className="text-sm leading-6 text-white/70">
+            Every recommendation is based on this campaign&apos;s measured performance. Review the evidence and risk before applying it.
+          </p>
+          {!loading && proposals.length > 0 && (
+            <div className="flex items-center gap-3 rounded-lg bg-khaki-200/80 p-3 text-gray-900">
+              <TrendingUp className="h-5 w-5" />
+              <p className="text-sm font-semibold">
+                {proposals.length} optimization opportunit{proposals.length === 1 ? "y" : "ies"}
+              </p>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
-              5 optimization opportunities located
-            </p>
-          </div>
+          )}
         </SheetHeader>
 
-        {/* Optimization List */}
-        <div className="flex-1 overflow-y-auto px-4 py-10 space-y-4 hide-scrollbar">
-          {optimizations.map((item) => (
-            <div key={item.id} className="bg-black/20 rounded-lg p-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-6 hide-scrollbar">
+          {loading && (
+            <div className="flex items-center gap-3 rounded-xl bg-black/20 p-4 text-sm text-white/80">
+              <Loader2 className="h-4 w-4 animate-spin" /> Analyzing live campaign evidence…
+            </div>
+          )}
+          {error && (
+            <div className="flex items-start gap-2 rounded-xl bg-red-950/40 p-4 text-sm text-red-100">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+            </div>
+          )}
+          {success && (
+            <div className="flex items-start gap-2 rounded-xl bg-emerald-950/40 p-4 text-sm text-emerald-100">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {success}
+            </div>
+          )}
+          {!loading && !error && proposals.length === 0 && !success && (
+            <p className="rounded-xl bg-black/20 p-4 text-sm text-white/70">
+              No evidence-backed changes are available for this campaign yet.
+            </p>
+          )}
+          {proposals.map((proposal) => (
+            <article key={proposal.id} className="rounded-xl bg-black/20 p-4">
               <div className="flex items-start gap-3">
                 <Checkbox
-                  className="mt-1 w-5 h-5 bg-khaki-200 data-[state=checked]:bg-khaki-200 border-khaki-200"
-                  checked={item.hasRecommendation}
+                  aria-label={`Select ${proposal.title}`}
+                  checked={Boolean(selected[proposal.id])}
+                  onCheckedChange={(checked) =>
+                    setSelected((current) => ({
+                      ...current,
+                      [proposal.id]: checked === true,
+                    }))
+                  }
+                  disabled={loading || applying}
+                  className="mt-1 border-khaki-200 data-[state=checked]:border-khaki-200 data-[state=checked]:bg-khaki-200 data-[state=checked]:text-gray-900"
                 />
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-gray-400">{item.description}</p>
-                  <button className="text-xs text-khaki-200 hover:text-khaki-300 transition-colors">
-                    {item.action}
-                  </button>
-                  {item.hasRecommendation && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Use recommendation
-                    </p>
-                  )}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold">{proposal.title}</h3>
+                  <p className="mt-1 text-xs leading-5 text-white/65">{proposal.summary}</p>
+                  <dl className="mt-3 space-y-2 rounded-lg bg-black/20 p-3 text-xs">
+                    <div>
+                      <dt className="font-medium text-khaki-200">Evidence · {proposal.evidence.window}</dt>
+                      <dd className="mt-0.5 text-white/70">
+                        {proposal.evidence.metric}: {proposal.evidence.observation}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-emerald-200">Expected outcome</dt>
+                      <dd className="mt-0.5 text-white/70">{proposal.expectedOutcome}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-amber-200">Risk</dt>
+                      <dd className="mt-0.5 text-white/70">{proposal.risk}</dd>
+                    </div>
+                  </dl>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {proposal.affectedFields.map((field) => (
+                      <span key={field} className="rounded-full bg-white/10 px-2 py-1 text-[10px] text-white/70">
+                        {field}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
-        {/* Actions */}
-        <div className="px-4 space-y-3">
-          <button className="w-full bg-khaki-200 text-gray-900 font-semibold py-3 rounded-lg hover:bg-khaki-300 transition-colors">
-            Implement all changes
-          </button>
+        <div className="space-y-3 border-t border-white/15 p-4">
           <button
-            onClick={onClose}
-            className="w-full text-red-700 text-sm font-medium hover:text-red-400 transition-colors"
+            type="button"
+            onClick={() => void applySelected()}
+            disabled={!selectedIds.length || loading || applying}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 py-3 font-semibold text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Discard optimization options
+            {applying && <Loader2 className="h-4 w-4 animate-spin" />}
+            Apply {selectedIds.length || "selected"} change{selectedIds.length === 1 ? "" : "s"}
           </button>
-        </div>
-
-        {/* Setup Wizard Section */}
-        <SheetFooter className="border-t border-gray-700 mt-4 pt-4">
-          <div className="w-full space-y-4">
-            {/* Input Section */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="What would you like to optimize?"
-                className="w-full bg-transparent border border-gray-200 text-white placeholder-gray-400 px-4 py-4 pr-12 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-khaki-200"
-              />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <SendHorizonalIcon className="w-4 h-4 text-black" />
-              </button>
-            </div>
-
-            {/* Wizard Steps */}
-            <div className="bg-black/20 p-4 rounded-lg space-y-3">
-              <h2 className="text-khaki-200 font-semibold text-sm mb-3">
-                Growdex Setup Wizard
-              </h2>
-              <div className="space-y-3">
-                {/* Step 1 */}
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center shrink-0">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                  </div>
-                  <span className="text-xs text-gray-300">
-                    Create your first campaign
-                  </span>
-                </div>
-
-                {/* Step 2 */}
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center shrink-0">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                  </div>
-                  <span className="text-xs text-gray-300">
-                    Connect your social accounts
-                  </span>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center shrink-0">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                  </div>
-                  <span className="text-xs text-gray-300">
-                    Fund your ad wallet
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="relative">
+            <input
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void requestNewOptimizations();
+                }
+              }}
+              disabled={loading || applying}
+              placeholder="What would you like to improve?"
+              className="w-full rounded-lg border border-white/40 bg-transparent px-4 py-3 pr-12 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-khaki-200 disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={() => void requestNewOptimizations()}
+              disabled={!prompt.trim() || loading || applying}
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-white text-black disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Ask Growdex AI to optimize"
+            >
+              <SendHorizontal className="h-4 w-4" />
+            </button>
           </div>
-        </SheetFooter>
+        </div>
       </SheetContent>
     </Sheet>
   );

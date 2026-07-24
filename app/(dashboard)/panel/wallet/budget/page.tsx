@@ -25,7 +25,7 @@ export default function BudgetPage() {
           {/* budget header */}
           <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col sm:flex-row gap-4 items-center">
             <div className="w-full">
-              <small>Wallet {">>"} Budget</small>
+              <small>Funding {">>"} Budget</small>
               <h2 className="text-lg font-semibold">Set Campaign Budgets</h2>
             </div>
 

@@ -58,17 +58,17 @@ export function MetaAdPreview({
 
         {/* Creative (Image/Video) */}
         {creative ? (
-          <div className="w-full bg-gray-100">
+          <div className="aspect-[1200/628] w-full overflow-hidden bg-gray-100">
             {creative.type === "image" ? (
               <img
                 src={creative.url}
                 alt="Ad creative"
-                className="w-full h-auto object-cover"
+                className="block h-full w-full object-cover"
               />
             ) : (
               <video
                 src={creative.url}
-                className="w-full h-auto object-cover"
+                className="block h-full w-full object-cover"
                 controls
                 playsInline
               />
@@ -76,7 +76,7 @@ export function MetaAdPreview({
           </div>
         ) : (
           /* Placeholder when no creative */
-          <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+          <div className="flex aspect-[1200/628] w-full items-center justify-center bg-gray-200">
             <div className="text-center text-gray-400">
               <svg
                 className="w-16 h-16 mx-auto mb-2"

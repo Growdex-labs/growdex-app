@@ -225,8 +225,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         });
 
         // Targeting
-        if (campaign.targeting) {
-          const targeting = campaign.targeting;
+        const primaryStrategy = campaign.audienceStrategies[0];
+        if (primaryStrategy) {
+          const targeting = primaryStrategy.audience;
 
           if (targeting.locations && targeting.locations.length > 0) {
             setMetaCountries(
@@ -247,8 +248,8 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         }
 
         // Budget
-        if (campaign.budget) {
-          const budget = campaign.budget;
+        if (primaryStrategy) {
+          const budget = primaryStrategy.budget;
           setCurrency(budget.currency || "NGN");
 
           if (budget.type === "daily" || budget.type === "lifetime") {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isOnboardingComplete, markOnboardingComplete } from '@/lib/onboarding';
 import { getCurrentUser } from '@/lib/auth';
 
 export default function PanelRootLayout({
@@ -14,12 +13,29 @@ export default function PanelRootLayout({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     const checkAccess = async () => {
-      // ⚠️ AUTH BYPASSED FOR UI DEV — restore original checkAccess when done
-      setIsLoading(false);
+      try {
+        const user = await getCurrentUser();
+        if (!active) return;
+        if (!user) {
+          router.replace('/login');
+          return;
+        }
+        if (!user.onboardingCompleted) {
+          router.replace('/onboarding');
+          return;
+        }
+        setIsLoading(false);
+      } catch {
+        if (active) router.replace('/login');
+      }
     };
 
-    checkAccess();
+    void checkAccess();
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   if (isLoading) {

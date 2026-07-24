@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Megaphone,
   Wallet,
+  Images,
   Settings,
   Plus,
 } from "lucide-react";
@@ -28,7 +28,8 @@ export function BottomNavigation() {
 
   // Right items (2 items)
   const rightItems: NavItem[] = [
-    { icon: Wallet, label: "Wallet", href: "/panel/wallet" },
+    { icon: Wallet, label: "Funding", href: "/panel/wallet" },
+    { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
   ];
 
