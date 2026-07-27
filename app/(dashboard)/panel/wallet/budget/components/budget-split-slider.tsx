@@ -82,7 +82,7 @@ export default function BudgetSplitSlider({
       {/* Amount Input */}
       <div>
         <label className="text-xs md:text-sm text-gray-600 mb-1 block">
-          Enter amount less than wallet balance
+          Enter an amount within the funding balance
         </label>
         <input
           type="text"
@@ -99,7 +99,7 @@ export default function BudgetSplitSlider({
         {amount && !isValidAmount && (
           <p className="text-xs text-red-600 mt-1">
             {numericAmount > walletBalance
-              ? `Amount exceeds wallet balance (${formatCurrency(
+              ? `Amount exceeds funding balance (${formatCurrency(
                   walletBalance
                 )})`
               : "Please enter a valid amount"}

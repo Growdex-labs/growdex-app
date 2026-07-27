@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { forgotPassword } from "@/lib/auth";
+import { forgotPassword, getAuthErrorMessage } from "@/lib/auth";
 import { useGoogleAuth } from "@/lib/use-google";
 import { toast } from "sonner";
 
@@ -24,8 +24,13 @@ export default function ForgotPasswordPage() {
         duration: 5000,
       });
       router.push("/login");
-    } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      setError(
+        getAuthErrorMessage(
+          err,
+          "We couldn't send a reset link right now. Please try again later.",
+        ),
+      );
     } finally {
       setIsLoading(false);
     }

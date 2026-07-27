@@ -127,7 +127,7 @@ export function PrivacyPolicyClient() {
               <h3 className="font-bold text-gray-900 mb-3 text-base">1.1 Information You Provide</h3>
               <ul className="list-disc pl-5 space-y-2">
                 <li><span className="font-medium text-gray-900">Account Information:</span> Name, email address, phone number, business name, password.</li>
-                <li><span className="font-medium text-gray-900">Billing Information:</span> Payment details when funding your Growdex wallet or paying for services.</li>
+                <li><span className="font-medium text-gray-900">Billing Information:</span> Payment details when adding Growdex campaign funding or paying for services.</li>
                 <li><span className="font-medium text-gray-900">Business Information:</span> Ad account IDs, social media handles, business category, marketing goals.</li>
               </ul>
             </div>
@@ -166,7 +166,7 @@ export function PrivacyPolicyClient() {
               <p className="text-gray-600 mb-3">We use your information to:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Enable ad creation, publishing, and campaign management</li>
-                <li>Provide budgeting, wallet functionality, and billing</li>
+                <li>Provide campaign funding, budgeting, and billing</li>
                 <li>Show analytics, insights, and performance reports</li>
                 <li>Offer AI-driven recommendations and optimizations</li>
                 <li>Maintain platform security and prevent fraud</li>

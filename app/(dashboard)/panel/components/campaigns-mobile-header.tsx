@@ -12,8 +12,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-interface CampaignsMobileHeaderProps {}
-
 export function CampaignsMobileHeader(): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
@@ -21,7 +19,7 @@ export function CampaignsMobileHeader(): JSX.Element {
   const navItems = [
     { label: "All campaigns", href: "/panel/campaigns" },
     { label: "New campaign", href: "/panel/campaigns/new" },
-    { label: "Wallet", href: "/panel/wallet" },
+    { label: "Funding", href: "/panel/wallet" },
     { label: "Thrashed", href: "/panel/campaigns/thrashed" },
     { label: "Saved audience", href: "/panel/campaigns/saved-audience" },
   ];

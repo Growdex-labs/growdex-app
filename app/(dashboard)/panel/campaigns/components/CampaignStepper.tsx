@@ -1,6 +1,6 @@
 "use client";
 
-import { PURPLE_GRADIENT } from "./AiCampaignChat";
+import { PURPLE_GRADIENT } from "./ai-campaign-theme";
 
 interface CampaignStepperProps {
   steps: string[];
@@ -8,6 +8,8 @@ interface CampaignStepperProps {
   onStepClick?: (index: number) => void;
   /** When true, the active step bar uses the purple gradient instead of khaki. */
   activeGradient?: boolean;
+  /** Uses the tighter label and spacing treatment from the AI review canvas. */
+  compact?: boolean;
 }
 
 export function CampaignStepper({
@@ -15,26 +17,34 @@ export function CampaignStepper({
   current,
   onStepClick,
   activeGradient = false,
+  compact = false,
 }: CampaignStepperProps) {
   return (
     <div className="flex items-start gap-3 overflow-x-auto hide-scrollbar">
       {steps.map((step, index) => {
         const isActive = index === current;
         const isDone = index < current;
+        const isUnavailable = index > current;
         return (
           <button
             key={step}
             type="button"
+            disabled={isUnavailable}
+            aria-current={isActive ? "step" : undefined}
             onClick={() => onStepClick?.(index)}
-            className="flex-1 min-w-[92px] flex flex-col gap-2 text-left"
+            className={`flex flex-1 flex-col text-left disabled:cursor-not-allowed ${
+              compact
+                ? "min-w-24 gap-2 xl:min-w-0"
+                : "min-w-[108px] gap-2 md:min-w-20"
+            }`}
           >
             <span
-              className={`text-xs whitespace-nowrap transition-colors ${
+              className={`transition-colors ${compact ? "flex min-h-8 items-center justify-center whitespace-normal text-center text-xs leading-4" : "whitespace-nowrap text-[10px] 2xl:text-xs"} ${
                 isActive
                   ? "font-semibold text-gray-900"
                   : isDone
                     ? "text-gray-600"
-                    : "text-gray-400"
+                    : "text-gray-300"
               }`}
             >
               {step}

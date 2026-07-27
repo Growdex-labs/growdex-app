@@ -122,20 +122,18 @@ export const fetchOnboardingStatus = async (): Promise<{
       clearOnboardingStatus();
     }
 
-    const session_user = sessionStorage.getItem('growdex_user');
-    const user = session_user ? JSON.parse(session_user) : null;
     const completed = !!(result.meta?.connected && result.tiktok?.connected);
 
     const fullName = result.profile
       ? `${result.profile.firstName ?? ''} ${result.profile.lastName ?? ''}`.trim()
-      : `${user?.profile?.firstName ?? ''} ${user?.profile?.lastName ?? ''}`.trim();
+      : '';
 
     const onboardingData: OnboardingData = {
       personalInfo: {
         name: fullName,
-        email: user?.email ?? '',
-        organizationName: result.profile?.organizationName ?? user?.brand?.name ?? '',
-        organizationSize: String(result.profile?.organizationSize ?? user?.brand?.size ?? ''),
+        email: '',
+        organizationName: result.profile?.organizationName ?? '',
+        organizationSize: String(result.profile?.organizationSize ?? ''),
         industry: result.profile?.industry ?? undefined,
         monthlyBudget: result.profile?.monthlyBudget ?? undefined,
       },

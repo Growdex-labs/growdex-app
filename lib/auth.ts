@@ -16,6 +16,66 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export class AuthRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly details?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "AuthRequestError";
+  }
+}
+
+const readAuthError = async (response: Response): Promise<AuthRequestError> => {
+  let details: Record<string, unknown> | undefined;
+
+  try {
+    const body: unknown = await response.json();
+    if (body && typeof body === "object" && !Array.isArray(body)) {
+      details = body as Record<string, unknown>;
+    }
+  } catch {
+    // An empty or non-JSON error response still has useful HTTP status context.
+  }
+
+  const serverMessage = details?.message;
+  const message =
+    typeof serverMessage === "string" && serverMessage.trim()
+      ? serverMessage
+      : `Request failed with status ${response.status}`;
+
+  return new AuthRequestError(message, response.status, details);
+};
+
+export const getAuthErrorMessage = (
+  error: unknown,
+  serviceFailureMessage: string,
+): string => {
+  if (error instanceof AuthRequestError) {
+    if (error.status >= 500) return serviceFailureMessage;
+
+    const responseMessage = error.details?.message;
+    const validationDetails =
+      responseMessage &&
+      typeof responseMessage === "object" &&
+      !Array.isArray(responseMessage)
+        ? (responseMessage as Record<string, unknown>)
+        : error.details;
+    const formErrors = validationDetails?.formErrors;
+    if (Array.isArray(formErrors)) {
+      const firstError = formErrors.find(
+        (entry): entry is string => typeof entry === "string" && !!entry.trim(),
+      );
+      if (firstError) return firstError;
+    }
+
+    return error.message;
+  }
+
+  return serviceFailureMessage;
+};
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 const compactOptionalFields = <T extends Record<string, unknown>>(value: T): T => {
@@ -39,7 +99,9 @@ const isMockableDevUrl = (url: string) =>
   url === "/users/me" ||
   url === "/users/me/user" ||
   url === "/users/ad-accounts/billing" ||
+  url === "/wallet" ||
   url === "/users/onboarding" ||
+  url === "/users/onboarding/status" ||
   url === "/users/onboarding/business" ||
   url === "/users/onboarding/goals" ||
   url === "/users/onboarding/complete" ||
@@ -102,6 +164,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
       email: "devtest@growdex.io",
       avatarUrl: mockAvatar,
       onboardingCompleted: true,
+      isAdmin: true,
       profile: mockProfileStr ? JSON.parse(mockProfileStr) : {
         id: "mock-id",
         firstName: "Dev",
@@ -187,9 +250,42 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
     data = { success: true };
   } else if (url === "/users/ad-accounts/billing") {
     data = [
-      { platform: "meta", billingUrl: "https://www.facebook.com/ads/manager/billing" },
-      { platform: "tiktok", billingUrl: "https://ads.tiktok.com/i18n/dashboard" }
+      {
+        platform: "meta",
+        accountId: "1234567890",
+        accountName: "Growdex Meta Account",
+        currency: "NGN",
+        billingUrl: "https://www.facebook.com/ads/manager/billing",
+      },
+      {
+        platform: "tiktok",
+        accountId: "9876543210",
+        accountName: "Growdex TikTok Account",
+        currency: "NGN",
+        billingUrl: "https://ads.tiktok.com/i18n/dashboard",
+      },
     ];
+  } else if (url === "/wallet") {
+    data = {
+      balances: { NGN: 30000000, USD: 18542.71 },
+      adAccounts: [
+        { platform: "meta", balance: 15900000, currency: "NGN" },
+        { platform: "tiktok", balance: 14100000, currency: "NGN" },
+      ],
+      spending: [
+        { label: "Feb", meta: 2300000, tiktok: 3100000 },
+        { label: "Mar", meta: 1700000, tiktok: 2200000 },
+        { label: "Apr", meta: 2800000, tiktok: 3600000 },
+        { label: "May", meta: 2500000, tiktok: 4100000 },
+        { label: "Jun", meta: 3600000, tiktok: 5400000 },
+      ],
+      spendChangePercent: 42,
+      transactions: [
+        { id: "GDX-ONE-UP-01", date: "2026-06-28", type: "deposit", amount: 1690000, currency: "NGN", status: "failed", merchant: "Paystack" },
+        { id: "GDX-ONE-UP-02", date: "2026-06-28", type: "deposit", amount: 56789, currency: "NGN", status: "success", merchant: "Paystack" },
+        { id: "GDX-CAMPAIGN-03", date: "2026-06-27", type: "campaign_spend", amount: 230000, currency: "NGN", status: "pending", merchant: "Meta Ads" },
+      ],
+    };
   } else if (url === "/users/onboarding/status") {
     data = {
       meta: {
@@ -197,10 +293,18 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
         needsReauth: false,
         assets: [
           {
+            id: "mock-meta-123",
             adAccountId: "mock-meta-123",
             adAccountName: "Growdex Meta Ads",
+            currency: "NGN",
+            accountStatus: 1,
+            timezoneName: "Africa/Lagos",
+            minDailyBudgetMinor: 600000,
+            pageId: "mock-page-123",
             pageName: "Growdex",
-            instagram: "growdex",
+            instagramActorId: "mock-instagram-123",
+            instagramUsername: "growdex",
+            readyForCampaigns: true,
             isPrimary: true,
           },
         ],
@@ -210,6 +314,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
         needsReauth: false,
         assets: [
           {
+            id: "mock-tiktok-456",
             advertiserId: "mock-tiktok-456",
             name: "Growdex TikTok Ads",
             isPrimary: true,
@@ -274,6 +379,11 @@ export const clearDevSession = (): void => {
   document.cookie = `dev_session=; path=/; expires=${expire}`;
   document.cookie = `access_token=; path=/; expires=${expire}`;
 };
+
+export const isDevelopmentMockSessionActive = () =>
+  process.env.NEXT_PUBLIC_APP_ENV === "development" &&
+  typeof document !== "undefined" &&
+  document.cookie.includes("dev_session=true");
 
 /**
  * Wrapper around fetch that automatically includes cookies
@@ -400,8 +510,7 @@ export const register = async (email: string, password: string) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw err;
+    throw await readAuthError(res);
   }
 
   return res.json();
@@ -418,8 +527,7 @@ export const resendVerification = async (email: string) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw err;
+    throw await readAuthError(res);
   }
 
   return res.json();
@@ -437,8 +545,7 @@ export const forgotPassword = async (email: string) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw err;
+    throw await readAuthError(res);
   }
 
   return res.json();
@@ -472,9 +579,16 @@ export const resetPassword = async (
  * Backend should clear httpOnly cookies
  */
 export const logout = async () => {
-  await apiFetch("/auth/logout", { method: "POST", body: JSON.stringify({}) });
-  clearDevSession();
-  window.location.href = "/login";
+  try {
+    await apiFetch("/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+  } finally {
+    clearDevSession();
+    window.location.href = "/login";
+  }
 };
 
 /**

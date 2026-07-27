@@ -10,7 +10,7 @@ export function CampaignsSidebar() {
   const navItems = [
     { label: 'All campaigns', href: '/panel/campaigns' },
     { label: 'New campaign', href: '/panel/campaigns/new' },
-    { label: 'Wallet', href: '/panel/wallet' },
+    { label: 'Funding', href: '/panel/wallet' },
     { label: 'Thrashed', href: '/panel/campaigns/thrashed' },
     { label: 'Saved audience', href: '/panel/campaigns/saved-audience' },
   ];

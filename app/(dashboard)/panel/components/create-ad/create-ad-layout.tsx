@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import AdFormSection from "./ad-form";
 import AdPreviewSection from "./ad-preview-section";
-import { FacebookIcon } from "lucide-react";
 
 export default function CreateAdLayout({
+  campaignId,
   onSave,
 }: {
+  campaignId: string;
   onSave?: () => void;
-} = {}) {
+}) {
   const [activePlatform, setActivePlatform] = useState<"meta" | "tiktok">(
     "meta"
   );
@@ -18,17 +19,6 @@ export default function CreateAdLayout({
   } | null>(null);
   const [caption, setCaption] = useState<string>("");
   const [callToAction, setCallToAction] = useState<string>("Join Now");
-
-  const calculateHeadlineOptimization = (text: string): number => {
-    if (!text) return 0;
-    let score = 0;
-    if (text.length >= 20 && text.length <= 60) score += 50;
-    if (/\d/.test(text)) score += 25;
-    if (text.split(" ").length >= 3) score += 25;
-    return Math.min(score, 100);
-  };
-
-  const headlineOptimization = calculateHeadlineOptimization(headline);
 
   return (
     <div className="relative">
@@ -98,10 +88,10 @@ export default function CreateAdLayout({
           {/* Scrollable form area (scrollbar hidden) */}
           <div className="flex-1 min-h-0 lg:overflow-y-auto hide-scrollbar pr-1">
             <AdFormSection
+              campaignId={campaignId}
               platform={activePlatform}
               headline={headline}
               setHeadline={setHeadline}
-              headlineOptimization={headlineOptimization}
               creative={creative}
               setCreative={setCreative}
               caption={caption}

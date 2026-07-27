@@ -163,18 +163,22 @@ function OnboardingPageContent() {
     setLoadingAction(platform);
     setError('');
 
-    const result = await connectSocialAccount(platform);
-    setLoadingAction(null);
+    try {
+      const result = await connectSocialAccount(platform);
+      if (!result.success) {
+        setError(result.error || `Failed to connect ${platform}`);
+        return;
+      }
 
-    if (!result.success) {
-      setError(result.error || `Failed to connect ${platform}`);
-      return;
-    }
-
-    if (result.data) {
-      setSocialAccounts(result.data);
-    } else {
       await refreshSocialAccounts();
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : `Failed to connect ${platform}`,
+      );
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -206,7 +210,9 @@ function OnboardingPageContent() {
     const res = await hydrateSocialAccounts();
     if (res.success && res.data) {
       setSocialAccounts(res.data);
+      return;
     }
+    setError(res.error || 'Failed to refresh connected accounts');
   };
 
   useEffect(() => {
@@ -236,6 +242,9 @@ function OnboardingPageContent() {
           goals: goals?.selected || [],
           customGoal: goals?.custom || '',
         }));
+        if (res.data.socialAccounts) {
+          setSocialAccounts(res.data.socialAccounts);
+        }
       }
     };
     hydrate();

@@ -1,18 +1,23 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Bold,
   Italic,
   ListIcon,
   MoreVertical,
+  Loader2,
+  Pencil,
   SparklesIcon,
   Strikethrough,
   Type,
   Underline,
 } from "lucide-react";
+import { requestCampaignCreativeSuggestion } from "@/lib/campaigns";
 
 interface CreativeAndCaptionProps {
+  campaignId: string;
   platform: "meta" | "tiktok";
   creative: {
     type: "image" | "video";
@@ -27,6 +32,7 @@ interface CreativeAndCaptionProps {
 }
 
 export default function CreativeAndCaption({
+  campaignId,
   platform,
   creative,
   setCreative,
@@ -34,7 +40,12 @@ export default function CreativeAndCaption({
   setCaption,
   headline = "",
 }: CreativeAndCaptionProps) {
-  const [isUploading, setIsUploading] = useState(false);
+  const [captionSuggestion, setCaptionSuggestion] = useState<{
+    value: string;
+    rationale: string;
+  } | null>(null);
+  const [captionLoading, setCaptionLoading] = useState(false);
+  const [captionError, setCaptionError] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,6 +54,34 @@ export default function CreativeAndCaption({
     const type = file.type.startsWith("video/") ? "video" : "image";
 
     setCreative({ type, url });
+  };
+
+  const generateCaption = async () => {
+    if (captionLoading) return;
+    setCaptionLoading(true);
+    setCaptionError(null);
+    setCaptionSuggestion(null);
+    try {
+      const suggestion = await requestCampaignCreativeSuggestion(campaignId, {
+        platform,
+        field: "caption",
+        currentValue: caption,
+        headline,
+        caption,
+      });
+      setCaptionSuggestion({
+        value: suggestion.value,
+        rationale: suggestion.rationale,
+      });
+    } catch (failure) {
+      setCaptionError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not generate a caption variation.",
+      );
+    } finally {
+      setCaptionLoading(false);
+    }
   };
 
   return (
@@ -92,9 +131,12 @@ export default function CreativeAndCaption({
         {creative ? (
           <div className="relative">
             {creative.type === "image" ? (
-              <img
+              <Image
                 src={creative.url}
                 alt="Ad creative"
+                width={640}
+                height={640}
+                unoptimized
                 className="w-full h-64 object-cover rounded-lg"
               />
             ) : (
@@ -112,7 +154,7 @@ export default function CreativeAndCaption({
               }
               className="mt-2 text-khaki-300 text-sm flex items-center gap-1 hover:text-khaki-400"
             >
-              ✏️ Change {creative.type}
+              <Pencil className="h-3.5 w-3.5" /> Change {creative.type}
             </button>
           </div>
         ) : (
@@ -121,7 +163,7 @@ export default function CreativeAndCaption({
             <input
               id="creative-upload"
               type="file"
-              accept="image/*,video/*"
+              accept={platform === "meta" ? "image/*" : "video/*"}
               onChange={handleFileUpload}
               className="hidden"
             />
@@ -191,10 +233,52 @@ export default function CreativeAndCaption({
               </button>
             </div>
 
-            <span className="inline-flex ml-auto text-xs text-khaki-300">
-              <SparklesIcon className="w-4 h-4 mr-2" />
-              Generate variable caption
-            </span>
+            <button
+              type="button"
+              onClick={() => void generateCaption()}
+              disabled={captionLoading}
+              className="ml-auto inline-flex items-center text-xs text-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {captionLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <SparklesIcon className="mr-2 h-4 w-4" />
+              )}
+              {captionLoading ? "Generating…" : "Generate caption variation"}
+            </button>
+          </div>
+        )}
+
+        {captionError && (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+            {captionError}
+          </p>
+        )}
+        {captionSuggestion && (
+          <div className="rounded-lg border border-violet-100 bg-violet-50 p-3">
+            <p className="text-sm leading-6 text-gray-900">{captionSuggestion.value}</p>
+            <p className="mt-1 text-xs leading-5 text-violet-700">
+              {captionSuggestion.rationale}
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCaption(captionSuggestion.value);
+                  setCaptionSuggestion(null);
+                }}
+                className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white"
+              >
+                Use variation
+              </button>
+              <button
+                type="button"
+                onClick={() => setCaptionSuggestion(null)}
+                className="rounded-lg border border-violet-200 px-3 py-1.5 text-xs text-violet-700"
+              >
+                Keep current
+              </button>
+            </div>
           </div>
         )}
       </div>

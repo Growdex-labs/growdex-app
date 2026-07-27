@@ -44,6 +44,7 @@ export type MeResponse = {
   email: string;
   avatarUrl: string | null;
   onboardingCompleted: boolean;
+  isAdmin: boolean;
   profile: MeProfile;
   brand: MeBrand;
   platformConnections: PlatformConnection[];
@@ -63,6 +64,7 @@ const MOCK_ME: MeResponse = {
   email: "devtest@growdex.io",
   avatarUrl: null,
   onboardingCompleted: true,
+  isAdmin: true,
   profile: {
     id: "mock-id",
     firstName: "Dev",

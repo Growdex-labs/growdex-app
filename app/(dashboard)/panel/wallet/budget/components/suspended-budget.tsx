@@ -1,5 +1,6 @@
 import { Pencil } from "lucide-react";
-// TODO: Add Budget type
+import type { Budget } from "@/lib/mock-data";
+import Image from "next/image";
 import Link from "next/link";
 
 const suspendedBudgets = [
@@ -21,7 +22,9 @@ const suspendedBudgets = [
     amount: 300000.0,
     isActive: false,
   },
-];
+] satisfies Array<
+  Pick<Budget, "id" | "name" | "icon" | "status" | "usedPercent" | "amount" | "isActive">
+>;
 
 export default function SuspendedBudget() {
   return (
@@ -36,9 +39,11 @@ export default function SuspendedBudget() {
             {/* Budget Icon */}
             <div className="w-14 h-14 bg-gray-100 border border-khaki-200 rounded-full flex items-center justify-center flex-shrink-0">
               {budget.icon ? (
-                <img
+                <Image
                   src={budget.icon}
                   alt={budget.name}
+                  width={44}
+                  height={44}
                   className="w-11 h-11 object-contain"
                 />
               ) : (
@@ -91,9 +96,11 @@ export default function SuspendedBudget() {
               <div className="flex gap-3 flex-1">
                 <div className="w-10 h-10 bg-gray-100 border border-khaki-200 rounded-full flex items-center justify-center flex-shrink-0">
                   {budget.icon ? (
-                    <img
+                    <Image
                       src={budget.icon}
                       alt={budget.name}
+                      width={36}
+                      height={36}
                       className="w-9 h-9 object-contain"
                     />
                   ) : (

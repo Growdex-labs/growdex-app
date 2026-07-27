@@ -2,8 +2,6 @@
 
 import { Campaign } from "@/lib/mock-data";
 import {
-  Facebook,
-  Instagram,
   MoreVertical,
   Sparkles,
   TrendingDown,
@@ -13,11 +11,11 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { CampaignsEmptyState } from "./campaigns-empty-state";
+import Image from "next/image";
 
 interface CampaignsTableProps {
   campaigns: Campaign[];
@@ -40,9 +38,11 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
       case "meta":
         return (
           <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center">
-            <img
+            <Image
               src="/logos_meta-icon.png"
-              alt="meta"
+              alt="Meta"
+              width={12}
+              height={12}
               className="w-3 h-3 text-white"
             />
           </div>
@@ -220,15 +220,11 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
                         </span>
                         <TrendingDown className="w-4 h-4 text-firebrick-500" />
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-peru-200 cursor-pointer">
-                        <Sparkles className="w-3 h-3" />
-                        optimize with AI
-                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <button className="px-4 py-2 bg-bisque-50 text-firebrick-500 rounded-xl font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm whitespace-nowrap">
-                      <img src="/mdi_fire.png" alt="fire" className="w-4 h-4" />
+                      <Image src="/mdi_fire.png" alt="" width={16} height={16} className="h-4 w-4" />
                       Budget Burn
                     </button>
                   </td>

@@ -8,16 +8,23 @@ import { NotificationSidebar } from "./notification-sidebar";
 
 interface PanelLayoutProps {
   children: ReactNode;
+  defaultSidebarCollapsed?: boolean;
 }
 
-export function PanelLayout({ children }: PanelLayoutProps) {
+export function PanelLayout({
+  children,
+  defaultSidebarCollapsed = false,
+}: PanelLayoutProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <TopHeader />
       <div className="flex flex-1 overflow-hidden">
-        <CollapsibleSidebar onNotificationClick={() => setIsNotificationOpen(true)} />
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0 hide-scrollbar">
+        <CollapsibleSidebar
+          defaultCollapsed={defaultSidebarCollapsed}
+          onNotificationClick={() => setIsNotificationOpen(true)}
+        />
+        <main className="min-w-0 flex-1 overflow-y-auto pb-16 md:pb-0 hide-scrollbar">
           {children}
         </main>
         <NotificationSidebar
