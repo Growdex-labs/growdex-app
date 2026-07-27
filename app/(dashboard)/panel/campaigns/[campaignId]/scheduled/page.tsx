@@ -823,8 +823,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                           <div>
                             <dt className="font-medium text-gray-800">Schedule</dt>
                             <dd>
-                              {strategy.budget.startDate} –{" "}
-                              {strategy.budget.endDate}
+                              {strategy.budget.endDate
+                                ? `${strategy.budget.startDate} – ${strategy.budget.endDate}`
+                                : `${strategy.budget.startDate} – Ongoing`}
                             </dd>
                           </div>
                         </dl>
