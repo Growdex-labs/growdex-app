@@ -84,6 +84,9 @@ export function DemographicsForm({
     () => new Set(audience.locations),
     [audience.locations],
   );
+  const providerAccountKey = platforms
+    .map((platform) => `${platform}:${accountAssetIds[platform] ?? ""}`)
+    .join("|");
 
   const changeTab = (nextTab: Tab) => {
     setTab(nextTab);
@@ -165,8 +168,11 @@ export function DemographicsForm({
       setLanguageLoading(true);
       setLanguageError(null);
       void Promise.all(
-        platforms.map((platform) => {
-          const assetId = accountAssetIds[platform];
+        providerAccountKey.split("|").filter(Boolean).map((entry) => {
+          const [platform, assetId] = entry.split(":") as [
+            CampaignPlatform,
+            string,
+          ];
           if (!assetId) {
             throw new Error(
               `Select a ${platform === "meta" ? "Meta" : "TikTok"} account first.`,
@@ -210,7 +216,7 @@ export function DemographicsForm({
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [accountAssetIds, languageQuery, platforms, tab]);
+  }, [languageQuery, providerAccountKey, tab]);
 
   const applySavedAudience = (saved: SavedAudience) => {
     const locations = audienceLocations(saved);

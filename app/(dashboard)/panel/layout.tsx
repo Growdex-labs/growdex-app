@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { AuthRequestError, getCurrentUser } from '@/lib/auth';
 
 export default function PanelRootLayout({
   children,
@@ -11,6 +11,7 @@ export default function PanelRootLayout({
 }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -27,8 +28,19 @@ export default function PanelRootLayout({
           return;
         }
         setIsLoading(false);
-      } catch {
-        if (active) router.replace('/login');
+      } catch (error) {
+        if (!active) return;
+        if (
+          error instanceof AuthRequestError &&
+          (error.status === 401 || error.status === 403)
+        ) {
+          router.replace('/login');
+          return;
+        }
+        setAccessError(
+          "We could not verify your account right now. Please refresh and try again.",
+        );
+        setIsLoading(false);
       }
     };
 
@@ -44,6 +56,24 @@ export default function PanelRootLayout({
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <div className="text-gray-600">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div role="alert" className="max-w-md rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-lg font-semibold text-gray-900">Account check failed</h1>
+          <p className="mt-2 text-sm text-gray-600">{accessError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white"
+          >
+            Try again
+          </button>
         </div>
       </div>
     );

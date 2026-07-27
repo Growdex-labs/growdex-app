@@ -53,9 +53,7 @@ export function OptimizationSidebar({
   }) => {
     setRevision(response.revision);
     setProposals(response.proposals);
-    setSelected(
-      Object.fromEntries(response.proposals.map((proposal) => [proposal.id, true])),
-    );
+    setSelected({});
   };
 
   useEffect(() => {
@@ -79,7 +77,9 @@ export function OptimizationSidebar({
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-    return () => controller.abort();
+    return () => {
+      requestRef.current?.abort();
+    };
   }, [campaignId, isOpen]);
 
   const requestNewOptimizations = async () => {

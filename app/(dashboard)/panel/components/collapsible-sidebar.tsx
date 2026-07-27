@@ -93,21 +93,19 @@ export function CollapsibleSidebar({
           </div>
 
           {/* Notification Button */}
-          {!isCollapsed && (
-            <button
-              type="button"
-              onClick={onNotificationClick}
-              aria-label="Open notifications"
-              className="relative flex shrink-0 cursor-pointer gap-2 border-none bg-transparent p-0"
-            >
-              <Bell className="size-6 text-khaki-300" />
-              {unreadCount > 0 && (
-                <div className="absolute -right-3 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-khaki-300 text-xs font-bold text-gray-900">
-                  {unreadCount}
-                </div>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onNotificationClick}
+            aria-label="Open notifications"
+            className="relative flex shrink-0 cursor-pointer gap-2 border-none bg-transparent p-0"
+          >
+            <Bell className="size-6 text-khaki-300" />
+            {unreadCount > 0 && (
+              <div className="absolute -right-3 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-khaki-300 text-xs font-bold text-gray-900">
+                {unreadCount}
+              </div>
+            )}
+          </button>
         </div>
       </div>
 

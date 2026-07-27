@@ -35,6 +35,13 @@ const transactionLabel = (transaction: WalletTransaction) =>
     ? "Campaign spend"
     : transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
 
+const formatTransactionDate = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Date unavailable"
+    : new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(date);
+};
+
 function SpendingChart({ overview }: { overview: WalletOverview }) {
   if (overview.spending.length === 0) {
     return (
@@ -324,9 +331,7 @@ export default function WalletOverviewPage() {
                             </div>
                           </div>
                           <span className="hidden text-gray-500 lg:block">
-                            {new Intl.DateTimeFormat("en-NG", {
-                              dateStyle: "medium",
-                            }).format(new Date(transaction.date))}
+                            {formatTransactionDate(transaction.date)}
                           </span>
                           <span className="hidden font-gilroy-semibold text-gray-900 lg:block">
                             {formatWalletMoney(

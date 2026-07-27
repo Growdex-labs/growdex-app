@@ -20,6 +20,47 @@ type BillingOption = {
   error?: string;
 };
 
+const isPlatform = (value: unknown): value is Platform =>
+  value === "meta" || value === "tiktok";
+
+const isOptionalString = (value: unknown) =>
+  value === undefined || typeof value === "string";
+
+const parseBillingOptions = (value: unknown): BillingOption[] => {
+  if (!Array.isArray(value)) {
+    throw new Error("Billing options returned an invalid response.");
+  }
+
+  if (
+    !value.every(
+      (item) =>
+        item !== null &&
+        typeof item === "object" &&
+        isPlatform((item as BillingOption).platform) &&
+        isOptionalString((item as BillingOption).accountId) &&
+        isOptionalString((item as BillingOption).accountName) &&
+        ((item as BillingOption).currency === null ||
+          isOptionalString((item as BillingOption).currency)) &&
+        isOptionalString((item as BillingOption).billingUrl) &&
+        isOptionalString((item as BillingOption).error),
+    )
+  ) {
+    throw new Error("Billing options returned an invalid response shape.");
+  }
+
+  return value as BillingOption[];
+};
+
+const getSecureBillingUrl = (value?: string) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+};
+
 const billingOptionKey = (option: BillingOption) =>
   `${option.platform}:${option.accountId ?? "unavailable"}`;
 
@@ -124,7 +165,7 @@ export default function FundWalletPage() {
         if (!response.ok) {
           throw new Error(`Billing options failed (${response.status}).`);
         }
-        const data = (await response.json()) as BillingOption[];
+        const data = parseBillingOptions(await response.json());
         if (active) {
           setBillingOptions(data);
           setCardErrors(
@@ -153,11 +194,11 @@ export default function FundWalletPage() {
 
   const handleFund = (option: BillingOption) => {
     const key = billingOptionKey(option);
-    const billingUrl = option.billingUrl;
+    const billingUrl = getSecureBillingUrl(option.billingUrl);
     if (!billingUrl) {
       setCardErrors((current) => ({
         ...current,
-        [key]: `No billing link is available for ${PLATFORM_CONFIG[option.platform].name}.`,
+        [key]: `A secure billing link is not available for ${PLATFORM_CONFIG[option.platform].name}.`,
       }));
       return;
     }
@@ -205,7 +246,7 @@ export default function FundWalletPage() {
                       }
                       accountId={option.accountId}
                       currency={option.currency}
-                      canFund={Boolean(option.billingUrl)}
+                      canFund={Boolean(getSecureBillingUrl(option.billingUrl))}
                       loading={false}
                       error={cardErrors[key]}
                       onFund={() => handleFund(option)}

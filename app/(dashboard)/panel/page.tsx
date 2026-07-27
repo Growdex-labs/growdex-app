@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PanelLayout } from "./components/panel-layout";
 import { DashboardHeader } from "./components/dashboard-header";
 import { PerformanceChart } from "./components/performance-chart";
@@ -99,6 +99,14 @@ export default function PanelPage() {
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantError, setAssistantError] = useState<string | null>(null);
   const [messages, setMessages] = useState<AiMessage[]>([]);
+  const assistantRequestRef = useRef(0);
+  const selectedCampaignRef = useRef(selectedCampaignId);
+
+  useEffect(() => {
+    selectedCampaignRef.current = selectedCampaignId;
+    assistantRequestRef.current += 1;
+    setAssistantLoading(false);
+  }, [selectedCampaignId]);
 
   useEffect(() => {
     let active = true;
@@ -198,6 +206,9 @@ export default function PanelPage() {
       return;
     }
 
+    const requestCampaignId = selectedCampaignId;
+    const requestId = assistantRequestRef.current + 1;
+    assistantRequestRef.current = requestId;
     const userMessage: AiMessage = {
       id: crypto.randomUUID(),
       sender: "user",
@@ -210,25 +221,39 @@ export default function PanelPage() {
 
     try {
       const response = await requestCampaignAdvice(
-        selectedCampaignId,
+        requestCampaignId,
         text,
         messages.map((message) => ({
           role: message.sender === "user" ? "user" : "assistant",
           content: message.text,
         })),
       );
+      if (
+        assistantRequestRef.current !== requestId ||
+        selectedCampaignRef.current !== requestCampaignId
+      ) {
+        return;
+      }
       setMessages((current) => [
         ...current,
         { id: crypto.randomUUID(), sender: "ai", text: response.answer },
       ]);
     } catch (failure) {
+      if (
+        assistantRequestRef.current !== requestId ||
+        selectedCampaignRef.current !== requestCampaignId
+      ) {
+        return;
+      }
       setAssistantError(
         failure instanceof Error
           ? failure.message
           : "The campaign assistant could not answer right now.",
       );
     } finally {
-      setAssistantLoading(false);
+      if (assistantRequestRef.current === requestId) {
+        setAssistantLoading(false);
+      }
     }
   };
 

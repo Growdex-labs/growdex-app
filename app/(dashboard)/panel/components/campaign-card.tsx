@@ -28,12 +28,26 @@ const statusClass = (status?: string) => {
   }
 };
 
-const formatMoney = (campaign: CampaignDto) =>
-  new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: campaign.audienceStrategies[0]?.budget.currency ?? "NGN",
-    maximumFractionDigits: 2,
-  }).format(campaign.audienceStrategies.reduce((total, strategy) => total + strategy.budget.amount, 0));
+const formatMoney = (campaign: CampaignDto) => {
+  const totals = campaign.audienceStrategies.reduce<Record<string, number>>(
+    (result, strategy) => {
+      const { amount, currency } = strategy.budget;
+      result[currency] = (result[currency] ?? 0) + amount;
+      return result;
+    },
+    {},
+  );
+
+  const formatted = Object.entries(totals).map(([currency, amount]) =>
+    new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(amount),
+  );
+
+  return formatted.join(" + ") || "No budget set";
+};
 
 export function CampaignCard({ campaign, href }: CampaignCardProps) {
   return (

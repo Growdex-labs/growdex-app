@@ -1419,6 +1419,18 @@ const serializeCampaignPayload = (
   };
 };
 
+const parseCampaignWriteResponse = (
+  value: unknown,
+  operation: string,
+): CampaignDto => {
+  const candidate =
+    isRecord(value) && isRecord(value.data) ? value.data : value;
+  if (!isRecord(candidate) || typeof candidate.id !== "string" || !candidate.id) {
+    throw new Error(`${operation} returned an invalid campaign response.`);
+  }
+  return candidate as unknown as CampaignDto;
+};
+
 export const createCampaign = async (
   payload: CreateCampaignPayload,
   options?: { idempotencyKey?: string },
@@ -1439,7 +1451,7 @@ export const createCampaign = async (
     throw new Error(getApiError(data, `Create campaign failed (${res.status})`));
   }
 
-  return data as CampaignDto;
+  return parseCampaignWriteResponse(data, "Create campaign");
 };
 
 export const createCampaignDraft = async (
@@ -1460,7 +1472,7 @@ export const createCampaignDraft = async (
   if (!res.ok) {
     throw new Error(getApiError(data, `Save campaign draft failed (${res.status})`));
   }
-  return data as CampaignDto;
+  return parseCampaignWriteResponse(data, "Save campaign draft");
 };
 
 export const fetchCampaigns = async (): Promise<CampaignDto[]> => {
@@ -1524,7 +1536,7 @@ export const updateCampaign = async (
     throw new Error(getApiError(data, `Update campaign failed (${res.status})`));
   }
 
-  return data as CampaignDto;
+  return parseCampaignWriteResponse(data, "Update campaign");
 };
 
 export const updateCampaignDraft = async (
@@ -1540,7 +1552,7 @@ export const updateCampaignDraft = async (
   if (!res.ok) {
     throw new Error(getApiError(data, `Save campaign draft failed (${res.status})`));
   }
-  return data as CampaignDto;
+  return parseCampaignWriteResponse(data, "Save campaign draft");
 };
 
 export const publishCampaign = async (
@@ -1559,12 +1571,31 @@ export const publishCampaign = async (
     throw new Error(getApiError(data, `Publish campaign failed (${res.status})`));
   }
 
-  return data as CampaignDto;
+  return parseCampaignWriteResponse(data, "Publish campaign");
 };
 
 export const campaignDtoToPayload = (
   campaign: CampaignDto,
-): CampaignReviewPayload => ({
+): CampaignReviewPayload => {
+  if (
+    typeof campaign.name !== "string" ||
+    !Array.isArray(campaign.platforms) ||
+    !isRecord(campaign.configuration) ||
+    !Array.isArray(campaign.audienceStrategies) ||
+    campaign.audienceStrategies.length === 0 ||
+    campaign.audienceStrategies.some(
+      (strategy) =>
+        !isRecord(strategy) ||
+        typeof strategy.id !== "string" ||
+        !isRecord(strategy.configuration) ||
+        !isRecord(strategy.audience) ||
+        !isRecord(strategy.budget),
+    ) ||
+    (campaign.creatives !== undefined && !Array.isArray(campaign.creatives))
+  ) {
+    throw new Error("The campaign service returned incomplete campaign details.");
+  }
+  return {
   creationMode: campaign.creationMode ?? "unknown",
   campaign: {
     name: campaign.name,
@@ -1585,4 +1616,5 @@ export const campaignDtoToPayload = (
       leadFormId: ad.leadFormId,
     })),
   })),
-});
+  };
+};

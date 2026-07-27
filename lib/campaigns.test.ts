@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { apiFetch } from "./auth";
 import {
   fetchMetaLeadForms,
+  campaignDtoToPayload,
   parseAiCampaignDraftResponse,
   parseCampaignNameSuggestion,
   parseCampaignOptimizationResponse,
@@ -13,6 +14,27 @@ import {
 } from "./campaigns";
 
 vi.mock("./auth", () => ({ apiFetch: vi.fn() }));
+
+describe("campaignDtoToPayload", () => {
+  it("rejects saved campaigns without an audience strategy", () => {
+    expect(() =>
+      campaignDtoToPayload({
+        id: "campaign-1",
+        name: "Incomplete campaign",
+        creationMode: "manual",
+        goal: "TRAFFIC",
+        platforms: ["meta"],
+        configuration: {
+          specialAdCategories: [],
+          sameCreativeForAll: false,
+          budgetOptimization: "audience_strategy",
+        },
+        audienceStrategies: [],
+        creatives: [],
+      }),
+    ).toThrow("incomplete campaign details");
+  });
+});
 
 describe("parseCampaignNameSuggestion", () => {
   it("accepts a readable campaign title", () => {

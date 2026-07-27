@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -46,6 +46,22 @@ export default function AssetsPage() {
   const [tab, setTab] = useState<LibraryTab>("assets");
   const [view, setView] = useState<LibraryView>("grid");
   const [selected, setSelected] = useState<CreativeAsset | null>(null);
+  const closePreviewRef = useRef<HTMLButtonElement>(null);
+  const previewTriggerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!selected) return;
+    previewTriggerRef.current = document.activeElement as HTMLElement | null;
+    closePreviewRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelected(null);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previewTriggerRef.current?.focus();
+    };
+  }, [selected]);
 
   useEffect(() => {
     let active = true;
@@ -56,8 +72,7 @@ export default function AssetsPage() {
             socialSetup.error ?? "Could not load connected social accounts.",
           );
         }
-        const providerMedia = (
-          await Promise.all(
+        const providerResults = await Promise.allSettled(
             [
               ...(socialSetup.data.meta?.assets ?? []).map((asset) =>
                 fetchMetaSocialPosts(asset.id),
@@ -69,8 +84,10 @@ export default function AssetsPage() {
                 fetchTikTokSocialPosts(asset.id),
               ),
             ],
-          )
-        ).flat();
+          );
+        const providerMedia = providerResults.flatMap((result) =>
+          result.status === "fulfilled" ? result.value : [],
+        );
         if (active) {
           setAssets(
             [...campaignAssets, ...providerMedia].filter(
@@ -315,7 +332,7 @@ export default function AssetsPage() {
                   <p className="truncate font-gilroy-semibold text-gray-900">{selected.name}</p>
                   <p className="truncate text-xs text-gray-400">{selected.campaignName}</p>
                 </div>
-                <button type="button" onClick={() => setSelected(null)} aria-label="Close asset preview" className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+                <button ref={closePreviewRef} type="button" onClick={() => setSelected(null)} aria-label="Close asset preview" className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
                   <X className="size-5" />
                 </button>
               </div>

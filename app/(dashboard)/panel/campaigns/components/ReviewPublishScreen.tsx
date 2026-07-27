@@ -17,6 +17,18 @@ import {
   type CampaignReviewPayload,
   validateCampaignPayload,
 } from "@/lib/campaigns";
+
+const formatBudget = (amount: number, currency: string) => {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${amount.toLocaleString()} ${currency}`.trim();
+  }
+};
 import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { PlatformAdPreview } from "./PlatformAdPreview";
@@ -265,11 +277,10 @@ export function ReviewPublishScreen({
                       <Banknote className="size-3.5" /> Budget
                     </p>
                     <p className="mt-1 text-xl font-gilroy-bold">
-                      {new Intl.NumberFormat(undefined, {
-                        style: "currency",
-                        currency: strategy.budget.currency,
-                        maximumFractionDigits: 2,
-                      }).format(strategy.budget.amount)}
+                      {formatBudget(
+                        strategy.budget.amount,
+                        strategy.budget.currency,
+                      )}
                       <span className="ml-1 text-xs font-gilroy-regular text-white/50">
                         /{strategy.budget.type}
                       </span>

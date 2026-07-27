@@ -4,7 +4,6 @@ import { Campaign } from "@/lib/mock-data";
 import Image from "next/image";
 import { PerformanceChart } from "./performance-chart";
 import {
-  Facebook,
   MoreVertical,
   Sparkles,
   TrendingDownIcon,
@@ -55,8 +54,8 @@ export function Overview({ campaign, subTab, onOptimizationClick }: OverviewProp
           {/* Platform Stats */}
           <div className="flex items-center gap-4 md:gap-6 overflow-x-auto hide-scrollbar">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                <Facebook className="w-3.5 h-3.5 text-white" />
+              <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                <Image src="/logos_meta-icon.png" alt="Meta" width={14} height={14} className="h-3.5 w-3.5" />
               </div>
               <span className="text-lg font-semibold text-gray-900">
                 23,900

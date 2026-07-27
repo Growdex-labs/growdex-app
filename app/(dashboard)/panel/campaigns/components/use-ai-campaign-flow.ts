@@ -41,14 +41,21 @@ const DEFAULT_STATUSES: Record<AiStepId, AiStepStatus> = {
   creative: "review",
 };
 
-const currencySymbol = (currency: string) =>
-  new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    currencyDisplay: "narrowSymbol",
-  })
-    .formatToParts(0)
-    .find((part) => part.type === "currency")?.value ?? currency;
+const currencySymbol = (currency: string) => {
+  try {
+    return (
+      new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+        currencyDisplay: "narrowSymbol",
+      })
+        .formatToParts(0)
+        .find((part) => part.type === "currency")?.value ?? currency
+    );
+  } catch {
+    return currency;
+  }
+};
 
 export function useAiCampaignFlow(
   campaign: CreateCampaignPayload,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   forecastCampaignReach,
   type AudienceStrategy,
@@ -16,6 +16,7 @@ import type { AudienceAiFixRequest } from "./AudienceReachCard";
 import { DemographicsForm } from "./DemographicsForm";
 
 type Audience = AudienceStrategy["audience"];
+const EMPTY_ACCOUNT_ASSET_IDS: Partial<Record<CampaignPlatform, string>> = {};
 
 interface AudienceTargetingScreenProps {
   goal: CampaignGoal;
@@ -58,6 +59,10 @@ export function AudienceTargetingScreen({
   const metaAssetId = configuration.accountAssetIds?.meta;
   const canForecast = Boolean(
     metaSelected && metaConnected && metaAssetId && audience.locations.length,
+  );
+  const accountAssetIds = useMemo(
+    () => configuration.accountAssetIds ?? EMPTY_ACCOUNT_ASSET_IDS,
+    [configuration.accountAssetIds],
   );
 
   useEffect(() => {
@@ -109,7 +114,7 @@ export function AudienceTargetingScreen({
         <div className="min-w-0 space-y-6">
           <DemographicsForm
             platforms={platforms}
-            accountAssetIds={configuration.accountAssetIds ?? {}}
+            accountAssetIds={accountAssetIds}
             audience={audience}
             unavailableInterests={unavailableInterests}
             onChange={onChange}

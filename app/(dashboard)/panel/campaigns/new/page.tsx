@@ -8,7 +8,6 @@ import DottedBackground from "@/components/dotted-background";
 import { useMe } from "@/context/me-context";
 import { apiFetch, isDevelopmentMockSessionActive } from "@/lib/auth";
 import {
-  createCampaign,
   createCampaignDraft,
   createAudienceStrategy,
   createInitialCampaignPayload,
@@ -24,7 +23,6 @@ import {
   requestAudienceInterestSuggestions,
   resumeAiCampaignDraft,
   startAiCampaignDraft,
-  updateCampaign,
   updateCampaignDraft,
   validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
@@ -44,7 +42,7 @@ import {
   type MetaSpecialAdCategory,
 } from "@/lib/campaigns";
 import { eventManagementPatch } from "../components/event-management-state";
-import { validateFile } from "@/lib/campaign-shared";
+import { isVideoUrl, validateFile } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
@@ -244,7 +242,7 @@ const loadAvailableCampaignMedia = async (
       name: media.name,
       url: media.url,
       platform: media.platform,
-      mediaType: /\.(mp4|mov|webm)(\?|$)/i.test(media.url)
+      mediaType: isVideoUrl(media.url)
         ? ("video" as const)
         : ("image" as const),
       source: media.kind,
@@ -338,6 +336,7 @@ export default function NewCampaignPage() {
     requested: false,
     lastFingerprint: "",
   });
+  const autosaveRetryTimerRef = useRef<number | null>(null);
   const aiSessionRestoredRef = useRef(false);
   const openStrategyEditor = (id: string) => {
     setActiveStrategyId(id);
@@ -404,6 +403,15 @@ export default function NewCampaignPage() {
     savedCampaignIdRef.current = savedCampaignId;
   }, [savedCampaignId]);
 
+  useEffect(
+    () => () => {
+      if (autosaveRetryTimerRef.current !== null) {
+        window.clearTimeout(autosaveRetryTimerRef.current);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (editingCampaignLoading || !method || !campaign.campaign.name.trim()) return;
     if (validateCampaignDraftPayload(campaign)) return;
@@ -436,11 +444,19 @@ export default function NewCampaignPage() {
               window.history.replaceState(window.history.state, "", url);
             }
           } catch (failure) {
+            autosaveRef.current.requested = true;
             setAutosaveError(
               failure instanceof Error
                 ? `Growdex could not protect your latest changes: ${failure.message}`
                 : "Growdex could not protect your latest changes.",
             );
+            if (autosaveRetryTimerRef.current === null) {
+              autosaveRetryTimerRef.current = window.setTimeout(() => {
+                autosaveRetryTimerRef.current = null;
+                void flush();
+              }, 2_000);
+            }
+            break;
           }
         }
       } finally {
@@ -480,15 +496,10 @@ export default function NewCampaignPage() {
           ...payload,
           creationMode: payload.creationMode,
         };
-        setCampaign(editablePayload);
-        setActiveStrategyId(
+        const restoredStrategyId =
           payload.audienceStrategies.some(({ id }) => id === editStrategyId)
             ? editStrategyId
-            : payload.audienceStrategies[0]?.id ?? null,
-        );
-        setMethod(payload.creationMode);
-        setGoalConfirmed(true);
-        setSavedCampaignId(result.id);
+            : payload.audienceStrategies[0]?.id ?? null;
         if (payload.creationMode === "ai") {
           const socialSetup = await hydrateSocialAccounts();
           if (!socialSetup.success || !socialSetup.data) {
@@ -506,6 +517,12 @@ export default function NewCampaignPage() {
           if (resumed.status !== "ready") {
             throw new Error("The saved AI campaign could not be resumed.");
           }
+          if (!active) return;
+          setCampaign(editablePayload);
+          setActiveStrategyId(restoredStrategyId);
+          setMethod("ai");
+          setGoalConfirmed(true);
+          setSavedCampaignId(result.id);
           setAiDraftId(resumed.draftId);
           setAiDraftRevision(resumed.revision);
           setAiGeneratedDraft(resumed.draft);
@@ -514,6 +531,11 @@ export default function NewCampaignPage() {
           setAiStepRationales(resumed.draft.stepRationales);
           setStep(editStrategyId ? 3 : 0);
         } else {
+          setCampaign(editablePayload);
+          setActiveStrategyId(restoredStrategyId);
+          setMethod("manual");
+          setGoalConfirmed(true);
+          setSavedCampaignId(result.id);
           setStep(
             editAdIndex !== null && Number.isInteger(editAdIndex)
               ? 6
@@ -549,6 +571,14 @@ export default function NewCampaignPage() {
         else
           setAccountError(result.error ?? "Could not load connected accounts.");
       })
+      .catch((failure) => {
+        if (!active) return;
+        setAccountError(
+          failure instanceof Error
+            ? failure.message
+            : "Could not load connected accounts.",
+        );
+      })
       .finally(() => {
         if (active) setAccountsLoading(false);
       });
@@ -579,7 +609,8 @@ export default function NewCampaignPage() {
       if (
         !value.campaign ||
         value.campaign.creationMode !== "ai" ||
-        typeof value.savedCampaignId === "string" ||
+        (value.savedCampaignId !== undefined &&
+          typeof value.savedCampaignId !== "string") ||
         typeof value.draftId !== "string" ||
         typeof value.revision !== "number" ||
         (!value.generatedDraft && !value.question) ||
@@ -1461,8 +1492,8 @@ export default function NewCampaignPage() {
     setError(null);
     try {
       const created = savedCampaignId
-        ? await updateCampaign(savedCampaignId, campaign)
-        : await createCampaign(campaign, {
+        ? await updateCampaignDraft(savedCampaignId, campaign)
+        : await createCampaignDraft(campaign, {
             idempotencyKey: createIdempotencyKeyRef.current,
           });
       setSavedCampaignId(created.id);
@@ -1498,8 +1529,8 @@ export default function NewCampaignPage() {
     setError(null);
     try {
       const saved = savedCampaignId
-        ? await updateCampaign(savedCampaignId, campaign)
-        : await createCampaign(campaign, {
+        ? await updateCampaignDraft(savedCampaignId, campaign)
+        : await createCampaignDraft(campaign, {
             idempotencyKey: createIdempotencyKeyRef.current,
           });
       setSavedCampaignId(saved.id);

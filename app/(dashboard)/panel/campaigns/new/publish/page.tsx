@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PanelLayout } from "../../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
@@ -31,6 +31,8 @@ export default function PublishCampaignPage() {
   const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(null);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountsError, setAccountsError] = useState<string | null>(null);
+  const [strategyMutationPending, setStrategyMutationPending] = useState(false);
+  const strategyMutationPendingRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -42,6 +44,14 @@ export default function PublishCampaignPage() {
           return;
         }
         setAccountsError(result.error ?? "Could not load connected accounts.");
+      })
+      .catch((failure) => {
+        if (!active) return;
+        setAccountsError(
+          failure instanceof Error
+            ? failure.message
+            : "Could not load connected accounts.",
+        );
       })
       .finally(() => {
         if (active) setAccountsLoading(false);
@@ -111,7 +121,12 @@ export default function PublishCampaignPage() {
   };
 
   const handleDuplicateStrategy = async (strategyId: string) => {
-    if (!campaignId || !campaign || sourceStatus !== "draft") return;
+    if (
+      !campaignId ||
+      !campaign ||
+      sourceStatus !== "draft" ||
+      strategyMutationPendingRef.current
+    ) return;
     const creationMode = campaign.creationMode;
     if (creationMode === "unknown") {
       setError("This draft does not have a supported setup mode.");
@@ -141,6 +156,8 @@ export default function PublishCampaignPage() {
     };
 
     setError(null);
+    strategyMutationPendingRef.current = true;
+    setStrategyMutationPending(true);
     setCampaign(nextCampaign);
     setActiveStrategyId(duplicate.id);
     try {
@@ -157,6 +174,9 @@ export default function PublishCampaignPage() {
           ? failure.message
           : "Could not duplicate the audience strategy.",
       );
+    } finally {
+      strategyMutationPendingRef.current = false;
+      setStrategyMutationPending(false);
     }
   };
 
@@ -166,6 +186,7 @@ export default function PublishCampaignPage() {
       !campaign ||
       sourceStatus !== "draft" ||
       campaign.audienceStrategies.length === 1
+      || strategyMutationPendingRef.current
     ) {
       return;
     }
@@ -188,6 +209,8 @@ export default function PublishCampaignPage() {
         : activeStrategyId;
 
     setError(null);
+    strategyMutationPendingRef.current = true;
+    setStrategyMutationPending(true);
     setCampaign(nextCampaign);
     setActiveStrategyId(nextActiveStrategyId);
     try {
@@ -201,6 +224,9 @@ export default function PublishCampaignPage() {
           ? failure.message
           : "Could not delete the audience strategy.",
       );
+    } finally {
+      strategyMutationPendingRef.current = false;
+      setStrategyMutationPending(false);
     }
   };
 
@@ -226,12 +252,12 @@ export default function PublishCampaignPage() {
               )
             }
             onDuplicateStrategy={
-              sourceStatus === "draft"
+              sourceStatus === "draft" && !strategyMutationPending
                 ? (strategyId) => void handleDuplicateStrategy(strategyId)
                 : undefined
             }
             onDeleteStrategy={
-              sourceStatus === "draft"
+              sourceStatus === "draft" && !strategyMutationPending
                 ? (strategyId) => void handleDeleteStrategy(strategyId)
                 : undefined
             }

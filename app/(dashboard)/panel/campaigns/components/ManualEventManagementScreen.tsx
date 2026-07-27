@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   FileText,
   Globe2,
@@ -163,10 +164,44 @@ export function ManualEventManagementScreen({
       (destination) => destination.value === configuration.destination,
     ) ?? availableDestinations[0];
   const selectedOptimization =
-    selectedDestination.optimizationGoals.find(
+    selectedDestination?.optimizationGoals.find(
       (optimization) =>
         optimization.value === configuration.optimizationGoal,
-    ) ?? selectedDestination.optimizationGoals[0];
+    ) ?? selectedDestination?.optimizationGoals[0];
+
+  useEffect(() => {
+    if (
+      !selectedDestination ||
+      !selectedOptimization ||
+      (selectedDestination.value === configuration.destination &&
+        selectedOptimization.value === configuration.optimizationGoal)
+    ) {
+      return;
+    }
+    onChange({
+      destination: selectedDestination.value,
+      optimizationGoal: selectedOptimization.value,
+    });
+  }, [
+    configuration.destination,
+    configuration.optimizationGoal,
+    onChange,
+    selectedDestination,
+    selectedOptimization,
+  ]);
+
+  if (!selectedDestination || !selectedOptimization) {
+    return (
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+        <h2 className="text-xl font-gilroy-semibold text-gray-900">
+          No supported destination for this objective
+        </h2>
+        <p className="mt-2 text-sm text-gray-500">
+          Change the campaign objective or selected platforms to continue.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">

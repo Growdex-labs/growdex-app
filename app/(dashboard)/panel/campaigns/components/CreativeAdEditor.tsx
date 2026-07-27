@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Film,
@@ -99,7 +99,19 @@ export function CreativeAdEditor({
     null,
   );
   const [headlineError, setHeadlineError] = useState<string | null>(null);
+  const [headlineStateIndex, setHeadlineStateIndex] = useState<number | null>(
+    null,
+  );
+  const headlineRequestRef = useRef(0);
   const creative = creatives[activeIndex];
+
+  useEffect(() => {
+    headlineRequestRef.current += 1;
+    setGeneratingHeadline(false);
+    setHeadlineRationale(null);
+    setHeadlineError(null);
+    setHeadlineStateIndex(null);
+  }, [activeIndex]);
 
   if (!creative) {
     return (
@@ -117,8 +129,12 @@ export function CreativeAdEditor({
   const samePlatformCount = creatives.filter((item) => item.platform === platform).length;
   const canRemove = samePlatformCount > 1;
   const generateHeadline = async () => {
+    const requestIndex = activeIndex;
+    const requestId = headlineRequestRef.current + 1;
+    headlineRequestRef.current = requestId;
     if (!campaignId) {
       setHeadlineError("Save the campaign draft before generating a headline.");
+      setHeadlineStateIndex(requestIndex);
       return;
     }
 
@@ -132,16 +148,32 @@ export function CreativeAdEditor({
         headline: creative.headline,
         caption: creative.primaryText,
       });
-      onChange(activeIndex, { headline: suggestion.value });
+      if (
+        headlineRequestRef.current !== requestId ||
+        requestIndex !== activeIndex
+      ) {
+        return;
+      }
+      onChange(requestIndex, { headline: suggestion.value });
+      setHeadlineStateIndex(requestIndex);
       setHeadlineRationale(suggestion.rationale);
     } catch (failure) {
+      if (
+        headlineRequestRef.current !== requestId ||
+        requestIndex !== activeIndex
+      ) {
+        return;
+      }
+      setHeadlineStateIndex(requestIndex);
       setHeadlineError(
         failure instanceof Error
           ? failure.message
           : "Could not generate a headline.",
       );
     } finally {
-      setGeneratingHeadline(false);
+      if (headlineRequestRef.current === requestId) {
+        setGeneratingHeadline(false);
+      }
     }
   };
 
@@ -245,12 +277,12 @@ export function CreativeAdEditor({
                 onChange={(event) => onChange(activeIndex, { headline: event.target.value })}
                 placeholder="Add a clear headline"
               />
-              {headlineRationale && (
+              {headlineStateIndex === activeIndex && headlineRationale && (
                 <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-violet-600">
                   Why this works: {headlineRationale}
                 </span>
               )}
-              {headlineError && (
+              {headlineStateIndex === activeIndex && headlineError && (
                 <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-red-600">
                   {headlineError}
                 </span>

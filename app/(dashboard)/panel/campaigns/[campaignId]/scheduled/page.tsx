@@ -30,6 +30,7 @@ import {
   fetchCampaignById,
   publishCampaign,
   type BudgetType,
+  type CampaignDto,
   type CampaignGoal,
   type CreateCampaignPayload,
 } from "@/lib/campaigns";
@@ -91,6 +92,9 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
 
   const [progressTab, setProgressTab] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [audienceStrategies, setAudienceStrategies] = useState<
+    CampaignDto["audienceStrategies"]
+  >([]);
 
   const COUNTRY_OPTIONS = (
     Object.entries(metaSpecialAdLocations) as Array<
@@ -111,36 +115,20 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
 
   const [metaCountries, setMetaCountries] = useState<
     MetaSpecialAdLocationCode[]
-  >(["NG"]);
+  >([]);
   const [tiktokCountries, setTiktokCountries] = useState<
     MetaSpecialAdLocationCode[]
-  >(["NG"]);
+  >([]);
 
   const [metaLocationQuery, setMetaLocationQuery] = useState("");
   const [tiktokLocationQuery, setTiktokLocationQuery] = useState("");
-  const [metaLocations, setMetaLocations] = useState<string[]>([
-    "Makurdi",
-    "Abuja",
-    "Lagos",
-    "Kano",
-  ]);
-  const [tiktokLocations, setTiktokLocations] = useState<string[]>([
-    "Makurdi",
-    "Abuja",
-    "Lagos",
-    "Kano",
-  ]);
+  const [metaLocations, setMetaLocations] = useState<string[]>([]);
+  const [tiktokLocations, setTiktokLocations] = useState<string[]>([]);
 
   const [metaInterestQuery, setMetaInterestQuery] = useState("");
   const [tiktokInterestQuery, setTiktokInterestQuery] = useState("");
-  const [metaInterests, setMetaInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
-  const [tiktokInterests, setTiktokInterests] = useState<string[]>([
-    "technology",
-    "fashion",
-  ]);
+  const [metaInterests, setMetaInterests] = useState<string[]>([]);
+  const [tiktokInterests, setTiktokInterests] = useState<string[]>([]);
 
   const [metaAgeMin, setMetaAgeMin] = useState("18");
   const [metaAgeMax, setMetaAgeMax] = useState("65");
@@ -216,6 +204,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         // Pre-fill form with campaign data
         setCampaignName(campaign.name || "");
         setCampaignGoal(campaign.goal || "AWARENESS");
+        setAudienceStrategies(campaign.audienceStrategies);
 
         // Platforms
         const platforms = campaign.platforms || [];
@@ -796,6 +785,58 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                   {isGoingLive ? "Going live..." : "Go Live"}
                 </button>
               </div>
+
+              <section className="rounded-xl bg-white p-5">
+                <h2 className="text-lg font-bold text-gray-900">
+                  Audience strategies
+                </h2>
+                {audienceStrategies.length ? (
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    {audienceStrategies.map((strategy, index) => (
+                      <article
+                        key={strategy.id}
+                        className="rounded-xl border border-gray-200 p-4"
+                      >
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          Strategy {index + 1}
+                        </p>
+                        <h3 className="mt-1 font-semibold text-gray-900">
+                          {strategy.name}
+                        </h3>
+                        <dl className="mt-3 space-y-2 text-sm text-gray-600">
+                          <div>
+                            <dt className="font-medium text-gray-800">Audience</dt>
+                            <dd>
+                              {strategy.audience.locations.join(", ") ||
+                                "No locations selected"}{" "}
+                              · ages {strategy.audience.ageMin ?? 18}–
+                              {strategy.audience.ageMax ?? 65}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-800">Budget</dt>
+                            <dd>
+                              {strategy.budget.amount.toLocaleString()}{" "}
+                              {strategy.budget.currency} / {strategy.budget.type}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-800">Schedule</dt>
+                            <dd>
+                              {strategy.budget.startDate} –{" "}
+                              {strategy.budget.endDate}
+                            </dd>
+                          </div>
+                        </dl>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                    This campaign has no audience strategy to review.
+                  </p>
+                )}
+              </section>
 
               {/* Goal Section */}
               <GoalSection

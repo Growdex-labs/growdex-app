@@ -29,9 +29,29 @@ const transactionLabel = (transaction: WalletTransaction) =>
     ? "Campaign spend"
     : transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
 
+const formatTransactionDate = (
+  value: string,
+  dateStyle: "medium" | "long",
+) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Date unavailable"
+    : new Intl.DateTimeFormat("en-NG", { dateStyle }).format(date);
+};
+
+const protectSpreadsheetCell = (cell: string) =>
+  /^[\t\r\n ]*[=+\-@]/.test(cell) ? `'${cell}` : cell;
+
 const downloadCsv = (filename: string, rows: string[][]) => {
   const csv = rows
-    .map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(","))
+    .map((row) =>
+      row
+        .map(
+          (cell) =>
+            `"${protectSpreadsheetCell(cell).replaceAll('"', '""')}"`,
+        )
+        .join(","),
+    )
     .join("\n");
   const url = URL.createObjectURL(
     new Blob([csv], { type: "text/csv;charset=utf-8" }),
@@ -64,7 +84,8 @@ export default function PaymentHistory({
       const transactionDate = new Date(transaction.date);
       if (
         period === "month" &&
-        (transactionDate.getMonth() !== now.getMonth() ||
+        (Number.isNaN(transactionDate.getTime()) ||
+          transactionDate.getMonth() !== now.getMonth() ||
           transactionDate.getFullYear() !== now.getFullYear())
       ) {
         return false;
@@ -83,17 +104,26 @@ export default function PaymentHistory({
     filtered[0] ??
     null;
 
-  const totalSpend = filtered
+  const spendByCurrency = filtered
     .filter(
       (transaction) =>
         transaction.type === "campaign_spend" &&
         transaction.status === "success",
     )
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-
-  const spendCurrency =
-    filtered.find((transaction) => transaction.type === "campaign_spend")
-      ?.currency ?? "NGN";
+    .reduce<Partial<Record<WalletTransaction["currency"], number>>>(
+      (totals, transaction) => {
+        totals[transaction.currency] =
+          (totals[transaction.currency] ?? 0) + transaction.amount;
+        return totals;
+      },
+      {},
+    );
+  const formattedSpend =
+    (Object.entries(spendByCurrency) as Array<
+      [WalletTransaction["currency"], number]
+    >)
+      .map(([currency, amount]) => formatWalletMoney(amount, currency))
+      .join(" + ") || formatWalletMoney(0, "NGN");
 
   const exportTransactions = () =>
     downloadCsv("growdex-funding-transactions.csv", [
@@ -159,14 +189,14 @@ export default function PaymentHistory({
         </div>
         <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-2xl text-sm text-[#6b4b7c]">
-            You spent {formatWalletMoney(totalSpend, spendCurrency)} on successful campaigns in this period.
+            You spent {formattedSpend} on successful campaigns in this period.
           </p>
           <div className="shrink-0 sm:text-right">
             <p className="text-[10px] font-gilroy-semibold uppercase tracking-wide text-[#a464c7]">
               Total spend
             </p>
             <p className="mt-1 text-lg font-gilroy-bold text-gray-900">
-              {formatWalletMoney(totalSpend, spendCurrency)}
+              {formattedSpend}
             </p>
           </div>
         </div>
@@ -249,9 +279,7 @@ export default function PaymentHistory({
                     </span>
                   </span>
                   <span className="hidden text-gray-500 lg:block">
-                    {new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(
-                      new Date(transaction.date),
-                    )}
+                    {formatTransactionDate(transaction.date, "medium")}
                   </span>
                   <span className="hidden text-gray-700 lg:block">
                     {transactionLabel(transaction)}
@@ -296,9 +324,7 @@ export default function PaymentHistory({
                   {formatWalletMoney(selected.amount, selected.currency)}
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  {new Intl.DateTimeFormat("en-NG", { dateStyle: "long" }).format(
-                    new Date(selected.date),
-                  )}
+                  {formatTransactionDate(selected.date, "long")}
                 </p>
               </div>
               <dl className="mt-5 space-y-4 text-sm">

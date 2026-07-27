@@ -29,6 +29,9 @@ export function ManualEventScreen({
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const required = optimizationGoal === "CONVERSIONS";
+  const providerAccountKey = platforms
+    .map((platform) => `${platform}:${accountAssetIds[platform] ?? ""}`)
+    .join("|");
 
   useEffect(() => {
     if (!required) {
@@ -41,8 +44,11 @@ export function ManualEventScreen({
         setLoading(true);
         setError(null);
         return Promise.all(
-          platforms.map((platform) => {
-            const assetId = accountAssetIds[platform];
+          providerAccountKey.split("|").filter(Boolean).map((entry) => {
+            const [platform, assetId] = entry.split(":") as [
+              CampaignPlatform,
+              string,
+            ];
             if (!assetId) {
               throw new Error(
                 `Select a ${platform === "meta" ? "Meta" : "TikTok"} account first.`,
@@ -71,7 +77,7 @@ export function ManualEventScreen({
     return () => {
       active = false;
     };
-  }, [accountAssetIds, platforms, required]);
+  }, [providerAccountKey, required]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
