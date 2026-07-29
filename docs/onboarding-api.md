@@ -22,7 +22,7 @@ Title: *Manage Your Advertising in One Place*
 | Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled |
 | Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 2 |
 | Monthly budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — uses the allowed budget values below |
-| — | `organizationSize` | number | no | ✅ | No longer has an input in the new design, but still sent to keep the existing contract intact |
+| — | `organizationSize` | numeric string | no | ✅ | No longer has an input in the new design; sent as `"0"` to satisfy the API contract |
 
 ### Existing endpoint (today)
 
@@ -34,7 +34,7 @@ Content-Type: application/json
   "firstName": "John",
   "lastName": "Doe",
   "organizationName": "Doe Junior",
-  "organizationSize": 0
+  "organizationSize": "0"
 }
 ```
 
@@ -49,7 +49,7 @@ POST /users/onboarding
   "firstName": "John",
   "lastName": "Doe",
   "organizationName": "Doe Junior",
-  "organizationSize": 0,
+  "organizationSize": "0",
   "industry": "Real estate",      // NEW, optional
   "monthlyBudget": "1000-5000"    // NEW, optional
 }

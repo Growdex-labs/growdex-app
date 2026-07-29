@@ -186,7 +186,10 @@ export const savePersonalInfo = async (data: {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...data }),
+      body: JSON.stringify({
+        ...data,
+        organizationSize: String(data.organizationSize),
+      }),
     });
 
     if (!response.ok) throw new Error(await readApiError(response, 'Failed to save personal information'));
