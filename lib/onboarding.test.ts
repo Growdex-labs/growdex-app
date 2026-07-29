@@ -10,20 +10,19 @@ describe("savePersonalInfo", () => {
     vi.mocked(apiFetch).mockResolvedValue(new Response(null, { status: 200 }));
   });
 
-  it("sends organization size as the numeric string required by the API", async () => {
+  it("does not invent an organization size that onboarding never collects", async () => {
     await savePersonalInfo({
       firstName: "Ada",
       lastName: "Lovelace",
       organizationName: "Analytical Engines",
-      organizationSize: 0,
       industry: "Software & Technology",
       monthlyBudget: "1000-5000",
     });
 
     expect(apiFetch).toHaveBeenCalledOnce();
     const [, request] = vi.mocked(apiFetch).mock.calls[0];
-    expect(JSON.parse(request?.body as string)).toMatchObject({
-      organizationSize: "0",
-    });
+    expect(JSON.parse(request?.body as string)).not.toHaveProperty(
+      "organizationSize",
+    );
   });
 });
