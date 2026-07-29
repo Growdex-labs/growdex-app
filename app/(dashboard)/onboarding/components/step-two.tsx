@@ -2,6 +2,7 @@ import { ChangeEvent } from "react";
 import { FormDataProps } from "../page";
 import { StepHeading, PrimaryButton, SkipLink } from "./onboarding-layout";
 import { OnboardingField, OnboardingSelect } from "./field";
+import { INDUSTRY_OPTIONS, MONTHLY_BUDGET_OPTIONS } from "./options";
 
 type FieldChange = (
   e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -14,14 +15,6 @@ interface StepBusinessProps {
   onSkip: () => void;
   isLoading?: boolean;
 }
-
-const BUDGET_RANGES = [
-  { label: "$0 - $500 / month", value: "0-500" },
-  { label: "$500 - $1,000 / month", value: "500-1000" },
-  { label: "$1,000 - $5,000 / month", value: "1000-5000" },
-  { label: "$5,000 - $10,000 / month", value: "5000-10000" },
-  { label: "$10,000+ / month", value: "10000+" },
-];
 
 export function StepTwoOnboarding({ formData, change, onNext, onSkip, isLoading }: StepBusinessProps) {
   return (
@@ -55,16 +48,17 @@ export function StepTwoOnboarding({ formData, change, onNext, onSkip, isLoading 
           value={formData.advertisingBudget}
           onChange={change}
           placeholder="Choose a range"
-          options={BUDGET_RANGES}
+          options={MONTHLY_BUDGET_OPTIONS}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <OnboardingField
+          <OnboardingSelect
             label="Industry"
             name="industry"
             value={formData.industry}
             onChange={change}
-            placeholder="Real estate"
+            placeholder="Choose an industry"
+            options={INDUSTRY_OPTIONS}
           />
           <OnboardingField
             label="Country"

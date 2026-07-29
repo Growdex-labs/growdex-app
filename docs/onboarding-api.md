@@ -20,8 +20,8 @@ Title: *Manage Your Advertising in One Place*
 | Your name | `firstName` | string | yes | ✅ | |
 | Last name | `lastName` | string | yes | ✅ | |
 | Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled |
-| Industry | `industry` | string | no | 🆕 | Free text today; could become an enum |
-| Monthly budget | `monthlyBudget` | string | no | 🆕 | Free text today (e.g. `"$1,000 - $5,000"`) |
+| Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 2 |
+| Monthly budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — uses the allowed budget values below |
 | — | `organizationSize` | number | no | ✅ | No longer has an input in the new design, but still sent to keep the existing contract intact |
 
 ### Existing endpoint (today)
@@ -66,10 +66,10 @@ Title: *Setup your business*
 | Business Name | `businessName` | string | no | 🆕 | Legal business name |
 | Website | `website` | string (URL) | no | 🆕 | Validate as URL |
 | Monthly Advertising Budget | `advertisingBudget` | string (enum) | no | 🆕 | Dropdown — see allowed values below |
-| Industry | `industry` | string | no | 🆕 | Shared with Step 1's `industry` |
+| Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 1 |
 | Country | `country` | string | no | 🆕 | Free text today; could become ISO country code |
 
-**`advertisingBudget` allowed values** (from `step-two.tsx`):
+**`monthlyBudget` and `advertisingBudget` allowed values** (from `components/options.ts`):
 
 ```
 "0-500"        // $0 - $500 / month
