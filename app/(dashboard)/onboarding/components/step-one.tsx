@@ -1,11 +1,16 @@
 import { ChangeEvent } from "react";
 import { FormDataProps } from "../page";
 import { StepHeading, PrimaryButton, SkipLink } from "./onboarding-layout";
-import { OnboardingField, FieldBadge } from "./field";
+import { OnboardingField, OnboardingSelect, FieldBadge } from "./field";
+import { INDUSTRY_OPTIONS, MONTHLY_BUDGET_OPTIONS } from "./options";
+
+type FieldChange = (
+  e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+) => void;
 
 interface StepProfileProps {
   formData: FormDataProps;
-  inputChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  inputChange: FieldChange;
   onNext: () => void;
   onSkip: () => void;
   isLoading: boolean;
@@ -50,19 +55,21 @@ export function StepOneOnboarding({ formData, inputChange, onNext, onSkip, isLoa
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <OnboardingField
+          <OnboardingSelect
             label="Industry"
             name="industry"
             value={formData.industry}
             onChange={inputChange}
-            placeholder="Real estate"
+            placeholder="Choose an industry"
+            options={INDUSTRY_OPTIONS}
           />
-          <OnboardingField
+          <OnboardingSelect
             label="Monthly budget"
             name="monthlyBudget"
             value={formData.monthlyBudget}
             onChange={inputChange}
-            placeholder="$1,000 - $5,000"
+            placeholder="Choose a range"
+            options={MONTHLY_BUDGET_OPTIONS}
           />
         </div>
       </div>
