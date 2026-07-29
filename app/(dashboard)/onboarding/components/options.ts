@@ -23,9 +23,9 @@ export const INDUSTRY_OPTIONS = [
 ];
 
 export const MONTHLY_BUDGET_OPTIONS = [
-  { label: "$0 - $500 / month", value: "0-500" },
-  { label: "$500 - $1,000 / month", value: "500-1000" },
-  { label: "$1,000 - $5,000 / month", value: "1000-5000" },
-  { label: "$5,000 - $10,000 / month", value: "5000-10000" },
+  { label: "$0 - $499 / month", value: "0-500" },
+  { label: "$500 - $999 / month", value: "500-1000" },
+  { label: "$1,000 - $4,999 / month", value: "1000-5000" },
+  { label: "$5,000 - $9,999 / month", value: "5000-10000" },
   { label: "$10,000+ / month", value: "10000+" },
 ];
