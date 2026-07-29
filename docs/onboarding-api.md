@@ -22,7 +22,6 @@ Title: *Manage Your Advertising in One Place*
 | Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled |
 | Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 2 |
 | Monthly budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — uses the allowed budget values below |
-| — | `organizationSize` | number | no | ✅ | No longer has an input in the new design, but still sent to keep the existing contract intact |
 
 ### Existing endpoint (today)
 
@@ -33,8 +32,7 @@ Content-Type: application/json
 {
   "firstName": "John",
   "lastName": "Doe",
-  "organizationName": "Doe Junior",
-  "organizationSize": 0
+  "organizationName": "Doe Junior"
 }
 ```
 
@@ -49,7 +47,6 @@ POST /users/onboarding
   "firstName": "John",
   "lastName": "Doe",
   "organizationName": "Doe Junior",
-  "organizationSize": 0,
   "industry": "Real estate",      // NEW, optional
   "monthlyBudget": "1000-5000"    // NEW, optional
 }
@@ -171,7 +168,6 @@ the persisted profile/business/goal data so the forms can pre-fill:
     "firstName": "John",
     "lastName": "Doe",
     "organizationName": "Doe Junior",
-    "organizationSize": 0,
     "industry": "Real estate",
     "monthlyBudget": "1000-5000"
   },
@@ -205,4 +201,3 @@ Once the endpoints exist, wire them in `lib/onboarding.ts` and `app/(dashboard)/
 1. Should `industry` be free text or a fixed enum? It currently appears on both Step 1 and Step 2 — confirm it's a single shared value.
 2. Should `country` be a free-text string or an ISO 3166 country code?
 3. Should `monthlyBudget` (Step 1) and `advertisingBudget` (Step 2) be merged into one field? They overlap conceptually.
-4. Is there still a need for `organizationSize` now that the input was removed from the design?

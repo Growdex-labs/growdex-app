@@ -8,7 +8,6 @@ export interface OnboardingData {
     name: string;
     email: string;
     organizationName: string;
-    organizationSize: string;
     industry?: string;
     monthlyBudget?: string;
   };
@@ -34,7 +33,6 @@ interface OnboardingStatusResponse extends SocialAccountSetupProps {
     firstName: string;
     lastName: string;
     organizationName: string;
-    organizationSize: number;
     industry?: string | null;
     monthlyBudget?: string | null;
   } | null;
@@ -133,7 +131,6 @@ export const fetchOnboardingStatus = async (): Promise<{
         name: fullName,
         email: '',
         organizationName: result.profile?.organizationName ?? '',
-        organizationSize: String(result.profile?.organizationSize ?? ''),
         industry: result.profile?.industry ?? undefined,
         monthlyBudget: result.profile?.monthlyBudget ?? undefined,
       },
@@ -176,7 +173,6 @@ export const savePersonalInfo = async (data: {
   firstName: string;
   lastName: string;
   organizationName: string;
-  organizationSize: number;
   industry?: string;
   monthlyBudget?: string;
 }): Promise<{ success: boolean; error?: string }> => {
@@ -186,7 +182,7 @@ export const savePersonalInfo = async (data: {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...data }),
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) throw new Error(await readApiError(response, 'Failed to save personal information'));
