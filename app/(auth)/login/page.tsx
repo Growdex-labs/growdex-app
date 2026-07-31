@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, Lock } from "lucide-react";
-import { login } from "@/lib/auth";
+import {
+  getAuthErrorMessage,
+  login,
+  resendVerification,
+} from "@/lib/auth";
 import { useGoogleAuth } from "@/lib/use-google";
 import { toast } from "sonner";
 
@@ -78,6 +82,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const {
     startGoogleAuth,
     loading: googleLoading,
@@ -89,8 +95,14 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setNeedsVerification(false);
     try {
       const response = await login(email, password);
+
+      if (response.status === "EMAIL_NOT_VERIFIED") {
+        setNeedsVerification(true);
+        return;
+      }
 
       if (
         response.status === "MFA_SETUP_REQUIRED" ||
@@ -120,7 +132,12 @@ export default function LoginPage() {
       const loginError = err as {
         formErrors?: string[];
         message?: string;
+        status?: string;
       };
+      if (loginError.status === "EMAIL_NOT_VERIFIED") {
+        setNeedsVerification(true);
+        return;
+      }
       if (loginError.formErrors?.length) {
         setError(loginError.formErrors[0]);
       } else {
@@ -130,6 +147,26 @@ export default function LoginPage() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setError("");
+    try {
+      await resendVerification(email);
+      toast.success("Verification email sent", {
+        description: "Check your inbox to finish verifying your account.",
+      });
+    } catch (err: unknown) {
+      setError(
+        getAuthErrorMessage(
+          err,
+          "We couldn't send the verification email right now. Please try again later.",
+        ),
+      );
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -345,6 +382,22 @@ export default function LoginPage() {
                 </div>
                 {error && (
                   <p className="mt-1.5 text-sm text-red-600">{error}</p>
+                )}
+                {needsVerification && (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    <p>
+                      Verify your email before signing in. Check your inbox for
+                      the verification link.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={isResending}
+                      className="mt-2 font-semibold underline underline-offset-2 hover:no-underline disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isResending ? "Sending..." : "Resend verification email"}
+                    </button>
+                  </div>
                 )}
                 <div className="mt-1.5 text-right">
                   <Link
