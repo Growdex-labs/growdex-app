@@ -18,7 +18,7 @@ const GOALS = [
   { id: "awareness", icon: "📣", title: "Build Awareness", description: "Increase reach and visibility" },
 ];
 
-export function StepThreeOnboarding({ formData, toggleGoal, change, onNext, onSkip, isLoading }: StepGoalsProps) {
+export function StepGoalsOnboarding({ formData, toggleGoal, change, onNext, onSkip, isLoading }: StepGoalsProps) {
   return (
     <div>
       <StepHeading
