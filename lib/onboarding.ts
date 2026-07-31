@@ -8,6 +8,7 @@ export interface OnboardingData {
     name: string;
     email: string;
     organizationName: string;
+    organizationSize?: string;
     industry?: string;
     monthlyBudget?: string;
   };
@@ -33,6 +34,7 @@ interface OnboardingStatusResponse extends SocialAccountSetupProps {
     firstName: string;
     lastName: string;
     organizationName: string;
+    organizationSize?: string | number | null;
     industry?: string | null;
     monthlyBudget?: string | null;
   } | null;
@@ -131,6 +133,10 @@ export const fetchOnboardingStatus = async (): Promise<{
         name: fullName,
         email: '',
         organizationName: result.profile?.organizationName ?? '',
+        organizationSize:
+          result.profile?.organizationSize != null
+            ? String(result.profile.organizationSize)
+            : undefined,
         industry: result.profile?.industry ?? undefined,
         monthlyBudget: result.profile?.monthlyBudget ?? undefined,
       },
@@ -173,6 +179,7 @@ export const savePersonalInfo = async (data: {
   firstName: string;
   lastName: string;
   organizationName: string;
+  organizationSize?: string;
   industry?: string;
   monthlyBudget?: string;
 }): Promise<{ success: boolean; error?: string }> => {

@@ -22,6 +22,7 @@ Title: *Manage Your Advertising in One Place*
 | Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled |
 | Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 2 |
 | Monthly budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — uses the allowed budget values below |
+| Company size | `organizationSize` | numeric string | no | ✅ | Dropdown — each band is sent as the numeric string below; omitted when unanswered |
 
 ### Existing endpoint (today)
 
@@ -32,8 +33,21 @@ Content-Type: application/json
 {
   "firstName": "John",
   "lastName": "Doe",
-  "organizationName": "Doe Junior"
+  "organizationName": "Doe Junior",
+  "organizationSize": "200"
 }
+```
+
+**`organizationSize` allowed values** (from `components/options.ts`):
+
+```
+"1"      // Just me
+"10"     // 2 - 10 people
+"25"     // 11 - 25 people
+"50"     // 26 - 50 people
+"200"    // 51 - 200 people
+"500"    // 201 - 500 people
+"1000"   // 500+ people
 ```
 
 ### Proposed extension
@@ -47,6 +61,7 @@ POST /users/onboarding
   "firstName": "John",
   "lastName": "Doe",
   "organizationName": "Doe Junior",
+  "organizationSize": "200",
   "industry": "Real estate",      // NEW, optional
   "monthlyBudget": "1000-5000"    // NEW, optional
 }
@@ -168,6 +183,7 @@ the persisted profile/business/goal data so the forms can pre-fill:
     "firstName": "John",
     "lastName": "Doe",
     "organizationName": "Doe Junior",
+    "organizationSize": "200",
     "industry": "Real estate",
     "monthlyBudget": "1000-5000"
   },

@@ -213,6 +213,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
           "mock_brand",
           JSON.stringify({
             name: bodyObj.organizationName,
+            size: bodyObj.organizationSize,
             industry: bodyObj.industry,
           }),
         );

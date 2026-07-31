@@ -22,6 +22,16 @@ export const INDUSTRY_OPTIONS = [
   { label: "Other", value: "Other" },
 ];
 
+export const COMPANY_SIZE_OPTIONS = [
+  { label: "Just me", value: "1" },
+  { label: "2 - 10 people", value: "10" },
+  { label: "11 - 25 people", value: "25" },
+  { label: "26 - 50 people", value: "50" },
+  { label: "51 - 200 people", value: "200" },
+  { label: "201 - 500 people", value: "500" },
+  { label: "500+ people", value: "1000" },
+];
+
 export const MONTHLY_BUDGET_OPTIONS = [
   { label: "$0 - $499 / month", value: "0-500" },
   { label: "$500 - $999 / month", value: "500-1000" },
