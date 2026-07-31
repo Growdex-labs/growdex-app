@@ -13,30 +13,26 @@ import {
 import { hydrateSocialAccounts } from '@/lib/social';
 import { SocialAccountSetupProps } from '@/types/social';
 import { OnboardingLayout } from './components/onboarding-layout';
-import { StepOneOnboarding } from './components/step-one';
-import { StepTwoOnboarding } from './components/step-two';
-import { StepThreeOnboarding } from './components/step-three';
+import { StepProfileOnboarding } from './components/step-profile';
+import { StepGoalsOnboarding } from './components/step-goals';
 import { StepConnectOnboarding } from './components/step-connect';
 
 export interface FormDataProps {
+  // Step 1 — profile and business
   firstName: string;
   lastName: string;
   organizationName: string;
   organizationSize: string;
-  // Step 1 — profile
+  website: string;
+  country: string;
   industry: string;
   monthlyBudget: string;
-  // Step 2 — business
-  businessName: string;
-  website: string;
-  advertisingBudget: string;
-  country: string;
-  // Step 3 — goals
+  // Step 2 — goals
   goals: string[];
   customGoal: string;
 }
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 
 function OnboardingPageContent() {
   const router = useRouter();
@@ -52,12 +48,10 @@ function OnboardingPageContent() {
     lastName: '',
     organizationName: '',
     organizationSize: '',
+    website: '',
+    country: '',
     industry: '',
     monthlyBudget: '',
-    businessName: '',
-    website: '',
-    advertisingBudget: '',
-    country: '',
     goals: [],
     customGoal: '',
   });
@@ -101,8 +95,8 @@ function OnboardingPageContent() {
       return;
     }
 
-    setLoadingAction('step1-submit');
-    const result = await savePersonalInfo({
+    setLoadingAction('profile-submit');
+    const profile = await savePersonalInfo({
       firstName: formData.firstName,
       lastName: formData.lastName,
       organizationName: formData.organizationName,
@@ -110,41 +104,34 @@ function OnboardingPageContent() {
       industry: formData.industry,
       monthlyBudget: formData.monthlyBudget,
     });
+
+    if (!profile.success) {
+      setLoadingAction(null);
+      setError(profile.error || 'Failed to save information');
+      return;
+    }
+
+    const business = await saveBusinessInfo({
+      businessName: formData.organizationName,
+      website: formData.website,
+      advertisingBudget: formData.monthlyBudget,
+      industry: formData.industry,
+      country: formData.country,
+    });
     setLoadingAction(null);
 
-    if (!result.success) {
-      setError(result.error || 'Failed to save information');
+    if (!business.success) {
+      setError(business.error || 'Failed to save business information');
       return;
     }
 
     goToStep(2);
   };
 
-  const handleBusinessNext = async () => {
-    setError('');
-
-    setLoadingAction('step2-submit');
-    const result = await saveBusinessInfo({
-      businessName: formData.businessName,
-      website: formData.website,
-      advertisingBudget: formData.advertisingBudget,
-      industry: formData.industry,
-      country: formData.country,
-    });
-    setLoadingAction(null);
-
-    if (!result.success) {
-      setError(result.error || 'Failed to save business information');
-      return;
-    }
-
-    goToStep(3);
-  };
-
   const handleGoalsNext = async () => {
     setError('');
 
-    setLoadingAction('step3-submit');
+    setLoadingAction('goals-submit');
     const result = await saveMarketingGoals({
       goals: formData.goals,
       customGoal: formData.customGoal,
@@ -156,7 +143,7 @@ function OnboardingPageContent() {
       return;
     }
 
-    goToStep(4);
+    goToStep(3);
   };
 
   const handleConnectSocial = async (platform: SocialPlatform) => {
@@ -231,14 +218,12 @@ function OnboardingPageContent() {
           ...prev,
           firstName: first || '',
           lastName: rest.join(' ') || '',
-          organizationName: personalInfo.organizationName || '',
+          organizationName: personalInfo.organizationName || business?.businessName || '',
           organizationSize: personalInfo.organizationSize || '',
-          industry: personalInfo.industry || business?.industry || '',
-          monthlyBudget: personalInfo.monthlyBudget || '',
-          businessName: business?.businessName || '',
           website: business?.website || '',
-          advertisingBudget: business?.advertisingBudget || '',
           country: business?.country || '',
+          industry: personalInfo.industry || business?.industry || '',
+          monthlyBudget: personalInfo.monthlyBudget || business?.advertisingBudget || '',
           goals: goals?.selected || [],
           customGoal: goals?.custom || '',
         }));
@@ -264,37 +249,27 @@ function OnboardingPageContent() {
       )}
 
       {currentStep === 1 && (
-        <StepOneOnboarding
+        <StepProfileOnboarding
           formData={formData}
           inputChange={handleChange}
           onNext={handleProfileNext}
           onSkip={handleSetupLater}
-          isLoading={loadingAction === 'step1-submit'}
+          isLoading={loadingAction === 'profile-submit'}
         />
       )}
 
       {currentStep === 2 && (
-        <StepTwoOnboarding
-          formData={formData}
-          change={handleChange}
-          onNext={handleBusinessNext}
-          onSkip={handleSetupLater}
-          isLoading={loadingAction === 'step2-submit'}
-        />
-      )}
-
-      {currentStep === 3 && (
-        <StepThreeOnboarding
+        <StepGoalsOnboarding
           formData={formData}
           toggleGoal={toggleGoal}
           change={handleChange}
           onNext={handleGoalsNext}
           onSkip={handleSetupLater}
-          isLoading={loadingAction === 'step3-submit'}
+          isLoading={loadingAction === 'goals-submit'}
         />
       )}
 
-      {currentStep === 4 && (
+      {currentStep === 3 && (
         <StepConnectOnboarding
           socialAccounts={socialAccounts}
           loadingAction={loadingAction}

@@ -16,7 +16,7 @@ interface StepProfileProps {
   isLoading: boolean;
 }
 
-export function StepOneOnboarding({ formData, inputChange, onNext, onSkip, isLoading }: StepProfileProps) {
+export function StepProfileOnboarding({ formData, inputChange, onNext, onSkip, isLoading }: StepProfileProps) {
   const organizationMissing = !formData.organizationName;
 
   return (
@@ -55,6 +55,23 @@ export function StepOneOnboarding({ formData, inputChange, onNext, onSkip, isLoa
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <OnboardingField
+            label="Website"
+            name="website"
+            value={formData.website}
+            onChange={inputChange}
+            placeholder="https://legalbusiness.com"
+          />
+          <OnboardingField
+            label="Country"
+            name="country"
+            value={formData.country}
+            onChange={inputChange}
+            placeholder="Spain"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <OnboardingSelect
             label="Industry"
             name="industry"
@@ -64,23 +81,22 @@ export function StepOneOnboarding({ formData, inputChange, onNext, onSkip, isLoa
             options={INDUSTRY_OPTIONS}
           />
           <OnboardingSelect
-            label="Monthly budget"
+            label="Monthly ad budget"
             name="monthlyBudget"
             value={formData.monthlyBudget}
             onChange={inputChange}
             placeholder="Choose a range"
             options={MONTHLY_BUDGET_OPTIONS}
           />
+          <OnboardingSelect
+            label="Company size"
+            name="organizationSize"
+            value={formData.organizationSize}
+            onChange={inputChange}
+            placeholder="Choose a size"
+            options={COMPANY_SIZE_OPTIONS}
+          />
         </div>
-
-        <OnboardingSelect
-          label="Company size"
-          name="organizationSize"
-          value={formData.organizationSize}
-          onChange={inputChange}
-          placeholder="Choose a size"
-          options={COMPANY_SIZE_OPTIONS}
-        />
       </div>
 
       <div className="mt-8 flex items-center justify-between">

@@ -11,7 +11,7 @@ The frontend `FormDataProps` shape lives in `app/(dashboard)/onboarding/page.tsx
 
 ---
 
-## Step 1 — Profile
+## Step 1 — Profile and business
 
 Title: *Manage Your Advertising in One Place*
 
@@ -19,10 +19,16 @@ Title: *Manage Your Advertising in One Place*
 |---|---|---|---|---|---|
 | Your name | `firstName` | string | yes | ✅ | |
 | Last name | `lastName` | string | yes | ✅ | |
-| Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled |
-| Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 2 |
-| Monthly budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — uses the allowed budget values below |
+| Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled; also sent as `businessName` |
+| Website | `website` | string (URL) | no | 🆕 | Validate as URL |
+| Country | `country` | string | no | 🆕 | Free text today; could become ISO country code |
+| Industry | `industry` | string (enum) | no | 🆕 | Dropdown |
+| Monthly advertising budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — also sent as `advertisingBudget` |
 | Company size | `organizationSize` | numeric string | no | ✅ | Dropdown — each band is sent as the numeric string below; omitted when unanswered |
+
+The step saves to two endpoints in turn: the profile fields to `POST /users/onboarding`, then the
+business fields to `POST /users/onboarding/business`. A failure on either one keeps the customer on
+this step.
 
 ### Existing endpoint (today)
 
@@ -67,37 +73,23 @@ POST /users/onboarding
 }
 ```
 
----
-
-## Step 2 — Business
-
-Title: *Setup your business*
-
-| UI label | Field key | Type | Required | Status | Notes |
-|---|---|---|---|---|---|
-| Business Name | `businessName` | string | no | 🆕 | Legal business name |
-| Website | `website` | string (URL) | no | 🆕 | Validate as URL |
-| Monthly Advertising Budget | `advertisingBudget` | string (enum) | no | 🆕 | Dropdown — see allowed values below |
-| Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 1 |
-| Country | `country` | string | no | 🆕 | Free text today; could become ISO country code |
-
 **`monthlyBudget` and `advertisingBudget` allowed values** (from `components/options.ts`):
 
 ```
-"0-500"        // $0 - $500 / month
-"500-1000"     // $500 - $1,000 / month
-"1000-5000"    // $1,000 - $5,000 / month
-"5000-10000"   // $5,000 - $10,000 / month
+"0-500"        // $0 - $499 / month
+"500-1000"     // $500 - $999 / month
+"1000-5000"    // $1,000 - $4,999 / month
+"5000-10000"   // $5,000 - $9,999 / month
 "10000+"       // $10,000+ / month
 ```
 
-### Proposed endpoint (new)
+### Business endpoint (proposed)
 
 ```
 POST /users/onboarding/business
 
 {
-  "businessName": "Legal Business Ltd",
+  "businessName": "Doe Junior",
   "website": "https://legalbusiness.com",
   "advertisingBudget": "1000-5000",
   "industry": "Real estate",
@@ -107,7 +99,7 @@ POST /users/onboarding/business
 
 ---
 
-## Step 3 — Marketing Goals
+## Step 2 — Marketing Goals
 
 Title: *Set your marketing goals*
 
@@ -116,7 +108,7 @@ Title: *Set your marketing goals*
 | Goal cards (multi-select) | `goals` | string[] | no | 🆕 | Array of goal IDs (see below) |
 | "Tell Growdex what you want to achieve" | `customGoal` | string | no | 🆕 | Free-text goal |
 
-**`goals` allowed IDs** (from `step-three.tsx`):
+**`goals` allowed IDs** (from `step-goals.tsx`):
 
 ```
 "leads"      // Generate Leads
@@ -138,7 +130,7 @@ POST /users/onboarding/goals
 
 ---
 
-## Step 4 — Connect Social Accounts
+## Step 3 — Connect Social Accounts
 
 Title: *Connect your social accounts*
 
@@ -208,12 +200,13 @@ the persisted profile/business/goal data so the forms can pre-fill:
 Once the endpoints exist, wire them in `lib/onboarding.ts` and `app/(dashboard)/onboarding/page.tsx`:
 
 - [ ] Extend `savePersonalInfo` payload with `industry`, `monthlyBudget`.
-- [ ] Add `saveBusinessInfo()` → `POST /users/onboarding/business`, call it on Step 2 "Next".
-- [ ] Add `saveGoals()` → `POST /users/onboarding/goals`, call it on Step 3 "Next".
+- [ ] Add `saveBusinessInfo()` → `POST /users/onboarding/business`, call it on Step 1 "Next".
+- [ ] Add `saveGoals()` → `POST /users/onboarding/goals`, call it on Step 2 "Next".
 - [ ] Extend `fetchOnboardingStatus` to read `profile` / `business` / `goals` and pre-fill `formData`.
 - [ ] (Optional) Wire "Notify me" / "Request a new integration" to `integration-interest`.
 
 ### Open questions for the backend team
-1. Should `industry` be free text or a fixed enum? It currently appears on both Step 1 and Step 2 — confirm it's a single shared value.
+1. Should `industry` be free text or a fixed enum?
 2. Should `country` be a free-text string or an ISO 3166 country code?
-3. Should `monthlyBudget` (Step 1) and `advertisingBudget` (Step 2) be merged into one field? They overlap conceptually.
+3. `monthlyBudget` and `advertisingBudget` now always carry the same answer, and `organizationName`
+   doubles as `businessName`. Can the duplicates be collapsed server-side?
