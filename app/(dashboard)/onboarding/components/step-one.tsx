@@ -2,7 +2,7 @@ import { ChangeEvent } from "react";
 import { FormDataProps } from "../page";
 import { StepHeading, PrimaryButton, SkipLink } from "./onboarding-layout";
 import { OnboardingField, OnboardingSelect, FieldBadge } from "./field";
-import { INDUSTRY_OPTIONS, MONTHLY_BUDGET_OPTIONS } from "./options";
+import { COMPANY_SIZE_OPTIONS, INDUSTRY_OPTIONS, MONTHLY_BUDGET_OPTIONS } from "./options";
 
 type FieldChange = (
   e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -72,6 +72,15 @@ export function StepOneOnboarding({ formData, inputChange, onNext, onSkip, isLoa
             options={MONTHLY_BUDGET_OPTIONS}
           />
         </div>
+
+        <OnboardingSelect
+          label="Company size"
+          name="organizationSize"
+          value={formData.organizationSize}
+          onChange={inputChange}
+          placeholder="Choose a size"
+          options={COMPANY_SIZE_OPTIONS}
+        />
       </div>
 
       <div className="mt-8 flex items-center justify-between">

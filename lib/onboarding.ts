@@ -176,7 +176,7 @@ export const savePersonalInfo = async (data: {
   firstName: string;
   lastName: string;
   organizationName: string;
-  organizationSize: number;
+  organizationSize?: number;
   industry?: string;
   monthlyBudget?: string;
 }): Promise<{ success: boolean; error?: string }> => {

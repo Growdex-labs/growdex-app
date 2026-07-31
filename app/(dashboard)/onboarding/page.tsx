@@ -22,7 +22,7 @@ export interface FormDataProps {
   firstName: string;
   lastName: string;
   organizationName: string;
-  organizationSize: number;
+  organizationSize: string;
   // Step 1 — profile
   industry: string;
   monthlyBudget: string;
@@ -51,7 +51,7 @@ function OnboardingPageContent() {
     firstName: '',
     lastName: '',
     organizationName: '',
-    organizationSize: 0,
+    organizationSize: '',
     industry: '',
     monthlyBudget: '',
     businessName: '',
@@ -106,7 +106,7 @@ function OnboardingPageContent() {
       firstName: formData.firstName,
       lastName: formData.lastName,
       organizationName: formData.organizationName,
-      organizationSize: formData.organizationSize,
+      organizationSize: Number(formData.organizationSize) || undefined,
       industry: formData.industry,
       monthlyBudget: formData.monthlyBudget,
     });
@@ -232,7 +232,7 @@ function OnboardingPageContent() {
           firstName: first || '',
           lastName: rest.join(' ') || '',
           organizationName: personalInfo.organizationName || '',
-          organizationSize: Number(personalInfo.organizationSize) || 0,
+          organizationSize: personalInfo.organizationSize || '',
           industry: personalInfo.industry || business?.industry || '',
           monthlyBudget: personalInfo.monthlyBudget || '',
           businessName: business?.businessName || '',
