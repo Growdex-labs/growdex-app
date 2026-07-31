@@ -106,7 +106,7 @@ function OnboardingPageContent() {
       firstName: formData.firstName,
       lastName: formData.lastName,
       organizationName: formData.organizationName,
-      organizationSize: Number(formData.organizationSize) || undefined,
+      organizationSize: formData.organizationSize || undefined,
       industry: formData.industry,
       monthlyBudget: formData.monthlyBudget,
     });

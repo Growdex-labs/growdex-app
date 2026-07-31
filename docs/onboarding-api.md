@@ -22,7 +22,7 @@ Title: *Manage Your Advertising in One Place*
 | Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled |
 | Industry | `industry` | string (enum) | no | 🆕 | Dropdown — shared with Step 2 |
 | Monthly budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — uses the allowed budget values below |
-| — | `organizationSize` | number | no | ✅ | No longer has an input in the new design, but still sent to keep the existing contract intact |
+| Company size | `organizationSize` | numeric string | no | ✅ | Dropdown — each band is sent as the numeric string below; omitted when unanswered |
 
 ### Existing endpoint (today)
 
@@ -34,8 +34,20 @@ Content-Type: application/json
   "firstName": "John",
   "lastName": "Doe",
   "organizationName": "Doe Junior",
-  "organizationSize": 0
+  "organizationSize": "200"
 }
+```
+
+**`organizationSize` allowed values** (from `components/options.ts`):
+
+```
+"1"      // Just me
+"10"     // 2 - 10 people
+"25"     // 11 - 25 people
+"50"     // 26 - 50 people
+"200"    // 51 - 200 people
+"500"    // 201 - 500 people
+"1000"   // 500+ people
 ```
 
 ### Proposed extension
@@ -49,7 +61,7 @@ POST /users/onboarding
   "firstName": "John",
   "lastName": "Doe",
   "organizationName": "Doe Junior",
-  "organizationSize": 0,
+  "organizationSize": "200",
   "industry": "Real estate",      // NEW, optional
   "monthlyBudget": "1000-5000"    // NEW, optional
 }
@@ -171,7 +183,7 @@ the persisted profile/business/goal data so the forms can pre-fill:
     "firstName": "John",
     "lastName": "Doe",
     "organizationName": "Doe Junior",
-    "organizationSize": 0,
+    "organizationSize": "200",
     "industry": "Real estate",
     "monthlyBudget": "1000-5000"
   },
@@ -205,4 +217,3 @@ Once the endpoints exist, wire them in `lib/onboarding.ts` and `app/(dashboard)/
 1. Should `industry` be free text or a fixed enum? It currently appears on both Step 1 and Step 2 — confirm it's a single shared value.
 2. Should `country` be a free-text string or an ISO 3166 country code?
 3. Should `monthlyBudget` (Step 1) and `advertisingBudget` (Step 2) be merged into one field? They overlap conceptually.
-4. Is there still a need for `organizationSize` now that the input was removed from the design?
