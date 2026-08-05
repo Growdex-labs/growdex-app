@@ -12,7 +12,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: frontend-production-image
+  group: frontend-image-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:
