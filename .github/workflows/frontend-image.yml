@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/growdex-app
+  IMAGE_NAME: ghcr.io/growdex-labs/growdex-app
   DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
   API_URL: ${{ github.ref_name == 'main' && 'https://api.growdex.ai' || 'https://api-staging.growdex.ai' }}
 
