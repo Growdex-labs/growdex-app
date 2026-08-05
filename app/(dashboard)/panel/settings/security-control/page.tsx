@@ -10,29 +10,15 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-const activeSessions = [
-  {
-    id: 1,
-    device: "Safari on Mac Os X",
-    iconType: "safari",
-    location: "Lagos, NG",
-    lastActive: "1hr, ago",
-  },
-  {
-    id: 2,
-    device: "Chrome on Hp Elitebook",
-    iconType: "chrome",
-    location: "Lagos, NG",
-    lastActive: "1hr, ago",
-  },
-  {
-    id: 3,
-    device: "Ebuka's iMac",
-    iconType: "apple",
-    location: "Lagos, NG",
-    lastActive: "1hr, ago",
-  },
-];
+type ActiveSession = {
+  id: number;
+  device: string;
+  iconType: "safari" | "chrome" | "apple";
+  location: string;
+  lastActive: string;
+};
+
+const activeSessions: ActiveSession[] = [];
 
 export default function SecurityControlPage() {
   const { me } = useMe();
@@ -483,6 +469,12 @@ export default function SecurityControlPage() {
                         </div>
 
                         <div className="divide-y divide-gray-100 border-x border-b border-gray-100 rounded-b-lg">
+                          {sessions.length === 0 && (
+                            <p className="px-4 py-6 text-sm text-gray-600">
+                              Session history is not available yet. No device or
+                              location data is being shown for this account.
+                            </p>
+                          )}
                           {sessions.map((session) => (
                             <div
                               key={session.id}
