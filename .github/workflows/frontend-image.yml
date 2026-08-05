@@ -1,0 +1,62 @@
+name: Publish frontend image
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: frontend-production-image
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/growdex-app
+  DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+  API_URL: ${{ github.ref_name == 'main' && 'https://api.growdex.ai' || 'https://api-staging.growdex.ai' }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          target: runner
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.ref_name == 'main' && 'latest' || 'staging' }}
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            BACKEND_API_BASE_URL=${{ env.API_URL }}
+            NEXT_PUBLIC_APP_ENV=${{ env.DEPLOY_ENV }}
+            NEXT_PUBLIC_BACKEND_API_URL=${{ env.API_URL }}
+            NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=djptzfvfl
+            NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true
+            NEXT_PUBLIC_GOOGLE_AUTH_URL=${{ env.API_URL }}
+            NEXT_PUBLIC_WS_API_URL=${{ env.API_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
