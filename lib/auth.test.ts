@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AuthRequestError, getAuthErrorMessage } from "./auth";
+import {
+  AuthRequestError,
+  getAuthErrorMessage,
+  verificationEmailWasSent,
+} from "./auth";
 
 describe("getAuthErrorMessage", () => {
   it("keeps actionable validation feedback", () => {
@@ -34,5 +38,19 @@ describe("getAuthErrorMessage", () => {
     expect(
       getAuthErrorMessage(new TypeError("Failed to fetch"), "Service unavailable"),
     ).toBe("Service unavailable");
+  });
+});
+
+describe("verificationEmailWasSent", () => {
+  it("reports an explicit delivery failure", () => {
+    expect(verificationEmailWasSent(false)).toBe(false);
+  });
+
+  it("accepts a confirmed delivery", () => {
+    expect(verificationEmailWasSent(true)).toBe(true);
+  });
+
+  it("keeps successful older registration responses compatible", () => {
+    expect(verificationEmailWasSent(undefined)).toBe(true);
   });
 });

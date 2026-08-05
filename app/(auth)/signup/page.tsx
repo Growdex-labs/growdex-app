@@ -8,6 +8,7 @@ import {
   getAuthErrorMessage,
   register,
   resendVerification,
+  verificationEmailWasSent,
 } from "@/lib/auth";
 import { useGoogleAuth } from "@/lib/use-google";
 import { toast } from "sonner";
@@ -108,7 +109,9 @@ export default function SignUpPage() {
       }
 
       setRegistrationComplete(true);
-      setVerificationEmailSent(response.verificationEmailSent === true);
+      setVerificationEmailSent(
+        verificationEmailWasSent(response.verificationEmailSent),
+      );
     } catch (err: unknown) {
       setError(
         getAuthErrorMessage(

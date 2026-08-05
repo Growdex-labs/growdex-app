@@ -76,6 +76,9 @@ export const getAuthErrorMessage = (
   return serviceFailureMessage;
 };
 
+export const verificationEmailWasSent = (value: unknown): boolean =>
+  value !== false;
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 const compactOptionalFields = <T extends Record<string, unknown>>(value: T): T => {
