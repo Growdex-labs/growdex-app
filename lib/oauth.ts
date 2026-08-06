@@ -91,7 +91,17 @@ export const connectSocialAccount = async (
     return { success: false, error: popupResult.error || `Failed to connect ${platform}` };
   }
 
-  return hydrateSocialAccounts();
+  const connection = await hydrateSocialAccounts();
+  if (!connection.success || !connection.data) return connection;
+
+  if (!connection.data[platform]?.connected) {
+    return {
+      success: false,
+      error: `${platform === 'meta' ? 'Meta' : 'TikTok'} authorization finished, but Growdex could not confirm the connected account. Please try again.`,
+    };
+  }
+
+  return connection;
 };
 
 /**
