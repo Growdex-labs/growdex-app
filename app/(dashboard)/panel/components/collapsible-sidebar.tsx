@@ -76,7 +76,13 @@ export function CollapsibleSidebar({
     >
       {/* Logo Section */}
       <div className={`p-6 ${isCollapsed ? "px-4" : "px-6"}`}>
-        <div className="flex justify-between items-center">
+        <div
+          className={
+            isCollapsed
+              ? "flex flex-col items-center gap-4"
+              : "flex items-center justify-between"
+          }
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 shrink-0">
               <Image
