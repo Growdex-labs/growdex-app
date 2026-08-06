@@ -74,6 +74,7 @@ import {
   type CreationMethod,
 } from "../components/CreateMethodBox";
 import { ReviewPublishScreen } from "../components/ReviewPublishScreen";
+import { getCampaignRepairStep } from "@/lib/campaign-edit-state";
 
 const STEPS = [
   "Setup campaign",
@@ -496,41 +497,65 @@ export default function NewCampaignPage() {
           ...payload,
           creationMode: payload.creationMode,
         };
+        const restoredFingerprint = JSON.stringify(editablePayload);
         const restoredStrategyId =
           payload.audienceStrategies.some(({ id }) => id === editStrategyId)
             ? editStrategyId
             : payload.audienceStrategies[0]?.id ?? null;
         if (payload.creationMode === "ai") {
-          const socialSetup = await hydrateSocialAccounts();
-          if (!socialSetup.success || !socialSetup.data) {
-            throw new Error(
-              socialSetup.error ??
-                "Could not load connected accounts for AI editing.",
+          const currentDraft = campaignToAiDraft(editablePayload);
+          try {
+            const socialSetup = await hydrateSocialAccounts();
+            if (!socialSetup.success || !socialSetup.data) {
+              throw new Error(
+                socialSetup.error ??
+                  "Could not load connected accounts for AI editing.",
+              );
+            }
+            const resumed = await resumeAiCampaignDraft({
+              campaignId: result.id,
+              currentDraft,
+              availableMedia: await loadAvailableCampaignMedia(socialSetup.data),
+            });
+            if (resumed.status !== "ready") {
+              throw new Error("The saved AI campaign could not be resumed.");
+            }
+            if (!active) return;
+            autosaveRef.current.lastFingerprint = restoredFingerprint;
+            setCampaign(editablePayload);
+            setActiveStrategyId(restoredStrategyId);
+            setMethod("ai");
+            setGoalConfirmed(true);
+            setSavedCampaignId(result.id);
+            setAiDraftId(resumed.draftId);
+            setAiDraftRevision(resumed.revision);
+            setAiGeneratedDraft(resumed.draft);
+            setAiMessages(toUiMessages(resumed.messages));
+            setAiRationale(resumed.draft.rationale);
+            setAiStepRationales(resumed.draft.stepRationales);
+            setStep(editStrategyId ? 3 : 0);
+          } catch {
+            if (!active) return;
+            autosaveRef.current.lastFingerprint = restoredFingerprint;
+            setCampaign(editablePayload);
+            setActiveStrategyId(restoredStrategyId);
+            setMethod("ai");
+            setGoalConfirmed(true);
+            setSavedCampaignId(result.id);
+            setAiGeneratedDraft(currentDraft);
+            setAiRationale(currentDraft.rationale);
+            setAiStepRationales(currentDraft.stepRationales);
+            setStep(
+              editStrategyId
+                ? 3
+                : getCampaignRepairStep(editablePayload),
+            );
+            setError(
+              "Campaign opened, but the AI assistant could not resume. Complete the missing campaign details, then save the draft.",
             );
           }
-          const currentDraft = campaignToAiDraft(editablePayload);
-          const resumed = await resumeAiCampaignDraft({
-            campaignId: result.id,
-            currentDraft,
-            availableMedia: await loadAvailableCampaignMedia(socialSetup.data),
-          });
-          if (resumed.status !== "ready") {
-            throw new Error("The saved AI campaign could not be resumed.");
-          }
-          if (!active) return;
-          setCampaign(editablePayload);
-          setActiveStrategyId(restoredStrategyId);
-          setMethod("ai");
-          setGoalConfirmed(true);
-          setSavedCampaignId(result.id);
-          setAiDraftId(resumed.draftId);
-          setAiDraftRevision(resumed.revision);
-          setAiGeneratedDraft(resumed.draft);
-          setAiMessages(toUiMessages(resumed.messages));
-          setAiRationale(resumed.draft.rationale);
-          setAiStepRationales(resumed.draft.stepRationales);
-          setStep(editStrategyId ? 3 : 0);
         } else {
+          autosaveRef.current.lastFingerprint = restoredFingerprint;
           setCampaign(editablePayload);
           setActiveStrategyId(restoredStrategyId);
           setMethod("manual");
