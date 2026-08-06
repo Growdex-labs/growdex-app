@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, Lock } from "lucide-react";
 import {
   getAuthErrorMessage,
+  isEmailNotVerifiedError,
   login,
   resendVerification,
 } from "@/lib/auth";
@@ -132,9 +133,8 @@ export default function LoginPage() {
       const loginError = err as {
         formErrors?: string[];
         message?: string;
-        status?: string;
       };
-      if (loginError.status === "EMAIL_NOT_VERIFIED") {
+      if (isEmailNotVerifiedError(err)) {
         setNeedsVerification(true);
         return;
       }

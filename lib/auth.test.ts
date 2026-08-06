@@ -2,8 +2,37 @@ import { describe, expect, it } from "vitest";
 import {
   AuthRequestError,
   getAuthErrorMessage,
+  isEmailNotVerifiedError,
   verificationEmailWasSent,
 } from "./auth";
+
+describe("isEmailNotVerifiedError", () => {
+  it("recognizes the backend status inside error details", () => {
+    expect(
+      isEmailNotVerifiedError(
+        new AuthRequestError("Unauthorized", 401, {
+          status: "EMAIL_NOT_VERIFIED",
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("recognizes the production verification message", () => {
+    expect(
+      isEmailNotVerifiedError(
+        new AuthRequestError("Please verify your email before signing in", 401),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not treat other login failures as verification errors", () => {
+    expect(
+      isEmailNotVerifiedError(
+        new AuthRequestError("Invalid email or password", 401),
+      ),
+    ).toBe(false);
+  });
+});
 
 describe("getAuthErrorMessage", () => {
   it("keeps actionable validation feedback", () => {

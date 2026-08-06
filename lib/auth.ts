@@ -79,6 +79,29 @@ export const getAuthErrorMessage = (
 export const verificationEmailWasSent = (value: unknown): boolean =>
   value !== false;
 
+export const isEmailNotVerifiedError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") return false;
+
+  const candidate = error as {
+    message?: unknown;
+    status?: unknown;
+    details?: Record<string, unknown>;
+  };
+  const values = [
+    candidate.status,
+    candidate.details?.status,
+    candidate.details?.code,
+    candidate.details?.error,
+  ];
+
+  if (values.includes("EMAIL_NOT_VERIFIED")) return true;
+
+  return (
+    typeof candidate.message === "string" &&
+    /verify (?:your )?email|email (?:is )?not verified/i.test(candidate.message)
+  );
+};
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 const compactOptionalFields = <T extends Record<string, unknown>>(value: T): T => {
