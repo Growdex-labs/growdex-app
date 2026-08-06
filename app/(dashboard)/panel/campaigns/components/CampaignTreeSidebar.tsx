@@ -71,7 +71,7 @@ export function CampaignTreeSidebar({
       className={`hidden h-full shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white lg:flex ${
         compact
           ? "w-52 p-3 xl:w-60 xl:p-4"
-          : "w-64 p-3 xl:w-72 xl:p-4"
+          : "w-80 p-4 xl:w-96"
       }`}
     >
       <Link
