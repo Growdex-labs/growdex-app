@@ -60,3 +60,10 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: mode=max
           sbom: true
+
+      - name: Deploy production image in Dokploy
+        if: github.ref_name == 'main'
+        run: |
+          curl --fail --show-error --silent \
+            --request POST \
+            "${{ secrets.DOKPLOY_FRONTEND_WEBHOOK }}"
