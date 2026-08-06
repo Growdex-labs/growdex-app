@@ -157,7 +157,11 @@ function OnboardingPageContent() {
         return;
       }
 
-      await refreshSocialAccounts();
+      if (result.data) {
+        setSocialAccounts(result.data);
+      } else {
+        await refreshSocialAccounts();
+      }
     } catch (failure) {
       setError(
         failure instanceof Error

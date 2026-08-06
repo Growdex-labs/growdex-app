@@ -15,10 +15,7 @@ let socket: Socket | null = null;
 export function getSocket(): Socket {
   if (!socket) {
     socket = io(SOCKET_URL || "", {
-      auth: (cb) => {
-        // Token will be retrieved from cookies automatically by the browser
-        cb({ token: "" });
-      },
+      withCredentials: true,
       transports: ["websocket", "polling"],
       autoConnect: false,
     });

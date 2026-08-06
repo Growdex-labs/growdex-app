@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, PlusCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { SocialAccountSetupProps } from "@/types/social";
 
 interface ConnectedAccount {
   id: string;
@@ -27,6 +28,35 @@ interface ConnectedAccount {
   accountName: string;
   status: string;
 }
+
+const mapConnectedAccounts = (
+  socialAccounts: SocialAccountSetupProps,
+): ConnectedAccount[] => {
+  const accounts: ConnectedAccount[] = [];
+
+  if (socialAccounts.meta?.connected) {
+    accounts.push({
+      id: "meta",
+      platform: "Meta Ads",
+      icon: "meta",
+      accountName:
+        socialAccounts.meta.assets?.[0]?.adAccountName || "Meta Account",
+      status: "Connected",
+    });
+  }
+
+  if (socialAccounts.tiktok?.connected) {
+    accounts.push({
+      id: "tiktok",
+      platform: "TikTok Ads",
+      icon: "tiktok",
+      accountName: socialAccounts.tiktok.assets?.[0]?.name || "TikTok Account",
+      status: "Connected",
+    });
+  }
+
+  return accounts;
+};
 
 export default function ManageAccountPage() {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
@@ -42,29 +72,7 @@ export default function ManageAccountPage() {
     try {
       const res = await hydrateSocialAccounts();
       if (res.success && res.data) {
-        const mappedAccounts: ConnectedAccount[] = [];
-        
-        if (res.data.meta?.connected) {
-          mappedAccounts.push({
-            id: 'meta',
-            platform: "Meta Ads",
-            icon: "meta",
-            accountName: res.data.meta.assets?.[0]?.adAccountName || "Meta Account",
-            status: "Connected",
-          });
-        }
-        
-        if (res.data.tiktok?.connected) {
-          mappedAccounts.push({
-            id: 'tiktok',
-            platform: "TikTok Ads",
-            icon: "tiktok",
-            accountName: res.data.tiktok.assets?.[0]?.name || "TikTok Account",
-            status: "Connected",
-          });
-        }
-        
-        setAccounts(mappedAccounts);
+        setAccounts(mapConnectedAccounts(res.data));
       } else {
         setError(res.error || "Failed to fetch connected accounts");
       }
@@ -110,7 +118,12 @@ export default function ManageAccountPage() {
 
       toast.success(`Connected to ${platform === "meta" ? "Meta" : "TikTok"}`);
       setIsConnectDialogOpen(false);
-      await fetchAccounts();
+      if (result.data) {
+        setError(null);
+        setAccounts(mapConnectedAccounts(result.data));
+      } else {
+        await fetchAccounts();
+      }
     } catch {
       toast.error("An error occurred while connecting the account");
     } finally {
