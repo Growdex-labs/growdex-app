@@ -101,8 +101,6 @@ function OnboardingPageContent() {
       lastName: formData.lastName,
       organizationName: formData.organizationName,
       organizationSize: formData.organizationSize || undefined,
-      industry: formData.industry,
-      monthlyBudget: formData.monthlyBudget,
     });
 
     if (!profile.success) {

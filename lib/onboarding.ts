@@ -56,19 +56,35 @@ const ONBOARDING_STATUS_KEY = 'onboarding_status';
 const readApiError = async (response: Response, fallback: string) => {
   try {
     const body = await response.json();
-    if (typeof body?.message === 'string') return body.message;
-    if (Array.isArray(body?.message)) return body.message.join(', ');
     if (Array.isArray(body?.errors) && body.errors.length > 0) {
-      return body.errors
+      const details = body.errors
         .map((error: { field?: string; message?: string }) =>
           error.field ? `${error.field}: ${error.message}` : error.message
         )
         .filter(Boolean)
         .join(', ');
+      if (details) return details;
     }
+    if (Array.isArray(body?.message)) return body.message.join(', ');
+    if (typeof body?.message === 'string') return body.message;
   } catch {}
 
   return fallback;
+};
+
+const normalizeWebsite = (website?: string): string | undefined => {
+  const value = website?.trim();
+  if (!value) return undefined;
+
+  const normalized = /^[a-z][a-z\d+.-]*:\/\//i.test(value)
+    ? value
+    : `https://${value}`;
+
+  try {
+    return new URL(normalized).toString();
+  } catch {
+    throw new Error('Enter a valid website address, such as https://example.com.');
+  }
 };
 
 /**
@@ -180,8 +196,6 @@ export const savePersonalInfo = async (data: {
   lastName: string;
   organizationName: string;
   organizationSize?: string;
-  industry?: string;
-  monthlyBudget?: string;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
     const response = await apiFetch('/users/onboarding', {
@@ -214,12 +228,16 @@ export const saveBusinessInfo = async (data: {
   country?: string;
 }): Promise<{ success: boolean; error?: string }> => {
   try {
+    const payload = {
+      ...data,
+      website: normalizeWebsite(data.website),
+    };
     const response = await apiFetch('/users/onboarding/business', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...data }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) throw new Error(await readApiError(response, 'Failed to save business information'));
