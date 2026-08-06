@@ -1,17 +1,16 @@
 import { SocialAccountSetupProps } from '@/types/social';
-import { hydrateSocialAccounts } from './social';
 import { API_BASE_URL, apiFetch } from './auth';
 
 export type SocialPlatform = 'meta' | 'tiktok';
 
 /**
- * Open the OAuth popup and resolve once the backend OAuth flow redirects to the
- * frontend callback. The backend owns the provider code exchange and connection;
- * the frontend refreshes onboarding status after the callback confirms success.
+ * Open the OAuth popup and resolve with the authorization code returned by the
+ * provider. The backend starts the provider flow; the frontend callback relays
+ * the returned code so the backend can finish and save the connection.
  */
 export const openOAuthPopup = (
   platform: SocialPlatform,
-  onSuccess: () => void,
+  onSuccess: (code: string) => void,
   onError: (error: string) => void
 ): Window | null => {
   const width = 600;
@@ -42,11 +41,15 @@ export const openOAuthPopup = (
     if (!allowedOrigins.has(event.origin)) return;
     if (event.data?.platform !== platform) return;
 
-    if (event.data?.type === 'oauth_success') {
+    if (
+      event.data?.type === 'oauth_success' &&
+      typeof event.data.code === 'string' &&
+      event.data.code.trim()
+    ) {
       isCompleted = true;
       window.removeEventListener('message', messageHandler);
       popup.close();
-      onSuccess();
+      onSuccess(event.data.code);
     }
 
     if (event.data?.type === 'oauth_error') {
@@ -73,35 +76,69 @@ export const openOAuthPopup = (
 };
 
 /**
- * Connect a social account: run the OAuth popup, then refresh the backend social
- * setup once the callback reports success.
+ * Send the provider authorization code to the backend so it can exchange the
+ * code, save the connection, and return the connected account state.
+ */
+export const exchangeSocialAuthorizationCode = async (
+  platform: SocialPlatform,
+  code: string,
+): Promise<{ success: boolean; data?: SocialAccountSetupProps; error?: string }> => {
+  try {
+    const response = await apiFetch(`/users/onboarding/connect/${platform}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const message =
+        typeof body?.message === 'string' && body.message.trim()
+          ? body.message
+          : `Could not connect ${platform === 'meta' ? 'Meta' : 'TikTok'} (${response.status}).`;
+      return { success: false, error: message };
+    }
+
+    const data = body as SocialAccountSetupProps | null;
+    if (!data?.[platform]?.connected) {
+      return {
+        success: false,
+        error: `${platform === 'meta' ? 'Meta' : 'TikTok'} authorization completed, but the connected account was not saved. Please try again.`,
+      };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : `Could not connect ${platform === 'meta' ? 'Meta' : 'TikTok'}.`,
+    };
+  }
+};
+
+/**
+ * Connect a social account by collecting the provider code and asking the
+ * backend to exchange and save it.
  */
 export const connectSocialAccount = async (
   platform: SocialPlatform
 ): Promise<{ success: boolean; data?: SocialAccountSetupProps; error?: string }> => {
-  const popupResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
+  const popupResult = await new Promise<{ code?: string; error?: string }>((resolve) => {
     openOAuthPopup(
       platform,
-      () => resolve({ success: true }),
-      (error) => resolve({ success: false, error })
+      (code) => resolve({ code }),
+      (error) => resolve({ error })
     );
   });
 
-  if (!popupResult.success) {
+  if (!popupResult.code) {
     return { success: false, error: popupResult.error || `Failed to connect ${platform}` };
   }
 
-  const connection = await hydrateSocialAccounts();
-  if (!connection.success || !connection.data) return connection;
-
-  if (!connection.data[platform]?.connected) {
-    return {
-      success: false,
-      error: `${platform === 'meta' ? 'Meta' : 'TikTok'} authorization finished, but Growdex could not confirm the connected account. Please try again.`,
-    };
-  }
-
-  return connection;
+  return exchangeSocialAuthorizationCode(platform, popupResult.code);
 };
 
 /**

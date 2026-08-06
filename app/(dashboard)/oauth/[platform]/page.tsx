@@ -2,26 +2,18 @@
 
 import { Suspense, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-
-type OAuthMessage =
-  | { type: 'oauth_success'; platform: string }
-  | { type: 'oauth_error'; platform: string; error: string };
+import { buildOAuthCallbackPayload } from '@/lib/oauth-callback';
 
 function OAuthCallbackContent() {
   const params = useParams<{ platform: string }>();
   const searchParams = useSearchParams();
   const platform = params.platform;
+  const code = searchParams.get('code');
   const error = searchParams.get('error') || searchParams.get('error_description');
-  const success = searchParams.get('success') !== 'false';
 
-  const payload: OAuthMessage = useMemo(
-    () =>
-      error
-        ? { type: 'oauth_error', platform, error }
-        : success
-          ? { type: 'oauth_success', platform }
-          : { type: 'oauth_error', platform, error: 'Connection was not completed' },
-    [error, platform, success]
+  const payload = useMemo(
+    () => buildOAuthCallbackPayload(platform, code, error),
+    [code, error, platform]
   );
 
   const message =
