@@ -323,10 +323,20 @@ const getApiError = (data: unknown, fallback: string) => {
   if (!data || typeof data !== "object") return fallback;
   const response = data as {
     message?: unknown;
-    errors?: Array<{ message?: unknown }>;
+    errors?: Array<{ message?: unknown; path?: unknown }>;
   };
-  const fieldMessage = response.errors?.[0]?.message;
-  if (typeof fieldMessage === "string") return fieldMessage;
+  const fieldError = response.errors?.[0];
+  const fieldMessage = fieldError?.message;
+  if (typeof fieldMessage === "string") {
+    const path = Array.isArray(fieldError?.path)
+      ? fieldError.path
+          .filter((part): part is string | number =>
+            typeof part === "string" || typeof part === "number",
+          )
+          .join(".")
+      : "";
+    return path ? `${path}: ${fieldMessage}` : fieldMessage;
+  }
   return typeof response.message === "string" ? response.message : fallback;
 };
 
@@ -1386,7 +1396,7 @@ export const searchProviderLanguages = async (
   return data as ProviderLanguage[];
 };
 
-const serializeCampaignPayload = (
+export const normalizeCampaignPayloadForWrite = (
   payload: CreateCampaignPayload,
 ): CreateCampaignPayload => {
   return {
@@ -1443,7 +1453,7 @@ export const createCampaign = async (
         ? { "Idempotency-Key": options.idempotencyKey }
         : {}),
     },
-    body: JSON.stringify(serializeCampaignPayload(payload)),
+    body: JSON.stringify(normalizeCampaignPayloadForWrite(payload)),
   });
   const data = await readJson(res);
 
@@ -1466,7 +1476,7 @@ export const createCampaignDraft = async (
         ? { "Idempotency-Key": options.idempotencyKey }
         : {}),
     },
-    body: JSON.stringify(serializeCampaignPayload(payload)),
+    body: JSON.stringify(normalizeCampaignPayloadForWrite(payload)),
   });
   const data = await readJson(res);
   if (!res.ok) {
@@ -1528,7 +1538,7 @@ export const updateCampaign = async (
   const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(serializeCampaignPayload(payload)),
+    body: JSON.stringify(normalizeCampaignPayloadForWrite(payload)),
   });
   const data = await readJson(res);
 
@@ -1546,7 +1556,7 @@ export const updateCampaignDraft = async (
   const res = await apiFetch(`/campaigns/drafts/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(serializeCampaignPayload(payload)),
+    body: JSON.stringify(normalizeCampaignPayloadForWrite(payload)),
   });
   const data = await readJson(res);
   if (!res.ok) {
