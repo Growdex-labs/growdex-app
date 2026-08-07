@@ -10,6 +10,8 @@ import {
   fetchCampaignById,
   publishCampaign,
   updateCampaignDraft,
+  validateCampaignPayload,
+  type CreateCampaignPayload,
   type CampaignReviewPayload,
 } from "@/lib/campaigns";
 import { hydrateSocialAccounts } from "@/lib/social";
@@ -97,10 +99,33 @@ export default function PublishCampaignPage() {
   }, [campaignId, router]);
 
   const handlePublish = async () => {
-    if (!campaignId) return;
+    if (!campaignId || !campaign) return;
+    if (campaign.creationMode === "unknown") {
+      setError(
+        "This draft was saved with an older campaign format. Open it in the editor and choose a setup method before publishing.",
+      );
+      return;
+    }
+    const validationError = validateCampaignPayload(campaign);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setIsPublishing(true);
     setError(null);
     try {
+      const writableCampaign: CreateCampaignPayload = {
+        ...campaign,
+        creationMode: campaign.creationMode,
+      };
+      // Drafts created under an older contract can contain nullable optional
+      // fields. Re-saving converts them to the current write contract before
+      // the backend builds the provider request.
+      const savedCampaign = await updateCampaignDraft(
+        campaignId,
+        writableCampaign,
+      );
+      setCampaign(campaignDtoToPayload(savedCampaign));
       await publishCampaign(campaignId);
       router.push("/panel/campaigns");
     } catch (failure) {

@@ -7,6 +7,7 @@ import {
   parseCampaignNameSuggestion,
   parseCampaignOptimizationResponse,
   createInitialCampaignPayload,
+  normalizeCampaignPayloadForWrite,
   validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
   validateCampaignPayload,
@@ -33,6 +34,38 @@ describe("campaignDtoToPayload", () => {
         creatives: [],
       }),
     ).toThrow("incomplete campaign details");
+  });
+});
+
+describe("normalizeCampaignPayloadForWrite", () => {
+  it("removes legacy null optional fields before a draft is published", () => {
+    const campaign = createInitialCampaignPayload();
+    campaign.campaign.name = "  Legacy campaign  ";
+    campaign.campaign.platforms = ["meta"];
+    campaign.audienceStrategies[0]!.ads = [
+      {
+        platform: "meta",
+        primaryText: "  Primary text  ",
+        headline: null,
+        cta: "LEARN_MORE",
+        mediaUrl: "https://cdn.example.com/ad.jpg",
+        landingPageUrl: " https://example.com ",
+        appId: null,
+        leadFormId: null,
+      } as unknown as (typeof campaign.audienceStrategies)[number]["ads"][number],
+    ];
+
+    const normalized = normalizeCampaignPayloadForWrite(campaign);
+    const serialized = JSON.parse(JSON.stringify(normalized));
+
+    expect(serialized.campaign.name).toBe("Legacy campaign");
+    expect(serialized.audienceStrategies[0].ads[0]).toEqual({
+      platform: "meta",
+      primaryText: "Primary text",
+      cta: "LEARN_MORE",
+      mediaUrl: "https://cdn.example.com/ad.jpg",
+      landingPageUrl: "https://example.com",
+    });
   });
 });
 
