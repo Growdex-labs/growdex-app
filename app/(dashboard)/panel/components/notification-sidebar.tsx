@@ -74,12 +74,12 @@ function NotificationRow({ item }: { item: Notification }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm leading-snug mb-4 ${item.isRead ? "text-gray-400" : "text-white"}`}>
+        <p className={`text-sm leading-snug mb-4 ${item.isRead ? "text-dimGray" : "text-white"}`}>
           {item.content}
         </p>
         <div className="flex items-center gap-4 mt-1.5">
           <span className="text-xs text-gray-500">{item.time}</span>
-          <button className="text-xs text-khaki-200 hover:text-khaki-300 transition-colors font-medium">
+          <button className="text-xs text-khaki-200 hover:text-khaki-300 transition-colors font-gilroy-medium">
             {item.action}
           </button>
         </div>
@@ -115,11 +115,11 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
               <div className="bg-red-700 p-1 rounded-full">
                 <BellIcon className="size-5" />
               </div>
-              <p className="text-white text-base font-semibold">
+              <p className="text-white text-base font-gilroy-semibold">
                 Notifications
               </p>
               {!showSettings && unreadCount > 0 && (
-                <span className="bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                <span className="bg-red-600 text-white text-xs font-gilroy-bold px-1.5 py-0.5 rounded-full">
                   {unreadCount}
                 </span>
               )}
@@ -148,7 +148,7 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
             <div className="flex flex-col">
               {/* Settings Header */}
               <div className="px-4 py-3 bg-[#4D4D4D] rounded-sm mx-2 mt-4">
-                <p className="text-sm font-medium text-white">Notification settings</p>
+                <p className="text-sm font-gilroy-medium text-white">Notification settings</p>
               </div>
 
               {/* Toggle Option */}
@@ -173,7 +173,7 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
                 <div key={dateLabel}>
                   {/* Date group header */}
                   <div className="px-2 py-2 bg-[#4D4D4D] rounded-sm mx-2 sticky top-0 z-10">
-                    <p className="text-xs font-medium text-gray-400">{dateLabel}</p>
+                    <p className="text-xs font-gilroy-medium text-dimGray">{dateLabel}</p>
                   </div>
 
                   {/* Rows */}

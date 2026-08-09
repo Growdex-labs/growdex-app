@@ -16,7 +16,8 @@ import {
   DashboardAiPanel,
   type AiMessage,
 } from "./components/dashboard-ai-panel";
-import { Users, TrendingDown } from "lucide-react";
+import { Users } from "lucide-react";
+import { TrendBadge, type TrendGoodDirection } from "./components/trend-badge";
 import { fetchPanelMetrics } from "@/lib/panel";
 import { fetchCampaigns, requestCampaignAdvice } from "@/lib/campaigns";
 
@@ -57,23 +58,16 @@ const formatCurrency = (value: number) =>
 const formatNumber = (value: number) =>
   Math.trunc(Number.isFinite(value) ? value : 0).toLocaleString("en-US");
 
-function TrendBadge({ trend }: { trend: number }) {
-  return (
-    <div className="flex items-center gap-1 text-firebrick-500">
-      <span className="text-sm font-gilroy-regular">{Math.abs(trend)}%</span>
-      <TrendingDown className="w-5 h-5" />
-    </div>
-  );
-}
-
 function SideMetricCard({
   label,
   children,
   trend,
+  goodDirection,
 }: {
   label: string;
   children: React.ReactNode;
   trend: number;
+  goodDirection?: TrendGoodDirection;
 }) {
   return (
     <div className="bg-bisque-50/25 rounded-xl p-4 flex-1 flex flex-col justify-center gap-3">
@@ -82,7 +76,7 @@ function SideMetricCard({
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         {children}
-        <TrendBadge trend={trend} />
+        <TrendBadge trend={trend} goodDirection={goodDirection} />
       </div>
     </div>
   );
@@ -286,8 +280,9 @@ export default function PanelPage() {
               <SideMetricCard
                 label="Cost per Conversion/CPA"
                 trend={metrics.costPerConversion.trend}
+                goodDirection="down"
               >
-                <span className="text-2xl text-firebrick-500 font-gilroy-semibold">
+                <span className="text-2xl text-gray-900 font-gilroy-semibold">
                   {formatCurrency(metrics.costPerConversion.value)}
                 </span>
               </SideMetricCard>
@@ -295,8 +290,9 @@ export default function PanelPage() {
               <SideMetricCard
                 label="Cost Per Click (CPC)"
                 trend={metrics.costPerClick.trend}
+                goodDirection="down"
               >
-                <span className="text-2xl text-firebrick-500 font-gilroy-semibold">
+                <span className="text-2xl text-gray-900 font-gilroy-semibold">
                   {formatCurrency(metrics.costPerClick.value)}
                 </span>
               </SideMetricCard>
@@ -305,8 +301,8 @@ export default function PanelPage() {
                 label="Audience Reception"
                 trend={metrics.audienceReception.trend}
               >
-                <Users className="w-7 h-7 text-firebrick-500" />
-                <span className="text-2xl text-firebrick-500 font-gilroy-semibold">
+                <Users className="w-7 h-7 text-gray-500" />
+                <span className="text-2xl text-gray-900 font-gilroy-semibold">
                   {metrics.audienceReception.value}
                 </span>
               </SideMetricCard>
@@ -378,7 +374,7 @@ export default function PanelPage() {
           </div>
             </>
           )}
-          {!assistantOpen && (
+          {hasData && !assistantOpen && (
             <DashboardAiBar
               campaigns={campaigns}
               selectedCampaignId={selectedCampaignId}
