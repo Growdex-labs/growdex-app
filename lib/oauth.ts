@@ -1,4 +1,5 @@
 import { SocialAccountSetupProps } from '@/types/social';
+import { readApiErrorMessage, readResponseError } from './api-error';
 import { API_BASE_URL, apiFetch } from './auth';
 import { hydrateSocialAccounts } from './social';
 
@@ -93,10 +94,10 @@ export const exchangeSocialAuthorizationCode = async (
     const body = await response.json().catch(() => null);
 
     if (!response.ok) {
-      const message =
-        typeof body?.message === 'string' && body.message.trim()
-          ? body.message
-          : `Could not connect ${platform === 'meta' ? 'Meta' : 'TikTok'} (${response.status}).`;
+      const message = readApiErrorMessage(
+        body,
+        `Could not connect ${platform === 'meta' ? 'Meta' : 'TikTok'} (${response.status}).`,
+      );
       return { success: false, error: message };
     }
 
@@ -175,13 +176,11 @@ export const disconnectSocialAccount = async (
     });
 
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as {
-        message?: unknown;
-      };
       throw new Error(
-        typeof body.message === "string" && body.message.trim()
-          ? body.message
-          : `Could not disconnect ${platform === "meta" ? "Meta" : "TikTok"} (${res.status}).`,
+        await readResponseError(
+          res,
+          `Could not disconnect ${platform === "meta" ? "Meta" : "TikTok"} (${res.status}).`,
+        ),
       );
     }
 
