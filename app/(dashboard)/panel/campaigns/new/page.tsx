@@ -241,8 +241,8 @@ const loadAvailableCampaignMedia = async (
     )
     .slice(0, 100)
     .map((media) => ({
-      id: media.id,
-      name: media.name,
+      id: media.id.slice(0, 200),
+      name: media.name.trim().slice(0, 80) || "Untitled media",
       url: media.url,
       platform: media.platform,
       mediaType: isVideoMedia(media)
