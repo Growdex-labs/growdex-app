@@ -102,7 +102,7 @@ export default function EditBudgetForm({
       )}
       {/* Budget Title Section */}
       <div className="bg-slate-100 p-3 flex rounded-lg items-center mb-4">
-        <div className="size-7 rounded-full bg-linear-to-br from-green-400 to-emerald-600 text-white mr-3 flex items-center justify-center text-sm font-bold">
+        <div className="size-7 rounded-full bg-linear-to-br from-green-400 to-emerald-600 text-white mr-3 flex items-center justify-center text-sm font-gilroy-bold">
           {budget.icon ? (
             <img src={budget.icon} alt={budget.name} />
           ) : (
@@ -122,7 +122,7 @@ export default function EditBudgetForm({
                 }}
                 onBlur={handleTitleSave}
                 onKeyDown={handleKeyDown}
-                className="text-gray-800 text-2xl font-semibold bg-white border border-khaki-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-khaki-300"
+                className="text-gray-800 text-2xl font-gilroy-semibold bg-white border border-khaki-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-khaki-300"
               />
               <CheckIcon
                 className="w-5 h-5 text-green-600 cursor-pointer"
@@ -131,11 +131,11 @@ export default function EditBudgetForm({
             </div>
           ) : (
             <>
-              <h3 className="text-gray-800 text-2xl font-semibold">
+              <h3 className="text-gray-800 text-2xl font-gilroy-semibold">
                 {budgetTitle}
               </h3>
               <PencilIcon
-                className="w-4 h-4 ml-px text-[#D6C34A] cursor-pointer hover:text-[#c5b13a] transition-colors"
+                className="w-4 h-4 ml-px text-darkkhaki-200 cursor-pointer hover:text-peru-200 transition-colors"
                 onClick={handleTitleEdit}
               />
             </>
@@ -145,7 +145,7 @@ export default function EditBudgetForm({
 
       {/* Campaign Selection */}
       <div className="mb-6 mt-2">
-        <h3 className="mb-2 font-medium">Select a campaign for this budget</h3>
+        <h3 className="mb-2 font-gilroy-medium">Select a campaign for this budget</h3>
         <Select
           value={selectedCampaign}
           onValueChange={(value) => {
@@ -187,7 +187,7 @@ export default function EditBudgetForm({
 
       {/* Budget Allocation Section */}
       <div className="space-y-3 mt-6">
-        <h3 className="text-sm font-medium">How much do you want to use?</h3>
+        <h3 className="text-sm font-gilroy-medium">How much do you want to use?</h3>
         <div className="flex flex-col lg:flex-row gap-4 overflow-hidden">
           {/* Meta Platform (Facebook) */}
           <div className="bg-slate-100 p-4 rounded-lg flex items-start gap-3 sm:flex-1">
@@ -295,7 +295,7 @@ export default function EditBudgetForm({
 
       {/* Pause on Budget Reached Toggle */}
       <div className="flex items-center gap-3 mt-6 mb-4">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-gilroy-medium text-gray-700">
           Pause campaign after budget is reached
         </span>
         {/* Toggle Switch */}
@@ -324,7 +324,7 @@ export default function EditBudgetForm({
         <button
           onClick={handleSaveBudget}
           disabled={!hasChanges}
-          className={`flex-1 py-2 rounded-md text-sm font-semibold flex items-center justify-center transition-colors ${
+          className={`flex-1 py-2 rounded-md text-sm font-gilroy-semibold flex items-center justify-center transition-colors ${
             hasChanges
               ? "bg-khaki-200 hover:bg-khaki-300 text-gray-900"
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
@@ -333,26 +333,26 @@ export default function EditBudgetForm({
           <SaveIcon className="w-4 h-4 mr-2" />
           Save Changes
         </button>
-        <button className="flex-1 py-2 rounded-md text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+        <button className="flex-1 py-2 rounded-md text-sm font-gilroy-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
           Cancel
         </button>
       </div>
 
       {/* Budget Status Info */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h4 className="text-sm font-semibold text-blue-900 mb-2">
+        <h4 className="text-sm font-gilroy-semibold text-blue-900 mb-2">
           Budget Status
         </h4>
         <div className="text-xs text-blue-800 space-y-1">
           <p>
-            <span className="font-medium">Status:</span>{" "}
+            <span className="font-gilroy-medium">Status:</span>{" "}
             <span className="capitalize">{budgetStatus}</span>
           </p>
           <p>
-            <span className="font-medium">Created:</span> {budget.createdAt}
+            <span className="font-gilroy-medium">Created:</span> {budget.createdAt}
           </p>
           <p>
-            <span className="font-medium">Usage:</span> {budget.usedPercent}% of
+            <span className="font-gilroy-medium">Usage:</span> {budget.usedPercent}% of
             ₦
             {budget.amount.toLocaleString("en-US", {
               minimumFractionDigits: 2,

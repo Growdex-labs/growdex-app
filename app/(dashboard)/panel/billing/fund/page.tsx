@@ -6,8 +6,8 @@ import { AlertCircle, ExternalLink, Loader2 } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import { apiFetch } from "@/lib/auth";
 import { useMe } from "@/context/me-context";
-import { WalletHeader } from "../components/wallet-header";
-import { WalletSidebar } from "../components/wallet-sidebar";
+import { BillingHeader } from "../components/billing-header";
+import { BillingSidebar } from "../components/billing-sidebar";
 
 type Platform = "meta" | "tiktok";
 
@@ -104,7 +104,7 @@ function FundingCard({
     <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
         <span
-          className={`flex size-9 items-center justify-center rounded-full text-sm font-bold text-white ${config.avatarClass}`}
+          className={`flex size-9 items-center justify-center rounded-full text-sm font-gilroy-bold text-white ${config.avatarClass}`}
         >
           {accountName.slice(0, 1).toUpperCase()}
         </span>
@@ -112,7 +112,7 @@ function FundingCard({
           <p className="truncate text-sm font-gilroy-semibold text-gray-900">
             {accountName}
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-dimGray">
             {[config.name, accountId, currency].filter(Boolean).join(" · ")}
           </p>
         </div>
@@ -138,7 +138,11 @@ function FundingCard({
           className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2 text-xs font-gilroy-semibold text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <ExternalLink className="size-4" />}
-          {loading ? "Opening…" : "Continue to platform"}
+          {loading
+            ? "Opening…"
+            : platform === "tiktok"
+              ? "Open TikTok Ads Manager"
+              : "Open Meta billing"}
         </button>
       </div>
     </article>
@@ -211,17 +215,17 @@ export default function FundWalletPage() {
     <PanelLayout>
       <div className="flex min-h-full bg-[#f5f5f5]">
         <div className="hidden sm:block">
-          <WalletSidebar />
+          <BillingSidebar />
         </div>
         <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-8 lg:p-10">
-          <WalletHeader />
+          <BillingHeader />
           <div className="mx-auto max-w-5xl">
             <h1 className="text-2xl font-gilroy-bold text-gray-950">
               Add campaign funding
             </h1>
             <p className="mt-2 text-sm text-gray-500">
-              Choose an account, then continue securely on the platform’s
-              billing page.
+              Meta opens its billing page directly. For TikTok, open Ads
+              Manager and choose Tools, Billing, then Payment.
             </p>
 
             {pageError ? (

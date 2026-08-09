@@ -4,34 +4,33 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
-export function WalletSidebar() {
+export const BILLING_NAV_ITEMS = [
+  { label: 'Billing', href: '/panel/billing' },
+  { label: 'Fund ad account', href: '/panel/billing/fund' },
+  { label: 'Budget', href: '/panel/billing/budget' },
+];
+
+export function BillingSidebar() {
   const pathname = usePathname();
 
-  const navItems = [
-    { label: 'Balance', href: '/panel/wallet' },
-    { label: 'Transactions', href: '/panel/wallet/transactions' },
-    { label: 'Add funding', href: '/panel/wallet/fund' },
-    { label: 'Budget', href: '/panel/wallet/budget' },
-  ];
-
   const isActive = (href: string) => {
-    if (href === '/panel/wallet') {
-      return pathname === '/panel/wallet';
+    if (href === '/panel/billing') {
+      return pathname === '/panel/billing';
     }
     return pathname?.startsWith(href);
   };
 
   return (
-    <div className="w-64 h-screen flex flex-col justify-between bg-white border-r border-gray-200 p-6">
+    <div className="w-64 h-full flex flex-col justify-between bg-white border-r border-gray-200 p-6">
       <div className="space-y-2 mb-8">
-        <h2 className="text-lg lg:text-2xl font-gilroy-semibold mb-4">Funding</h2>
-        {navItems.map((item) => (
+        <h2 className="text-lg lg:text-2xl font-gilroy-semibold mb-4">Billing</h2>
+        {BILLING_NAV_ITEMS.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={`block px-4 py-2.5 rounded-lg text-sm transition-colors ${
               isActive(item.href)
-                ? 'bg-lavender-50 text-gray-900 font-medium'
+                ? 'bg-lavender-50 text-gray-900 font-gilroy-medium'
                 : 'text-gray-400 hover:bg-lavender-50 hover:text-gray-800'
             }`}
           >

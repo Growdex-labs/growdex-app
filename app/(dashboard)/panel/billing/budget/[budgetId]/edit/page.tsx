@@ -5,10 +5,17 @@ import { useParams } from "next/navigation";
 import { getBudgetById } from "@/lib/mock-data";
 import Link from "next/link";
 import { PanelLayout } from "@/app/(dashboard)/panel/components/panel-layout";
-import { WalletSidebar } from "../../../components/wallet-sidebar";
-import { WalletHeader } from "../../../components/wallet-header";
+import { BillingSidebar } from "../../../components/billing-sidebar";
+import { BillingHeader } from "../../../components/billing-header";
 import { useState } from "react";
 import { AlertCircle, ArrowLeft, ChevronLeft, Pause } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function EditBudgetPage() {
   const params = useParams();
@@ -22,20 +29,20 @@ export default function EditBudgetPage() {
   if (!budget) {
     return (
       <PanelLayout>
-        <div className="flex h-screen overflow-hidden bg-gray-50">
+        <div className="flex h-full overflow-hidden bg-gray-50">
           <div className="hidden sm:block">
-            <WalletSidebar />
+            <BillingSidebar />
           </div>
           <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h1 className="text-2xl font-gilroy-semibold text-gray-900 mb-2">
               Budget not found
             </h1>
             <p className="text-gray-600 mb-4">
               The budget you're looking for doesn't exist.
             </p>
             <Link
-              href="/panel/wallet/budget"
-              className="text-khaki-300 hover:text-khaki-400 font-medium"
+              href="/panel/billing/budget"
+              className="text-khaki-300 hover:text-khaki-400 font-gilroy-medium"
             >
               Back to budgets
             </Link>
@@ -60,35 +67,35 @@ export default function EditBudgetPage() {
 
   return (
     <PanelLayout>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-full overflow-hidden bg-gray-50">
         {/* Secondary Sidebar */}
         <div className="hidden sm:block">
-          <WalletSidebar />
+          <BillingSidebar />
         </div>
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto p-4 space-y-4 flex flex-col">
-          <WalletHeader />
+          <BillingHeader />
 
           {/* Budget header with breadcrumb and status */}
           <div className="bg-white rounded-lg shadow-sm border border-khaki-300 p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-px sm:gap-2">
                 <Link
-                  href="/panel/wallet"
+                  href="/panel/billing"
                   className="text-gray-600 hover:text-gray-900 transition-colors text-xs"
                 >
                   Funding
                 </Link>
                 <span className="text-xs">&gt;&gt;</span>
                 <Link
-                  href="/panel/wallet/budget"
+                  href="/panel/billing/budget"
                   className="text-gray-600 hover:text-gray-900 transition-colors text-xs"
                 >
                   Budget
                 </Link>
                 <span className="text-xs">&gt;&gt;</span>
-                <span className="text-gray-900 font-medium text-xs whitespace-nowrap">
+                <span className="text-gray-900 font-gilroy-medium text-xs whitespace-nowrap">
                   {budget.name}
                 </span>
               </div>
@@ -112,7 +119,7 @@ export default function EditBudgetPage() {
                   />
                 </button>
                 <span
-                  className={`capitalize py-1.5 px-2 rounded-lg text-sm font-semibold ${
+                  className={`capitalize py-1.5 px-2 rounded-lg text-sm font-gilroy-semibold ${
                     budgetStatus === "running"
                       ? "bg-green-500 text-white"
                       : budgetStatus === "paused"
@@ -133,37 +140,37 @@ export default function EditBudgetPage() {
           </div>
 
           {/* Pause Confirmation Modal */}
-          {showPauseModal && (
-            <div className="fixed inset-0 bg-slate-800/40 bg-opacity-20 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
-                <h2 className="text-center mb-4 text-lg font-semibold">
-                  You're about to pause your budget
-                </h2>
-                <p className="text-center mb-4 text-gray-700 text-sm">
+          <Dialog open={showPauseModal} onOpenChange={setShowPauseModal}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="text-center">
+                  You&apos;re about to pause your budget
+                </DialogTitle>
+                <DialogDescription className="text-center">
                   This will stop your ad from being displayed to your audience.
-                </p>
-                <div className="flex gap-3 justify-center mt-4">
-                  <button
-                    onClick={confirmPauseBudget}
-                    className="px-4 py-2 text-slate-900 rounded-lg text-sm font-medium flex items-center gap-2 border border-slate-900 cursor-pointer"
-                  >
-                    <Pause
-                      className="w-3 h-3 text-black"
-                      style={{ fill: "#000" }}
-                    />
-                    Pause
-                  </button>
-                  <button
-                    onClick={() => setShowPauseModal(false)}
-                    className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm flex items-center gap-2 font-medium transition-colors cursor-pointer hover:bg-khaki-300"
-                  >
-                    <ArrowLeft className="w-3 h-3 text-slate-800" />
-                    Go back
-                  </button>
-                </div>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={confirmPauseBudget}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-900 px-4 py-2 text-sm font-gilroy-medium text-slate-900"
+                >
+                  <Pause
+                    className="w-3 h-3 text-black"
+                    style={{ fill: "#000" }}
+                  />
+                  Pause
+                </button>
+                <button
+                  onClick={() => setShowPauseModal(false)}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2 text-sm font-gilroy-medium text-gray-900 transition-colors hover:bg-khaki-300"
+                >
+                  <ArrowLeft className="w-3 h-3 text-slate-800" />
+                  Go back
+                </button>
               </div>
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
 
           {/* Edit Budget Form */}
           <EditBudgetForm budget={budget} budgetStatus={budgetStatus} />

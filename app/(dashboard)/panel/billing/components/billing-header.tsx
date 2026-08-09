@@ -11,54 +11,45 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { BILLING_NAV_ITEMS } from "./billing-sidebar";
 
-
-export function WalletHeader(): JSX.Element {
+export function BillingHeader(): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  const navItems = [
-    { label: "Balance", href: "/panel/wallet" },
-    { label: "Transactions", href: "/panel/wallet/transactions" },
-    { label: "Add funding", href: "/panel/wallet/fund" },
-    { label: "Budget", href: "/panel/wallet/budget" },
-  ];
-
   const isActive = (href: string) => {
-    if (href === "/panel/wallet") {
-      return pathname === "/panel/wallet";
+    if (href === "/panel/billing") {
+      return pathname === "/panel/billing";
     }
     return pathname?.startsWith(href);
   };
 
-  const getActiveLabel = () => {
-    const activeItem = navItems.find((item) => isActive(item.href));
-    return activeItem?.label || "Funding";
-  };
+  const activeLabel =
+    BILLING_NAV_ITEMS.find((item) => isActive(item.href))?.label ?? "Billing";
 
   return (
     <div className="md:hidden flex items-center justify-between p-4 ">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <button className="flex items-center gap-2 font-semibold text-gray-900 hover:text-gray-700 transition-colors">
-            {getActiveLabel()}
+          <button className="flex items-center gap-2 font-gilroy-semibold text-gray-900 hover:text-gray-700 transition-colors">
+            {activeLabel}
             <ChevronDown className="w-4 h-4" />
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-80 p-0">
           <SheetHeader className="p-6 border-b border-gray-200">
-            <SheetTitle>{getActiveLabel()}</SheetTitle>
+            <SheetTitle>{activeLabel}</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col justify-between h-[calc(100vh-120px)]">
             <div className="space-y-2 p-6">
-              {navItems.map((item) => (
+              {BILLING_NAV_ITEMS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={`block px-4 py-2.5 rounded-lg text-sm transition-colors ${
                     isActive(item.href)
-                      ? "bg-lavender-50 text-gray-900 font-medium"
+                      ? "bg-lavender-50 text-gray-900 font-gilroy-medium"
                       : "text-gray-400 hover:bg-lavender-50 hover:text-gray-800"
                   }`}
                 >

@@ -74,7 +74,7 @@ export default function BudgetSplitSlider({
         <div className="w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center">
           <span className="text-xs text-white">ℹ</span>
         </div>
-        <h4 className="text-sm md:text-base font-medium text-gray-700">
+        <h4 className="text-sm md:text-base font-gilroy-medium text-gray-700">
           Split funds
         </h4>
       </div>
@@ -90,7 +90,7 @@ export default function BudgetSplitSlider({
           onChange={handleAmountChange}
           onBlur={handleAmountBlur}
           placeholder="N0"
-          className={`w-full text-xl md:text-2xl font-semibold px-4 py-3 rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 ${
+          className={`w-full text-xl md:text-2xl font-gilroy-semibold px-4 py-3 rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 ${
             amount && !isValidAmount
               ? "border-red-300 bg-red-50 focus:ring-red-200"
               : "border-gray-200 bg-white focus:ring-khaki-300"
@@ -116,7 +116,7 @@ export default function BudgetSplitSlider({
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
               <div className="flex flex-col items-center gap-1">
                 {getPlatformIcon(platforms[0].icon)}
-                <span className="text-xs md:text-sm font-semibold text-gray-700">
+                <span className="text-xs md:text-sm font-gilroy-semibold text-gray-700">
                   {formatCurrency(platform1Amount)}
                 </span>
               </div>
@@ -141,7 +141,7 @@ export default function BudgetSplitSlider({
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
               <div className="flex flex-col items-center gap-1">
                 {getPlatformIcon(platforms[1].icon)}
-                <span className="text-xs md:text-sm font-semibold text-gray-700">
+                <span className="text-xs md:text-sm font-gilroy-semibold text-gray-700">
                   {formatCurrency(platform2Amount)}
                 </span>
               </div>
@@ -150,10 +150,10 @@ export default function BudgetSplitSlider({
 
           {/* Amount Distribution */}
           <div className="flex items-center justify-between text-sm">
-            <div className="bg-gray-600 text-white rounded-full px-8  font-semibold">
+            <div className="bg-gray-600 text-white rounded-full px-8  font-gilroy-semibold">
               {splitPercentage}%
             </div>
-            <div className="bg-gray-600 text-white rounded-full px-8   font-semibold">
+            <div className="bg-gray-600 text-white rounded-full px-8   font-gilroy-semibold">
               {100 - splitPercentage}%
             </div>
           </div>
