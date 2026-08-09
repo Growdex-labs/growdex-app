@@ -16,7 +16,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { isVideoUrl } from "@/lib/campaign-shared";
+import { isVideoMedia } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
@@ -294,7 +294,7 @@ export function CreativeSetupScreen({
   const visibleAssets = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return library.filter((asset) => {
-      if (destination === "VIDEO" && !isVideoUrl(asset.url)) {
+      if (destination === "VIDEO" && !isVideoMedia(asset)) {
         return false;
       }
       if (
@@ -692,8 +692,13 @@ export function CreativeSetupScreen({
                       } ${view === "list" ? "flex items-center gap-4 p-3" : ""}`}
                     >
                       <span className={`relative block shrink-0 overflow-hidden bg-gray-100 ${view === "grid" ? "aspect-4/3 w-full" : "h-20 w-28 rounded-xl"}`}>
-                        {isVideoUrl(asset.url) ? (
-                          <video className="h-full w-full object-cover" src={asset.url} muted />
+                        {isVideoMedia(asset) ? (
+                          <video
+                            className="h-full w-full object-cover"
+                            src={asset.url}
+                            poster={asset.thumbnailUrl}
+                            muted
+                          />
                         ) : (
                           <Image
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -727,7 +732,7 @@ export function CreativeSetupScreen({
               <div className="flex min-h-64 flex-col items-center justify-center text-center">
                 <Search className="size-8 text-gray-300" />
                 <p className="mt-3 font-gilroy-semibold text-gray-700">No matching media</p>
-                <p className="mt-1 text-sm text-gray-400">Change the search or platform filter.</p>
+                <p className="mt-1 text-sm text-dimGray">Change the search or platform filter.</p>
               </div>
             )}
           </div>
@@ -747,8 +752,22 @@ export function CreativeSetupScreen({
                       const platform = item.platform;
                       return (
                         <span key={`${platform}-${url}-${index}`} className="relative block size-16 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
-                          {isVideoUrl(url) ? (
-                            <video src={url} muted className="h-full w-full object-cover" />
+                          {isVideoMedia({
+                            url,
+                            platform,
+                            mediaType:
+                              "mediaType" in item ? item.mediaType : undefined,
+                          }) ? (
+                            <video
+                              src={url}
+                              poster={
+                                "thumbnailUrl" in item
+                                  ? item.thumbnailUrl
+                                  : undefined
+                              }
+                              muted
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <Image src={url} alt="" fill sizes="64px" className="object-cover" unoptimized />
                           )}

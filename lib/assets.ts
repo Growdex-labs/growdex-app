@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/auth";
 import { fetchCampaigns, type CampaignPlatform } from "@/lib/campaigns";
-import { isVideoUrl } from "@/lib/campaign-shared";
+import { isVideoMedia } from "@/lib/campaign-shared";
 
 export interface CreativeAsset {
   id: string;
@@ -53,7 +53,12 @@ export const fetchCreativeAssets = async (options?: {
         status: campaign.status ?? "draft",
         createdAt: creative.createdAt ?? campaign.createdAt ?? "",
       kind: "asset",
-      mediaType: isVideoUrl(creative.mediaUrl) ? "video" : "image",
+      mediaType: isVideoMedia({
+        url: creative.mediaUrl,
+        platform: creative.platform,
+      })
+        ? "video"
+        : "image",
       });
     }
   }

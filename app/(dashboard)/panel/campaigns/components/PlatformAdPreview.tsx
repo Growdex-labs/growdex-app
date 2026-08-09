@@ -16,7 +16,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-import { isVideoUrl } from "@/lib/campaign-shared";
+import { isVideoMedia } from "@/lib/campaign-shared";
 import type { CampaignCreativeInput } from "@/lib/campaigns";
 
 interface PlatformAdPreviewProps {
@@ -45,11 +45,17 @@ function PreviewMedia({
     );
   }
 
-  if (isVideoUrl(creative.mediaUrl)) {
+  if (
+    isVideoMedia({
+      url: creative.mediaUrl,
+      platform: creative.platform,
+    })
+  ) {
     return (
       <video
         className={className}
         src={creative.mediaUrl}
+        poster={creative.thumbnailUrl}
         autoPlay
         loop
         muted

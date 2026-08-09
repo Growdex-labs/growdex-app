@@ -35,12 +35,12 @@ export function CampaignHeader({
           </div>
 
           {/* Campaign Title */}
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-gilroy-bold text-gray-900 mb-4">
             {campaign.name}
           </h1>
           <div className="flex items-center gap-2 w-full">
             {/* Budget Burn Badge */}
-            <button className="px-4 py-2 flex-1 md:flex-none bg-bisque-50 text-firebrick-500 rounded-lg font-medium flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm md:text-xs font-gilroy-bold">
+            <button className="px-4 py-2 flex-1 md:flex-none bg-bisque-50 text-firebrick-500 rounded-lg flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm md:text-xs font-gilroy-bold">
               <Image src="/mdi_fire.png" alt="" width={28} height={28} className="size-7" />
               Budget Burn
             </button>
@@ -78,11 +78,11 @@ export function CampaignHeader({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-6">
             <SparklesIcon className="w-3 h-3 text-khaki-200" />
-            <span className="text-xs font-medium text-gray-400 ">
+            <span className="text-xs font-gilroy-medium text-gray-400 ">
               Description
             </span>
           </div>
-          <p className="text-gray-700 font-semibold text-sm leading-relaxed">
+          <p className="text-gray-700 font-gilroy-semibold text-sm leading-relaxed">
             {campaign.description || "No description provided."}
           </p>
         </div>
@@ -94,13 +94,13 @@ export function CampaignHeader({
         <div className="bg-slate-300/20 border border-gray-200 rounded-xl p-6 flex-1">
           <p className="text-sm text-gray-500 mb-2">Campaign goal</p>
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
+            <h3 className="text-xl font-gilroy-bold text-gray-900 mb-3">
               {campaign.goal || "No goal specified"}
             </h3>
 
             <div className="mb-4 flex items-center gap-2">
               <SparklesIcon className="h-3 w-3 text-violet-500" />
-              <span className="text-xs font-semibold text-violet-600">
+              <span className="text-xs font-gilroy-semibold text-violet-600">
                 AI review available
               </span>
             </div>
@@ -108,7 +108,7 @@ export function CampaignHeader({
 
           <button
             onClick={onOptimizationClick}
-            className="text-xs text-khaki-300 flex items-center gap-2 hover:text-khaki-400 font-semibold transition-colors cursor-pointer"
+            className="text-xs text-khaki-300 flex items-center gap-2 hover:text-khaki-400 font-gilroy-semibold transition-colors cursor-pointer"
           >
             <SparklesIcon className="w-3 h-3" />
             Optimize for campaign goal

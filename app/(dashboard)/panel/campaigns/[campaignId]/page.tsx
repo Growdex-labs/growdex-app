@@ -1,7 +1,13 @@
 "use client";
 
-import { getAdsByCampaignId, type Campaign } from "@/lib/mock-data";
-import { fetchCampaignById, type CampaignDto } from "@/lib/campaigns";
+import { type Campaign } from "@/lib/mock-data";
+import {
+  fetchCampaignById,
+  fetchCampaignMetricsById,
+  summariseCampaignMetrics,
+  type CampaignDto,
+  type CampaignMetricsSummary,
+} from "@/lib/campaigns";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { PanelLayout } from "../../components/panel-layout";
@@ -26,12 +32,36 @@ export default function CampaignDetailPage({
   const [activeSubTab, setActiveSubTab] = useState<string>("modular");
   const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [campaignDto, setCampaignDto] = useState<CampaignDto | null>(null);
+  const [metrics, setMetrics] = useState<CampaignMetricsSummary | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { campaignId } = use(params);
   const router = useRouter();
 
-  const campaignAds = getAdsByCampaignId(campaignId);
+  const campaignAds = campaignDto?.creatives ?? [];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void fetchCampaignMetricsById(campaignId)
+      .then((rows) => {
+        if (isMounted) setMetrics(summariseCampaignMetrics(rows));
+      })
+      .catch((failure) => {
+        if (!isMounted) return;
+        setMetricsError(
+          failure instanceof Error
+            ? failure.message
+            : "Could not load campaign performance.",
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [campaignId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -43,6 +73,7 @@ export default function CampaignDetailPage({
         const data = await fetchCampaignById(campaignId);
         if (isMounted) {
           setCampaign(mapCampaign(data));
+          setCampaignDto(data);
         }
       } catch (err) {
         if (!isMounted) return;
@@ -67,7 +98,7 @@ export default function CampaignDetailPage({
   if (isLoading) {
     return (
       <PanelLayout>
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-full items-center justify-center">
           <div className="text-gray-500">Loading campaign...</div>
         </div>
       </PanelLayout>
@@ -77,9 +108,9 @@ export default function CampaignDetailPage({
   if (!campaign) {
     return (
       <PanelLayout>
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-full items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl font-gilroy-bold text-gray-900 mb-4">
               Campaign Not Found
             </h1>
             <p className="text-gray-600 mb-6">
@@ -128,7 +159,7 @@ export default function CampaignDetailPage({
                     Optimize for campaign goal
                   </p>
                 </div>
-                <button className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg font-semibold text-sm hover:bg-khaki-300 transition-colors">
+                <button className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg font-gilroy-semibold text-sm hover:bg-khaki-300 transition-colors">
                   See changes
                 </button>
               </div>
@@ -140,7 +171,7 @@ export default function CampaignDetailPage({
                 {/* Overview Tab - Fixed */}
                 <button
                   onClick={() => setActiveTab("overview")}
-                  className={`flex-shrink-0 px-2.5 sm:px-8 py-4 rounded-xl font-semibold transition-colors whitespace-nowrap ${
+                  className={`flex-shrink-0 px-2.5 sm:px-8 py-4 rounded-xl font-gilroy-semibold transition-colors whitespace-nowrap ${
                     activeTab === "overview"
                       ? "bg-khaki-200 text-gray-900"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-150"
@@ -152,17 +183,17 @@ export default function CampaignDetailPage({
                 {/* Dynamic Ad Tabs - Scrollable */}
                 <div className="flex-1 overflow-x-auto hide-scrollbar">
                   <div className="flex items-center gap-2 sm:gap-3">
-                    {campaignAds.map((ad) => (
+                    {campaignAds.map((ad, index) => (
                       <button
                         key={ad.id}
                         onClick={() => setActiveTab(ad.id)}
-                        className={`flex-shrink-0 px-6 sm:px-8 py-4 rounded-xl font-semibold transition-colors whitespace-nowrap ${
+                        className={`flex-shrink-0 whitespace-nowrap rounded-xl px-6 py-4 font-gilroy-semibold transition-colors sm:px-8 ${
                           activeTab === ad.id
                             ? "bg-gray-200 text-gray-900"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-150"
+                            : "bg-gray-100 text-dimGray hover:bg-gray-200"
                         }`}
                       >
-                        {ad.name}
+                        {ad.headline?.trim() || `Ad ${index + 1}`}
                       </button>
                     ))}
                   </div>
@@ -175,7 +206,7 @@ export default function CampaignDetailPage({
             {activeTab === "overview" && (
               <div className="bg-white p-4 md:p-6 rounded-lg mb-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 md:mb-6">
-                  <h2 className="text-base md:text-lg font-semibold">
+                  <h2 className="text-base md:text-lg font-gilroy-semibold">
                     Performance
                   </h2>
                   <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-4">
@@ -215,7 +246,7 @@ export default function CampaignDetailPage({
                     <div className="flex items-center bg-gray-50 rounded-lg p-0.5 md:p-1">
                       <button
                         onClick={() => setActiveSubTab("modular")}
-                        className={`px-2 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                        className={`px-2 md:px-4 py-2 rounded-lg text-sm font-gilroy-medium transition-colors flex items-center gap-2 ${
                           activeSubTab === "modular"
                             ? "bg-[#4E5673] text-gray-200 shadow-sm"
                             : "bg-transparent text-gray-600 hover:text-gray-900"
@@ -239,7 +270,7 @@ export default function CampaignDetailPage({
                       </button>
                       <button
                         onClick={() => setActiveSubTab("table")}
-                        className={`px-2 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                        className={`px-2 md:px-4 py-2 rounded-lg text-sm font-gilroy-medium transition-colors flex items-center gap-2 ${
                           activeSubTab === "table"
                             ? "bg-[#4E5673] text-gray-200 shadow-sm"
                             : "bg-transparent text-gray-600 hover:text-gray-900"
@@ -265,11 +296,15 @@ export default function CampaignDetailPage({
                   </div>
                 </div>
 
-                <Overview
-                  subTab={activeSubTab}
-                  campaign={campaign}
-                  onOptimizationClick={() => setIsOptimizationOpen(true)}
-                />
+                {campaignDto && (
+                  <Overview
+                    subTab={activeSubTab}
+                    campaign={campaignDto}
+                    metrics={metrics}
+                    metricsError={metricsError}
+                    onOptimizationClick={() => setIsOptimizationOpen(true)}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -280,7 +315,7 @@ export default function CampaignDetailPage({
           campaignId={campaignId}
           isOpen={isOptimizationOpen}
           onClose={() => setIsOptimizationOpen(false)}
-          onApplied={(updated) => setCampaign(mapCampaign(updated))}
+          onApplied={(updated) => { setCampaign(mapCampaign(updated)); setCampaignDto(updated); }}
         />
       </div>
     </PanelLayout>

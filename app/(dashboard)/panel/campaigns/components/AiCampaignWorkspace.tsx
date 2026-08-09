@@ -98,17 +98,19 @@ export function AiCampaignWorkspace({
             />
           </div>
 
-          <div className="mt-5">
-            <CampaignNameCard
-              value={campaignName}
-              onChange={onCampaignNameChange}
-              onGenerate={onGenerateName}
-              generating={generatingName}
-              rationale={nameRationale}
-              disabledReason={disabledReason}
-              prominent
-            />
-          </div>
+          {hasDraft && (
+            <div className="mt-5">
+              <CampaignNameCard
+                value={campaignName}
+                onChange={onCampaignNameChange}
+                onGenerate={onGenerateName}
+                generating={generatingName}
+                rationale={nameRationale}
+                disabledReason={disabledReason}
+                prominent
+              />
+            </div>
+          )}
 
           {error && (
             <p className="mt-4 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -119,7 +121,7 @@ export function AiCampaignWorkspace({
           {!hasDraft && !loading && !question && (
             <div className="flex min-h-[calc(100vh-13rem)] flex-col items-center justify-center px-6 pb-20 text-center">
               <GradientSparkle className="h-16 w-16" />
-              <h1 className="mt-7 text-3xl font-semibold text-gray-800 md:text-4xl">
+              <h1 className="mt-7 text-3xl font-gilroy-semibold text-gray-800 md:text-4xl">
                 Hello{firstName ? ` ${firstName}` : ""}, let&apos;s create your
                 campaign
               </h1>
@@ -142,7 +144,7 @@ export function AiCampaignWorkspace({
 
           {!hasDraft && loading && (
             <div className="mt-9 space-y-8" aria-live="polite">
-              <div className="inline-flex items-center gap-2 text-sm font-medium text-violet-600">
+              <div className="inline-flex items-center gap-2 text-sm font-gilroy-medium text-violet-600">
                 <Loader2 className="h-4 w-4 animate-spin" /> Growdex AI is
                 building your campaign
               </div>
@@ -154,10 +156,10 @@ export function AiCampaignWorkspace({
 
           {!hasDraft && question && (
             <div className="mt-10 max-w-2xl">
-              <div className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400">
+              <div className="inline-flex items-center gap-1.5 text-xs font-gilroy-medium text-violet-400">
                 <Sparkles className="h-3.5 w-3.5" /> Campaign setup paused
               </div>
-              <h2 className="mt-3 text-2xl font-semibold text-gray-800">
+              <h2 className="mt-3 text-2xl font-gilroy-semibold text-gray-800">
                 Growdex AI needs one decision before it can continue
               </h2>
               <div className="mt-4 h-1 rounded-full bg-violet-200" />
@@ -190,7 +192,7 @@ export function AiCampaignWorkspace({
                   type="button"
                   onClick={allApproved ? onContinue : onApproveAll}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-3 text-base font-medium text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:bg-khaki-100 disabled:text-gray-500"
+                  className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-3 text-base font-gilroy-medium text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:bg-khaki-100 disabled:text-gray-500"
                 >
                   {allApproved && <Check className="h-4 w-4" />}
                   {allApproved ? continueLabel : "Approve all decisions"}

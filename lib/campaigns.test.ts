@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { apiFetch } from "./auth";
 import {
+  ensureCampaignStartLeadTime,
   fetchMetaLeadForms,
   campaignDtoToPayload,
   parseAiCampaignDraftResponse,
@@ -8,11 +9,32 @@ import {
   parseCampaignOptimizationResponse,
   createInitialCampaignPayload,
   normalizeCampaignPayloadForWrite,
+  requestCampaignCreativeSuggestion,
   validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
   validateCampaignPayload,
   type MetaSpecialAdCategory,
 } from "./campaigns";
+
+describe("ensureCampaignStartLeadTime", () => {
+  const now = Date.parse("2030-01-01T10:00:00.000Z");
+
+  it("keeps a start time that already has enough lead time", () => {
+    expect(
+      ensureCampaignStartLeadTime("2030-01-01T11:00:00.000Z", now),
+    ).toBe("2030-01-01T11:00:00.000Z");
+  });
+
+  it.each([
+    "2029-12-31T10:00:00.000Z",
+    "2030-01-01T10:10:00.000Z",
+    "not-a-date",
+  ])("moves %s to thirty minutes from now", (startDate) => {
+    expect(ensureCampaignStartLeadTime(startDate, now)).toBe(
+      "2030-01-01T10:30:00.000Z",
+    );
+  });
+});
 
 vi.mock("./auth", () => ({ apiFetch: vi.fn() }));
 
@@ -49,6 +71,7 @@ describe("normalizeCampaignPayloadForWrite", () => {
         headline: null,
         cta: "LEARN_MORE",
         mediaUrl: "https://cdn.example.com/ad.jpg",
+        thumbnailUrl: "https://cdn.example.com/ad-thumbnail.jpg",
         landingPageUrl: " https://example.com ",
         appId: null,
         leadFormId: null,
@@ -66,6 +89,42 @@ describe("normalizeCampaignPayloadForWrite", () => {
       mediaUrl: "https://cdn.example.com/ad.jpg",
       landingPageUrl: "https://example.com",
     });
+  });
+});
+
+describe("requestCampaignCreativeSuggestion", () => {
+  it("does not send legacy null creative text to the AI service", async () => {
+    vi.mocked(apiFetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          field: "headline",
+          value: "A clearer campaign headline",
+          rationale: "It states the customer benefit directly.",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await requestCampaignCreativeSuggestion("campaign-1", {
+      platform: "meta",
+      field: "headline",
+      currentValue: null,
+      headline: null,
+      caption: null,
+    });
+
+    expect(apiFetch).toHaveBeenLastCalledWith(
+      "/ai/campaigns/campaign-1/creative-suggestions",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: "meta",
+          field: "headline",
+          currentValue: "",
+        }),
+      },
+    );
   });
 });
 

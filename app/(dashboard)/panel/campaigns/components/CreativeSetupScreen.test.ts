@@ -51,6 +51,25 @@ describe("mergeSelectedAssets", () => {
     });
   });
 
+  it("keeps the thumbnail for a signed TikTok video URL without a file extension", () => {
+    const tiktok = asset("tiktok-signed", "tiktok");
+    tiktok.url = "https://video.example.test/preview?token=signed";
+    tiktok.mediaType = "video";
+    tiktok.thumbnailUrl = "https://video.example.test/poster.jpg";
+
+    const result = mergeSelectedAssets(
+      [tiktok],
+      [creative("tiktok")],
+      ["tiktok"],
+    );
+
+    expect(result[0]).toMatchObject({
+      platform: "tiktok",
+      mediaUrl: tiktok.url,
+      thumbnailUrl: tiktok.thumbnailUrl,
+    });
+  });
+
   it("reserves a slot for every required platform within the six-asset selection cap", () => {
     const assets = Array.from({ length: 8 }, (_, index) =>
       asset(`meta-${index + 1}`, "meta"),

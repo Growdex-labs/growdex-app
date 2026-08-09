@@ -214,7 +214,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
           <div className="w-full">
             <label
               htmlFor="platform"
-              className="block text-sm font-medium text-gray-800 font-gilroy-bold"
+              className="block text-sm text-gray-800 font-gilroy-bold"
             >
               Target audience
             </label>
@@ -228,7 +228,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
               {props.selectedPlatforms.meta &&
                <div className="rounded-4xl border p-3 space-y-2">
                 <div>
-                  <p className="text-gray-400">Total reach</p>
+                  <p className="text-dimGray">Total reach</p>
                   <h4 className="text-xl md:text-2xl">{props.lowerReach} - {props.upperReach}</h4>
                 </div>
                 <div className="w-full inline-flex items-start justify-between gap-2 cursor-pointer group bg-gray-50 p-2 rounded-xl">
@@ -242,7 +242,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
 
                     {/* Facebook Account */}
                     <div className="mb-3 border-r pr-2 mt-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <div className="flex items-center gap-2 text-sm font-gilroy-medium text-gray-700">
                         <div className="p-1 bg-gray-600 rounded-full">
                           <Facebook className="w-4 h-4 text-white" />
                         </div>
@@ -250,7 +250,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <PluggedIcon fill="#0A883F" />
-                        <span className="text-xs text-green-600 font-medium">
+                        <span className="text-xs text-green-600 font-gilroy-medium">
                           Connected
                         </span>
                       </div>
@@ -258,14 +258,14 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
 
                     {/* Instagram Account */}
                     <div className="mt-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <div className="flex items-center gap-2 text-sm font-gilroy-medium text-gray-700">
                         <InstagramIcon className="w-4 h-4 text-gray-500" />
                         <span>{props.instagramAccountName}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <button
                           type="button"
-                          className="text-xs text-red-500 font-medium hover:underline flex items-center gap-1"
+                          className="text-xs text-red-500 font-gilroy-medium hover:underline flex items-center gap-1"
                         >
                           <PluggedOutIcon />
                           Connect
@@ -321,7 +321,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                     <p>Country</p>
                     <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
                       <div className="flex-1">
-                        <p className="text-gray-400">
+                        <p className="text-dimGray">
                           {props.formatCountriesSummary(props.metaCountries)}
                         </p>
                       </div>
@@ -407,7 +407,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                           >
                             <button
                               type="button"
-                              className="text-xs font-medium text-gray-700"
+                              className="text-xs font-gilroy-medium text-gray-700"
                               aria-label={`Remove ${location}`}
                               onClick={() =>
                                 props.removeLocationTag("meta", location)
@@ -415,7 +415,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                             >
                               &times;
                             </button>
-                            <p className="text-xs font-medium text-gray-700">
+                            <p className="text-xs font-gilroy-medium text-gray-700">
                               {location}
                             </p>
                           </div>
@@ -426,7 +426,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                   {/* age */}
                   <div className="p-2 bg-gray-50 h-52 rounded-xl">
                     <p>Age</p>
-                    <p className="text-gray-400">Set the audience age</p>
+                    <p className="text-dimGray">Set the audience age</p>
                     <div className="mt-3 grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-sm text-gray-700">Min Age</label>
@@ -461,7 +461,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                 {/* category card */}
                 <div className="p-2 bg-gray-50 rounded-xl">
                   <p>Core Interest Categories</p>
-                  <p className="text-gray-400">
+                  <p className="text-dimGray">
                     Broad and sub-interests inferred from user activity and
                     profile data.
                   </p>
@@ -510,13 +510,13 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                         >
                           <button
                             type="button"
-                            className="text-xs font-medium text-gray-700"
+                            className="text-xs font-gilroy-medium text-gray-700"
                             aria-label={`Remove ${interest}`}
                             onClick={() => props.removeInterestTag("meta", interest)}
                           >
                             &times;
                           </button>
-                          <p className="text-xs font-medium text-gray-700">
+                          <p className="text-xs font-gilroy-medium text-gray-700">
                             {interest}
                           </p>
                         </div>
@@ -545,12 +545,12 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
 
                     {/* TikTok Account */}
                     <div className="flex flex-col gap-2 items-start">
-                      <p className="text-sm font-medium text-gray-700">
+                      <p className="text-sm font-gilroy-medium text-gray-700">
                         <span>{props.brandName}</span>
                       </p>
                       <div className="flex items-center gap-2">
                         <PluggedIcon fill="#0A883F" />
-                        <span className="text-xs text-green-600 font-medium">
+                        <span className="text-xs text-green-600 font-gilroy-medium">
                           Connected
                         </span>
                       </div>
@@ -604,7 +604,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                     <p>Country</p>
                     <div className="border-b inline-flex items-center justify-between w-full pb-2 gap-2">
                       <div className="flex-1">
-                        <p className="text-gray-400">
+                        <p className="text-dimGray">
                           {props.formatCountriesSummary(props.tiktokCountries)}
                         </p>
                       </div>
@@ -688,7 +688,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                           >
                             <button
                               type="button"
-                              className="text-xs font-medium text-gray-700"
+                              className="text-xs font-gilroy-medium text-gray-700"
                               aria-label={`Remove ${location}`}
                               onClick={() =>
                                 props.removeLocationTag("tiktok", location)
@@ -696,7 +696,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                             >
                               &times;
                             </button>
-                            <p className="text-xs font-medium text-gray-700">
+                            <p className="text-xs font-gilroy-medium text-gray-700">
                               {location}
                             </p>
                           </div>
@@ -707,7 +707,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                   {/* age */}
                   <div className="p-2 bg-gray-50 h-52 rounded-xl">
                     <p>Age</p>
-                    <p className="text-gray-400">Set the audience age</p>
+                    <p className="text-dimGray">Set the audience age</p>
                     <div className="mt-2 flex flex-col gap-2">
                       <label
                         htmlFor="tiktok-age1"
@@ -758,7 +758,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                 {/* category card */}
                 <div className="p-2 bg-gray-50 rounded-xl">
                   <p>Core Interest Categories</p>
-                  <p className="text-gray-400">
+                  <p className="text-dimGray">
                     Broad and sub-interests inferred from user activity and
                     profile data.
                   </p>
@@ -807,7 +807,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                         >
                           <button
                             type="button"
-                            className="text-xs font-medium text-gray-700"
+                            className="text-xs font-gilroy-medium text-gray-700"
                             aria-label={`Remove ${interest}`}
                             onClick={() =>
                               props.removeInterestTag("tiktok", interest)
@@ -815,7 +815,7 @@ export const AudienceSection: FC<AudienceSectionProps> = (props) => {
                           >
                             &times;
                           </button>
-                          <p className="text-xs font-medium text-gray-700">
+                          <p className="text-xs font-gilroy-medium text-gray-700">
                             {interest}
                           </p>
                         </div>

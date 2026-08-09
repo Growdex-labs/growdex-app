@@ -18,9 +18,8 @@ export function CampaignsMobileHeader(): JSX.Element {
 
   const navItems = [
     { label: "All campaigns", href: "/panel/campaigns" },
-    { label: "New campaign", href: "/panel/campaigns/new" },
-    { label: "Funding", href: "/panel/wallet" },
-    { label: "Thrashed", href: "/panel/campaigns/thrashed" },
+    { label: "Billing", href: "/panel/billing" },
+    { label: "Trashed", href: "/panel/campaigns/trashed" },
     { label: "Saved audience", href: "/panel/campaigns/saved-audience" },
   ];
 
@@ -40,7 +39,7 @@ export function CampaignsMobileHeader(): JSX.Element {
     <div className="md:hidden flex items-center justify-between p-4 ">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <button className="flex items-center gap-2 font-semibold text-gray-900 hover:text-gray-700 transition-colors">
+          <button className="flex items-center gap-2 font-gilroy-semibold text-gray-900 hover:text-gray-700 transition-colors">
             {getActiveLabel()}
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -58,7 +57,7 @@ export function CampaignsMobileHeader(): JSX.Element {
                   onClick={() => setIsOpen(false)}
                   className={`block px-4 py-2.5 rounded-lg text-sm transition-colors ${
                     isActive(item.href)
-                      ? "bg-lavender-50 text-gray-900 font-medium"
+                      ? "bg-lavender-50 text-gray-900 font-gilroy-medium"
                       : "text-gray-400 hover:bg-lavender-50 hover:text-gray-800"
                   }`}
                 >

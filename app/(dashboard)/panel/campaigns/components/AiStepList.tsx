@@ -75,10 +75,10 @@ export function AiStepList({
                 : ""
             }`}
           >
-            <div className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400">
+            <div className="inline-flex items-center gap-1.5 text-xs font-gilroy-medium text-violet-400">
               <Sparkles className="h-3.5 w-3.5" /> {step.title}
             </div>
-            <h3 className="mt-1 truncate text-base font-semibold text-gray-800">
+            <h3 className="mt-1 truncate text-base font-gilroy-semibold text-gray-800">
               {step.result}
             </h3>
             <div
@@ -116,14 +116,14 @@ export function AiStepList({
                 onClick={() => onWhyThis(step)}
                 disabled={busy}
                 style={{ background: PURPLE_GRADIENT }}
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-gilroy-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Info className="h-3 w-3" /> Why this?
               </button>
 
               {step.status === "approved" ? (
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-green-700">
+                  <span className="inline-flex items-center gap-1 text-sm font-gilroy-medium text-green-700">
                     <Check className="h-4 w-4" /> Approved
                   </span>
                   <button
@@ -136,7 +136,7 @@ export function AiStepList({
                   </button>
                 </div>
               ) : step.status === "revising" ? (
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-violet-700">
+                <span className="inline-flex items-center gap-1 text-sm font-gilroy-medium text-violet-700">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Revising with
                   AI
                 </span>
@@ -179,7 +179,7 @@ export function AiStepList({
 
             {decliningId === step.id && (
               <div className="mt-3 rounded-xl border border-violet-100 bg-white p-3 shadow-sm">
-                <label className="text-xs font-medium text-gray-700">
+                <label className="text-xs font-gilroy-medium text-gray-700">
                   What should the AI change?
                   <textarea
                     autoFocus
@@ -201,7 +201,7 @@ export function AiStepList({
                         ? { background: PURPLE_GRADIENT }
                         : undefined
                     }
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:bg-gray-200 disabled:text-gray-400"
+                    className="rounded-lg px-3 py-1.5 text-xs font-gilroy-medium text-white disabled:bg-gray-200 disabled:text-gray-400"
                   >
                     Regenerate with AI
                   </button>

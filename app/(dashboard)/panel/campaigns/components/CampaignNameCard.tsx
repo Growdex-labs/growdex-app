@@ -44,7 +44,7 @@ export function CampaignNameCard({
         onChange={(e) => onChange(e.target.value)}
         maxLength={100}
         placeholder="Untitled Campaign"
-        className={`block w-full font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none ${
+        className={`block w-full font-gilroy-bold text-gray-900 placeholder:text-gray-400 focus:outline-none ${
           prominent ? "text-2xl" : "text-lg"
         }`}
       />
@@ -53,7 +53,7 @@ export function CampaignNameCard({
           type="button"
           onClick={onGenerate}
           disabled={generating || Boolean(disabledReason)}
-          className={`mt-2 inline-flex items-center gap-1 font-medium text-violet-500 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`mt-2 inline-flex items-center gap-1 font-gilroy-medium text-violet-500 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-50 ${
             prominent ? "text-sm" : "text-xs"
           }`}
         >

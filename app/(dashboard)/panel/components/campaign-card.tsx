@@ -56,11 +56,11 @@ export function CampaignCard({ campaign, href }: CampaignCardProps) {
       className="block rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="truncate text-lg font-bold text-gray-900">
+        <h2 className="truncate text-lg font-gilroy-bold text-gray-900">
           {campaign.name}
         </h2>
         <span
-          className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusClass(campaign.status)}`}
+          className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-gilroy-medium ${statusClass(campaign.status)}`}
         >
           {statusLabel(campaign.status)}
         </span>
@@ -81,10 +81,10 @@ export function CampaignCard({ campaign, href }: CampaignCardProps) {
       </div>
 
       <div className="mt-5 border-t border-gray-100 pt-4">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-dimGray">
           {campaign.audienceStrategies.length === 1 ? "Audience budget" : "Combined audience budgets"}
         </p>
-        <p className="mt-1 font-semibold text-gray-900">
+        <p className="mt-1 font-gilroy-semibold text-gray-900">
           {formatMoney(campaign)}
         </p>
       </div>

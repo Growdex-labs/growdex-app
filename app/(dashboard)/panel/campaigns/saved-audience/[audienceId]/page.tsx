@@ -60,7 +60,7 @@ export default function SavedAudienceDetailPage({
   if (loading) {
     return (
       <PanelLayout>
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-full items-center justify-center">
           <div className="text-gray-500">Loading audience details...</div>
         </div>
       </PanelLayout>
@@ -70,9 +70,9 @@ export default function SavedAudienceDetailPage({
   if (error || !audience) {
     return (
       <PanelLayout>
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-full items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl font-gilroy-bold text-gray-900 mb-4">
               Audience Not Found
             </h1>
             <p className="text-gray-600 mb-6">
@@ -92,7 +92,7 @@ export default function SavedAudienceDetailPage({
 
   return (
     <PanelLayout>
-      <div className="flex h-screen">
+      <div className="flex h-full">
         <div className="hidden md:block">
           <CampaignsSidebar />
         </div>
@@ -123,13 +123,13 @@ export default function SavedAudienceDetailPage({
 
               {/* Header */}
               <div className="flex items-start justify-between gap-4 mb-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl md:text-3xl font-gilroy-bold text-gray-900">
                   {audience.name}
                 </h1>
 
                 <div className="text-right">
                   <div className="text-xs text-gray-400">Total reach</div>
-                  <div className="text-lg font-bold text-gray-900">—</div>
+                  <div className="text-lg font-gilroy-bold text-gray-900">—</div>
                 </div>
               </div>
 
@@ -141,7 +141,7 @@ export default function SavedAudienceDetailPage({
                       <button
                         type="button"
                         onClick={() => setActiveTab("meta")}
-                        className={`py-3 text-xs font-medium transition-colors ${
+                        className={`py-3 text-xs font-gilroy-medium transition-colors ${
                           activeTab === "meta"
                             ? "text-gray-900"
                             : "text-gray-400"
@@ -152,7 +152,7 @@ export default function SavedAudienceDetailPage({
                       <button
                         type="button"
                         onClick={() => setActiveTab("tiktok")}
-                        className={`py-3 text-xs font-medium transition-colors ${
+                        className={`py-3 text-xs font-gilroy-medium transition-colors ${
                           activeTab === "tiktok"
                             ? "text-gray-900"
                             : "text-gray-400"
@@ -197,7 +197,7 @@ export default function SavedAudienceDetailPage({
                         <div>
                           <div className="flex items-center gap-2">
                             <div className="w-1.5 h-3.5 bg-green-600 rounded-sm" />
-                            <div className="text-xs font-semibold text-gray-900">
+                            <div className="text-xs font-gilroy-semibold text-gray-900">
                               Country
                             </div>
                           </div>
@@ -241,7 +241,7 @@ export default function SavedAudienceDetailPage({
                   {/* Age */}
                   {(audience.metaConfig || audience.tiktokConfig) && (
                     <div className="bg-white rounded-2xl p-4 border border-gray-200">
-                      <div className="text-xs font-semibold text-gray-900">
+                      <div className="text-xs font-gilroy-semibold text-gray-900">
                         Age
                       </div>
                       <div className="text-[11px] text-gray-400 mt-1">
@@ -301,7 +301,7 @@ export default function SavedAudienceDetailPage({
                 {/* Core Interest Categories */}
                 {audience.interests && audience.interests.length > 0 && (
                   <div className="mt-4 bg-white rounded-2xl p-4 border border-gray-200">
-                    <div className="text-xs font-semibold text-gray-900">
+                    <div className="text-xs font-gilroy-semibold text-gray-900">
                       Core Interest Categories
                     </div>
                     <div className="text-[11px] text-gray-400 mt-1">

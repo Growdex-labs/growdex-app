@@ -9,9 +9,8 @@ export function CampaignsSidebar() {
 
   const navItems = [
     { label: 'All campaigns', href: '/panel/campaigns' },
-    { label: 'New campaign', href: '/panel/campaigns/new' },
-    { label: 'Funding', href: '/panel/wallet' },
-    { label: 'Thrashed', href: '/panel/campaigns/thrashed' },
+    { label: 'Billing', href: '/panel/billing' },
+    { label: 'Trashed', href: '/panel/campaigns/trashed' },
     { label: 'Saved audience', href: '/panel/campaigns/saved-audience' },
   ];
 
@@ -23,7 +22,7 @@ export function CampaignsSidebar() {
   };
 
   return (
-    <div className="w-64 h-screen flex flex-col justify-between bg-white border-r border-gray-200 p-6">
+    <div className="w-64 h-full flex flex-col justify-between bg-white border-r border-gray-200 p-6">
       <div className="space-y-2 mb-8">
         {navItems.map((item) => (
           <Link
@@ -31,7 +30,7 @@ export function CampaignsSidebar() {
             href={item.href}
             className={`block px-4 py-2.5 rounded-lg text-sm transition-colors ${
               isActive(item.href)
-                ? 'bg-lavender-50 text-gray-900 font-medium'
+                ? 'bg-lavender-50 text-gray-900 font-gilroy-medium'
                 : 'text-gray-400 hover:bg-lavender-50 hover:text-gray-800'
             }`}
           >

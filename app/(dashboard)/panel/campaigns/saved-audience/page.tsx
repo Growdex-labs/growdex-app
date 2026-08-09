@@ -126,7 +126,7 @@ export default function SavedAudiencePage() {
 
   return (
     <PanelLayout>
-      <div className="flex h-screen">
+      <div className="flex h-full">
         {/* Secondary Sidebar - Hidden on mobile */}
         <div className="hidden md:block">
           <CampaignsSidebar />
@@ -152,7 +152,7 @@ export default function SavedAudiencePage() {
 
               {/* Page Header */}
               <div className="flex items-center justify-between gap-4 mb-6">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl md:text-3xl font-gilroy-bold text-gray-900">
                   Saved Audiences
                 </h1>
 
@@ -160,12 +160,12 @@ export default function SavedAudiencePage() {
                   <button
                     type="button"
                     onClick={() => setIsCreating((value) => !value)}
-                    className="px-5 py-2.5 bg-khaki-200 text-gray-900 rounded-lg font-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors"
+                    className="px-5 py-2.5 bg-khaki-200 text-gray-900 rounded-lg font-gilroy-medium flex items-center gap-2 hover:bg-khaki-300 transition-colors"
                   >
                     <Plus className="w-5 h-5" />
                     {isCreating ? "Cancel" : "Create new audience"}
                   </button>
-                  <button className="px-5 py-2.5 border border-gray-300 bg-white text-peru-200 rounded-lg font-medium flex items-center gap-2 hover:bg-gray-50 transition-colors">
+                  <button className="px-5 py-2.5 border border-gray-300 bg-white text-peru-200 rounded-lg font-gilroy-medium flex items-center gap-2 hover:bg-gray-50 transition-colors">
                     <SlidersHorizontal className="w-5 h-5" />
                     Filter
                   </button>
@@ -192,7 +192,7 @@ export default function SavedAudiencePage() {
                   className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4"
                 >
                   <label className="space-y-1">
-                    <span className="text-xs font-medium text-gray-600">
+                    <span className="text-xs font-gilroy-medium text-gray-600">
                       Audience name
                     </span>
                     <input
@@ -210,7 +210,7 @@ export default function SavedAudiencePage() {
                   </label>
 
                   <label className="space-y-1">
-                    <span className="text-xs font-medium text-gray-600">
+                    <span className="text-xs font-gilroy-medium text-gray-600">
                       Countries
                     </span>
                     <input
@@ -228,7 +228,7 @@ export default function SavedAudiencePage() {
                   </label>
 
                   <label className="space-y-1">
-                    <span className="text-xs font-medium text-gray-600">
+                    <span className="text-xs font-gilroy-medium text-gray-600">
                       Locations
                     </span>
                     <input
@@ -246,7 +246,7 @@ export default function SavedAudiencePage() {
                   </label>
 
                   <label className="space-y-1">
-                    <span className="text-xs font-medium text-gray-600">
+                    <span className="text-xs font-gilroy-medium text-gray-600">
                       Interests
                     </span>
                     <input
@@ -292,7 +292,7 @@ export default function SavedAudiencePage() {
 
                     <button
                       type="submit"
-                      className="ml-auto rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                      className="ml-auto rounded-lg bg-gray-900 px-5 py-2 text-sm font-gilroy-medium text-white hover:bg-gray-800"
                     >
                       Save audience
                     </button>
@@ -341,7 +341,7 @@ export default function SavedAudiencePage() {
                       }}
                       className="flex items-center justify-between gap-4 bg-lavender-50/40 border border-gray-200 rounded-xl px-5 py-4"
                     >
-                      <div className="font-medium text-gray-900">
+                      <div className="font-gilroy-medium text-gray-900">
                         {audience.name}
                       </div>
 
@@ -363,7 +363,7 @@ export default function SavedAudiencePage() {
                         </button>
 
                         <button
-                          className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors text-sm font-gilroy-medium disabled:opacity-50 disabled:cursor-not-allowed"
                           type="button"
                           onClick={(e) => handleDelete(audience.id, e)}
                           disabled={deleting === audience.id}

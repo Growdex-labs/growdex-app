@@ -102,7 +102,7 @@ export function ReviewPublishScreen({
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review and publish</h1>
+          <h1 className="text-2xl font-gilroy-bold text-gray-900">Review and publish</h1>
           <p className="mt-1 text-sm text-gray-500">
             This is the exact campaign Growdex will save and send to your ad platforms.
           </p>
@@ -113,7 +113,7 @@ export function ReviewPublishScreen({
               type="button"
               onClick={onBack}
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-gilroy-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               <ArrowLeft className="h-4 w-4" /> Edit campaign
             </button>
@@ -123,7 +123,7 @@ export function ReviewPublishScreen({
               type="button"
               onClick={onSaveDraft}
               disabled={busy}
-              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-gilroy-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save draft"}
             </button>
@@ -132,7 +132,7 @@ export function ReviewPublishScreen({
             type="button"
             onClick={onPublish}
             disabled={busy || Boolean(validationError)}
-            className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-gilroy-medium text-gray-900 hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {publishing && <Loader2 className="h-4 w-4 animate-spin" />}
             {publishing ? "Publishing…" : publishLabel}
@@ -297,7 +297,7 @@ export function ReviewPublishScreen({
                       className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
                     >
                       <Icon className="size-4 text-violet-500" />
-                      <p className="mt-3 text-xs font-gilroy-semibold uppercase tracking-[0.1em] text-gray-400">
+                      <p className="mt-3 text-xs font-gilroy-semibold uppercase tracking-[0.1em] text-dimGray">
                         {label}
                       </p>
                       <p className="mt-1 text-sm capitalize leading-5 text-gray-800">
@@ -316,7 +316,7 @@ export function ReviewPublishScreen({
                 </div>
 
                 <div className="mt-7">
-                  <p className="text-xs font-gilroy-semibold uppercase tracking-[0.14em] text-gray-400">
+                  <p className="text-xs font-gilroy-semibold uppercase tracking-[0.14em] text-dimGray">
                     Ads in this strategy
                   </p>
                   <div className="mt-4 flex flex-wrap items-start gap-5">

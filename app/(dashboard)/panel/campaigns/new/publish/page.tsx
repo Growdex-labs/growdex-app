@@ -7,6 +7,7 @@ import DottedBackground from "@/components/dotted-background";
 import { useMe } from "@/context/me-context";
 import {
   campaignDtoToPayload,
+  ensureCampaignPayloadScheduleLeadTime,
   fetchCampaignById,
   publishCampaign,
   updateCampaignDraft,
@@ -79,7 +80,9 @@ export default function PublishCampaignPage() {
           );
         }
         setSourceStatus(result.status ?? "draft");
-        const payload = campaignDtoToPayload(result);
+        const payload = ensureCampaignPayloadScheduleLeadTime(
+          campaignDtoToPayload(result),
+        );
         setCampaign(payload);
         setActiveStrategyId(payload.audienceStrategies[0]?.id ?? null);
       })

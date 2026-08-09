@@ -738,7 +738,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         <div className="h-full flex-1 overflow-y-auto">
           <div className="p-8">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-gilroy-bold text-gray-900">
                 Scheduled Campaign
               </h1>
             </div>
@@ -748,7 +748,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                 <button
                   key={index}
                   onClick={() => setProgressTab(index)}
-                  className={`px-2 py-3 rounded-lg font-medium transition-colors ${
+                  className={`px-2 py-3 rounded-lg font-gilroy-medium transition-colors ${
                     progressTab === index
                       ? "bg-khaki-200 text-gray-900 shadow-lg"
                       : "bg-transparent text-gray-600"
@@ -765,14 +765,14 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                 <div className="flex gap-3 items-center">
                   <img src="/megaphone.png" alt="megaphone-icon" />
                   <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-gilroy-medium text-gray-500">
                       Campaign Name
                     </label>
                     <input
                       type="text"
                       value={campaignName}
                       readOnly
-                      className="mt-1 block w-full focus:outline-none md:text-lg lg:text-2xl font-bold"
+                      className="mt-1 block w-full focus:outline-none md:text-lg lg:text-2xl font-gilroy-bold"
                     />
                   </div>
                 </div>
@@ -780,14 +780,14 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                 <button
                   type="submit"
                   disabled={isGoingLive}
-                  className="px-6 py-2 border bg-khaki-200 text-sm text-gray-800 rounded-lg font-bold flex items-center gap-2 hover:bg-khaki-300 transition-colors shadow-sm"
+                  className="px-6 py-2 border bg-khaki-200 text-sm text-gray-800 rounded-lg font-gilroy-bold flex items-center gap-2 hover:bg-khaki-300 transition-colors shadow-sm"
                 >
                   {isGoingLive ? "Going live..." : "Go Live"}
                 </button>
               </div>
 
               <section className="rounded-xl bg-white p-5">
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-gilroy-bold text-gray-900">
                   Audience strategies
                 </h2>
                 {audienceStrategies.length ? (
@@ -797,15 +797,15 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                         key={strategy.id}
                         className="rounded-xl border border-gray-200 p-4"
                       >
-                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <p className="text-xs font-gilroy-medium uppercase tracking-wide text-dimGray">
                           Strategy {index + 1}
                         </p>
-                        <h3 className="mt-1 font-semibold text-gray-900">
+                        <h3 className="mt-1 font-gilroy-semibold text-gray-900">
                           {strategy.name}
                         </h3>
                         <dl className="mt-3 space-y-2 text-sm text-gray-600">
                           <div>
-                            <dt className="font-medium text-gray-800">Audience</dt>
+                            <dt className="font-gilroy-medium text-gray-800">Audience</dt>
                             <dd>
                               {strategy.audience.locations.join(", ") ||
                                 "No locations selected"}{" "}
@@ -814,14 +814,14 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                             </dd>
                           </div>
                           <div>
-                            <dt className="font-medium text-gray-800">Budget</dt>
+                            <dt className="font-gilroy-medium text-gray-800">Budget</dt>
                             <dd>
                               {strategy.budget.amount.toLocaleString()}{" "}
                               {strategy.budget.currency} / {strategy.budget.type}
                             </dd>
                           </div>
                           <div>
-                            <dt className="font-medium text-gray-800">Schedule</dt>
+                            <dt className="font-gilroy-medium text-gray-800">Schedule</dt>
                             <dd>
                               {strategy.budget.endDate
                                 ? `${strategy.budget.startDate} – ${strategy.budget.endDate}`
@@ -949,12 +949,12 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
               />
 
               {submissionError && (
-                <p className="text-red-500 text-sm font-medium text-center">
+                <p className="text-red-500 text-sm font-gilroy-medium text-center">
                   {submissionError}
                 </p>
               )}
               {submissionSuccess && (
-                <p className="text-emerald-600 text-sm font-medium text-center">
+                <p className="text-emerald-600 text-sm font-gilroy-medium text-center">
                   {submissionSuccess}
                 </p>
               )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -17,7 +17,14 @@ import {
   X,
 } from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
-import { isVideoUrl } from "@/lib/campaign-shared";
+import { isVideoMedia } from "@/lib/campaign-shared";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
@@ -35,7 +42,7 @@ const statusLabel = (status: string) =>
   status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const isVideoAsset = (asset: CreativeAsset) =>
-  asset.mediaType === "video" || isVideoUrl(asset.url);
+  isVideoMedia(asset);
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<CreativeAsset[]>([]);
@@ -46,22 +53,6 @@ export default function AssetsPage() {
   const [tab, setTab] = useState<LibraryTab>("assets");
   const [view, setView] = useState<LibraryView>("grid");
   const [selected, setSelected] = useState<CreativeAsset | null>(null);
-  const closePreviewRef = useRef<HTMLButtonElement>(null);
-  const previewTriggerRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!selected) return;
-    previewTriggerRef.current = document.activeElement as HTMLElement | null;
-    closePreviewRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelected(null);
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previewTriggerRef.current?.focus();
-    };
-  }, [selected]);
 
   useEffect(() => {
     let active = true;
@@ -147,7 +138,7 @@ export default function AssetsPage() {
         <div className="mx-auto max-w-7xl">
           <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <p className="text-sm text-gray-400">Assets</p>
+              <p className="text-sm text-dimGray">Assets</p>
               <h1 className="mt-1 text-2xl font-gilroy-bold text-gray-950">
                 Creative library
               </h1>
@@ -324,36 +315,42 @@ export default function AssetsPage() {
           </section>
         </div>
 
-        {selected && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Asset preview">
-            <div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-                <div className="min-w-0">
-                  <p className="truncate font-gilroy-semibold text-gray-900">{selected.name}</p>
-                  <p className="truncate text-xs text-gray-400">{selected.campaignName}</p>
+        <Dialog
+          open={selected !== null}
+          onOpenChange={(open) => {
+            if (!open) setSelected(null);
+          }}
+        >
+          <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-3xl">
+            {selected && (
+              <>
+                <DialogHeader className="border-b border-gray-100 px-5 py-4 pr-14 text-left">
+                  <DialogTitle className="truncate font-gilroy-semibold text-gray-900">
+                    {selected.name}
+                  </DialogTitle>
+                  <DialogDescription className="truncate text-xs text-dimGray">
+                    {selected.campaignName}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex max-h-[70vh] min-h-80 items-center justify-center bg-gray-950">
+                  {isVideoAsset(selected) ? (
+                    <video
+                      src={selected.url}
+                      poster={selected.thumbnailUrl}
+                      controls
+                      playsInline
+                      className="max-h-[70vh] max-w-full"
+                    />
+                  ) : (
+                    <div className="relative h-[60vh] w-full">
+                      <Image src={selected.url} alt={selected.name} fill sizes="900px" className="object-contain" unoptimized />
+                    </div>
+                  )}
                 </div>
-                <button ref={closePreviewRef} type="button" onClick={() => setSelected(null)} aria-label="Close asset preview" className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
-                  <X className="size-5" />
-                </button>
-              </div>
-              <div className="flex max-h-[70vh] min-h-80 items-center justify-center bg-gray-950">
-                {isVideoAsset(selected) ? (
-                  <video
-                    src={selected.url}
-                    poster={selected.thumbnailUrl}
-                    controls
-                    playsInline
-                    className="max-h-[70vh] max-w-full"
-                  />
-                ) : (
-                  <div className="relative h-[60vh] w-full">
-                    <Image src={selected.url} alt={selected.name} fill sizes="900px" className="object-contain" unoptimized />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </PanelLayout>
   );
