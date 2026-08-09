@@ -200,7 +200,7 @@ export default function ManageAccountPage() {
 
   return (
     <PanelLayout>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-full overflow-hidden bg-gray-50">
         <div className="hidden md:block">
           <SettingsSidebar />
         </div>
@@ -209,21 +209,21 @@ export default function ManageAccountPage() {
           <SettingsHeader />
 
           <div className="p-4 md:p-6">
-            <div className="mb-6 bg-khaki-200 rounded-lg px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3 mx-auto">
-                <span className="text-sm md:text-base font-semibold text-gray-900">
-                  {accounts.length === 1 ? "Connected Ads Account" : "Connected Ads Accounts"}
-                </span>
-                <span className="px-3 py-1 bg-white text-gray-900 rounded-full text-xs font-semibold">
-                  {isLoading ? "..." : accounts.length}
-                </span>
-              </div>
-            </div>
+            <header className="mb-6">
+              <h1 className="text-2xl font-gilroy-bold text-gray-950">
+                Connected Accounts
+              </h1>
+              <p className="mt-1 text-sm leading-6 text-gray-500">
+                {isLoading
+                  ? "Checking your advertising platforms…"
+                  : `${accounts.length} advertising ${accounts.length === 1 ? "account" : "accounts"} connected to Growdex.`}
+              </p>
+            </header>
 
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
               <button
                 onClick={() => setIsConnectDialogOpen(true)}
-                className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-medium hover:bg-khaki-300 transition-colors ml-auto mb-4 flex items-center gap-2 whitespace-nowrap">
+                className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-medium hover:bg-khaki-300 transition-colors ml-auto mb-4 flex items-center gap-2 whitespace-nowrap">
                 <PlusCircle className="w-4 h-4" /> Connect New Account
               </button>
 
@@ -246,7 +246,7 @@ export default function ManageAccountPage() {
                       type="button"
                       onClick={() => handleConnect("meta")}
                       disabled={connectingPlatform !== null}
-                      className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-gilroy-medium text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {connectingPlatform === "meta" ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
@@ -259,7 +259,7 @@ export default function ManageAccountPage() {
                       type="button"
                       onClick={() => handleConnect("tiktok")}
                       disabled={connectingPlatform !== null}
-                      className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-gilroy-medium text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {connectingPlatform === "tiktok" ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
@@ -274,7 +274,7 @@ export default function ManageAccountPage() {
                     type="button"
                     onClick={() => setIsConnectDialogOpen(false)}
                     disabled={connectingPlatform !== null}
-                    className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-gilroy-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Cancel
                   </button>
@@ -283,16 +283,16 @@ export default function ManageAccountPage() {
 
               <div className="bg-white rounded-lg overflow-hidden ">
                 <div className="bg-khaki-200/50 rounded-lg px-4 py-2 mb-4 grid grid-cols-4 gap-2 md:gap-4">
-                  <div className="text-xs md:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <div className="text-xs md:text-sm font-gilroy-semibold text-gray-700 whitespace-nowrap">
                     Platform
                   </div>
-                  <div className="text-xs md:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <div className="text-xs md:text-sm font-gilroy-semibold text-gray-700 whitespace-nowrap">
                     Account Name
                   </div>
-                  <div className="text-xs md:text-sm font-semibold text-gray-700 whitespace-nowrap ml-3 sm:ml-0">
+                  <div className="text-xs md:text-sm font-gilroy-semibold text-gray-700 whitespace-nowrap ml-3 sm:ml-0">
                     Status
                   </div>
-                  <div className="text-xs md:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <div className="text-xs md:text-sm font-gilroy-semibold text-gray-700 whitespace-nowrap">
                     Action
                   </div>
                 </div>
@@ -306,7 +306,7 @@ export default function ManageAccountPage() {
                   ) : error ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                       <AlertCircle className="w-8 h-8 text-red-500 mb-2" />
-                      <p className="text-sm text-red-600 font-medium">{error}</p>
+                      <p className="text-sm text-red-600 font-gilroy-medium">{error}</p>
                       <button 
                         onClick={fetchAccounts}
                         className="mt-4 text-xs text-gray-500 hover:text-gray-700 underline"
@@ -319,7 +319,7 @@ export default function ManageAccountPage() {
                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                         <PlusCircle className="w-8 h-8 text-gray-400" />
                       </div>
-                      <h3 className="text-sm font-semibold text-gray-900">No accounts connected</h3>
+                      <h3 className="text-sm font-gilroy-semibold text-gray-900">No accounts connected</h3>
                       <p className="text-xs text-gray-500 mt-1 max-w-[200px] mx-auto">
                         Connect your Meta or TikTok Ads accounts to start managing them.
                       </p>
@@ -343,7 +343,7 @@ export default function ManageAccountPage() {
                             {account.accountName}
                           </div>
                           <div className="text-xs md:text-sm">
-                            <span className="px-1 md:px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium whitespace-nowrap">
+                            <span className="px-1 md:px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-gilroy-medium whitespace-nowrap">
                               {account.status}
                             </span>
                           </div>
@@ -351,7 +351,7 @@ export default function ManageAccountPage() {
                             <button
                               onClick={() => handleDisconnect(account.id)}
                               disabled={disconnectingId === account.id}
-                              className="px-1 md:px-3 py-1 md:bg-red-100 text-red-700 md:hover:bg-red-200 rounded text-xs font-medium transition-colors whitespace-nowrap flex items-center justify-center md:justify-start gap-1 disabled:opacity-50"
+                              className="px-1 md:px-3 py-1 md:bg-red-100 text-red-700 md:hover:bg-red-200 rounded text-xs font-gilroy-medium transition-colors whitespace-nowrap flex items-center justify-center md:justify-start gap-1 disabled:opacity-50"
                             >
                               {disconnectingId === account.id ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />

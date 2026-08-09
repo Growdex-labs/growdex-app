@@ -8,7 +8,7 @@ import { PrivacyPolicyClient } from "./privacy-policy-client";
 export default function DataPrivacyPage() {
   return (
     <PanelLayout>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-full overflow-hidden bg-gray-50">
         <div className="hidden md:block border-r border-gray-200">
           <SettingsSidebar />
         </div>
@@ -23,7 +23,7 @@ export default function DataPrivacyPage() {
 
             {/* Header Title */}
             <div className="bg-[#fde047] py-2 w-full mb-4 max-w-5xl mx-auto rounded-lg shadow-sm shrink-0">
-              <h1 className="text-center font-gilroy-bold text-gray-900 font-semibold text-lg">
+              <h1 className="text-center font-gilroy-bold text-gray-900 text-lg">
                 Privacy Policy
               </h1>
             </div>
@@ -32,7 +32,7 @@ export default function DataPrivacyPage() {
 
               {/* Intro text */}
               <div className="max-w-3xl mx-auto text-center mb-8 px-4 shrink-0">
-                <p className="text-gray-900 text-sm md:text-base font-medium">
+                <p className="text-gray-900 text-sm md:text-base font-gilroy-medium">
                   Growdex provides an AI-powered advertising platform and marketing services
                   that help businesses create, launch, manage, and optimize digital advertising
                   campaigns across multiple platforms.

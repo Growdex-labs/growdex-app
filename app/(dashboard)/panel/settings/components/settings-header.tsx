@@ -11,33 +11,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { SETTINGS_NAV_ITEMS } from "../../components/settings-sidebar";
 
 export function SettingsHeader(): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  const navItems = [
-    { label: "Manage Account", href: "/panel/settings/manage-account" },
-    {
-      label: "Security & Access Control",
-      href: "/panel/settings/security-control",
-    },
-    {
-      label: "Support & Help",
-      href: "/panel/settings/support-and-help",
-    },
-    {
-      label: "Data & Privacy",
-      href: "/panel/settings/data-privacy",
-    },
-  ];
-
-  const isActive = (href: string) => {
-    return pathname === href || pathname?.startsWith(href);
-  };
+  const isActive = (href: string) => pathname === href;
 
   const getActiveLabel = () => {
-    const activeItem = navItems.find((item) => isActive(item.href));
+    const activeItem = SETTINGS_NAV_ITEMS.find((item) => isActive(item.href));
     return activeItem?.label || "Settings";
   };
 
@@ -45,7 +28,7 @@ export function SettingsHeader(): JSX.Element {
     <div className="md:hidden flex items-center justify-between p-4 ">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <button className="flex items-center gap-2 font-semibold text-gray-900 hover:text-gray-700 transition-colors">
+          <button className="flex items-center gap-2 font-gilroy-semibold text-gray-900 hover:text-gray-700 transition-colors">
             {getActiveLabel()}
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -56,14 +39,14 @@ export function SettingsHeader(): JSX.Element {
           </SheetHeader>
           <div className="flex flex-col justify-between h-[calc(100vh-120px)]">
             <div className="p-4 space-y-2">
-              {navItems.map((item) => (
+              {SETTINGS_NAV_ITEMS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={`block px-4 py-2.5 rounded-lg text-sm transition-colors ${
                     isActive(item.href)
-                      ? "bg-lavender-50 text-gray-900 font-medium"
+                      ? "bg-lavender-50 text-gray-900 font-gilroy-medium"
                       : "text-gray-600 hover:bg-lavender-50 hover:text-gray-800"
                   }`}
                 >
