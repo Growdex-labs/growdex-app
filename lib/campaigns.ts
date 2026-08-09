@@ -348,7 +348,7 @@ const getApiError = (data: unknown, fallback: string) => {
   if (!data || typeof data !== "object") return fallback;
   const response = data as {
     message?: unknown;
-    errors?: Array<{ message?: unknown; path?: unknown }>;
+    errors?: Array<{ message?: unknown; path?: unknown; field?: unknown }>;
   };
   const fieldError = response.errors?.[0];
   const fieldMessage = fieldError?.message;
@@ -359,7 +359,9 @@ const getApiError = (data: unknown, fallback: string) => {
             typeof part === "string" || typeof part === "number",
           )
           .join(".")
-      : "";
+      : typeof fieldError?.field === "string"
+        ? fieldError.field
+        : "";
     return path ? `${path}: ${fieldMessage}` : fieldMessage;
   }
   return typeof response.message === "string" ? response.message : fallback;

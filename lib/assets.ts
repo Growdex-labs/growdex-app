@@ -17,6 +17,15 @@ export interface CreativeAsset {
   thumbnailUrl?: string;
 }
 
+const fingerprint = (value: string) => {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(36);
+};
+
 export const PUBLISHED_CAMPAIGN_STATUSES = new Set([
   "publishing",
   "under_review",
@@ -44,8 +53,8 @@ export const fetchCreativeAssets = async (options?: {
       const identity = `${creative.platform}:${creative.mediaUrl}`;
       if (unique.has(identity)) continue;
       unique.set(identity, {
-        id: identity,
-        name: creative.headline?.trim() || campaign.name,
+        id: `${creative.platform}:${fingerprint(creative.mediaUrl)}`,
+        name: (creative.headline?.trim() || campaign.name).slice(0, 80),
         url: creative.mediaUrl,
         platform: creative.platform,
         campaignId: campaign.id,
