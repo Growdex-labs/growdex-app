@@ -77,7 +77,7 @@ export const getAuthErrorMessage = (
 };
 
 export const verificationEmailWasSent = (value: unknown): boolean =>
-  value !== false;
+  value === true;
 
 export const isEmailNotVerifiedError = (error: unknown): boolean => {
   if (!error || typeof error !== "object") return false;

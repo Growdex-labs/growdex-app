@@ -54,7 +54,7 @@ export default function IntegrationSuccessPage() {
       <main className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-lg p-8 text-center">
           <AlertTriangle className="mx-auto mb-4 h-10 w-10 text-red-500" />
-          <h1 className="text-xl font-semibold mb-2">
+          <h1 className="text-xl font-gilroy-semibold mb-2">
             {platformName} connection not confirmed
           </h1>
           <p className="text-gray-600 mb-6">
@@ -77,7 +77,7 @@ export default function IntegrationSuccessPage() {
       <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
         <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-600" />
 
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+        <h1 className="text-2xl font-gilroy-semibold text-gray-900 mb-2">
           {needsReauth
             ? `${platformName} reconnected`
             : `${platformName} connected`}
@@ -100,7 +100,7 @@ export default function IntegrationSuccessPage() {
         <div className="flex justify-center gap-3">
           <a
             href="/panel"
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900"
+            className="rounded-md bg-black px-4 py-2 text-sm font-gilroy-medium text-white hover:bg-gray-900"
           >
             Go to dashboard
           </a>

@@ -61,7 +61,7 @@ function GoogleCallbackContent() {
       {status === 'loading' && (
         <>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900">{message}</h3>
+          <h3 className="text-lg font-gilroy-medium text-gray-900">{message}</h3>
           <p className="mt-2 text-sm text-gray-500">Please wait while we complete your sign in.</p>
         </>
       )}
@@ -73,7 +73,7 @@ function GoogleCallbackContent() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900">{message}</h3>
+          <h3 className="text-lg font-gilroy-medium text-gray-900">{message}</h3>
         </>
       )}
 
@@ -84,11 +84,11 @@ function GoogleCallbackContent() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-red-900">{message}</h3>
+          <h3 className="text-lg font-gilroy-medium text-red-900">{message}</h3>
           <div className="mt-6">
             <button
               onClick={() => router.push('/login')}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-gilroy-medium text-white bg-black hover:bg-gray-800 focus:outline-none"
             >
               Back to Login
             </button>

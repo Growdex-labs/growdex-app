@@ -42,8 +42,8 @@ export function StepGoalsOnboarding({ formData, toggleGoal, change, onNext, onSk
             >
               <span className="text-xl leading-none">{goal.icon}</span>
               <span className="flex flex-col">
-                <span className="text-sm font-semibold text-[#333]">{goal.title}</span>
-                <span className="mt-0.5 text-xs text-[#666]">{goal.description}</span>
+                <span className="text-sm font-gilroy-semibold text-[#333]">{goal.title}</span>
+                <span className="mt-0.5 text-xs text-dimGray">{goal.description}</span>
               </span>
               {selected && (
                 <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-md bg-khaki-300 text-[#333]">
@@ -58,8 +58,8 @@ export function StepGoalsOnboarding({ formData, toggleGoal, change, onNext, onSk
       </div>
 
       <div className="mt-8">
-        <p className="text-xs text-[#666]">Don&apos;t see your goal?</p>
-        <p className="mb-2 text-sm font-medium text-khaki-300">Tell Growdex what you want to achieve</p>
+        <p className="text-xs text-dimGray">Don&apos;t see your goal?</p>
+        <p className="mb-2 text-sm font-gilroy-medium text-khaki-300">Tell Growdex what you want to achieve</p>
         <textarea
           name="customGoal"
           value={formData.customGoal}

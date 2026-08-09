@@ -198,7 +198,7 @@ export default function LoginPage() {
             Growdex
           </span>
         </div>
-        <button className="flex items-center gap-2 bg-[#1c1c1c] border border-white/10 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">
+        <button className="flex items-center gap-2 bg-[#1c1c1c] border border-white/10 text-white text-sm font-gilroy-medium px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">
           Menu
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
@@ -248,11 +248,11 @@ export default function LoginPage() {
                 className="size-12 object-contain"
               />
               <div className="mt-auto">
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   Meta Ads
                 </p>
                 <div className="flex items-center gap-1">
-                  <p className="text-gray-400 text-xs">Connected</p>
+                  <p className="text-dimGray text-xs">Connected</p>
                   <div className="flex items-center p-0.5 justify-center rounded-full bg-green-400">
                     <Check className="size-2" strokeWidth={6} />
                   </div>
@@ -270,11 +270,11 @@ export default function LoginPage() {
                 className="size-12 object-contain"
               />
               <div className="mt-auto">
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   TikTok Ads
                 </p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <p className="text-gray-400 text-xs">Connected</p>
+                  <p className="text-dimGray text-xs">Connected</p>
                   <div className="flex items-center p-0.5 justify-center rounded-full bg-green-400">
                     <Check className="size-2" strokeWidth={6} />
                   </div>
@@ -294,11 +294,11 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   AI Optimization
                 </p>
-                <p className="text-gray-400 text-xs mt-0.5">ROAS Increase</p>
-                <p className="text-green-400 text-xs font-bold">+24%</p>
+                <p className="text-dimGray text-xs mt-0.5">ROAS Increase</p>
+                <p className="text-green-400 text-xs font-gilroy-bold">+24%</p>
               </div>
             </FeatureCard>
 
@@ -312,11 +312,11 @@ export default function LoginPage() {
                 className="size-12 object-contain"
               />
               <div>
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   Unified Wallet
                 </p>
-                <p className="text-gray-400 text-xs mt-0.5">Balance</p>
-                <p className="text-white text-sm font-bold">$24,680.84</p>
+                <p className="text-dimGray text-xs mt-0.5">Balance</p>
+                <p className="text-white text-sm font-gilroy-bold">$24,680.84</p>
               </div>
             </FeatureCard>
 
@@ -329,7 +329,7 @@ export default function LoginPage() {
 
             {/* Bottom tagline */}
             <div className="absolute bottom-8 inset-x-0 z-20 text-center">
-              <h2 className="text-4xl font-lexend text-white leading-snug">
+              <h2 className="text-4xl font-gilroy-bold text-white leading-snug">
                 Create. Optimize. <span className="text-khaki-200">Scale.</span>
               </h2>
             </div>
@@ -393,7 +393,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={handleResendVerification}
                       disabled={isResending}
-                      className="mt-2 font-semibold underline underline-offset-2 hover:no-underline disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-2 font-gilroy-semibold underline underline-offset-2 hover:no-underline disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isResending ? "Sending..." : "Resend verification email"}
                     </button>
@@ -402,7 +402,7 @@ export default function LoginPage() {
                 <div className="mt-1.5 text-right">
                   <Link
                     href="/forgot-password"
-                    className="text-xs font-medium text-gray-500 hover:text-gray-900 hover:underline"
+                    className="text-xs font-gilroy-medium text-gray-500 hover:text-gray-900 hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -412,7 +412,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-gilroy-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Please wait..." : "Sign in"}
               </button>
@@ -421,7 +421,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleDevLogin}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-dashed border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-xl transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-dashed border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-gilroy-semibold rounded-xl transition-colors"
                 >
                   Dev quick-login (bypasses auth &amp; MFA)
                 </button>
@@ -438,7 +438,7 @@ export default function LoginPage() {
               type="button"
               onClick={startGoogleAuth}
               disabled={googleLoading || !googleAuthEnabled}
-              className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-gilroy-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <img
                 src="/devicon_google.png"
@@ -463,7 +463,7 @@ export default function LoginPage() {
               New here?{" "}
               <Link
                 href="/signup"
-                className="font-semibold text-gray-900 hover:underline"
+                className="font-gilroy-semibold text-gray-900 hover:underline"
               >
                 Create an account
               </Link>

@@ -70,16 +70,16 @@ function ActiveCard({
         <div className="mb-3 flex items-center gap-2">
           <PlatformLogo>{logo}</PlatformLogo>
           {connected && accountName && (
-            <span className="truncate text-sm font-medium text-[#333]">{accountName}</span>
+            <span className="truncate text-sm font-gilroy-medium text-[#333]">{accountName}</span>
           )}
         </div>
-        <h3 className="text-sm font-semibold text-[#333]">{title}</h3>
-        <p className="mt-1 text-xs leading-relaxed text-[#666]">{description}</p>
+        <h3 className="text-sm font-gilroy-semibold text-[#333]">{title}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-dimGray">{description}</p>
       </div>
 
       <div className="mt-4 flex justify-end">
         {connected ? (
-          <span className="flex items-center gap-1.5 text-sm font-medium text-[#0A883F]">
+          <span className="flex items-center gap-1.5 text-sm font-gilroy-medium text-[#0A883F]">
             {CheckIcon}
             Connected
           </span>
@@ -88,7 +88,7 @@ function ActiveCard({
             type="button"
             onClick={onConnect}
             disabled={loading}
-            className="flex items-center gap-1.5 text-sm font-medium text-firebrick-500 transition-colors hover:underline disabled:opacity-50"
+            className="flex items-center gap-1.5 text-sm font-gilroy-medium text-firebrick-500 transition-colors hover:underline disabled:opacity-50"
           >
             {loading && <Loader2 className="size-4 animate-spin" />}
             {loading ? "Connecting..." : "Connect"}
@@ -115,11 +115,11 @@ function ComingSoonCard({
           <span className="opacity-60 grayscale">
             <PlatformLogo>{logo}</PlatformLogo>
           </span>
-          <span className="rounded-md bg-[#eceef2] px-2 py-0.5 text-[10px] font-medium text-[#808080]">
+          <span className="rounded-md bg-[#eceef2] px-2 py-0.5 text-[10px] font-gilroy-medium text-[#808080]">
             Coming Soon
           </span>
         </div>
-        <h3 className="text-sm font-semibold text-[#808080]">{title}</h3>
+        <h3 className="text-sm font-gilroy-semibold text-[#808080]">{title}</h3>
         <p className="mt-1 text-xs leading-relaxed text-[#9ca0b0]">{description}</p>
       </div>
 
@@ -194,8 +194,8 @@ export function StepConnectOnboarding({
 
       <div className="mt-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="text-sm">
-          <span className="text-[#666]">Don&apos;t see your platform? </span>
-          <button type="button" className="font-medium text-firebrick-500 hover:underline">
+          <span className="text-dimGray">Don&apos;t see your platform? </span>
+          <button type="button" className="font-gilroy-medium text-firebrick-500 hover:underline">
             Request a new integration
           </button>
         </div>

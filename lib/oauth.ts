@@ -1,5 +1,6 @@
 import { SocialAccountSetupProps } from '@/types/social';
 import { API_BASE_URL, apiFetch } from './auth';
+import { hydrateSocialAccounts } from './social';
 
 export type SocialPlatform = 'meta' | 'tiktok';
 
@@ -10,7 +11,7 @@ export type SocialPlatform = 'meta' | 'tiktok';
  */
 export const openOAuthPopup = (
   platform: SocialPlatform,
-  onSuccess: (code: string) => void,
+  onSuccess: (code?: string) => void,
   onError: (error: string) => void
 ): Window | null => {
   const width = 600;
@@ -41,15 +42,15 @@ export const openOAuthPopup = (
     if (!allowedOrigins.has(event.origin)) return;
     if (event.data?.platform !== platform) return;
 
-    if (
-      event.data?.type === 'oauth_success' &&
-      typeof event.data.code === 'string' &&
-      event.data.code.trim()
-    ) {
+    if (event.data?.type === 'oauth_success') {
       isCompleted = true;
       window.removeEventListener('message', messageHandler);
       popup.close();
-      onSuccess(event.data.code);
+      const code =
+        typeof event.data.code === 'string' && event.data.code.trim()
+          ? event.data.code
+          : undefined;
+      onSuccess(code);
     }
 
     if (event.data?.type === 'oauth_error') {
@@ -126,19 +127,40 @@ export const exchangeSocialAuthorizationCode = async (
 export const connectSocialAccount = async (
   platform: SocialPlatform
 ): Promise<{ success: boolean; data?: SocialAccountSetupProps; error?: string }> => {
-  const popupResult = await new Promise<{ code?: string; error?: string }>((resolve) => {
+  const popupResult = await new Promise<{
+    completed?: boolean;
+    code?: string;
+    error?: string;
+  }>((resolve) => {
     openOAuthPopup(
       platform,
-      (code) => resolve({ code }),
+      (code) => resolve({ completed: true, code }),
       (error) => resolve({ error })
     );
   });
 
-  if (!popupResult.code) {
+  if (!popupResult.completed) {
     return { success: false, error: popupResult.error || `Failed to connect ${platform}` };
   }
 
-  return exchangeSocialAuthorizationCode(platform, popupResult.code);
+  // Current backend callbacks exchange and save the provider code before
+  // notifying this window. Older callbacks relay the code for this client to
+  // exchange, so keep that path working as well.
+  if (popupResult.code) {
+    return exchangeSocialAuthorizationCode(platform, popupResult.code);
+  }
+
+  const accounts = await hydrateSocialAccounts();
+  if (accounts.success && accounts.data?.[platform]?.connected) {
+    return { success: true, data: accounts.data };
+  }
+
+  return {
+    success: false,
+    error:
+      accounts.error ||
+      `${platform === 'meta' ? 'Meta' : 'TikTok'} authorization completed, but Growdex could not reload the saved connection. Refresh the page and try again.`,
+  };
 };
 
 /**

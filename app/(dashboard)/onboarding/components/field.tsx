@@ -90,7 +90,7 @@ export function OnboardingSelect({
         ))}
       </select>
       <svg
-        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#666]"
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-dimGray"
         width="16"
         height="16"
         viewBox="0 0 20 20"
@@ -106,7 +106,7 @@ export function OnboardingSelect({
 /** Yellow pill used for the "Required" / status badge inside a field. */
 export function FieldBadge({ children }: { children: ReactNode }) {
   return (
-    <span className="shrink-0 bg-dimYellow text-[#8f2708] text-xs font-medium rounded-md px-5 py-1.5">
+    <span className="shrink-0 bg-dimYellow text-[#8f2708] text-xs font-gilroy-medium rounded-md px-5 py-1.5">
       {children}
     </span>
   );

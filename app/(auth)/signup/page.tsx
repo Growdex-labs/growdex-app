@@ -128,11 +128,21 @@ export default function SignUpPage() {
     setIsResending(true);
     setError("");
     try {
-      await resendVerification(email);
-      setVerificationEmailSent(true);
-      toast.success("Verification email sent", {
-        description: "Check your inbox to finish creating your account.",
-      });
+      const response = await resendVerification(email);
+      const emailWasSent = verificationEmailWasSent(
+        response.verificationEmailSent,
+      );
+
+      setVerificationEmailSent(emailWasSent);
+      if (emailWasSent) {
+        toast.success("Verification email sent", {
+          description: "Check your inbox to finish creating your account.",
+        });
+      } else {
+        setError(
+          "We couldn't confirm that the verification email was sent. Please use the resend action to try again.",
+        );
+      }
     } catch (err: unknown) {
       setError(
         getAuthErrorMessage(
@@ -160,7 +170,7 @@ export default function SignUpPage() {
             Growdex
           </span>
         </div>
-        <button className="flex items-center gap-2 bg-[#1c1c1c] border border-white/10 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">
+        <button className="flex items-center gap-2 bg-[#1c1c1c] border border-white/10 text-white text-sm font-gilroy-medium px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">
           Menu
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
@@ -186,7 +196,7 @@ export default function SignUpPage() {
               <OrbitRing size={230} opacity={0.25} />
 
               {/* Ambient glow */}
-              <div className="absolute w-56 h-56 rounded-full bg-[#ffe95c]/10 blur-[60px]" />
+              <div className="absolute w-56 h-56 rounded-full bg-khaki-200/10 blur-[60px]" />
               <div className="absolute w-36 h-36 rounded-full bg-khaki-200/15 blur-[30px]" />
 
               {/* Center logo — glow baked into the image */}
@@ -210,11 +220,11 @@ export default function SignUpPage() {
                 className="size-12 object-contain"
               />
               <div className="mt-auto">
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   Meta Ads
                 </p>
                 <div className="flex items-center gap-1">
-                  <p className="text-gray-400 text-xs">Connected</p>
+                  <p className="text-dimGray text-xs">Connected</p>
                   <div className="flex items-center p-0.5 justify-center rounded-full bg-green-400">
                     <Check className="size-2" strokeWidth={6} />
                   </div>
@@ -232,11 +242,11 @@ export default function SignUpPage() {
                 className="size-12 object-contain"
               />
               <div className="mt-auto">
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   TikTok Ads
                 </p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <p className="text-gray-400 text-xs">Connected</p>
+                  <p className="text-dimGray text-xs">Connected</p>
                   <div className="flex items-center p-0.5 justify-center rounded-full bg-green-400">
                     <Check className="size-2" strokeWidth={6} />
                   </div>
@@ -256,11 +266,11 @@ export default function SignUpPage() {
                 />
               </div>
               <div>
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   AI Optimization
                 </p>
-                <p className="text-gray-400 text-xs mt-0.5">ROAS Increase</p>
-                <p className="text-green-400 text-xs font-bold">+24%</p>
+                <p className="text-dimGray text-xs mt-0.5">ROAS Increase</p>
+                <p className="text-green-400 text-xs font-gilroy-bold">+24%</p>
               </div>
             </FeatureCard>
 
@@ -274,24 +284,24 @@ export default function SignUpPage() {
                 className="size-12 object-contain"
               />
               <div>
-                <p className="text-white text-sm font-semibold leading-tight">
+                <p className="text-white text-sm font-gilroy-semibold leading-tight">
                   Unified Wallet
                 </p>
-                <p className="text-gray-400 text-xs mt-0.5">Balance</p>
-                <p className="text-white text-sm font-bold">$24,680.84</p>
+                <p className="text-dimGray text-xs mt-0.5">Balance</p>
+                <p className="text-white text-sm font-gilroy-bold">$24,680.84</p>
               </div>
             </FeatureCard>
 
             {/* Scatter dots */}
             <Dot className="w-2 h-2 bg-green-400 top-[20%] left-[38%] opacity-50" />
             <Dot className="w-2 h-2 bg-orange-400 top-[52%] right-[10%] opacity-80" />
-            <Dot className="w-2 h-2 bg-[#ffe95c] bottom-[19%] left-[54%] opacity-70" />
+            <Dot className="w-2 h-2 bg-khaki-200 bottom-[19%] left-[54%] opacity-70" />
             <Dot className="w-2 h-2 bg-green-300 bottom-[28%] left-12 opacity-60" />
             <Dot className="w-1.5 h-1.5 bg-purple-400 top-[42%] right-[18%] opacity-50" />
 
             {/* Bottom tagline */}
             <div className="absolute bottom-8 inset-x-0 z-20 text-center">
-              <h2 className="text-4xl font-lexend text-white leading-snug">
+              <h2 className="text-4xl font-gilroy-bold text-white leading-snug">
                 Create. Optimize. <span className="text-khaki-200">Scale.</span>
               </h2>
             </div>
@@ -319,14 +329,16 @@ export default function SignUpPage() {
             {registrationComplete ? (
               <div className="space-y-5">
                 <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-gilroy-semibold text-gray-900">
                     {verificationEmailSent
                       ? "We sent a verification link to:"
-                      : "Your account was created, but we couldn't send its verification email."}
+                      : "Your account was created, but we couldn't confirm that its verification email was sent."}
                   </p>
                   <p className="mt-2 break-all">{email}</p>
                   <p className="mt-3 text-gray-500">
-                    Verify this address before signing in. The link expires in one hour.
+                    {verificationEmailSent
+                      ? "Verify this address before signing in. The link expires in one hour."
+                      : "Use the resend action below, then verify this address before signing in."}
                   </p>
                 </div>
 
@@ -336,14 +348,14 @@ export default function SignUpPage() {
                   type="button"
                   onClick={handleResendVerification}
                   disabled={isResending}
-                  className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-gilroy-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isResending ? "Sending..." : "Resend verification email"}
                 </button>
 
                 <Link
                   href="/login"
-                  className="block w-full rounded-xl border border-gray-200 bg-white py-3.5 text-center text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                  className="block w-full rounded-xl border border-gray-200 bg-white py-3.5 text-center text-sm font-gilroy-semibold text-gray-900 hover:bg-gray-50"
                 >
                   Back to sign in
                 </Link>
@@ -384,7 +396,7 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-gilroy-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Please wait..." : "Sign up"}
               </button>
@@ -400,7 +412,7 @@ export default function SignUpPage() {
                 type="button"
                 onClick={startGoogleAuth}
                 disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-gilroy-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <img
                   src="/devicon_google.png"
@@ -414,7 +426,7 @@ export default function SignUpPage() {
                 Got an account?{" "}
                 <Link
                   href="/login"
-                  className="font-semibold text-gray-900 hover:underline"
+                  className="font-gilroy-semibold text-gray-900 hover:underline"
                 >
                   Sign in
                 </Link>
