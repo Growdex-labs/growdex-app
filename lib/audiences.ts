@@ -1,3 +1,4 @@
+import { readResponseError } from "./api-error";
 import { apiFetch } from "./auth";
 
 export interface MetaConfig {
@@ -40,8 +41,7 @@ export const createAudience = async (payload: CreateAudiencePayload) => {
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Create audience failed (${res.status}): ${text}`);
+    throw new Error(await readResponseError(res, `Create audience failed (${res.status}).`));
   }
 
   const data = await res.json();
@@ -54,8 +54,7 @@ export const fetchAudiences = async (): Promise<Audience[]> => {
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Fetch audiences failed (${res.status}): ${text}`);
+    throw new Error(await readResponseError(res, `Fetch audiences failed (${res.status}).`));
   }
 
   const data = await res.json();
@@ -73,8 +72,7 @@ export const fetchAudienceById = async (id: string): Promise<Audience> => {
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Fetch audience failed (${res.status}): ${text}`);
+    throw new Error(await readResponseError(res, `Fetch audience failed (${res.status}).`));
   }
 
   const data = await res.json();
@@ -92,8 +90,7 @@ export const updateAudience = async (
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Update audience failed (${res.status}): ${text}`);
+    throw new Error(await readResponseError(res, `Update audience failed (${res.status}).`));
   }
 
   const data = await res.json();
@@ -106,8 +103,7 @@ export const deleteAudience = async (id: string) => {
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Delete audience failed (${res.status}): ${text}`);
+    throw new Error(await readResponseError(res, `Delete audience failed (${res.status}).`));
   }
 
   // Handle 204 No Content or empty responses
