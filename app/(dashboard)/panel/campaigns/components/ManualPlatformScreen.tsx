@@ -58,7 +58,7 @@ export function ManualPlatformScreen({
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-      <h2 className="text-xl font-bold text-gray-900">
+      <h2 className="text-xl font-gilroy-bold text-gray-900">
         Choose the accounts that will run this campaign
       </h2>
       <p className="mt-2 text-sm text-gray-500">
@@ -80,10 +80,10 @@ export function ManualPlatformScreen({
               <div key={platform} className="rounded-2xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-gilroy-semibold text-gray-900">
                       {platform === "meta" ? "Meta" : "TikTok"}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-dimGray">
                       {usable ? `${assets.length} available account${assets.length === 1 ? "" : "s"}` : "Not connected"}
                     </p>
                   </div>
@@ -91,7 +91,7 @@ export function ManualPlatformScreen({
                     <button
                       type="button"
                       onClick={() => removePlatform(platform)}
-                      className="text-xs font-medium text-gray-500 hover:text-gray-900"
+                      className="text-xs font-gilroy-medium text-gray-500 hover:text-gray-900"
                     >
                       Remove
                     </button>
@@ -139,7 +139,7 @@ export function ManualPlatformScreen({
                         >
                           <SelectionMark checked={selected} />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium text-gray-900">
+                            <span className="block truncate text-sm font-gilroy-medium text-gray-900">
                               {name}
                             </span>
                             <span className="block truncate text-[11px] text-gray-400">
@@ -158,7 +158,7 @@ export function ManualPlatformScreen({
                             )}
                           </span>
                           {asset.isPrimary && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-700">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-gilroy-medium text-green-700">
                               <Check className="h-3 w-3" /> Primary
                             </span>
                           )}
@@ -176,7 +176,7 @@ export function ManualPlatformScreen({
                           type="button"
                           onClick={() => onRefresh("meta")}
                           disabled={connecting !== null}
-                          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 disabled:opacity-50"
+                          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-gilroy-medium text-gray-700 disabled:opacity-50"
                         >
                           {connecting === "meta" && (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -190,7 +190,7 @@ export function ManualPlatformScreen({
                     type="button"
                     onClick={() => onConnect(platform)}
                     disabled={connecting !== null}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-medium text-gray-700 disabled:opacity-50"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-gilroy-medium text-gray-700 disabled:opacity-50"
                   >
                     {connecting === platform ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

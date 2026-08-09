@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { AudienceStrategy } from "@/lib/campaigns";
@@ -55,10 +56,17 @@ export function CampaignBudgetEditor({
   const startTime = localTimePart(budget.startDate) || "09:00";
   const endDate = localDatePart(budget.endDate);
   const endTime = localTimePart(budget.endDate) || startTime;
+  const [lastInteractionTime, setLastInteractionTime] = useState(Date.now);
+  const parsedStart = new Date(budget.startDate).getTime();
+  const startIsPast =
+    Number.isNaN(parsedStart) || parsedStart < lastInteractionTime;
 
   const updateStart = (datePart: string, timePart: string) => {
     const value = mergeLocalDateTime(datePart, timePart);
-    if (value) onChange({ startDate: value });
+    if (value) {
+      setLastInteractionTime(Date.now());
+      onChange({ startDate: value });
+    }
   };
 
   const updateEnd = (datePart: string, timePart: string) => {
@@ -75,17 +83,17 @@ export function CampaignBudgetEditor({
 
   return (
     <div>
-      <h4 className="text-lg font-semibold text-gray-900">Budget</h4>
+      <h4 className="text-lg font-gilroy-semibold text-gray-900">Budget</h4>
       <div className="mt-5 grid gap-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,1fr)]">
         <div>
           <label
             htmlFor="aiBudgetAmount"
-            className="text-base font-medium text-gray-800"
+            className="text-base font-gilroy-medium text-gray-800"
           >
             Setup your budget
           </label>
           <div className="mt-3 flex min-h-14 items-center overflow-hidden rounded-xl border border-gray-300 bg-white focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-100">
-            <span className="pl-4 text-base font-semibold text-gray-500">
+            <span className="pl-4 text-base font-gilroy-semibold text-gray-500">
               {currencySymbol(budget.currency)}
             </span>
             <Input
@@ -97,9 +105,9 @@ export function CampaignBudgetEditor({
               onChange={(event) =>
                 onChange({ amount: Number(event.target.value) })
               }
-              className="h-14 min-w-0 flex-1 border-0 px-3 text-lg font-semibold shadow-none focus-visible:ring-0"
+              className="h-14 min-w-0 flex-1 border-0 px-3 text-lg font-gilroy-semibold shadow-none focus-visible:ring-0"
             />
-            <span className="flex h-14 items-center border-l border-gray-100 px-3 text-sm font-medium text-gray-600">
+            <span className="flex h-14 items-center border-l border-gray-100 px-3 text-sm font-gilroy-medium text-gray-600">
               {budget.currency}
             </span>
             <select
@@ -133,7 +141,7 @@ export function CampaignBudgetEditor({
         </div>
 
         <div>
-          <p className="text-base font-medium text-gray-800">Start date</p>
+          <p className="text-base font-gilroy-medium text-gray-800">Start date</p>
           <div className="mt-3 grid grid-cols-[minmax(0,1fr)_9rem] gap-3">
             <label className="relative">
               <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -156,6 +164,11 @@ export function CampaignBudgetEditor({
               />
             </label>
           </div>
+          {startIsPast && (
+            <p className="mt-2 text-sm text-red-600" role="alert">
+              Choose a start time in the future.
+            </p>
+          )}
 
           <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm text-gray-600">
             <input

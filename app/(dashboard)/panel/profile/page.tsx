@@ -309,13 +309,13 @@ export default function MyProfilePage(): JSX.Element {
                 {/* Title */}
                 <div className="flex items-center justify-between w-full mt-4">
                   <div className="flex items-center">
-                    <span className="text-xl font-bold text-gray-900">
+                    <span className="text-xl font-gilroy-bold text-gray-900">
                       My Profile
                     </span>
                   </div>
                   <button
                     onClick={toggleEdit}
-                    className={`flex items-center gap-2 px-4 py-2 ${isEditing ? 'bg-gray-200 hover:bg-gray-300' : 'bg-yellow-300 hover:bg-yellow-400'} text-gray-900 font-semibold rounded-lg transition-colors text-sm`}
+                    className={`flex items-center gap-2 px-4 py-2 ${isEditing ? 'bg-gray-200 hover:bg-gray-300' : 'bg-yellow-300 hover:bg-yellow-400'} text-gray-900 font-gilroy-semibold rounded-lg transition-colors text-sm`}
                   >
                     {isEditing ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
                     {isEditing ? "Cancel" : "Edit Profile"}
@@ -332,7 +332,7 @@ export default function MyProfilePage(): JSX.Element {
                         className="w-32 h-32 rounded-lg object-cover bg-gray-100"
                       />
                       {isUploadingAvatar && (
-                        <div className="absolute inset-0 bg-black/50 rounded-lg flex flex-col items-center justify-center text-white text-xs font-semibold gap-1">
+                        <div className="absolute inset-0 bg-black/50 rounded-lg flex flex-col items-center justify-center text-white text-xs font-gilroy-semibold gap-1">
                           <Loader2 className="w-6 h-6 animate-spin" />
                           {avatarUploadProgress > 0 && <span>{avatarUploadProgress}%</span>}
                         </div>
@@ -362,14 +362,14 @@ export default function MyProfilePage(): JSX.Element {
                         <button
                           onClick={() => fileInputRef.current?.click()}
                           disabled={isUploadingAvatar}
-                          className="px-4 py-2 bg-yellow-300 hover:bg-yellow-400 disabled:bg-yellow-200 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
+                          className="px-4 py-2 bg-yellow-300 hover:bg-yellow-400 disabled:bg-yellow-200 disabled:cursor-not-allowed text-gray-900 font-gilroy-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
                         >
                           Upload New
                         </button>
                         <button
                           onClick={handleImageDelete}
                           disabled={isUploadingAvatar}
-                          className="px-4 py-2 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap mr-2"
+                          className="px-4 py-2 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-900 font-gilroy-semibold rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap mr-2"
                         >
                           Delete Image
                         </button>
@@ -377,7 +377,7 @@ export default function MyProfilePage(): JSX.Element {
                     )}
                   </div>
                   {avatarError && (
-                    <div className="text-xs text-red-600 font-medium max-w-md bg-red-50 border border-red-200 rounded p-2 mt-1">
+                    <div className="text-xs text-red-600 font-gilroy-medium max-w-md bg-red-50 border border-red-200 rounded p-2 mt-1">
                       {avatarError}
                     </div>
                   )}
@@ -390,14 +390,14 @@ export default function MyProfilePage(): JSX.Element {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                 {/* Personal Information Section */}
                 <div className="bg-slate-100 p-4 rounded-lg">
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6">
+                  <h2 className="text-lg md:text-xl font-gilroy-bold text-gray-900 mb-6">
                     Personal Information
                   </h2>
                   <div className="space-y-4">
                     {/* First Name & Last Name */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           First Name
                         </label>
                         <input
@@ -410,7 +410,7 @@ export default function MyProfilePage(): JSX.Element {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Last Name
                         </label>
                         <input
@@ -426,7 +426,7 @@ export default function MyProfilePage(): JSX.Element {
 
                     {/* Password */}
                     <div className="relative">
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                         Password
                       </label>
                       <input
@@ -447,7 +447,7 @@ export default function MyProfilePage(): JSX.Element {
 
                     {/* Phone Number */}
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                         Phone Number
                       </label>
                       <div className="flex gap-2">
@@ -471,7 +471,7 @@ export default function MyProfilePage(): JSX.Element {
 
                     {/* Email Address */}
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                         Email Address
                       </label>
                       <input
@@ -486,7 +486,7 @@ export default function MyProfilePage(): JSX.Element {
 
                     {/* Country */}
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                         Country
                       </label>
                       <Select
@@ -523,14 +523,14 @@ export default function MyProfilePage(): JSX.Element {
 
                 {/* Brand Information Section */}
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6">
+                  <h2 className="text-lg md:text-xl font-gilroy-bold text-gray-900 mb-6">
                     Brand Information
                   </h2>
                   <div className="space-y-4">
                     {/* Brand Name & Size */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Brand Name
                         </label>
                         <input
@@ -548,7 +548,7 @@ export default function MyProfilePage(): JSX.Element {
                         )}
                       </div>
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Brand Size
                         </label>
                         <input
@@ -566,7 +566,7 @@ export default function MyProfilePage(): JSX.Element {
                     {/* Social Links Grid */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Twitter Link
                         </label>
                         <input
@@ -580,7 +580,7 @@ export default function MyProfilePage(): JSX.Element {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Facebook Link
                         </label>
                         <input
@@ -594,7 +594,7 @@ export default function MyProfilePage(): JSX.Element {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Google Link
                         </label>
                         <input
@@ -608,7 +608,7 @@ export default function MyProfilePage(): JSX.Element {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Instagram Link
                         </label>
                         <input
@@ -625,7 +625,7 @@ export default function MyProfilePage(): JSX.Element {
 
                     {/* Business Address */}
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                         Business Address
                       </label>
                       <textarea
@@ -657,7 +657,7 @@ export default function MyProfilePage(): JSX.Element {
                     <button
                         onClick={handleSaveChanges}
                         disabled={isSaving}
-                        className="w-full px-6 py-3 md:py-3.5 bg-yellow-300 hover:bg-yellow-400 disabled:bg-yellow-200 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-colors text-sm md:text-base flex items-center justify-center gap-2"
+                        className="w-full px-6 py-3 md:py-3.5 bg-yellow-300 hover:bg-yellow-400 disabled:bg-yellow-200 disabled:cursor-not-allowed text-gray-900 font-gilroy-semibold rounded-lg transition-colors text-sm md:text-base flex items-center justify-center gap-2"
                     >
                     <DepositIcon />
                     {isSaving ? "Saving..." : "Save changes"}

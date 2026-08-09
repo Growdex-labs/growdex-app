@@ -76,12 +76,12 @@ export function CampaignTreeSidebar({
     >
       <Link
         href="/panel/campaigns"
-        className="flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+        className="flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-2.5 text-sm font-gilroy-medium text-gray-700 transition-colors hover:bg-gray-100"
       >
         <ChevronLeft className="size-4" /> Back
       </Link>
 
-      <div className="mt-6 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-semibold text-gray-900 truncate">
+      <div className="mt-6 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-900 truncate">
         {truncatedName}
       </div>
 
@@ -122,12 +122,12 @@ export function CampaignTreeSidebar({
                 <button
                   type="button"
                   onClick={() => onSelectStrategy?.(strategy.id)}
-                  className="min-w-0 flex-1 truncate text-left text-sm font-semibold"
+                  className="min-w-0 flex-1 truncate text-left text-sm font-gilroy-semibold"
                 >
                   {strategy.name || `Audience Strategy ${strategyIndex + 1}`}
                 </button>
                 {isActive && (
-                  <span className="rounded-full bg-khaki-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-900">
+                  <span className="rounded-full bg-khaki-200 px-2 py-0.5 text-[10px] font-gilroy-bold uppercase tracking-wide text-gray-900">
                     {activeStrategyLabel}
                   </span>
                 )}
@@ -136,7 +136,7 @@ export function CampaignTreeSidebar({
                   onClick={() =>
                     (onEditStrategy ?? onSelectStrategy)?.(strategy.id)
                   }
-                  className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-gilroy-bold transition ${
                     isActive
                       ? "bg-white/10 text-white hover:bg-white/20"
                       : "bg-gray-100 text-gray-700 hover:bg-khaki-100"
@@ -217,7 +217,7 @@ export function CampaignTreeSidebar({
         <button
           type="button"
           onClick={onAddStrategy}
-          className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2.5 text-sm font-semibold text-gray-700 hover:border-khaki-300 hover:bg-khaki-50"
+          className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2.5 text-sm font-gilroy-semibold text-gray-700 hover:border-khaki-300 hover:bg-khaki-50"
         >
           <Plus className="size-4" /> Add Audience Strategy
         </button>

@@ -32,7 +32,7 @@ function OAuthCallbackContent() {
     <div className="flex min-h-screen items-center justify-center bg-[#f8f8f8]">
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-gray-900" />
-        <p className="text-sm text-[#666]">{message}</p>
+        <p className="text-sm text-dimGray">{message}</p>
       </div>
     </div>
   );

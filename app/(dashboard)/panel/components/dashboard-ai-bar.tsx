@@ -67,7 +67,7 @@ export function DashboardAiBar({
             }}
             placeholder="Ask anything about this campaign"
             disabled={loading}
-            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:font-medium placeholder:text-gray-500 focus:outline-none disabled:opacity-60"
+            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:font-gilroy-medium placeholder:text-gray-500 focus:outline-none disabled:opacity-60"
           />
           <button
             type="button"

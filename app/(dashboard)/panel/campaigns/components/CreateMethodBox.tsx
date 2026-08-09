@@ -12,7 +12,7 @@ interface CreateMethodBoxProps {
 export function CreateMethodBox({ value, onSelect }: CreateMethodBoxProps) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm">
-      <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-6">
+      <h2 className="text-lg md:text-xl font-gilroy-semibold text-gray-900 mb-6">
         How do you want to create your campaign?
       </h2>
 
@@ -31,10 +31,10 @@ export function CreateMethodBox({ value, onSelect }: CreateMethodBoxProps) {
           <div className="w-16 h-16 rounded-2xl bg-khaki-200 flex items-center justify-center mb-5">
             <img src="/megaphone.png" alt="" className="w-8 h-8" />
           </div>
-          <span className="text-xs font-medium text-gray-400 mb-1">
+          <span className="text-xs font-gilroy-medium text-gray-400 mb-1">
             Manual setup
           </span>
-          <span className="text-xl font-semibold text-gray-900">
+          <span className="text-xl font-gilroy-semibold text-gray-900">
             Build it myself
           </span>
         </button>
@@ -53,10 +53,10 @@ export function CreateMethodBox({ value, onSelect }: CreateMethodBoxProps) {
           <div className="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-5">
             <GradientSparkle className="w-8 h-8" />
           </div>
-          <span className="text-xs font-medium text-violet-500 mb-1">
+          <span className="text-xs font-gilroy-medium text-violet-500 mb-1">
             AI-assisted
           </span>
-          <span className="text-xl font-semibold text-gray-900">
+          <span className="text-xl font-gilroy-semibold text-gray-900">
             Create with AI
           </span>
         </button>

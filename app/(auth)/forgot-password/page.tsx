@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
             Growdex
           </span>
         </div>
-        <button className="flex items-center gap-2 bg-[#1c1c1c] border border-white/10 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-black/80 transition-colors">
+        <button className="flex items-center gap-2 bg-[#1c1c1c] border border-white/10 text-white text-sm font-gilroy-medium px-4 py-2 rounded-xl hover:bg-black/80 transition-colors">
           Menu
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-khaki-200 hover:bg-khaki-300 active:bg-peru-200 text-gray-900 font-gilroy-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Sending..." : "Send code"}
             </button>
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
             type="button"
             onClick={startGoogleAuth}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-gilroy-medium text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <img
               src="/devicon_google.png"

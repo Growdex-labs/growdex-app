@@ -99,7 +99,7 @@ export const BudgetSection = ({
           <div className="w-full">
             <label
               htmlFor="platform"
-              className="block text-sm font-medium text-gray-800 font-gilroy-bold"
+              className="block text-sm text-gray-800 font-gilroy-bold"
             >
               Budget & Schedule
             </label>
@@ -156,7 +156,7 @@ export const BudgetSection = ({
                 </div>
 
                 <div className="flex-1 mb-3 mt-2">
-                  <div className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700">
+                  <div className="flex items-center justify-between gap-2 text-sm font-gilroy-medium text-gray-700">
                     <span>{brandName}</span>
                     {useSeparateBudgets ? (
                       <span className="text-xs text-gray-400">
@@ -262,7 +262,7 @@ export const BudgetSection = ({
 
                 {/* Meta Freq */}
                 <div className="mb-3 mt-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <div className="flex items-center gap-2 text-sm font-gilroy-medium text-gray-700">
                     <span>{brandName}</span>
                   </div>
 
@@ -305,7 +305,7 @@ export const BudgetSection = ({
 
                 {/* Tiktok Freq */}
                 <div className="mb-3 mt-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <div className="flex items-center gap-2 text-sm font-gilroy-medium text-gray-700">
                     <span>{brandName}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-2">
@@ -346,7 +346,7 @@ export const BudgetSection = ({
             {/* Schedule toggle */}
               <div className="mt-2 flex items-center  gap-2 mb-2">
                 <div>
-                  <p className="text-sm font-medium font-gilroy-bold">
+                  <p className="text-sm font-gilroy-bold">
                     Schedule campaign for later date
                   </p>
                 </div>
@@ -378,7 +378,7 @@ export const BudgetSection = ({
                     <div className="w-0 h-full border border-peru-200" />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-800 font-gilroy-bold">
+                    <label className="block text-sm text-gray-800 font-gilroy-bold">
                       Schedule ad
                     </label>
 

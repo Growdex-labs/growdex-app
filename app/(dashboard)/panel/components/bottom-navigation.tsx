@@ -26,11 +26,11 @@ export function BottomNavigation() {
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
   ];
 
-  // Right items (2 items)
+  // Right items (3 items)
   const rightItems: NavItem[] = [
-    { icon: Wallet, label: "Funding", href: "/panel/wallet" },
+    { icon: Wallet, label: "Billing", href: "/panel/billing" },
     { icon: Images, label: "Assets", href: "/panel/assets" },
-    { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
+    { icon: Settings, label: "Settings", href: "/panel/settings/profile" },
   ];
 
   const isActive = (item: NavItem) => {

@@ -71,6 +71,7 @@ export interface CampaignCreativeInput {
   headline?: string;
   cta: CampaignCta;
   mediaUrl: string;
+  thumbnailUrl?: string;
   landingPageUrl?: string;
   appId?: string;
   leadFormId?: string;
@@ -238,6 +239,30 @@ export type CampaignReviewPayload = Omit<
 > & {
   creationMode: CampaignCreationMode | "unknown";
 };
+
+export interface CampaignPlatformMetric {
+  platform: CampaignPlatform;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  reach: number;
+  ctr: number;
+  cpc: number;
+  cpa: number;
+}
+
+export interface CampaignMetricsSummary {
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  reach: number;
+  ctr: number;
+  cpc: number;
+  cpa: number;
+  byPlatform: CampaignPlatformMetric[];
+}
 
 export interface CampaignMetrics {
   summary: {
@@ -786,6 +811,62 @@ export const parseCampaignOptimizationResponse = (
 const futureIso = (minutes: number) =>
   new Date(Date.now() + minutes * 60_000).toISOString();
 
+export const ensureCampaignStartLeadTime = (
+  startDate: string,
+  now = Date.now(),
+  leadMinutes = 30,
+) => {
+  const earliestStart = now + leadMinutes * 60_000;
+  const parsedStart = new Date(startDate).getTime();
+
+  return Number.isNaN(parsedStart) || parsedStart < earliestStart
+    ? new Date(earliestStart).toISOString()
+    : startDate;
+};
+
+export const ensureCampaignScheduleLeadTime = (
+  budget: AudienceStrategy["budget"],
+  now = Date.now(),
+  leadMinutes = 30,
+): AudienceStrategy["budget"] => {
+  const startDate = ensureCampaignStartLeadTime(
+    budget.startDate,
+    now,
+    leadMinutes,
+  );
+  if (startDate === budget.startDate) return budget;
+
+  const previousStart = new Date(budget.startDate).getTime();
+  const nextStart = new Date(startDate).getTime();
+  const previousEnd = budget.endDate
+    ? new Date(budget.endDate).getTime()
+    : Number.NaN;
+  const duration = previousEnd - previousStart;
+
+  return {
+    ...budget,
+    startDate,
+    endDate:
+      Number.isFinite(duration) && duration > 0
+        ? new Date(nextStart + duration).toISOString()
+        : budget.endDate,
+  };
+};
+
+export const ensureCampaignPayloadScheduleLeadTime = <
+  T extends CampaignReviewPayload,
+>(payload: T, now = Date.now()): T => {
+  let changed = false;
+  const audienceStrategies = payload.audienceStrategies.map((strategy) => {
+    const budget = ensureCampaignScheduleLeadTime(strategy.budget, now);
+    if (budget === strategy.budget) return strategy;
+    changed = true;
+    return { ...strategy, budget };
+  });
+
+  return changed ? { ...payload, audienceStrategies } : payload;
+};
+
 export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
   creationMode: "manual",
   campaign: {
@@ -1171,17 +1252,23 @@ export const requestCampaignCreativeSuggestion = async (
   input: {
     platform: CampaignPlatform;
     field: "headline" | "caption";
-    currentValue: string;
-    headline?: string;
-    caption?: string;
+    currentValue: string | null;
+    headline?: string | null;
+    caption?: string | null;
   },
 ): Promise<CampaignCreativeSuggestion> => {
+  const requestBody = {
+    ...input,
+    currentValue: input.currentValue ?? "",
+    headline: input.headline ?? undefined,
+    caption: input.caption ?? undefined,
+  };
   const res = await apiFetch(
     `/ai/campaigns/${encodeURIComponent(campaignId)}/creative-suggestions`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+      body: JSON.stringify(requestBody),
     },
   );
   const data = await readJson(res);
@@ -1196,7 +1283,12 @@ export const requestCampaignCreativeSuggestion = async (
     throw new Error("The AI creative service returned a suggestion for the wrong field.");
   }
   const value = requiredString(data.value, "creative suggestion");
-  const limit = field === "headline" ? 255 : 2_200;
+  const limit =
+    field === "headline"
+      ? input.platform === "tiktok"
+        ? 512
+        : 255
+      : 2_200;
   if (value.length > limit) {
     throw new Error(`The AI creative service returned ${field} text over ${limit} characters.`);
   }
@@ -1416,15 +1508,19 @@ export const normalizeCampaignPayloadForWrite = (
         languages: [...new Set((strategy.audience.languages ?? []).map((item) => item.trim()))].filter(Boolean),
       },
       budget: { ...strategy.budget, endDate: strategy.budget.endDate || undefined },
-      ads: strategy.ads.map((ad) => ({
-        ...ad,
-        primaryText: ad.primaryText.trim(),
-        headline: ad.headline?.trim() || undefined,
-        mediaUrl: ad.mediaUrl.trim(),
-        landingPageUrl: ad.landingPageUrl?.trim() || undefined,
-        appId: ad.appId?.trim() || undefined,
-        leadFormId: ad.leadFormId?.trim() || undefined,
-      })),
+      ads: strategy.ads.map((ad) => {
+        const normalized: CampaignCreativeInput = {
+          ...ad,
+          primaryText: ad.primaryText.trim(),
+          headline: ad.headline?.trim() || undefined,
+          mediaUrl: ad.mediaUrl.trim(),
+          landingPageUrl: ad.landingPageUrl?.trim() || undefined,
+          appId: ad.appId?.trim() || undefined,
+          leadFormId: ad.leadFormId?.trim() || undefined,
+        };
+        delete normalized.thumbnailUrl;
+        return normalized;
+      }),
     })),
   };
 };
@@ -1531,6 +1627,74 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
   throw new Error("Fetch campaign metrics returned an invalid response shape");
 };
 
+export const fetchCampaignMetricsById = async (
+  campaignId: string,
+): Promise<CampaignPlatformMetric[]> => {
+  const res = await apiFetch(
+    `/campaigns/metrics/${encodeURIComponent(campaignId)}`,
+    { method: "GET" },
+  );
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getApiError(data, `Fetch campaign metrics failed (${res.status})`),
+    );
+  }
+
+  const rows = Array.isArray(data) ? data : data?.data;
+  if (!Array.isArray(rows)) {
+    throw new Error("Fetch campaign metrics returned an invalid response shape");
+  }
+
+  if (
+    !rows.every(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        (row.platform === "meta" || row.platform === "tiktok") &&
+        [
+          "spend",
+          "impressions",
+          "clicks",
+          "conversions",
+          "reach",
+          "ctr",
+          "cpc",
+          "cpa",
+        ].every((key) => typeof row[key] === "number"),
+    )
+  ) {
+    throw new Error("Fetch campaign metrics returned an invalid response shape");
+  }
+
+  return rows as CampaignPlatformMetric[];
+};
+
+export const summariseCampaignMetrics = (
+  rows: CampaignPlatformMetric[],
+): CampaignMetricsSummary => {
+  const totals = rows.reduce(
+    (carry, row) => ({
+      spend: carry.spend + row.spend,
+      impressions: carry.impressions + row.impressions,
+      clicks: carry.clicks + row.clicks,
+      conversions: carry.conversions + row.conversions,
+      reach: carry.reach + row.reach,
+    }),
+    { spend: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 },
+  );
+
+  return {
+    ...totals,
+    ctr:
+      totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0,
+    cpc: totals.clicks > 0 ? totals.spend / totals.clicks : 0,
+    cpa: totals.conversions > 0 ? totals.spend / totals.conversions : 0,
+    byPlatform: rows,
+  };
+};
+
 export const updateCampaign = async (
   id: string,
   payload: CreateCampaignPayload,
@@ -1618,7 +1782,7 @@ export const campaignDtoToPayload = (
     ads: (campaign.creatives ?? []).filter((ad) => ad.audienceStrategyId === strategy.id).map((ad) => ({
       platform: ad.platform,
       primaryText: ad.primaryText,
-      headline: ad.headline,
+      headline: ad.headline ?? undefined,
       cta: ad.cta,
       mediaUrl: ad.mediaUrl,
       landingPageUrl: ad.landingPageUrl,

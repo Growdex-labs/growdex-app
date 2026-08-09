@@ -9,6 +9,7 @@ import {
   Megaphone,
   Wallet,
   Images,
+  Plug,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -53,19 +54,25 @@ export function CollapsibleSidebar({
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/panel" },
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
-    { icon: Wallet, label: "Funding", href: "/panel/wallet" },
     { icon: Images, label: "Assets", href: "/panel/assets" },
-    { icon: Settings, label: "Settings", href: "/panel/settings/manage-account" },
+    { icon: Plug, label: "Integrations", href: "/panel/integrations" },
+    { icon: Wallet, label: "Billing", href: "/panel/billing" },
+    {
+      icon: Settings,
+      label: "Settings",
+      href: "/panel/settings/profile",
+      section: "/panel/settings",
+    },
     ...(me?.isAdmin
       ? [{ icon: ShieldCheck, label: "Admin", href: "/panel/admin" }]
       : []),
   ];
 
-  const isActive = (href: string) => {
-    if (href === "/panel") {
+  const isActive = (item: { href: string; section?: string }) => {
+    if (item.href === "/panel") {
       return pathname === "/panel";
     }
-    return pathname?.startsWith(href);
+    return pathname?.startsWith(item.section ?? item.href);
   };
 
   return (
@@ -94,7 +101,7 @@ export function CollapsibleSidebar({
               />
             </div>
             {!isCollapsed && (
-              <span className="font-semibold text-xl">Growdex</span>
+              <span className="font-gilroy-semibold text-xl">Growdex</span>
             )}
           </div>
 
@@ -107,7 +114,7 @@ export function CollapsibleSidebar({
           >
             <Bell className="size-6 text-khaki-300" />
             {unreadCount > 0 && (
-              <div className="absolute -right-3 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-khaki-300 text-xs font-bold text-gray-900">
+              <div className="absolute -right-3 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-khaki-300 text-xs font-gilroy-bold text-gray-900">
                 {unreadCount}
               </div>
             )}
@@ -127,7 +134,7 @@ export function CollapsibleSidebar({
         <div className="space-y-1 border-t border-dimGray pt-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.href);
+            const active = isActive(item);
 
             return (
               <Link
@@ -142,7 +149,7 @@ export function CollapsibleSidebar({
               >
                 <Icon className="w-5 h-5 shrink-0" />
                 {!isCollapsed && (
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-gilroy-medium">{item.label}</span>
                 )}
               </Link>
             );
@@ -158,11 +165,11 @@ export function CollapsibleSidebar({
           className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : ""}`}
         >
           <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-white font-semibold text-sm">{initials}</span>
+            <span className="text-white font-gilroy-semibold text-sm">{initials}</span>
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm text-white truncate">
+              <div className="font-gilroy-medium text-sm text-white truncate">
                 {isLoading ? "Loading…" : userName}
               </div>
               <div className="text-xs text-gray-400 truncate">{userEmail}</div>

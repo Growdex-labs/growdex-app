@@ -6,7 +6,7 @@ import {
   Sparkles as SparklesIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CreativeDraft, isVideoUrl } from "@/lib/campaign-shared";
+import { CreativeDraft, isVideoMedia } from "@/lib/campaign-shared";
 
 interface CreativeSectionProps {
   progressTab: number;
@@ -44,7 +44,7 @@ export const CreativeSection = ({
           <div className="w-full">
             <label
               htmlFor="platform"
-              className="block text-sm font-medium text-gray-800 font-gilroy-bold"
+              className="block text-sm text-gray-800 font-gilroy-bold"
             >
               Setup Creative
             </label>
@@ -55,7 +55,7 @@ export const CreativeSection = ({
                 <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
                   <SparklesIcon className="w-6 h-6 text-gray-400" />
                 </div>
-                <p className="text-gray-600 font-medium">
+                <p className="text-gray-600 font-gilroy-medium">
                   No platforms selected
                 </p>
                 <p className="text-sm text-gray-500 mt-1 max-w-xs">
@@ -80,7 +80,7 @@ export const CreativeSection = ({
                         className="h-11"
                       />
                       <div>
-                        <p className="font-medium">
+                        <p className="font-gilroy-medium">
                           {creativesByPlatform.meta?.headline ||
                             creativesByPlatform.meta?.heading ||
                             "Header"}
@@ -96,7 +96,10 @@ export const CreativeSection = ({
                   </div>
 
                   {creativesByPlatform.meta?.mediaUrl ? (
-                    isVideoUrl(creativesByPlatform.meta.mediaUrl) ? (
+                    isVideoMedia({
+                      url: creativesByPlatform.meta.mediaUrl,
+                      platform: "meta",
+                    }) ? (
                       <video
                         src={creativesByPlatform.meta.mediaUrl}
                         className="w-full h-44 object-cover rounded-lg bg-white"
@@ -146,7 +149,7 @@ export const CreativeSection = ({
                         className="h-11"
                       />
                       <div>
-                        <p className="font-medium">
+                        <p className="font-gilroy-medium">
                           {creativesByPlatform.tiktok?.headline ||
                             creativesByPlatform.tiktok?.heading ||
                             "Header"}
@@ -162,7 +165,10 @@ export const CreativeSection = ({
                   </div>
 
                   {creativesByPlatform.tiktok?.mediaUrl ? (
-                    isVideoUrl(creativesByPlatform.tiktok.mediaUrl) ? (
+                    isVideoMedia({
+                      url: creativesByPlatform.tiktok.mediaUrl,
+                      platform: "tiktok",
+                    }) ? (
                       <video
                         src={creativesByPlatform.tiktok.mediaUrl}
                         className="w-full h-44 object-cover rounded-lg bg-white"

@@ -41,7 +41,7 @@ export function CampaignStepper({
             <span
               className={`transition-colors ${compact ? "flex min-h-8 items-center justify-center whitespace-normal text-center text-xs leading-4" : "whitespace-nowrap text-[10px] 2xl:text-xs"} ${
                 isActive
-                  ? "font-semibold text-gray-900"
+                  ? "font-gilroy-semibold text-gray-900"
                   : isDone
                     ? "text-gray-600"
                     : "text-gray-300"

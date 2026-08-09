@@ -1,112 +1,108 @@
 "use client";
 
+import type { ComponentType } from "react";
+import { BookOpen, Lightbulb, MessageCircle } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
-import { DashboardHeader } from "../../components/dashboard-header";
+
+interface SupportOption {
+  id: string;
+  title: string;
+  description: string;
+  Icon: ComponentType<{ className?: string }>;
+  actionLabel: string;
+  href: string;
+  external: boolean;
+}
+
+const SUPPORT_OPTIONS: SupportOption[] = [
+  {
+    id: "help-center",
+    title: "Help Center",
+    description:
+      "Explore FAQs, campaign setup guides, and troubleshooting resources.",
+    Icon: BookOpen,
+    actionLabel: "Visit Help Center",
+    href: "https://growdex.ai/help-center",
+    external: true,
+  },
+  {
+    id: "chat-support",
+    title: "Chat & Ticket Support",
+    description:
+      "Get personalised support or send a ticket straight to our team.",
+    Icon: MessageCircle,
+    actionLabel: "Contact Support",
+    href: "mailto:support@growdex.ai?subject=Growdex%20support%20request",
+    external: false,
+  },
+  {
+    id: "feedback",
+    title: "Feedback",
+    description: "Share ideas or report issues to help us improve Growdex.",
+    Icon: Lightbulb,
+    actionLabel: "Give Feedback",
+    href: "mailto:feedback@growdex.ai?subject=Growdex%20product%20feedback",
+    external: false,
+  },
+];
 
 export default function SupportAndHelpSettingsPage() {
-  const supportOptions = [
-    {
-      id: "help-center",
-      title: "Help Center",
-      description:
-        "Explore FAQs, campaign setup guides, and troubleshooting resources.",
-      emoji: "🔒",
-      buttonText: "Visit Help Center",
-      buttonHref: "https://growdex.ai/help-center",
-    },
-    {
-      id: "chat-support",
-      title: "Chat & Ticket Support",
-      description:
-        "Get personalized support or submit a tickets directly to our team.",
-      emoji: "🔒",
-      buttonText: "Contact Support",
-      buttonHref: "mailto:support@growdex.ai?subject=Growdex%20support%20request",
-    },
-    {
-      id: "feedback",
-      title: "Feedback",
-      description: "Share ideas or report issues to help us improve Growdex.",
-      emoji: "🔒",
-      buttonText: "Give Feedback",
-      buttonHref: "mailto:feedback@growdex.ai?subject=Growdex%20product%20feedback",
-    },
-  ];
-
   return (
     <PanelLayout>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
-        {/* Secondary Sidebar - Desktop Only */}
+      <div className="flex h-full overflow-hidden bg-gray-50">
         <div className="hidden md:block">
           <SettingsSidebar />
         </div>
 
-        {/* Main Content */}
         <div className="flex-1 overflow-auto">
-          {/* Mobile Header */}
           <SettingsHeader />
 
           <div className="p-4 md:p-6">
-            {/* Support & Help Content */}
-
-            {/* Yellow Header Section */}
-            <div className="bg-khaki-200 rounded-lg px-4 mb-6 md:px-6 py-3">
-              <h1 className="text-2xl md:text-2xl text-center font-bold text-slate-700">
-                Support & Help
+            <header className="mb-6">
+              <h1 className="text-2xl font-gilroy-bold text-gray-950">
+                Support &amp; Help
               </h1>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm">
-              {/* Support Options Grid */}
-              <div className="p-4 md:p-6">
-                <div className="my-6 flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex items-center w-full p-1 rounded-lg bg-khaki-200/40">
-                    <button className="w-full h-full rounded-lg p-1 justify-center  flex gap-2 items-center">
-                      <span className="text-sm">Platform</span>
-                    </button>
-                    <button className="w-full h-full rounded-lg p-1 justify-center flex gap-2 items-center">
-                      <span className="text-sm">Status</span>
-                    </button>
-                    <button className="w-full h-full rounded-lg p-1 justify-center flex gap-2 items-center">
-                      <span className="text-sm">Action</span>
-                    </button>
-                  </div>
-                </div>
+              <p className="mt-1 text-sm leading-6 text-gray-500">
+                Find an answer yourself, or reach the Growdex team directly.
+              </p>
+            </header>
 
-                <div className="space-y-4 md:space-y-6">
-                  {supportOptions.map((option) => {
-                    return (
-                      <div
-                        key={option.id}
-                        className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-4 md:p-6 bg-yellow-50 border-2 border-yellow-200 rounded-xl hover:border-yellow-400"
-                      >
-                        <div className="flex items-start gap-4 flex-1">
-                          <div className="flex-shrink-0 text-3xl md:text-4xl">
-                            {option.emoji}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-1">
-                              {option.title}
-                            </h3>
-                            <p className="text-sm md:text-base text-gray-600">
-                              {option.description}
-                            </p>
-                          </div>
-                        </div>
-
-                        <a
-                          href={option.buttonHref}
-                          className="flex-shrink-0 inline-block px-4 md:px-6 py-2 md:py-2.5 bg-yellow-300 hover:bg-yellow-400 text-gray-900 font-semibold rounded-lg transition-colors text-sm md:text-base"
-                        >
-                          {option.buttonText}
-                        </a>
+            <ul className="space-y-3">
+              {SUPPORT_OPTIONS.map(
+                ({ id, title, description, Icon, actionLabel, href, external }) => (
+                  <li
+                    key={id}
+                    className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between lg:p-6"
+                  >
+                    <div className="flex min-w-0 items-start gap-4">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-50">
+                        <Icon className="size-5 text-gray-500" />
+                      </span>
+                      <div className="min-w-0">
+                        <h2 className="font-gilroy-semibold text-gray-950">
+                          {title}
+                        </h2>
+                        <p className="mt-1 text-sm leading-6 text-gray-500">
+                          {description}
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+                    </div>
+
+                    <a
+                      href={href}
+                      {...(external
+                        ? { target: "_blank", rel: "noreferrer noopener" }
+                        : {})}
+                      className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-center text-sm font-gilroy-semibold text-gray-800 transition-colors hover:bg-gray-50"
+                    >
+                      {actionLabel}
+                    </a>
+                  </li>
+                ),
+              )}
+            </ul>
           </div>
         </div>
       </div>

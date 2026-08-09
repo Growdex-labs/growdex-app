@@ -48,7 +48,7 @@ export const PlatformSection = ({
           <div className="w-full">
             <label
               htmlFor="platform"
-              className="block text-sm font-medium text-gray-800 font-gilroy-bold"
+              className="block text-sm text-gray-800 font-gilroy-bold"
             >
               Choose platform
             </label>
@@ -84,7 +84,7 @@ export const PlatformSection = ({
 
                 {/* Facebook Account */}
                 <div className="mb-3 border-r pr-2 mt-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <div className="flex items-center gap-2 text-sm font-gilroy-medium text-gray-700">
                     <div className="p-1 bg-gray-600 rounded-full">
                       <Facebook className="w-4 h-4 text-white" />
                     </div>
@@ -92,7 +92,7 @@ export const PlatformSection = ({
                   </div>
                   <div className="flex items-center gap-2 mt-2">
                     <PluggedIcon fill="#0A883F" />
-                    <span className="text-xs text-green-600 font-medium">
+                    <span className="text-xs text-green-600 font-gilroy-medium">
                       Connected
                     </span>
                   </div>
@@ -100,14 +100,14 @@ export const PlatformSection = ({
 
                 {/* Instagram Account */}
                 <div className="mt-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <div className="flex items-center gap-2 text-sm font-gilroy-medium text-gray-700">
                     <InstagramIcon className="w-4 h-4 text-gray-500" />
                     <span>{instagramAccountName}</span>
                   </div>
                   <div className="flex items-center gap-2 mt-2">
                     <button
                       type="button"
-                      className="text-xs text-red-500 font-medium hover:underline flex items-center gap-1"
+                      className="text-xs text-red-500 font-gilroy-medium hover:underline flex items-center gap-1"
                     >
                       <PluggedOutIcon />
                       Connect
@@ -140,12 +140,12 @@ export const PlatformSection = ({
 
                   {/* TikTok Account */}
                   <div className="flex flex-col gap-2 items-start">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-gilroy-medium text-gray-700">
                       <span>{brandName}</span>
                     </p>
                     <div className="flex items-center gap-2">
                       <PluggedIcon fill="#0A883F" />
-                      <span className="text-xs text-green-600 font-medium">
+                      <span className="text-xs text-green-600 font-gilroy-medium">
                         Connected
                       </span>
                     </div>

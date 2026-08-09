@@ -44,14 +44,14 @@ export const validateFile = (file: File): { ok: boolean; error?: string } => {
   }
 
   const maxImage = 10 * 1024 * 1024; // 10MB
-  const maxVideo = 10 * 1024 * 1024; // 10MB
+  const maxVideo = 100 * 1024 * 1024; // 100MB
 
   if (isImage && file.size > maxImage) {
     return { ok: false, error: "Image is too large. Max 10 MB." };
   }
 
   if (isVideo && file.size > maxVideo) {
-    return { ok: false, error: "Video is too large. Max 10 MB." };
+    return { ok: false, error: "Video is too large. Max 100 MB." };
   }
 
   return { ok: true };
@@ -71,6 +71,19 @@ export const isVideoUrl = (url: string) => {
   return /\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(u);
 };
 
+export const isVideoMedia = ({
+  url,
+  platform,
+  mediaType,
+}: {
+  url: string;
+  platform?: "meta" | "tiktok";
+  mediaType?: string;
+}) =>
+  platform === "tiktok" ||
+  mediaType?.toLowerCase() === "video" ||
+  isVideoUrl(url);
+
 export const startOfUtcDayIso = (d: Date) =>
   new Date(
     Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
@@ -82,5 +95,3 @@ export const addDaysDateInputValue = (dateValue: string, days: number) => {
   base.setDate(base.getDate() + days);
   return toDateInputValue(base);
 };
-
-export default {};

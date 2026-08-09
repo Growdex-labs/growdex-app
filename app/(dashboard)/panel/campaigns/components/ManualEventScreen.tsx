@@ -92,7 +92,7 @@ export function ManualEventScreen({
   if (!required) {
     return (
       <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-        <p className="text-sm font-medium text-green-900">
+        <p className="text-sm font-gilroy-medium text-green-900">
           No additional tracking needed
         </p>
         <p className="mt-1 text-xs text-green-700">
@@ -105,7 +105,7 @@ export function ManualEventScreen({
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-900">
+      <h3 className="text-sm font-gilroy-semibold text-gray-900">
         Select conversion event sources
       </h3>
       <p className="mt-1 text-xs text-gray-500">
@@ -156,7 +156,7 @@ export function ManualEventScreen({
                   {selected && <Check className="h-3 w-3" />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-gray-900">
+                  <span className="block truncate text-sm font-gilroy-medium text-gray-900">
                     {source.name}
                   </span>
                   <span className="block text-[11px] uppercase text-gray-400">

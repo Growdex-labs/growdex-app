@@ -13,19 +13,19 @@ export function TopHeader() {
       : (me?.email ?? "Account");
 
   return (
-    <header className="bg-white text-gray-900 px-6 py-4  flex items-center justify-between h-16 shadow-md sm:hidden">
+    <header className="bg-white text-gray-900 px-6 py-4  flex items-center justify-between h-16 shadow-md md:hidden">
       {/* Left: Logo */}
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 shrink-0">
           <Image src="/logo2.png" alt="Growdex logo" width={32} height={32} className="size-8" />
         </div>
-        <span className="font-semibold text-lg">Growdex</span>
+        <span className="font-gilroy-semibold text-lg">Growdex</span>
       </div>
       {/* Right: User Menu */}
       <div className="flex items-center gap-4">
         {/* User Info */}
         <div className="flex flex-col items-end">
-          <p className="text-xs font-medium">
+          <p className="text-xs font-gilroy-medium">
             {isLoading ? "Loading…" : userName}
           </p>
           <button

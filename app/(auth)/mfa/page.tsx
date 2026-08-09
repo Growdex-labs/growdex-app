@@ -136,7 +136,7 @@ function MfaPageContent() {
 
         <div className="mb-12 flex items-start justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl md:text-4xl font-gilroy-bold text-gray-900 mb-2">
               Secure your Growdex account
             </h1>
             <p className="text-gray-600">
@@ -159,11 +159,11 @@ function MfaPageContent() {
             <>
               <div className="relative">
                 <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-gilroy-bold shrink-0">
                     1
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold mb-1 border-b  inline-block border-blue-500 text-slate-600">
+                    <h3 className="text-lg font-gilroy-semibold mb-1 border-b  inline-block border-blue-500 text-slate-600">
                       Install a compatible application
                     </h3>
                     <p className="text-sm text-gray-600 mb-4">
@@ -208,12 +208,12 @@ function MfaPageContent() {
               {/* Step 2 - Only show during Setup */}
               <div className="relative">
                 <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-gilroy-bold shrink-0">
                     2
                   </div>
                   <div className="flex flex-col md:flex-row md:items-start justify-between w-full border-b border-gray-200 pb-8">
                     <div className="max-w-md">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1 border-b pb-1 inline-block border-transparent">
+                      <h3 className="text-lg font-gilroy-semibold text-gray-900 mb-1 border-b pb-1 inline-block border-transparent">
                         Open your authenticator app
                       </h3>
                       <p className="text-sm text-gray-600 mt-2">
@@ -246,11 +246,11 @@ function MfaPageContent() {
               {/* Step 3 */}
               <div className="relative">
                 <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-gilroy-bold shrink-0">
                     3
                   </div>
                   <div className="w-full">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1 border-b pb-1 inline-block border-transparent">
+                    <h3 className="text-lg font-gilroy-semibold text-gray-900 mb-1 border-b pb-1 inline-block border-transparent">
                       Enter a MFA code from your app
                     </h3>
                     <p className="text-sm text-gray-600 mt-2 mb-6">
@@ -276,7 +276,7 @@ function MfaPageContent() {
                           onKeyDown={(e) => handleKeyDown(index, e)}
                           aria-label={`Digit ${index + 1}`}
                           aria-describedby={error ? "otp-error" : undefined}
-                          className="w-12 h-14 md:w-14 md:h-16 border border-gray-200 rounded-lg text-center text-xl font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors"
+                          className="w-12 h-14 md:w-14 md:h-16 border border-gray-200 rounded-lg text-center text-xl font-gilroy-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors"
                         />
                       ))}
                     </div>
@@ -285,7 +285,7 @@ function MfaPageContent() {
                       <button
                         onClick={handleSubmit}
                         disabled={loading || otp.join("").length < 6}
-                        className="px-8 py-3 bg-khaki-200 text-gray-900 font-semibold rounded-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-8 py-3 bg-khaki-200 text-gray-900 font-gilroy-semibold rounded-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {loading ? "Submitting..." : "Submit code"}
                       </button>
@@ -304,9 +304,9 @@ function MfaPageContent() {
           ) : (
             // MFA Challenge View
             <div className="max-w-md">
-              <div className="flex items-center gap-2 mb-6 text-sm font-semibold text-gray-800">
+              <div className="flex items-center gap-2 mb-6 text-sm font-gilroy-semibold text-gray-800">
                 You can setup your authentication with{" "}
-                <span className="font-bold text-base text-gray-900">
+                <span className="font-gilroy-bold text-base text-gray-900">
                   <svg viewBox="0 0 48 48" className="w-4 h-4">
                     <path
                       fill="#FFC107"
@@ -352,7 +352,7 @@ function MfaPageContent() {
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     aria-label={`Digit ${index + 1}`}
                     aria-describedby={error ? "otp-error" : undefined}
-                    className="w-12 h-14 md:w-14 md:h-16 border border-gray-200 rounded-lg text-center text-xl font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors"
+                    className="w-12 h-14 md:w-14 md:h-16 border border-gray-200 rounded-lg text-center text-xl font-gilroy-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors"
                   />
                 ))}
               </div>
@@ -361,7 +361,7 @@ function MfaPageContent() {
                 <button
                   onClick={handleSubmit}
                   disabled={loading || otp.join("").length < 6}
-                  className="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm font-gilroy-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Confirming..." : "Confirm 2FA"}
                 </button>
@@ -383,7 +383,7 @@ export default function MfaPage() {
           <div className="w-8 h-8">
             <img src="/logo.png" alt="Growdex logo" />
           </div>
-          <span className="font-semibold text-lg">Growdex</span>
+          <span className="font-gilroy-semibold text-lg">Growdex</span>
         </div>
       </aside>
 

@@ -15,6 +15,7 @@ const emptyFromAsset = (
   headline: source?.headline ?? asset.name,
   cta: source?.cta ?? "LEARN_MORE",
   mediaUrl: asset.url,
+  thumbnailUrl: asset.thumbnailUrl,
   landingPageUrl: source?.landingPageUrl,
   appId: source?.appId,
   leadFormId: source?.leadFormId,

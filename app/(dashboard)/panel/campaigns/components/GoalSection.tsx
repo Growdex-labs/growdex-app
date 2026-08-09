@@ -38,7 +38,7 @@ export const GoalSection = ({
           <div>
             <label
               htmlFor="campaignGoal"
-              className="block text-sm font-medium text-gray-500"
+              className="block text-sm font-gilroy-medium text-gray-500"
             >
               Set Campaign goal
             </label>

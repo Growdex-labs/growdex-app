@@ -100,7 +100,7 @@ export function AiSidePanel({
         {/* Question with gradient-checkbox options (only while the AI waits) */}
         {question && options.length > 0 && (
           <div className="pt-1">
-            <p className="mb-3 text-sm font-medium text-violet-500 xl:text-base">
+            <p className="mb-3 text-sm font-gilroy-medium text-violet-500 xl:text-base">
               {question}
             </p>
             <div className="space-y-2">
@@ -156,7 +156,7 @@ export function AiSidePanel({
                   ? { background: PURPLE_GRADIENT }
                   : undefined
               }
-              className={`mt-3 w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-opacity ${
+              className={`mt-3 w-full rounded-lg px-3 py-2.5 text-sm font-gilroy-medium transition-opacity ${
                 selectedList.length > 0
                   ? "text-white hover:opacity-90"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"

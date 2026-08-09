@@ -57,7 +57,7 @@ function CreativePreview({
     <aside className="self-start overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white shadow-sm xl:sticky xl:top-6">
       <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
         <div>
-          <p className="text-xs font-gilroy-semibold uppercase tracking-[0.12em] text-gray-400">
+          <p className="text-xs font-gilroy-semibold uppercase tracking-[0.12em] text-dimGray">
             Live preview
           </p>
           <p className="mt-0.5 text-sm font-gilroy-semibold text-gray-900">
@@ -102,15 +102,29 @@ export function CreativeAdEditor({
   const [headlineStateIndex, setHeadlineStateIndex] = useState<number | null>(
     null,
   );
+  const [generatingPrimaryText, setGeneratingPrimaryText] = useState(false);
+  const [primaryTextRationale, setPrimaryTextRationale] = useState<string | null>(
+    null,
+  );
+  const [primaryTextError, setPrimaryTextError] = useState<string | null>(null);
+  const [primaryTextStateIndex, setPrimaryTextStateIndex] = useState<number | null>(
+    null,
+  );
   const headlineRequestRef = useRef(0);
+  const primaryTextRequestRef = useRef(0);
   const creative = creatives[activeIndex];
 
   useEffect(() => {
     headlineRequestRef.current += 1;
+    primaryTextRequestRef.current += 1;
     setGeneratingHeadline(false);
     setHeadlineRationale(null);
     setHeadlineError(null);
     setHeadlineStateIndex(null);
+    setGeneratingPrimaryText(false);
+    setPrimaryTextRationale(null);
+    setPrimaryTextError(null);
+    setPrimaryTextStateIndex(null);
   }, [activeIndex]);
 
   if (!creative) {
@@ -125,9 +139,60 @@ export function CreativeAdEditor({
   }
 
   const platform = creative.platform;
+  const headlineLimit = platform === "meta" ? 255 : 512;
+  const headlineLabel = platform === "meta" ? "Headline" : "Ad name";
   const requiresVideo = platform === "tiktok" || destination === "VIDEO";
   const samePlatformCount = creatives.filter((item) => item.platform === platform).length;
   const canRemove = samePlatformCount > 1;
+  const generatePrimaryText = async () => {
+    const requestIndex = activeIndex;
+    const requestId = primaryTextRequestRef.current + 1;
+    primaryTextRequestRef.current = requestId;
+    if (!campaignId) {
+      setPrimaryTextError("Save the campaign draft before generating primary text.");
+      setPrimaryTextStateIndex(requestIndex);
+      return;
+    }
+
+    setGeneratingPrimaryText(true);
+    setPrimaryTextError(null);
+    try {
+      const suggestion = await requestCampaignCreativeSuggestion(campaignId, {
+        platform,
+        field: "caption",
+        currentValue: creative.primaryText,
+        headline: creative.headline,
+        caption: creative.primaryText,
+      });
+      if (
+        primaryTextRequestRef.current !== requestId ||
+        requestIndex !== activeIndex
+      ) {
+        return;
+      }
+      onChange(requestIndex, { primaryText: suggestion.value });
+      setPrimaryTextStateIndex(requestIndex);
+      setPrimaryTextRationale(suggestion.rationale);
+    } catch (failure) {
+      if (
+        primaryTextRequestRef.current !== requestId ||
+        requestIndex !== activeIndex
+      ) {
+        return;
+      }
+      setPrimaryTextStateIndex(requestIndex);
+      setPrimaryTextError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not generate primary text.",
+      );
+    } finally {
+      if (primaryTextRequestRef.current === requestId) {
+        setGeneratingPrimaryText(false);
+      }
+    }
+  };
+
   const generateHeadline = async () => {
     const requestIndex = activeIndex;
     const requestId = headlineRequestRef.current + 1;
@@ -239,7 +304,22 @@ export function CreativeAdEditor({
         <fieldset className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
           <legend className="sr-only">{platformName(platform)} ad details</legend>
           <label className="block text-sm font-gilroy-semibold text-gray-700">
-            Primary text
+            <span className="flex items-center justify-between gap-3">
+              Primary text
+              <button
+                type="button"
+                onClick={() => void generatePrimaryText()}
+                disabled={generatingPrimaryText || !campaignId}
+                className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-gilroy-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {generatingPrimaryText ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3.5" />
+                )}
+                {generatingPrimaryText ? "Working…" : "Use AI"}
+              </button>
+            </span>
             <textarea
               className="mt-2 min-h-28 w-full rounded-xl border border-gray-200 bg-white p-3 font-gilroy-regular outline-none transition focus:border-khaki-300 focus:ring-2 focus:ring-khaki-200/30"
               maxLength={125}
@@ -250,12 +330,22 @@ export function CreativeAdEditor({
             <span className="mt-1 block text-right text-xs font-gilroy-regular text-gray-400">
               {creative.primaryText.length}/125
             </span>
+            {primaryTextStateIndex === activeIndex && primaryTextRationale && (
+              <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-violet-600">
+                Why this works: {primaryTextRationale}
+              </span>
+            )}
+            {primaryTextStateIndex === activeIndex && primaryTextError && (
+              <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-red-600">
+                {primaryTextError}
+              </span>
+            )}
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-gilroy-semibold text-gray-700">
               <span className="flex items-center justify-between gap-3">
-                Headline
+                {headlineLabel}
                 <button
                   type="button"
                   onClick={() => void generateHeadline()}
@@ -272,11 +362,14 @@ export function CreativeAdEditor({
               </span>
               <Input
                 className="mt-2 h-11 rounded-xl border-gray-200"
-                maxLength={40}
+                maxLength={headlineLimit}
                 value={creative.headline ?? ""}
                 onChange={(event) => onChange(activeIndex, { headline: event.target.value })}
-                placeholder="Add a clear headline"
+                placeholder={platform === "meta" ? "Add a clear headline" : "Name this ad"}
               />
+              <span className="mt-1 block text-right text-xs font-gilroy-regular text-gray-400">
+                {(creative.headline ?? "").length}/{headlineLimit}
+              </span>
               {headlineStateIndex === activeIndex && headlineRationale && (
                 <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-violet-600">
                   Why this works: {headlineRationale}

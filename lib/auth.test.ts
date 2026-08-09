@@ -71,15 +71,16 @@ describe("getAuthErrorMessage", () => {
 });
 
 describe("verificationEmailWasSent", () => {
-  it("reports an explicit delivery failure", () => {
-    expect(verificationEmailWasSent(false)).toBe(false);
-  });
-
   it("accepts a confirmed delivery", () => {
     expect(verificationEmailWasSent(true)).toBe(true);
   });
 
-  it("keeps successful older registration responses compatible", () => {
-    expect(verificationEmailWasSent(undefined)).toBe(true);
+  it.each([
+    ["an explicit delivery failure", false],
+    ["a missing confirmation", undefined],
+    ["a null confirmation", null],
+    ["a truthy non-boolean value", "true"],
+  ])("rejects %s", (_description, value) => {
+    expect(verificationEmailWasSent(value)).toBe(false);
   });
 });

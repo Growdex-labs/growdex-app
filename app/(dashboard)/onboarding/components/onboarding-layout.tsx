@@ -15,7 +15,7 @@ export function OnboardingLayout({ children }: { children: ReactNode }) {
         <header className="flex items-center justify-between py-5">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Growdex" className="h-8 w-8" />
-            <span className="text-lg font-semibold">Growdex</span>
+            <span className="text-lg font-gilroy-semibold">Growdex</span>
           </div>
           <button
             type="button"
@@ -43,10 +43,10 @@ export function OnboardingLayout({ children }: { children: ReactNode }) {
 export function StepHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-10 text-center">
-      <h1 className="text-3xl font-normal text-[#333] sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+      <h1 className="text-3xl font-gilroy-regular text-[#333] sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
         {title}
       </h1>
-      <p className="mt-3 text-base text-[#666] sm:text-lg">{subtitle}</p>
+      <p className="mt-3 text-base text-dimGray sm:text-lg">{subtitle}</p>
     </div>
   );
 }
@@ -68,7 +68,7 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="rounded-lg bg-khaki-200 px-7 py-2.5 text-sm font-medium text-[#333] transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
+      className="rounded-lg bg-khaki-200 px-7 py-2.5 text-sm font-gilroy-medium text-[#333] transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {children}
     </button>

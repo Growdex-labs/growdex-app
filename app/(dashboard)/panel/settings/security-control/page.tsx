@@ -4,6 +4,14 @@ import React, { useState } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
+import { SegmentedTabs } from "../../components/segmented-tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useMe } from "@/context/me-context";
 import { apiFetch, enableMFA, disableMFA, getMFAStatus } from "@/lib/auth";
 import { useRouter } from "next/navigation";
@@ -20,10 +28,18 @@ type ActiveSession = {
 
 const activeSessions: ActiveSession[] = [];
 
+type SecurityTab = "2fa" | "password" | "session";
+
+const SECURITY_TABS = [
+  { id: "2fa" as const, label: "2FA" },
+  { id: "password" as const, label: "Password Management" },
+  { id: "session" as const, label: "Active Session" },
+];
+
 export default function SecurityControlPage() {
   const { me } = useMe();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("2fa");
+  const [activeTab, setActiveTab] = useState<SecurityTab>("2fa");
   const [sessions, setSessions] = useState(activeSessions);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
@@ -350,7 +366,7 @@ export default function SecurityControlPage() {
 
   return (
     <PanelLayout>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-full overflow-hidden bg-gray-50">
         {/* Secondary Sidebar - Desktop Only */}
         <div className="hidden md:block">
           <SettingsSidebar />
@@ -364,44 +380,16 @@ export default function SecurityControlPage() {
           {/* Security Control Content */}
           <div className="p-4 md:p-6">
             {/* Security Control Tabs */}
-            <div className="my-6 flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center w-full p-1 rounded-lg bg-slate-200">
-                <button
-                  onClick={() => setActiveTab("2fa")}
-                  className={`w-full h-full rounded-lg p-1 justify-center flex gap-2 items-center transition-colors ${
-                    activeTab === "2fa"
-                      ? "bg-khaki-200 shadow-sm"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <span className="text-sm font-semibold">2FA</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab("password")}
-                  className={`w-full h-full rounded-lg p-1 justify-center flex gap-2 items-center transition-colors ${
-                    activeTab === "password"
-                      ? "bg-khaki-200 shadow-sm"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <span className="text-sm font-semibold">Password Management</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab("session")}
-                  className={`w-full h-full rounded-lg p-1 justify-center flex gap-2 items-center transition-colors ${
-                    activeTab === "session"
-                      ? "bg-khaki-200 shadow-sm"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <span className="text-sm font-semibold">Active Session</span>
-                </button>
-              </div>
-            </div>
+            <SegmentedTabs
+              className="my-6"
+              label="Security settings"
+              value={activeTab}
+              onChange={setActiveTab}
+              items={SECURITY_TABS}
+            />
 
             {/* Settings Content */}
             <div className="space-y-6">
-              {/* 2FA Tab Content */}
               {activeTab === "2fa" && (
                 <div className="space-y-6">
                   {/* Two-Factor Authentication Card */}
@@ -410,7 +398,7 @@ export default function SecurityControlPage() {
                       <div className="flex items-start gap-4">
                         <span className="text-3xl">🔐</span>
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">
+                          <h3 className="text-lg font-gilroy-bold text-gray-900">
                             Two-Factor Authentication (2FA)
                           </h3>
                           <p className="text-sm text-gray-600 mt-1">
@@ -420,20 +408,24 @@ export default function SecurityControlPage() {
                       </div>
                       <button
                         onClick={handleEdit2FA}
-                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-bold hover:bg-khaki-300 transition-colors whitespace-nowrap"
+                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors whitespace-nowrap"
                       >
                         Edit 2FA
                       </button>
                     </div>
                   </div>
+                </div>
+              )}
 
+              {activeTab === "password" && (
+                <div className="space-y-6">
                   {/* Password Management Card */}
                   <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
                         <span className="text-3xl">🔑</span>
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">
+                          <h3 className="text-lg font-gilroy-bold text-gray-900">
                             Password Management
                           </h3>
                           <p className="text-sm text-gray-600 mt-1">
@@ -444,24 +436,34 @@ export default function SecurityControlPage() {
                       </div>
                       <button 
                         onClick={() => setIsChangePasswordModalOpen(true)}
-                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-bold hover:bg-khaki-300 transition-colors whitespace-nowrap">
+                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors whitespace-nowrap">
                         Change Password
                       </button>
                     </div>
                   </div>
+                </div>
+              )}
 
+              {activeTab === "session" && (
+                <div className="space-y-6">
                   {/* Active Session Card */}
                   <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
                     <div className="flex items-center gap-4 mb-4">
                       <span className="text-3xl">💻</span>
-                      <h3 className="text-lg font-bold text-gray-900">
+                      <h3 className="text-lg font-gilroy-bold text-gray-900">
                         Active Session
                       </h3>
                     </div>
 
+                    {sessions.length === 0 ? (
+                      <p className="rounded-lg bg-slate-50 px-4 py-6 text-sm text-gray-600">
+                        Session history is not available yet. No device or
+                        location data is being shown for this account.
+                      </p>
+                    ) : (
                     <div className="overflow-x-auto">
                       <div className="min-w-full">
-                        <div className="bg-slate-100 rounded-t-lg px-4 py-3 grid grid-cols-4 gap-4 text-xs font-bold text-gray-600">
+                        <div className="bg-slate-100 rounded-t-lg px-4 py-3 grid grid-cols-4 gap-4 text-xs font-gilroy-bold text-gray-600">
                           <div>Device</div>
                           <div>Location</div>
                           <div>Last Active</div>
@@ -469,18 +471,12 @@ export default function SecurityControlPage() {
                         </div>
 
                         <div className="divide-y divide-gray-100 border-x border-b border-gray-100 rounded-b-lg">
-                          {sessions.length === 0 && (
-                            <p className="px-4 py-6 text-sm text-gray-600">
-                              Session history is not available yet. No device or
-                              location data is being shown for this account.
-                            </p>
-                          )}
                           {sessions.map((session) => (
                             <div
                               key={session.id}
                               className="px-4 py-3 hover:bg-gray-50 transition-colors grid grid-cols-4 gap-4 items-center text-xs md:text-sm"
                             >
-                              <div className="flex items-center gap-2 text-gray-700 font-medium">
+                              <div className="flex items-center gap-2 text-gray-700 font-gilroy-medium">
                                 {session.iconType === "safari" && (
                                   <SafariIcon />
                                 )}
@@ -501,7 +497,7 @@ export default function SecurityControlPage() {
                                   onClick={() =>
                                     handleTerminateClick(session.id)
                                   }
-                                  className="px-3 py-1 bg-red-50 text-red-700 hover:bg-red-100 rounded text-xs font-bold transition-colors"
+                                  className="px-3 py-1 bg-red-50 text-red-700 hover:bg-red-100 rounded text-xs font-gilroy-bold transition-colors"
                                 >
                                   Terminate
                                 </button>
@@ -511,70 +507,76 @@ export default function SecurityControlPage() {
                         </div>
                       </div>
                     </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Duplicate cards for other tabs as per original design but simplified */}
-              {activeTab !== "2fa" && (
-                <div className="flex flex-col items-center justify-center p-12 bg-white border border-gray-200 rounded-lg shadow-sm">
-                   <p className="text-gray-500 font-medium">Content for {activeTab} goes here.</p>
-                   <button onClick={() => setActiveTab("2fa")} className="mt-4 text-khaki-600 font-bold hover:underline">Back to 2FA</button>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Terminate Session Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
-            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+      <Dialog
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCancelTerminate();
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">
               Terminate Session
-            </h2>
-            <p className="text-gray-600 text-center text-sm mb-6">
-              Are you sure you want to terminate this session? You will be logged out from that device.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleCancelTerminate}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmTerminate}
-                className="flex-1 px-4 py-2 bg-[#8B2A0F] text-white rounded-lg text-sm font-bold hover:bg-[#681c08] transition-colors"
-              >
-                Terminate
-              </button>
-            </div>
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              Are you sure you want to terminate this session? You will be
+              logged out from that device.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3">
+            <button
+              onClick={handleCancelTerminate}
+              className="flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm font-gilroy-bold text-gray-900 transition-colors hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmTerminate}
+              className="flex-1 rounded-lg bg-firebrick-500 px-4 py-2 text-sm font-gilroy-bold text-white transition-colors hover:bg-firebrick-400"
+            >
+              Terminate
+            </button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Change Password Modal */}
-      {isChangePasswordModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
-            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-              Change Password
-            </h2>
-            <p className="text-gray-600 text-center text-xs font-medium mb-6">
-              Update password for enhanced account security
-            </p>
+      <Dialog
+        open={isChangePasswordModalOpen}
+        onOpenChange={(open) => {
+          if (!open && !isSubmittingPassword) handleClosePasswordModal();
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-center text-xl">
+                Change Password
+              </DialogTitle>
+              <DialogDescription className="text-center">
+                Update password for enhanced account security
+              </DialogDescription>
+            </DialogHeader>
 
             {passwordError && (
-              <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-xs font-bold text-center">
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-xs font-gilroy-bold text-center">
                 {passwordError}
               </div>
             )}
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                <label className="block text-sm font-gilroy-bold text-gray-700 mb-1.5">
                   Current Password
                 </label>
                 <input
@@ -586,7 +588,7 @@ export default function SecurityControlPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                <label className="block text-sm font-gilroy-bold text-gray-700 mb-1.5">
                   New Password
                 </label>
                 <input
@@ -598,7 +600,7 @@ export default function SecurityControlPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                <label className="block text-sm font-gilroy-bold text-gray-700 mb-1.5">
                   Confirm New Password
                 </label>
                 <input
@@ -615,26 +617,29 @@ export default function SecurityControlPage() {
               <button
                 onClick={handleClosePasswordModal}
                 disabled={isSubmittingPassword}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApplyPasswordChanges}
                 disabled={isSubmittingPassword}
-                className="flex-1 px-4 py-2 bg-[#8B2A0F] text-white rounded-lg text-sm font-bold hover:bg-[#681c08] transition-colors disabled:opacity-50"
+                className="flex-1 rounded-lg bg-firebrick-500 px-4 py-2 text-sm font-gilroy-bold text-white transition-colors hover:bg-firebrick-400 disabled:opacity-50"
               >
                 {isSubmittingPassword ? "Updating..." : "Apply Changes"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* 2FA Editing Modal */}
-      {is2FAModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
+      <Dialog
+        open={is2FAModalOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCancel2FA();
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
             {/* Initial 2FA Choice Screen */}
             {!showDisable2FAConfirm &&
               !showDisable2FASuccess &&
@@ -642,35 +647,37 @@ export default function SecurityControlPage() {
               !showEnableOTP &&
               !showEnableSuccess && (
                 <>
-                  <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-                    Two-Factor Authentication
-                  </h2>
-                  <p className="text-gray-600 text-center text-sm font-medium mb-6">
-                    Enhance your account security with 2FA
-                  </p>
+                  <DialogHeader>
+                    <DialogTitle className="text-center text-xl">
+                      Two-Factor Authentication
+                    </DialogTitle>
+                    <DialogDescription className="text-center">
+                      Enhance your account security with 2FA
+                    </DialogDescription>
+                  </DialogHeader>
                   <div className="space-y-3">
                     <button
                       onClick={handleDisable2FA}
-                      className="w-full px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+                      className="w-full px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-gray-200 transition-colors"
                     >
                       Disable 2FA
                     </button>
                     <button
                       onClick={handleSetup2FA}
                       disabled={isRedirectingToMFA}
-                      className="w-full px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-bold hover:bg-khaki-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isRedirectingToMFA ? "Redirecting..." : "Setup 2FA →"}
                     </button>
                   </div>
-                  <button onClick={handleCancel2FA} className="w-full mt-4 text-xs text-gray-400 font-bold hover:text-gray-600">Close</button>
+                  <button onClick={handleCancel2FA} className="w-full mt-4 text-xs text-gray-400 font-gilroy-bold hover:text-gray-600">Close</button>
                 </>
               )}
 
             {/* Other states (Simplified for brevity as they follow similar pattern) */}
             {showEnablePassword && (
                <div className="space-y-4">
-                  <h2 className="text-lg font-bold text-gray-900 text-center">Enter Password</h2>
+                  <DialogTitle className="text-center text-lg">Enter Password</DialogTitle>
                   <input
                     type="password"
                     placeholder="••••••••"
@@ -679,16 +686,16 @@ export default function SecurityControlPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-khaki-400"
                   />
                   <div className="flex gap-2">
-                    <button onClick={handleCancel2FA} className="flex-1 p-2 bg-gray-100 rounded-lg font-bold">Cancel</button>
-                    <button onClick={handleContinueEnablePassword} className="flex-1 p-2 bg-khaki-200 rounded-lg font-bold">Continue</button>
+                    <button onClick={handleCancel2FA} className="flex-1 p-2 bg-gray-100 rounded-lg font-gilroy-bold">Cancel</button>
+                    <button onClick={handleContinueEnablePassword} className="flex-1 p-2 bg-khaki-200 rounded-lg font-gilroy-bold">Continue</button>
                   </div>
                </div>
             )}
 
             {showEnableOTP && (
                <div className="space-y-4">
-                  <h2 className="text-lg font-bold text-gray-900 text-center">Enter Code</h2>
-                  <p className="text-xs text-gray-500 text-center">Enter the security code sent to your device.</p>
+                  <DialogTitle className="text-center text-lg">Enter Code</DialogTitle>
+                  <DialogDescription className="text-center text-xs">Enter the security code sent to your device.</DialogDescription>
                   <div className="flex justify-center gap-2">
                     {enableOTP.map((digit, index) => (
                       <input
@@ -698,30 +705,30 @@ export default function SecurityControlPage() {
                         maxLength={1}
                         value={digit}
                         onChange={(e) => handleEnableOTPChange(index, e.target.value)}
-                        className="w-10 h-10 border border-gray-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-khaki-400"
+                        className="w-10 h-10 border border-gray-300 rounded-lg text-center font-gilroy-bold focus:ring-2 focus:ring-khaki-400"
                       />
                     ))}
                   </div>
-                  <button onClick={handleVerifyEnableOTP} className="w-full p-2 bg-khaki-200 rounded-lg font-bold">Verify</button>
+                  <button onClick={handleVerifyEnableOTP} className="w-full p-2 bg-khaki-200 rounded-lg font-gilroy-bold">Verify</button>
                </div>
             )}
 
             {showEnableSuccess && (
                <div className="text-center space-y-4">
                   <div className="mx-auto w-12 h-12 bg-green-100 text-green-600 flex items-center justify-center rounded-full">✓</div>
-                  <h2 className="text-lg font-bold">2FA Enabled</h2>
-                  <button onClick={handleEnableComplete} className="w-full p-2 bg-khaki-200 rounded-lg font-bold">Done</button>
+                  <DialogTitle className="text-center text-lg">2FA Enabled</DialogTitle>
+                  <button onClick={handleEnableComplete} className="w-full p-2 bg-khaki-200 rounded-lg font-gilroy-bold">Done</button>
                </div>
             )}
 
             {showDisable2FAConfirm && (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-bold text-red-600 text-center">Disable 2FA?</h2>
-                  <p className="text-xs text-gray-500 text-center">This will make your account <span className="font-bold text-black">less secure</span>.</p>
+                  <DialogTitle className="text-center text-lg text-firebrick-500">Disable 2FA?</DialogTitle>
+                  <p className="text-xs text-gray-500 text-center">This will make your account <span className="font-gilroy-bold text-black">less secure</span>.</p>
                   
                   <div className="mt-4 space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1">Confirm Password</label>
+                      <label className="block text-xs font-gilroy-bold text-gray-700 mb-1">Confirm Password</label>
                       <input
                         type="password"
                         placeholder="Your password"
@@ -731,7 +738,7 @@ export default function SecurityControlPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1">6-Digit Code</label>
+                      <label className="block text-xs font-gilroy-bold text-gray-700 mb-1">6-Digit Code</label>
                       <input
                         type="text"
                         placeholder="123456"
@@ -748,11 +755,11 @@ export default function SecurityControlPage() {
                   )}
 
                   <div className="flex gap-2">
-                    <button onClick={handleCancel2FA} className="flex-1 p-2 bg-gray-100 rounded-lg font-bold text-sm">Go Back</button>
+                    <button onClick={handleCancel2FA} className="flex-1 p-2 bg-gray-100 rounded-lg font-gilroy-bold text-sm">Go Back</button>
                     <button 
                         onClick={handleConfirmDisable2FA} 
                         disabled={isDisabling}
-                        className="flex-1 p-2 bg-red-600 text-white rounded-lg font-bold text-sm disabled:opacity-50"
+                        className="flex-1 p-2 bg-red-600 text-white rounded-lg font-gilroy-bold text-sm disabled:opacity-50"
                     >
                         {isDisabling ? "Disabling..." : "Disable"}
                     </button>
@@ -762,13 +769,12 @@ export default function SecurityControlPage() {
 
             {showDisable2FASuccess && (
                <div className="text-center space-y-4">
-                  <h2 className="text-lg font-bold">2FA Disabled</h2>
-                  <button onClick={handleDisable2FAComplete} className="w-full p-2 bg-khaki-200 rounded-lg font-bold">Done</button>
+                  <DialogTitle className="text-center text-lg">2FA Disabled</DialogTitle>
+                  <button onClick={handleDisable2FAComplete} className="w-full p-2 bg-khaki-200 rounded-lg font-gilroy-bold">Done</button>
                </div>
             )}
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </PanelLayout>
   );
 }

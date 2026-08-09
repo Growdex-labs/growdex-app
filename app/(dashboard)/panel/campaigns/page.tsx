@@ -12,11 +12,20 @@ import {
   type CampaignDto,
 } from "@/lib/campaigns";
 import { CampaignCard } from "../components/campaign-card";
+import { SegmentedTabs } from "../components/segmented-tabs";
 
 type CampaignTab = "active" | "draft" | "inactive";
 
+const TAB_ORDER: CampaignTab[] = ["active", "draft", "inactive"];
+
+const TABS: Array<{ id: CampaignTab; label: string; emptyTitle: string }> = [
+  { id: "active", label: "Active", emptyTitle: "No active campaigns" },
+  { id: "draft", label: "Drafts", emptyTitle: "No draft campaigns" },
+  { id: "inactive", label: "Inactive", emptyTitle: "No inactive campaigns" },
+];
+
 export default function CampaignsPage() {
-  const [activeTab, setActiveTab] = useState<CampaignTab>("active");
+  const [chosenTab, setChosenTab] = useState<CampaignTab | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -64,19 +73,18 @@ export default function CampaignsPage() {
     return result;
   }, [campaigns]);
 
+  // Opening on an empty tab hides the work the user came to find, so the first
+  // group holding campaigns leads until they pick a tab themselves.
+  const activeTab =
+    chosenTab ?? TAB_ORDER.find((tab) => groups[tab].length > 0) ?? "active";
+
   const displayed = groups[activeTab].filter((campaign) =>
     campaign.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
-  const tabs: Array<{ id: CampaignTab; label: string }> = [
-    { id: "active", label: "Active" },
-    { id: "draft", label: "Drafts" },
-    { id: "inactive", label: "Paused / failed" },
-  ];
-
   return (
     <PanelLayout>
-      <div className="flex h-screen">
+      <div className="flex h-full">
         <div className="hidden md:block"><CampaignsSidebar /></div>
         <div className="flex flex-1 flex-col overflow-auto hide-scrollbar">
           <CampaignsMobileHeader />
@@ -84,17 +92,17 @@ export default function CampaignsPage() {
             <div className="mx-auto max-w-6xl">
               <div className="mb-8 hidden items-center justify-between md:flex">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Campaigns</h1>
+                  <h1 className="text-3xl font-gilroy-bold text-gray-900">Campaigns</h1>
                   <p className="mt-1 text-sm text-gray-500">Create, review, and monitor campaigns from one place.</p>
                 </div>
-                <Link href="/panel/campaigns/new" className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300">
+                <Link href="/panel/campaigns/new" className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-medium text-gray-900 hover:bg-khaki-300">
                   <Plus className="h-4 w-4" /> Create campaign
                 </Link>
               </div>
 
               <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
-                <p className="text-xs text-gray-400">Total amount spent</p>
-                <p className="mt-1 text-2xl font-bold text-gray-900">
+                <p className="text-xs text-dimGray">Total amount spent</p>
+                <p className="mt-1 text-2xl font-gilroy-bold text-gray-900">
                   {new Intl.NumberFormat(undefined, {
                     style: "currency",
                     currency: "NGN",
@@ -103,28 +111,23 @@ export default function CampaignsPage() {
                 </p>
               </div>
 
-              <div className="mb-6 grid grid-cols-3 gap-2 rounded-lg bg-lavender-50 p-1 sm:gap-4">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`rounded-lg px-3 py-3 text-sm font-medium transition-colors sm:px-6 ${activeTab === tab.id ? "bg-khaki-200 text-gray-900 shadow" : "text-gray-600"}`}
-                  >
-                    {tab.label}
-                    <span className="ml-2 hidden rounded-full bg-white/70 px-2 py-0.5 text-xs sm:inline">{groups[tab.id].length}</span>
-                  </button>
-                ))}
-              </div>
+              <SegmentedTabs
+                className="mb-6"
+                label="Campaign status"
+                value={activeTab}
+                onChange={setChosenTab}
+                items={TABS.map((tab) => ({
+                  id: tab.id,
+                  label: tab.label,
+                  count: groups[tab.id].length,
+                }))}
+              />
 
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div className="relative w-full sm:w-72">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search campaigns" className="w-full rounded-full bg-gray-50 py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-khaki-200" />
                 </div>
-                <Link href="/panel/campaigns/new" className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 md:hidden">
-                  <Plus className="h-4 w-4" /> Create campaign
-                </Link>
               </div>
 
               {loadError && <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">{loadError}</p>}
@@ -132,7 +135,7 @@ export default function CampaignsPage() {
                 <p className="rounded-xl border border-gray-200 bg-white p-6 text-gray-500">Loading campaigns…</p>
               ) : displayed.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
-                  <h2 className="text-lg font-semibold text-gray-900">No {tabs.find((tab) => tab.id === activeTab)?.label.toLowerCase()} campaigns</h2>
+                  <h2 className="text-lg font-gilroy-semibold text-gray-900">{TABS.find((tab) => tab.id === activeTab)?.emptyTitle}</h2>
                   <p className="mt-2 text-sm text-gray-500">Campaigns in this state will appear here.</p>
                 </div>
               ) : (

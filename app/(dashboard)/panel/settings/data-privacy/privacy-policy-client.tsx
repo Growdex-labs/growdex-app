@@ -90,7 +90,7 @@ export function PrivacyPolicyClient() {
     <div className="flex flex-col lg:flex-row gap-12 px-6 lg:px-16 items-start relative h-full pb-8">
       
       {/* Left Navigation Menu */}
-      <div className="hidden lg:flex w-64 shrink-0 flex-col gap-6 font-medium">
+      <div className="hidden lg:flex w-64 shrink-0 flex-col gap-6 font-gilroy-medium">
         {SECTIONS.map((section) => {
           const isActive = activeSection === section.id;
           return (
@@ -100,7 +100,7 @@ export function PrivacyPolicyClient() {
               onClick={(e) => scrollTo(section.id, e)}
               className={`block pl-4 border-l-2 transition-all duration-200 text-sm ${
                 isActive 
-                  ? "border-[#a54a2a] text-[#a54a2a] font-bold drop-shadow-sm" 
+                  ? "border-[#a54a2a] text-[#a54a2a] font-gilroy-bold drop-shadow-sm" 
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -124,16 +124,16 @@ export function PrivacyPolicyClient() {
             <h2 className="text-2xl font-gilroy-bold text-[#a54a2a] mb-6 drop-shadow-sm">Information We Collect</h2>
             
             <div className="mb-6">
-              <h3 className="font-bold text-gray-900 mb-3 text-base">1.1 Information You Provide</h3>
+              <h3 className="font-gilroy-bold text-gray-900 mb-3 text-base">1.1 Information You Provide</h3>
               <ul className="list-disc pl-5 space-y-2">
-                <li><span className="font-medium text-gray-900">Account Information:</span> Name, email address, phone number, business name, password.</li>
-                <li><span className="font-medium text-gray-900">Billing Information:</span> Payment details when adding Growdex campaign funding or paying for services.</li>
-                <li><span className="font-medium text-gray-900">Business Information:</span> Ad account IDs, social media handles, business category, marketing goals.</li>
+                <li><span className="font-gilroy-medium text-gray-900">Account Information:</span> Name, email address, phone number, business name, password.</li>
+                <li><span className="font-gilroy-medium text-gray-900">Billing Information:</span> Payment details when adding Growdex campaign funding or paying for services.</li>
+                <li><span className="font-gilroy-medium text-gray-900">Business Information:</span> Ad account IDs, social media handles, business category, marketing goals.</li>
               </ul>
             </div>
 
             <div className="mb-6">
-              <h3 className="font-bold text-gray-900 mb-3 text-base">1.2 Information Collected Automatically</h3>
+              <h3 className="font-gilroy-bold text-gray-900 mb-3 text-base">1.2 Information Collected Automatically</h3>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Device information (browser, device model, IP address)</li>
                 <li>Usage logs (pages visited, actions performed on the platform)</li>
@@ -143,7 +143,7 @@ export function PrivacyPolicyClient() {
             </div>
 
             <div>
-              <h3 className="font-bold text-gray-900 mb-3 text-base">1.3 Third-Party Platform Data</h3>
+              <h3 className="font-gilroy-bold text-gray-900 mb-3 text-base">1.3 Third-Party Platform Data</h3>
               <p className="text-gray-600 mb-3">When you connect advertising accounts (e.g., TikTok, Meta), we may receive:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Ad performance metrics</li>
@@ -162,7 +162,7 @@ export function PrivacyPolicyClient() {
             <h2 className="text-2xl font-gilroy-bold text-[#a54a2a] mb-6 drop-shadow-sm">How We Use Your Information</h2>
             
             <div className="mb-6">
-              <h3 className="font-bold text-gray-900 mb-3 text-base">2.1 Provide and Improve Our Services</h3>
+              <h3 className="font-gilroy-bold text-gray-900 mb-3 text-base">2.1 Provide and Improve Our Services</h3>
               <p className="text-gray-600 mb-3">We use your information to:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Enable ad creation, publishing, and campaign management</li>
@@ -174,7 +174,7 @@ export function PrivacyPolicyClient() {
             </div>
 
             <div className="mb-6">
-              <h3 className="font-bold text-gray-900 mb-3 text-base">2.2 Communication</h3>
+              <h3 className="font-gilroy-bold text-gray-900 mb-3 text-base">2.2 Communication</h3>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Product updates</li>
                 <li>Account alerts</li>
@@ -184,7 +184,7 @@ export function PrivacyPolicyClient() {
             </div>
 
             <div>
-              <h3 className="font-bold text-gray-900 mb-3 text-base">2.3 Compliance</h3>
+              <h3 className="font-gilroy-bold text-gray-900 mb-3 text-base">2.3 Compliance</h3>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Meet legal, regulatory, and API partner (TikTok/Meta) requirements</li>
                 <li>Enforce terms and policies</li>
@@ -196,7 +196,7 @@ export function PrivacyPolicyClient() {
           {/* 3. How We Share Your Information */}
           <section id="how-we-share">
             <h2 className="text-2xl font-gilroy-bold text-[#a54a2a] mb-6 drop-shadow-sm">How We Share Your Information</h2>
-            <p className="font-bold text-gray-900 mb-4">We do not sell your data.</p>
+            <p className="font-gilroy-bold text-gray-900 mb-4">We do not sell your data.</p>
             <p className="text-gray-600 mb-3">We only share information with:</p>
             <ul className="list-disc pl-5 space-y-2 mb-4">
               <li>Advertising platforms (Meta, TikTok) to run your campaigns</li>
@@ -204,7 +204,7 @@ export function PrivacyPolicyClient() {
               <li>Cloud hosting providers (AWS, GCP, or equivalent)</li>
               <li>Analytics and error monitoring tools</li>
             </ul>
-            <p className="font-bold text-gray-900">We will never share information with unauthorized third parties.</p>
+            <p className="font-gilroy-bold text-gray-900">We will never share information with unauthorized third parties.</p>
           </section>
 
           {/* 4. Data Security */}
@@ -282,9 +282,9 @@ export function PrivacyPolicyClient() {
             <h2 className="text-2xl font-gilroy-bold text-[#a54a2a] mb-6 drop-shadow-sm">Contact Us</h2>
             <p className="text-gray-600 mb-4">For questions, concerns, or data requests:</p>
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-              <p className="mb-2"><span className="font-semibold text-gray-900">Email:</span> <a href="mailto:privacy@growdex.ai" className="text-blue-600 hover:underline">privacy@growdex.ai</a></p>
-              <p className="mb-2"><span className="font-semibold text-gray-900">Company:</span> Growdex Labs Ltd.</p>
-              <p><span className="font-semibold text-gray-900">Address:</span> 40, Obeagu Street, Otuku Emene, Enugu State, Nigeria</p>
+              <p className="mb-2"><span className="font-gilroy-semibold text-gray-900">Email:</span> <a href="mailto:privacy@growdex.ai" className="text-blue-600 hover:underline">privacy@growdex.ai</a></p>
+              <p className="mb-2"><span className="font-gilroy-semibold text-gray-900">Company:</span> Growdex Labs Ltd.</p>
+              <p><span className="font-gilroy-semibold text-gray-900">Address:</span> 40, Obeagu Street, Otuku Emene, Enugu State, Nigeria</p>
             </div>
           </section>
 

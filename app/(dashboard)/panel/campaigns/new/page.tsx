@@ -14,6 +14,8 @@ import {
   campaignDtoToPayload,
   fetchCampaignById,
   hasRestrictedMetaTargeting,
+  ensureCampaignPayloadScheduleLeadTime,
+  ensureCampaignScheduleLeadTime,
   answerAiCampaignQuestion,
   AI_CAMPAIGN_STEP_IDS,
   publishCampaign,
@@ -42,7 +44,7 @@ import {
   type MetaSpecialAdCategory,
 } from "@/lib/campaigns";
 import { eventManagementPatch } from "../components/event-management-state";
-import { isVideoUrl, validateFile } from "@/lib/campaign-shared";
+import { isVideoMedia, validateFile } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
@@ -243,7 +245,7 @@ const loadAvailableCampaignMedia = async (
       name: media.name,
       url: media.url,
       platform: media.platform,
-      mediaType: isVideoUrl(media.url)
+      mediaType: isVideoMedia(media)
         ? ("video" as const)
         : ("image" as const),
       source: media.kind,
@@ -265,6 +267,12 @@ export default function NewCampaignPage() {
   const editStrategyId = searchParams.get("strategy");
   const editAdIndexParam = searchParams.get("ad");
   const editAdIndex = editAdIndexParam === null ? null : Number(editAdIndexParam);
+  const requestedMethodParam = searchParams.get("method");
+  const requestedMethod: CreationMethod | null =
+    requestedMethodParam === "ai" || requestedMethodParam === "manual"
+      ? requestedMethodParam
+      : null;
+  const requestedPrompt = searchParams.get("prompt");
   const { me } = useMe();
   const brandName = me?.brand?.name ?? "Your brand";
   const firstName = me?.profile?.firstName ?? "";
@@ -275,8 +283,10 @@ export default function NewCampaignPage() {
   const activeStrategy =
     campaign.audienceStrategies.find(({ id }) => id === activeStrategyId) ??
     campaign.audienceStrategies[0]!;
-  const [method, setMethod] = useState<CreationMethod | null>(null);
-  const [goalConfirmed, setGoalConfirmed] = useState(false);
+  const [method, setMethod] = useState<CreationMethod | null>(requestedMethod);
+  const [goalConfirmed, setGoalConfirmed] = useState(
+    requestedMethod === "manual",
+  );
   const [step, setStep] = useState(0);
   const [creativeStage, setCreativeStage] = useState<"library" | "editor">("library");
   const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(
@@ -339,6 +349,7 @@ export default function NewCampaignPage() {
   });
   const autosaveRetryTimerRef = useRef<number | null>(null);
   const aiSessionRestoredRef = useRef(false);
+  const requestedMethodAppliedRef = useRef(false);
   const openStrategyEditor = (id: string) => {
     setActiveStrategyId(id);
     setStep(3);
@@ -493,11 +504,16 @@ export default function NewCampaignPage() {
         if (payload.creationMode === "unknown") {
           throw new Error("This campaign does not have a supported setup mode.");
         }
-        const editablePayload: CreateCampaignPayload = {
-          ...payload,
-          creationMode: payload.creationMode,
-        };
-        const restoredFingerprint = JSON.stringify(editablePayload);
+        const openedAt = Date.now();
+        const editablePayload =
+          ensureCampaignPayloadScheduleLeadTime<CreateCampaignPayload>(
+            {
+              ...payload,
+              creationMode: payload.creationMode,
+            },
+            openedAt,
+          );
+        const restoredFingerprint = JSON.stringify(payload);
         const restoredStrategyId =
           payload.audienceStrategies.some(({ id }) => id === editStrategyId)
             ? editStrategyId
@@ -777,6 +793,32 @@ export default function NewCampaignPage() {
       ),
     }));
   };
+
+  useEffect(() => {
+    if (method !== "manual" || step !== 5) return;
+
+    const now = Date.now();
+    setCampaign((current) => {
+      const strategyId =
+        activeStrategyId ?? current.audienceStrategies[0]?.id;
+      let changed = false;
+      const audienceStrategies = current.audienceStrategies.map((strategy) => {
+        if (strategy.id !== strategyId) return strategy;
+        const budget = ensureCampaignScheduleLeadTime(
+          strategy.budget,
+          now,
+        );
+        if (budget === strategy.budget) return strategy;
+        changed = true;
+        return {
+          ...strategy,
+          budget,
+        };
+      });
+
+      return changed ? { ...current, audienceStrategies } : current;
+    });
+  }, [activeStrategyId, method, step]);
 
   const addAudienceStrategy = () => {
     const source = activeStrategy ?? campaign.audienceStrategies[0];
@@ -1151,6 +1193,19 @@ export default function NewCampaignPage() {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
     }
   };
+
+  // The dashboard hands off a creation method, and sometimes the question the
+  // user already typed there, so the editor opens straight into that work.
+  useEffect(() => {
+    if (!requestedMethod || requestedMethodAppliedRef.current) return;
+    if (editCampaignId || accountsLoading) return;
+    requestedMethodAppliedRef.current = true;
+    patch({ creationMode: requestedMethod });
+    if (requestedMethod === "ai" && requestedPrompt?.trim()) {
+      void startAiDraft(requestedPrompt.trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountsLoading, editCampaignId, requestedMethod, requestedPrompt]);
 
   const reviseAiDraft = async (
     instruction: string,
@@ -1689,7 +1744,7 @@ export default function NewCampaignPage() {
               onChange={updateEventManagement}
             />
             <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h4 className="font-semibold text-gray-900">
+              <h4 className="font-gilroy-semibold text-gray-900">
                 Conversion data source
               </h4>
               <div className="mt-4">
@@ -1803,7 +1858,7 @@ export default function NewCampaignPage() {
         type="button"
         onClick={() => setStep((current) => Math.max(0, current - 1))}
         disabled={step === 0}
-        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:invisible"
+        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-gilroy-medium text-gray-700 hover:bg-gray-50 disabled:invisible"
       >
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
@@ -1811,7 +1866,7 @@ export default function NewCampaignPage() {
         type="button"
         onClick={() => void next()}
         disabled={uploading !== null || checkingInterests}
-        className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-khaki-300 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-gilroy-medium text-gray-900 hover:bg-khaki-300 disabled:opacity-50"
       >
         {checkingInterests ? "Checking interests…" : "Continue"}{" "}
         <ArrowRight className="h-4 w-4" />
@@ -1937,7 +1992,7 @@ export default function NewCampaignPage() {
                       <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
                       <div className="flex-1">
                         <p>
-                          <span className="font-semibold">AI draft:</span>{" "}
+                          <span className="font-gilroy-semibold">AI draft:</span>{" "}
                           {aiRationale} Review every choice before publishing.
                         </p>
                         <button
@@ -1945,7 +2000,7 @@ export default function NewCampaignPage() {
                           onClick={() => {
                             setStep(0);
                           }}
-                          className="mt-2 text-xs font-semibold text-violet-700 underline"
+                          className="mt-2 text-xs font-gilroy-semibold text-violet-700 underline"
                         >
                           Return to AI decision review
                         </button>

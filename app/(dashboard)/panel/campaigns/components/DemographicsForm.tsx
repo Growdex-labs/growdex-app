@@ -279,7 +279,7 @@ export function DemographicsForm({
             onClick={() => changeTab(item.id)}
             className={`whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm ${
               tab === item.id
-                ? "border border-gray-300 font-medium text-gray-900"
+                ? "border border-gray-300 font-gilroy-medium text-gray-900"
                 : "text-gray-400 hover:text-gray-700"
             }`}
           >
@@ -291,7 +291,7 @@ export function DemographicsForm({
       <div className="min-w-0">
         {tab === "demographics" && (
           <div className="space-y-5">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-gilroy-medium text-gray-700">
               Add a country
               <select
                 className="mt-2 h-11 w-full rounded-lg border bg-white px-3"
@@ -331,7 +331,7 @@ export function DemographicsForm({
               ))}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-gilroy-medium text-gray-700">
                 Minimum age
                 <Input
                   className="mt-2"
@@ -342,7 +342,7 @@ export function DemographicsForm({
                   onChange={(event) => onChange({ ageMin: Number(event.target.value) })}
                 />
               </label>
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-gilroy-medium text-gray-700">
                 Maximum age
                 <Input
                   className="mt-2"
@@ -354,7 +354,7 @@ export function DemographicsForm({
                 />
               </label>
             </div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-gilroy-medium text-gray-700">
               Gender
               <select
                 className="mt-2 h-11 w-full rounded-lg border bg-white px-3"
@@ -372,7 +372,7 @@ export function DemographicsForm({
             </label>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-gilroy-medium text-gray-700">
                 Languages
                 <div className="relative mt-2">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -435,7 +435,7 @@ export function DemographicsForm({
 
         {tab === "audiences" && (
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-gilroy-semibold text-gray-900">
               Reuse saved audience criteria
             </h3>
             <p className="mt-1 text-xs text-gray-500">
@@ -457,15 +457,15 @@ export function DemographicsForm({
                   const excluded = (audience.excludeAudienceIds ?? []).includes(saved.id);
                   return (
                     <div key={saved.id} className="rounded-xl border border-gray-200 p-4">
-                      <p className="text-sm font-medium text-gray-900">{saved.name}</p>
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="text-sm font-gilroy-medium text-gray-900">{saved.name}</p>
+                      <p className="mt-1 text-xs text-dimGray">
                         {audienceLocations(saved).length} countries · {saved.interests?.length ?? 0} interests
                       </p>
                       <div className="mt-3 flex gap-2">
                         <button
                           type="button"
                           onClick={() => applySavedAudience(saved)}
-                          className={`rounded-lg border px-3 py-2 text-xs font-medium ${
+                          className={`rounded-lg border px-3 py-2 text-xs font-gilroy-medium ${
                             included
                               ? "border-khaki-300 bg-dimYellow/30"
                               : "border-gray-300"
@@ -477,7 +477,7 @@ export function DemographicsForm({
                         <button
                           type="button"
                           onClick={() => excludeSavedAudience(saved)}
-                          className={`rounded-lg border px-3 py-2 text-xs font-medium ${
+                          className={`rounded-lg border px-3 py-2 text-xs font-gilroy-medium ${
                             excluded
                               ? "border-red-200 bg-red-50 text-red-700"
                               : "border-gray-300"
@@ -503,7 +503,7 @@ export function DemographicsForm({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <label
                 htmlFor="meta-interest-search"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-gilroy-medium text-gray-700"
               >
                 Meta interests
               </label>
@@ -592,14 +592,14 @@ export function DemographicsForm({
                       }}
                       className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      <span className="font-medium">{interest.name}</span>
+                      <span className="font-gilroy-medium">{interest.name}</span>
                       <span className="text-xs text-gray-400">Add</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            <p className="mt-2 text-xs text-gray-400">
+            <p className="mt-2 text-xs text-dimGray">
               Type at least two characters, then choose a Meta interest from
               the list.
             </p>
@@ -620,7 +620,7 @@ export function DemographicsForm({
                 {(audience.interests ?? []).map((interest) => (
                   <span
                     key={interest}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-800"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-gilroy-medium text-violet-800"
                   >
                     {interest}
                     <button
@@ -648,7 +648,7 @@ export function DemographicsForm({
                   key={unavailable}
                   className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4"
                 >
-                  <p className="text-sm font-medium text-amber-900">
+                  <p className="text-sm font-gilroy-medium text-amber-900">
                     “{unavailable}” is not an available Meta interest.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -659,7 +659,7 @@ export function DemographicsForm({
                         onClick={() =>
                           onReplaceInterest(unavailable, suggestion.name)
                         }
-                        className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900"
+                        className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-gilroy-medium text-amber-900"
                       >
                         Use {suggestion.name}
                       </button>
@@ -673,17 +673,16 @@ export function DemographicsForm({
 
         {tab === "devices" && (
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-gilroy-semibold text-gray-900">
               Preferred traffic from
             </h3>
             <p className="mt-1 text-xs text-gray-500">
-              TikTok delivery is mobile-only. Meta campaigns can also target
-              desktop.
+              Choose the devices where you prefer your ads to be delivered.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
                 { id: "mobile" as const, label: "Mobile & tablet", Icon: Smartphone, disabled: false },
-                { id: "desktop" as const, label: "Desktop", Icon: Monitor, disabled: platforms.includes("tiktok") },
+                { id: "desktop" as const, label: "Desktop", Icon: Monitor, disabled: false },
               ].map(({ id, label, Icon, disabled }) => {
                 const selected = (audience.devices ?? []).includes(id);
                 return (
@@ -697,7 +696,7 @@ export function DemographicsForm({
                     }`}
                   >
                     <Icon className="h-4 w-4" />
-                    <span className="text-sm font-medium text-gray-800">{label}</span>
+                    <span className="text-sm font-gilroy-medium text-gray-800">{label}</span>
                     {selected && <Check className="ml-auto h-4 w-4" />}
                   </button>
                 );
@@ -708,14 +707,14 @@ export function DemographicsForm({
 
         {tab === "advanced" && (
           <div className="rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-gilroy-semibold text-gray-900">
               Delivery summary
             </h3>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-              <div><dt className="text-gray-400">Countries</dt><dd className="font-medium text-gray-800">{audience.locations.length}</dd></div>
-              <div><dt className="text-gray-400">Age</dt><dd className="font-medium text-gray-800">{audience.ageMin ?? 18}–{audience.ageMax ?? 65}</dd></div>
-              <div><dt className="text-gray-400">Languages</dt><dd className="font-medium text-gray-800">{audience.languages?.length || "All"}</dd></div>
-              <div><dt className="text-gray-400">Devices</dt><dd className="font-medium capitalize text-gray-800">{(audience.devices ?? ["mobile"]).join(", ")}</dd></div>
+              <div><dt className="text-gray-400">Countries</dt><dd className="font-gilroy-medium text-gray-800">{audience.locations.length}</dd></div>
+              <div><dt className="text-gray-400">Age</dt><dd className="font-gilroy-medium text-gray-800">{audience.ageMin ?? 18}–{audience.ageMax ?? 65}</dd></div>
+              <div><dt className="text-gray-400">Languages</dt><dd className="font-gilroy-medium text-gray-800">{audience.languages?.length || "All"}</dd></div>
+              <div><dt className="text-gray-400">Devices</dt><dd className="font-gilroy-medium capitalize text-gray-800">{(audience.devices ?? ["mobile"]).join(", ")}</dd></div>
             </dl>
             <p className="mt-4 text-xs leading-relaxed text-gray-500">
               Growdex sends only the choices shown here. It does not silently

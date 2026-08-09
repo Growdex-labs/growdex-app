@@ -177,7 +177,7 @@ export default function AdminDashboardPage() {
                     >
                       <Icon className="size-5 text-gray-950" />
                     </span>
-                    <p className="mt-6 text-xs font-gilroy-semibold uppercase tracking-[0.12em] text-gray-400">
+                    <p className="mt-6 text-xs font-gilroy-semibold uppercase tracking-[0.12em] text-dimGray">
                       {label}
                     </p>
                     <p className="mt-1 text-3xl font-gilroy-bold text-gray-950">
@@ -228,7 +228,7 @@ export default function AdminDashboardPage() {
                     <h2 className="font-gilroy-bold text-gray-950">
                       Recent campaigns
                     </h2>
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="mt-1 text-xs text-dimGray">
                       The latest campaign activity across every account.
                     </p>
                   </div>
@@ -249,7 +249,7 @@ export default function AdminDashboardPage() {
                               <p className="font-gilroy-semibold text-gray-950">
                                 {campaign.name}
                               </p>
-                              <p className="mt-0.5 text-xs text-gray-400">
+                              <p className="mt-0.5 text-xs text-dimGray">
                                 {campaign.goal.replaceAll("_", " ")} ·{" "}
                                 {campaign.creationMode ?? "unknown"} setup
                               </p>
@@ -258,7 +258,7 @@ export default function AdminDashboardPage() {
                               <p className="text-gray-700">
                                 {campaign.brandName ?? "No brand"}
                               </p>
-                              <p className="mt-0.5 text-xs text-gray-400">
+                              <p className="mt-0.5 text-xs text-dimGray">
                                 {campaign.ownerEmail ?? "Unknown owner"}
                               </p>
                             </td>

@@ -160,7 +160,7 @@ export function OptimizationSidebar({
           {!loading && proposals.length > 0 && (
             <div className="flex items-center gap-3 rounded-lg bg-khaki-200/80 p-3 text-gray-900">
               <TrendingUp className="h-5 w-5" />
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-gilroy-semibold">
                 {proposals.length} optimization opportunit{proposals.length === 1 ? "y" : "ies"}
               </p>
             </div>
@@ -204,21 +204,21 @@ export function OptimizationSidebar({
                   className="mt-1 border-khaki-200 data-[state=checked]:border-khaki-200 data-[state=checked]:bg-khaki-200 data-[state=checked]:text-gray-900"
                 />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold">{proposal.title}</h3>
+                  <h3 className="text-sm font-gilroy-semibold">{proposal.title}</h3>
                   <p className="mt-1 text-xs leading-5 text-white/65">{proposal.summary}</p>
                   <dl className="mt-3 space-y-2 rounded-lg bg-black/20 p-3 text-xs">
                     <div>
-                      <dt className="font-medium text-khaki-200">Evidence · {proposal.evidence.window}</dt>
+                      <dt className="font-gilroy-medium text-khaki-200">Evidence · {proposal.evidence.window}</dt>
                       <dd className="mt-0.5 text-white/70">
                         {proposal.evidence.metric}: {proposal.evidence.observation}
                       </dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-emerald-200">Expected outcome</dt>
+                      <dt className="font-gilroy-medium text-emerald-200">Expected outcome</dt>
                       <dd className="mt-0.5 text-white/70">{proposal.expectedOutcome}</dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-amber-200">Risk</dt>
+                      <dt className="font-gilroy-medium text-amber-200">Risk</dt>
                       <dd className="mt-0.5 text-white/70">{proposal.risk}</dd>
                     </div>
                   </dl>
@@ -240,7 +240,7 @@ export function OptimizationSidebar({
             type="button"
             onClick={() => void applySelected()}
             disabled={!selectedIds.length || loading || applying}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 py-3 font-semibold text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 py-3 font-gilroy-semibold text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {applying && <Loader2 className="h-4 w-4 animate-spin" />}
             Apply {selectedIds.length || "selected"} change{selectedIds.length === 1 ? "" : "s"}
