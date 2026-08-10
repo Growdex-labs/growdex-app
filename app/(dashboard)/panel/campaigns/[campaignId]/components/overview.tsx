@@ -7,6 +7,7 @@ import type {
   CampaignMetricsSummary,
   CampaignPlatformMetric,
 } from "@/lib/campaigns";
+import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
 
 interface OverviewProps {
   campaign: CampaignDto;
@@ -19,13 +20,11 @@ interface OverviewProps {
 const formatNumber = (value: number) =>
   Math.trunc(Number.isFinite(value) ? value : 0).toLocaleString("en-US");
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
+const formatCurrency = (value: number, currency: string) =>
+  formatMoney(Number.isFinite(value) ? value : 0, currency, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(Number.isFinite(value) ? value : 0);
+  });
 
 const platformValue = (
   rows: CampaignPlatformMetric[],
@@ -120,6 +119,11 @@ export function Overview({
   subTab,
   onOptimizationClick,
 }: OverviewProps) {
+  // Every audience strategy in a campaign bills in the same currency, because
+  // publishing rejects a budget that does not match the ad account.
+  const currency =
+    campaign.audienceStrategies?.[0]?.budget?.currency ?? DEFAULT_CURRENCY;
+
   if (metricsError) {
     return (
       <div
@@ -168,7 +172,7 @@ export function Overview({
       <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6">
         <p className="text-xs text-dimGray">Total amount spent</p>
         <p className="mt-1 text-2xl font-gilroy-bold text-gray-900 md:text-[28px]">
-          {formatCurrency(metrics.spend)}
+          {formatCurrency(metrics.spend, currency)}
         </p>
       </div>
 
@@ -197,13 +201,13 @@ export function Overview({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
         <CostCard
           label="Cost per Conversion/CPA"
-          value={formatCurrency(metrics.cpa)}
+          value={formatCurrency(metrics.cpa, currency)}
           campaignName={campaign.name}
           onOptimizationClick={onOptimizationClick}
         />
         <CostCard
           label="Cost Per Click (CPC)"
-          value={formatCurrency(metrics.cpc)}
+          value={formatCurrency(metrics.cpc, currency)}
           campaignName={campaign.name}
           onOptimizationClick={onOptimizationClick}
         />

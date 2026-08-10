@@ -11,6 +11,8 @@ import {
   fetchCampaignMetrics,
   type CampaignDto,
 } from "@/lib/campaigns";
+import { formatMoneyTotals, type MoneyTotal } from "@/lib/currency";
+import { useMe } from "@/context/me-context";
 import { CampaignCard } from "../components/campaign-card";
 import { SegmentedTabs } from "../components/segmented-tabs";
 
@@ -25,11 +27,12 @@ const TABS: Array<{ id: CampaignTab; label: string; emptyTitle: string }> = [
 ];
 
 export default function CampaignsPage() {
+  const { currency: countryCurrency } = useMe();
   const [chosenTab, setChosenTab] = useState<CampaignTab | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [totalSpend, setTotalSpend] = useState(0);
+  const [spendByCurrency, setSpendByCurrency] = useState<MoneyTotal[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export default function CampaignsPage() {
         if (campaignResult.status === "rejected") throw campaignResult.reason;
         setCampaigns(campaignResult.value);
         if (metricsResult.status === "fulfilled") {
-          setTotalSpend(metricsResult.value.summary.totalSpend);
+          setSpendByCurrency(metricsResult.value.summary.spendByCurrency ?? []);
         }
       })
       .catch((failure) => {
@@ -103,12 +106,16 @@ export default function CampaignsPage() {
               <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
                 <p className="text-xs text-dimGray">Total amount spent</p>
                 <p className="mt-1 text-2xl font-gilroy-bold text-gray-900">
-                  {new Intl.NumberFormat(undefined, {
-                    style: "currency",
-                    currency: "NGN",
+                  {formatMoneyTotals(spendByCurrency, countryCurrency, {
                     maximumFractionDigits: 2,
-                  }).format(totalSpend)}
+                  })}
                 </p>
+                {spendByCurrency.length > 1 && (
+                  <p className="mt-1 text-xs text-dimGray">
+                    Your ad accounts bill in different currencies, so these
+                    totals stay separate.
+                  </p>
+                )}
               </div>
 
               <SegmentedTabs

@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { usePathname } from "next/navigation";
 import { apiFetch } from "@/lib/auth";
+import { currencyForCountry, isCurrencyCode } from "@/lib/currency";
 
 export type MeProfile = {
   id: string;
@@ -23,6 +24,7 @@ export type MeProfile = {
 export type MeBrand = {
   id: string;
   name: string;
+  country: string | null;
   businessAddress: string | null;
   size: number | null;
   instagramUrl: string | null;
@@ -45,6 +47,7 @@ export type MeResponse = {
   avatarUrl: string | null;
   onboardingCompleted: boolean;
   isAdmin: boolean;
+  currency?: string | null;
   profile: MeProfile;
   brand: MeBrand;
   platformConnections: PlatformConnection[];
@@ -54,6 +57,11 @@ type MeContextValue = {
   me: MeResponse | null;
   isLoading: boolean;
   error: string | null;
+  /**
+   * The currency to price things in before an ad account is chosen. An ad
+   * account currency always wins over this one.
+   */
+  currency: string;
   refresh: () => Promise<void>;
 };
 
@@ -75,6 +83,7 @@ const MOCK_ME: MeResponse = {
   brand: {
     id: "mock-brand-id",
     name: "Growdex Dev Brand",
+    country: "Nigeria",
     businessAddress: null,
     size: null,
     instagramUrl: null,
@@ -159,9 +168,17 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
     };
   }, [pathname, refresh]);
 
+  const currency = useMemo(
+    () =>
+      isCurrencyCode(me?.currency)
+        ? me.currency
+        : currencyForCountry(me?.profile?.country, me?.brand?.country),
+    [me],
+  );
+
   const value = useMemo<MeContextValue>(
-    () => ({ me, isLoading, error, refresh }),
-    [me, isLoading, error, refresh],
+    () => ({ me, isLoading, error, currency, refresh }),
+    [me, isLoading, error, currency, refresh],
   );
 
   return <MeContext.Provider value={value}>{children}</MeContext.Provider>;

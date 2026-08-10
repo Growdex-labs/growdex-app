@@ -14,13 +14,17 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { BudgetType } from "@/lib/campaigns";
 import { addDaysDateInputValue, toDateInputValue } from "@/lib/campaign-shared";
+import { currencySymbol } from "@/lib/currency";
 
 interface BudgetSectionProps {
   progressTab: number;
   setProgressTab: (tab: number) => void;
   currency: string;
-  setCurrency: (val: string) => void;
-  CURRENCY_OPTIONS: string[];
+  /**
+   * Why the campaign bills in this currency, shown under the amount so the
+   * advertiser knows it is not a choice they missed.
+   */
+  currencySource: "account" | "location";
   brandName: string;
   useSeparateBudgets: boolean;
   setUseSeparateBudgets: (val: boolean) => void;
@@ -55,8 +59,7 @@ export const BudgetSection = ({
   progressTab,
   setProgressTab,
   currency,
-  setCurrency,
-  CURRENCY_OPTIONS,
+  currencySource,
   brandName,
   useSeparateBudgets,
   setUseSeparateBudgets,
@@ -112,28 +115,17 @@ export const BudgetSection = ({
               </p>
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex items-start justify-between gap-4">
               <p className="text-gray-500">Currency</p>
-              <div className="w-40">
-                <Select
-                  value={currency}
-                  onValueChange={setCurrency}
-                  disabled={readOnly}
-                >
-                  <SelectTrigger disabled={readOnly}>
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Currency</SelectLabel>
-                      {CURRENCY_OPTIONS.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+              <div className="text-right">
+                <p className="font-gilroy-medium text-gray-800">
+                  {currencySymbol(currency)} {currency}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {currencySource === "account"
+                    ? "Set by your ad account."
+                    : "Set by your business location."}
+                </p>
               </div>
             </div>
 
@@ -173,7 +165,7 @@ export const BudgetSection = ({
                       step={0.01}
                       value={unifiedBudgetAmount}
                       onChange={(e) => setUnifiedBudgetAmount(e.target.value)}
-                      placeholder="Amount"
+                      placeholder={`Amount in ${currency}`}
                       disabled={readOnly || useSeparateBudgets}
                     />
 
@@ -274,7 +266,7 @@ export const BudgetSection = ({
                       step={0.01}
                       value={metaBudgetAmount}
                       onChange={(e) => setMetaBudgetAmount(e.target.value)}
-                      placeholder="Amount"
+                      placeholder={`Amount in ${currency}`}
                       disabled={readOnly || !useSeparateBudgets}
                     />
                     <Select
@@ -316,7 +308,7 @@ export const BudgetSection = ({
                       step={0.01}
                       value={tiktokBudgetAmount}
                       onChange={(e) => setTiktokBudgetAmount(e.target.value)}
-                      placeholder="Amount"
+                      placeholder={`Amount in ${currency}`}
                       disabled={readOnly || !useSeparateBudgets}
                     />
                     <Select

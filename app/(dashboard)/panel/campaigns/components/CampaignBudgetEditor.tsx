@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { AudienceStrategy } from "@/lib/campaigns";
+import { currencySymbol } from "@/lib/currency";
 
 type CampaignBudget = AudienceStrategy["budget"];
 
@@ -37,15 +38,6 @@ const mergeLocalDateTime = (datePart: string, timePart: string) => {
   const date = new Date(`${datePart}T${timePart}`);
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 };
-
-const currencySymbol = (currency: CampaignBudget["currency"]) =>
-  new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    currencyDisplay: "narrowSymbol",
-  })
-    .formatToParts(0)
-    .find((part) => part.type === "currency")?.value ?? currency;
 
 export function CampaignBudgetEditor({
   budget,
@@ -124,14 +116,21 @@ export function CampaignBudgetEditor({
               <option value="lifetime">Lifetime</option>
             </select>
           </div>
-          {accountRules && (
-            <p className="mt-2 text-xs text-gray-500">
-              Meta bills this account in {budget.currency}. Schedule times use{" "}
-              {accountRules.timezoneName}; minimum daily budget is{" "}
-              {currencySymbol(budget.currency)}
-              {accountRules.minimumDailyBudget.toLocaleString()}.
-            </p>
-          )}
+          <p className="mt-2 text-xs text-gray-500">
+            {accountRules ? (
+              <>
+                Meta bills this account in {budget.currency}. Schedule times use{" "}
+                {accountRules.timezoneName}; minimum daily budget is{" "}
+                {currencySymbol(budget.currency)}
+                {accountRules.minimumDailyBudget.toLocaleString()}.
+              </>
+            ) : (
+              <>
+                Growdex shows {budget.currency} because of your business
+                location. Choose an ad account to bill in its own currency.
+              </>
+            )}
+          </p>
           {budget.amount < (accountRules?.minimumDailyBudget ?? 0.01) && (
             <p className="mt-2 text-sm text-red-600">
               Enter at least {currencySymbol(budget.currency)}

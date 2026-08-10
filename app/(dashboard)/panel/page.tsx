@@ -17,15 +17,22 @@ import {
   type AiMessage,
 } from "./components/dashboard-ai-panel";
 import { Users } from "lucide-react";
+import { toast } from "sonner";
 import { TrendBadge, type TrendGoodDirection } from "./components/trend-badge";
 import { fetchPanelMetrics } from "@/lib/panel";
 import { fetchCampaigns, requestCampaignAdvice } from "@/lib/campaigns";
+import {
+  formatMoneyTotals,
+  isCurrencyCode,
+  type MoneyTotal,
+} from "@/lib/currency";
+import { useMe } from "@/context/me-context";
 
 type DashboardMetrics = {
-  totalSpent: number;
+  totalSpent: MoneyTotal[];
   totalImpressions: number;
-  costPerConversion: { value: number; trend: number };
-  costPerClick: { value: number; trend: number };
+  costPerConversion: { value: MoneyTotal[]; trend: number };
+  costPerClick: { value: MoneyTotal[]; trend: number };
   clickThroughRate: { meta: number; tiktok: number; trend: number };
   audienceReception: { value: string; trend: number };
   impressionsByPlatform: { meta: number; instagram: number; tiktok: number };
@@ -35,10 +42,10 @@ type DashboardMetrics = {
 };
 
 const ZERO_METRICS: DashboardMetrics = {
-  totalSpent: 0,
+  totalSpent: [],
   totalImpressions: 0,
-  costPerConversion: { value: 0, trend: 0 },
-  costPerClick: { value: 0, trend: 0 },
+  costPerConversion: { value: [], trend: 0 },
+  costPerClick: { value: [], trend: 0 },
   clickThroughRate: { meta: 0, tiktok: 0, trend: 0 },
   audienceReception: { value: "0", trend: 0 },
   impressionsByPlatform: { meta: 0, instagram: 0, tiktok: 0 },
@@ -47,13 +54,29 @@ const ZERO_METRICS: DashboardMetrics = {
   campaignHealth: "—",
 };
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
+const parseMoneyTotals = (value: unknown): MoneyTotal[] =>
+  Array.isArray(value)
+    ? value.flatMap((entry) =>
+        isCurrencyCode(entry?.currency) && typeof entry?.amount === "number"
+          ? [{ currency: entry.currency, amount: entry.amount }]
+          : [],
+      )
+    : [];
+
+const parseCostByCurrency = (value: unknown, field: "cpa" | "cpc"): MoneyTotal[] =>
+  Array.isArray(value)
+    ? value.flatMap((entry) =>
+        isCurrencyCode(entry?.currency) && typeof entry?.[field] === "number"
+          ? [{ currency: entry.currency, amount: entry[field] }]
+          : [],
+      )
+    : [];
+
+const formatCurrency = (totals: MoneyTotal[], fallbackCurrency: string) =>
+  formatMoneyTotals(totals, fallbackCurrency, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(Number.isFinite(value) ? value : 0);
+  });
 
 const formatNumber = (value: number) =>
   Math.trunc(Number.isFinite(value) ? value : 0).toLocaleString("en-US");
@@ -83,6 +106,7 @@ function SideMetricCard({
 }
 
 export default function PanelPage() {
+  const { currency: countryCurrency } = useMe();
   const [metrics, setMetrics] = useState<DashboardMetrics>(ZERO_METRICS);
   const [isLoading, setIsLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Array<{ id: string; name: string }>>(
@@ -127,18 +151,17 @@ export default function PanelPage() {
         const result = metricsResult.value;
         if (result) {
           setMetrics({
-            totalSpent:
-              typeof result.totalSpend === "number" ? result.totalSpend : 0,
+            totalSpent: parseMoneyTotals(result.spendByCurrency),
             totalImpressions:
               typeof result.totalImpressions === "number"
                 ? result.totalImpressions
                 : 0,
             costPerConversion: {
-              value: typeof result.cpa === "number" ? result.cpa : 0,
+              value: parseCostByCurrency(result.byCurrency, "cpa"),
               trend: result.cpaTrend ?? 0,
             },
             costPerClick: {
-              value: typeof result.cpc === "number" ? result.cpc : 0,
+              value: parseCostByCurrency(result.byCurrency, "cpc"),
               trend: result.cpcTrend ?? 0,
             },
             clickThroughRate: {
@@ -182,7 +205,11 @@ export default function PanelPage() {
           setMetrics(ZERO_METRICS);
         }
       } else {
-        console.error("Error loading dashboard metrics:", metricsResult.reason);
+        toast.error(
+          metricsResult.reason instanceof Error
+            ? metricsResult.reason.message
+            : "Could not load dashboard metrics.",
+        );
         setMetrics(ZERO_METRICS);
       }
       setIsLoading(false);
@@ -252,7 +279,8 @@ export default function PanelPage() {
   };
 
   const hasData =
-    metrics.totalSpent > 0 ||
+    campaigns.length > 0 ||
+    metrics.totalSpent.some(({ amount }) => amount > 0) ||
     metrics.totalImpressions > 0 ||
     metrics.campaigns.active > 0 ||
     metrics.campaigns.paused > 0 ||
@@ -273,7 +301,7 @@ export default function PanelPage() {
           {/* Row 1: Spending chart + side metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2">
-              <PerformanceChart totalSpent={formatCurrency(metrics.totalSpent)} />
+              <PerformanceChart totalSpent={formatCurrency(metrics.totalSpent, countryCurrency)} />
             </div>
 
             <div className="flex flex-col gap-4">
@@ -283,7 +311,7 @@ export default function PanelPage() {
                 goodDirection="down"
               >
                 <span className="text-2xl text-gray-900 font-gilroy-semibold">
-                  {formatCurrency(metrics.costPerConversion.value)}
+                  {formatCurrency(metrics.costPerConversion.value, countryCurrency)}
                 </span>
               </SideMetricCard>
 
@@ -293,7 +321,7 @@ export default function PanelPage() {
                 goodDirection="down"
               >
                 <span className="text-2xl text-gray-900 font-gilroy-semibold">
-                  {formatCurrency(metrics.costPerClick.value)}
+                  {formatCurrency(metrics.costPerClick.value, countryCurrency)}
                 </span>
               </SideMetricCard>
 

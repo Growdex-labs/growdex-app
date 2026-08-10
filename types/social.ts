@@ -25,7 +25,7 @@ export interface MetaAssetUI {
   minDailyBudgetMinor: number | null;
   pageId: string;
   pageName: string;
-  instagramActorId: string | null;
+  instagramUserId: string | null;
   instagramUsername: string | null;
   readyForCampaigns: boolean;
   isPrimary: boolean;

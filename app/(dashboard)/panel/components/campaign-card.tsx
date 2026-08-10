@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import type { CampaignDto } from "@/lib/campaigns";
+import { formatMoney } from "@/lib/currency";
 
 interface CampaignCardProps {
   campaign: CampaignDto;
@@ -28,7 +29,7 @@ const statusClass = (status?: string) => {
   }
 };
 
-const formatMoney = (campaign: CampaignDto) => {
+const formatCampaignBudget = (campaign: CampaignDto) => {
   const totals = campaign.audienceStrategies.reduce<Record<string, number>>(
     (result, strategy) => {
       const { amount, currency } = strategy.budget;
@@ -39,11 +40,7 @@ const formatMoney = (campaign: CampaignDto) => {
   );
 
   const formatted = Object.entries(totals).map(([currency, amount]) =>
-    new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 2,
-    }).format(amount),
+    formatMoney(amount, currency, { maximumFractionDigits: 2 }),
   );
 
   return formatted.join(" + ") || "No budget set";
@@ -85,7 +82,7 @@ export function CampaignCard({ campaign, href }: CampaignCardProps) {
           {campaign.audienceStrategies.length === 1 ? "Audience budget" : "Combined audience budgets"}
         </p>
         <p className="mt-1 font-gilroy-semibold text-gray-900">
-          {formatMoney(campaign)}
+          {formatCampaignBudget(campaign)}
         </p>
       </div>
 

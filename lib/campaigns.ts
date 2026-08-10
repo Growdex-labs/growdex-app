@@ -1,4 +1,5 @@
 import { apiFetch } from "./auth";
+import { DEFAULT_CURRENCY, type MoneyTotal } from "./currency";
 
 export type CampaignGoal =
   | "AWARENESS"
@@ -266,7 +267,7 @@ export interface CampaignMetricsSummary {
 
 export interface CampaignMetrics {
   summary: {
-    totalSpend: number;
+    spendByCurrency: MoneyTotal[];
     activeCount: number;
     suspendedCount: number;
     scheduledCount: number;
@@ -869,7 +870,9 @@ export const ensureCampaignPayloadScheduleLeadTime = <
   return changed ? { ...payload, audienceStrategies } : payload;
 };
 
-export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
+export const createInitialCampaignPayload = (
+  currency: CampaignCurrency = DEFAULT_CURRENCY,
+): CreateCampaignPayload => ({
   creationMode: "manual",
   campaign: {
     name: "",
@@ -882,11 +885,12 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
       budgetOptimization: "audience_strategy",
     },
   },
-  audienceStrategies: [createAudienceStrategy()],
+  audienceStrategies: [createAudienceStrategy("Audience Strategy 1", currency)],
 });
 
 export const createAudienceStrategy = (
   name = "Audience Strategy 1",
+  currency: CampaignCurrency = DEFAULT_CURRENCY,
 ): AudienceStrategy => ({
   id: crypto.randomUUID(),
   name,
@@ -908,7 +912,7 @@ export const createAudienceStrategy = (
   },
   budget: {
     amount: 0,
-    currency: "NGN",
+    currency,
     type: "daily",
     startDate: futureIso(30),
   },
@@ -973,6 +977,8 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
     if (strategy.budget.endDate) {
       const end = new Date(strategy.budget.endDate);
       if (Number.isNaN(end.getTime()) || end <= start) return `Choose an end time after the start time for ${strategy.name}.`;
+    } else if (strategy.budget.type === "lifetime") {
+      return `Choose an end time for ${strategy.name}. A lifetime budget needs one.`;
     }
   }
   return validateCampaignCreativeSetup(payload);
@@ -1075,7 +1081,7 @@ export const startAiCampaignDraft = async (input: {
     body: JSON.stringify({
       prompt: input.prompt,
       brandName: input.brandName,
-      currency: input.currency ?? "NGN",
+      currency: input.currency ?? DEFAULT_CURRENCY,
       availableMedia: input.availableMedia ?? [],
     }),
     signal: input.signal,
