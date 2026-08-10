@@ -327,25 +327,41 @@ describe("lifetime budget validation", () => {
     campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
     campaign.audienceStrategies[0].budget.amount = 5_000;
     campaign.audienceStrategies[0].budget.type = "lifetime";
-    campaign.audienceStrategies[0].budget.startDate =
-      "2030-01-01T00:00:00.000Z";
+    campaign.audienceStrategies[0].ads = [
+      {
+        platform: "meta",
+        primaryText: "Book your summer stay.",
+        headline: "Summer opens early",
+        cta: "LEARN_MORE",
+        mediaUrl: "https://images.example.com/summer.jpg",
+        landingPageUrl: "https://growdex.ai/summer",
+      },
+    ];
     return campaign;
   };
 
+  const daysAfter = (iso: string, days: number) =>
+    new Date(new Date(iso).getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+
   it("asks for an end time when a lifetime budget has none", () => {
-    expect(validateCampaignPayload(lifetimeCampaign())).toContain(
-      "A lifetime budget needs one",
+    expect(validateCampaignPayload(lifetimeCampaign())).toBe(
+      "Choose an end time for Audience Strategy 1. A lifetime budget needs one.",
     );
   });
 
   it("accepts a lifetime budget that ends after it starts", () => {
     const campaign = lifetimeCampaign();
-    campaign.audienceStrategies[0].budget.endDate =
-      "2030-02-01T00:00:00.000Z";
+    const budget = campaign.audienceStrategies[0].budget;
+    budget.endDate = daysAfter(budget.startDate, 30);
 
-    expect(validateCampaignPayload(campaign)).not.toContain(
-      "A lifetime budget needs one",
-    );
+    expect(validateCampaignPayload(campaign)).toBeNull();
+  });
+
+  it("leaves a daily budget without an end time alone", () => {
+    const campaign = lifetimeCampaign();
+    campaign.audienceStrategies[0].budget.type = "daily";
+
+    expect(validateCampaignPayload(campaign)).toBeNull();
   });
 });
 
