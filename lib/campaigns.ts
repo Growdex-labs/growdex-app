@@ -973,6 +973,8 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
     if (strategy.budget.endDate) {
       const end = new Date(strategy.budget.endDate);
       if (Number.isNaN(end.getTime()) || end <= start) return `Choose an end time after the start time for ${strategy.name}.`;
+    } else if (strategy.budget.type === "lifetime") {
+      return `Choose an end time for ${strategy.name}. A lifetime budget needs one.`;
     }
   }
   return validateCampaignCreativeSetup(payload);

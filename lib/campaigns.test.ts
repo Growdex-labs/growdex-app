@@ -319,6 +319,36 @@ describe("Meta special ad category validation", () => {
   });
 });
 
+describe("lifetime budget validation", () => {
+  const lifetimeCampaign = () => {
+    const campaign = createInitialCampaignPayload();
+    campaign.campaign.name = "Summer push";
+    campaign.campaign.platforms = ["meta"];
+    campaign.campaign.configuration.accountAssetIds = { meta: "account-1" };
+    campaign.audienceStrategies[0].budget.amount = 5_000;
+    campaign.audienceStrategies[0].budget.type = "lifetime";
+    campaign.audienceStrategies[0].budget.startDate =
+      "2030-01-01T00:00:00.000Z";
+    return campaign;
+  };
+
+  it("asks for an end time when a lifetime budget has none", () => {
+    expect(validateCampaignPayload(lifetimeCampaign())).toContain(
+      "A lifetime budget needs one",
+    );
+  });
+
+  it("accepts a lifetime budget that ends after it starts", () => {
+    const campaign = lifetimeCampaign();
+    campaign.audienceStrategies[0].budget.endDate =
+      "2030-02-01T00:00:00.000Z";
+
+    expect(validateCampaignPayload(campaign)).not.toContain(
+      "A lifetime budget needs one",
+    );
+  });
+});
+
 describe("validateCampaignCreativeSetup", () => {
   it("routes incomplete media to creative setup and completed media onward", () => {
     const campaign = createInitialCampaignPayload();

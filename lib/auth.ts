@@ -328,7 +328,7 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
             minDailyBudgetMinor: 600000,
             pageId: "mock-page-123",
             pageName: "Growdex",
-            instagramActorId: "mock-instagram-123",
+            instagramUserId: "mock-instagram-123",
             instagramUsername: "growdex",
             readyForCampaigns: true,
             isPrimary: true,
