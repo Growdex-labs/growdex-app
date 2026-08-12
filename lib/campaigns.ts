@@ -1,3 +1,4 @@
+import { readApiErrorMessage } from "./api-error";
 import { apiFetch } from "./auth";
 
 export type CampaignGoal =
@@ -344,28 +345,6 @@ export interface ProviderLanguage {
 
 const readJson = async (res: Response) => res.json().catch(() => ({}));
 
-const getApiError = (data: unknown, fallback: string) => {
-  if (!data || typeof data !== "object") return fallback;
-  const response = data as {
-    message?: unknown;
-    errors?: Array<{ message?: unknown; path?: unknown; field?: unknown }>;
-  };
-  const fieldError = response.errors?.[0];
-  const fieldMessage = fieldError?.message;
-  if (typeof fieldMessage === "string") {
-    const path = Array.isArray(fieldError?.path)
-      ? fieldError.path
-          .filter((part): part is string | number =>
-            typeof part === "string" || typeof part === "number",
-          )
-          .join(".")
-      : typeof fieldError?.field === "string"
-        ? fieldError.field
-        : "";
-    return path ? `${path}: ${fieldMessage}` : fieldMessage;
-  }
-  return typeof response.message === "string" ? response.message : fallback;
-};
 
 const CAMPAIGN_RATIONALE_KEYS = [
   "setup",
@@ -1014,7 +993,7 @@ export const fetchMetaLeadForms = async (
   const data = await readJson(res);
   if (!res.ok) {
     throw new Error(
-      getApiError(data, `Load Meta Instant Forms failed (${res.status})`),
+      readApiErrorMessage(data, `Load Meta Instant Forms failed (${res.status})`),
     );
   }
   if (
@@ -1084,7 +1063,7 @@ export const startAiCampaignDraft = async (input: {
   });
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Start AI campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Start AI campaign failed (${res.status})`));
   }
   return parseAiCampaignDraftResponse(data);
 };
@@ -1114,7 +1093,7 @@ export const resumeAiCampaignDraft = async (input: {
   });
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Resume AI campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Resume AI campaign failed (${res.status})`));
   }
   return parseAiCampaignDraftResponse(data);
 };
@@ -1141,7 +1120,7 @@ export const answerAiCampaignQuestion = async (input: {
   );
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Continue AI campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Continue AI campaign failed (${res.status})`));
   }
   return parseAiCampaignDraftResponse(data);
 };
@@ -1174,7 +1153,7 @@ export const reviseAiCampaignDraft = async (input: {
   );
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Revise AI campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Revise AI campaign failed (${res.status})`));
   }
   return parseAiCampaignDraftResponse(data);
 };
@@ -1192,7 +1171,7 @@ export const requestCampaignAdvice = async (
   const data = await readJson(res);
   if (!res.ok) {
     throw new Error(
-      getApiError(data, "The campaign assistant could not answer right now."),
+      readApiErrorMessage(data, "The campaign assistant could not answer right now."),
     );
   }
   const answer =
@@ -1218,7 +1197,7 @@ export const requestCampaignName = async (input: {
   });
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Generate campaign name failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Generate campaign name failed (${res.status})`));
   }
   return parseCampaignNameSuggestion(data);
 };
@@ -1277,7 +1256,7 @@ export const requestCampaignCreativeSuggestion = async (
   );
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Generate creative suggestion failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Generate creative suggestion failed (${res.status})`));
   }
   if (!isRecord(data)) {
     throw new Error("The AI creative service returned an invalid response.");
@@ -1321,7 +1300,7 @@ export const requestAudienceInterestSuggestions = async (
   const data = await readJson(res);
   if (!res.ok) {
     throw new Error(
-      getApiError(data, `Generate audience interests failed (${res.status})`),
+      readApiErrorMessage(data, `Generate audience interests failed (${res.status})`),
     );
   }
   if (
@@ -1349,7 +1328,7 @@ export const fetchCampaignOptimizations = async (
   );
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Load campaign optimizations failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Load campaign optimizations failed (${res.status})`));
   }
   return parseCampaignOptimizationResponse(data);
 };
@@ -1371,7 +1350,7 @@ export const requestCampaignOptimizations = async (
   const data = await readJson(res);
   if (!res.ok) {
     throw new Error(
-      getApiError(data, `Generate campaign optimizations failed (${res.status})`),
+      readApiErrorMessage(data, `Generate campaign optimizations failed (${res.status})`),
     );
   }
   return parseCampaignOptimizationResponse(data);
@@ -1399,7 +1378,7 @@ export const applyCampaignOptimizations = async (input: {
   );
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Apply campaign optimizations failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Apply campaign optimizations failed (${res.status})`));
   }
   const campaign = isRecord(data) && isRecord(data.campaign) ? data.campaign : data;
   if (!isRecord(campaign) || typeof campaign.id !== "string") {
@@ -1417,7 +1396,7 @@ export const searchMetaInterests = async (
   );
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Interest search failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Interest search failed (${res.status})`));
   }
   if (!Array.isArray(data?.interests)) {
     throw new Error("Interest search returned an invalid response shape");
@@ -1437,7 +1416,7 @@ export const forecastCampaignReach = async (input: {
   });
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Reach forecast failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Reach forecast failed (${res.status})`));
   }
   const forecast = data?.forecast;
   if (
@@ -1462,7 +1441,7 @@ export const fetchCampaignEventSources = async (
   const data = await readJson(res);
   if (!res.ok) {
     throw new Error(
-      getApiError(data, `Load ${platform} event sources failed (${res.status})`),
+      readApiErrorMessage(data, `Load ${platform} event sources failed (${res.status})`),
     );
   }
   if (!Array.isArray(data)) {
@@ -1483,7 +1462,7 @@ export const searchProviderLanguages = async (
   const data = await readJson(res);
   if (!res.ok) {
     throw new Error(
-      getApiError(data, `Load ${platform} languages failed (${res.status})`),
+      readApiErrorMessage(data, `Load ${platform} languages failed (${res.status})`),
     );
   }
   if (!Array.isArray(data)) {
@@ -1558,7 +1537,7 @@ export const createCampaign = async (
   const data = await readJson(res);
 
   if (!res.ok) {
-    throw new Error(getApiError(data, `Create campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Create campaign failed (${res.status})`));
   }
 
   return parseCampaignWriteResponse(data, "Create campaign");
@@ -1580,7 +1559,7 @@ export const createCampaignDraft = async (
   });
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Save campaign draft failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Save campaign draft failed (${res.status})`));
   }
   return parseCampaignWriteResponse(data, "Save campaign draft");
 };
@@ -1590,7 +1569,7 @@ export const fetchCampaigns = async (): Promise<CampaignDto[]> => {
   const data = await readJson(res);
 
   if (!res.ok) {
-    throw new Error(getApiError(data, `Fetch campaigns failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Fetch campaigns failed (${res.status})`));
   }
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.campaigns)) return data.campaigns;
@@ -1606,7 +1585,7 @@ export const fetchCampaignById = async (id: string): Promise<CampaignDto> => {
   const data = await readJson(res);
 
   if (!res.ok) {
-    throw new Error(getApiError(data, `Fetch campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Fetch campaign failed (${res.status})`));
   }
   if (data?.id) return data as CampaignDto;
   if (data?.data?.id) return data.data as CampaignDto;
@@ -1620,7 +1599,7 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
 
   if (!res.ok) {
     throw new Error(
-      getApiError(data, `Fetch campaign metrics failed (${res.status})`),
+      readApiErrorMessage(data, `Fetch campaign metrics failed (${res.status})`),
     );
   }
   if (data?.summary && Array.isArray(data?.campaigns)) return data;
@@ -1642,7 +1621,7 @@ export const fetchCampaignMetricsById = async (
 
   if (!res.ok) {
     throw new Error(
-      getApiError(data, `Fetch campaign metrics failed (${res.status})`),
+      readApiErrorMessage(data, `Fetch campaign metrics failed (${res.status})`),
     );
   }
 
@@ -1711,7 +1690,7 @@ export const updateCampaign = async (
   const data = await readJson(res);
 
   if (!res.ok) {
-    throw new Error(getApiError(data, `Update campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Update campaign failed (${res.status})`));
   }
 
   return parseCampaignWriteResponse(data, "Update campaign");
@@ -1728,7 +1707,7 @@ export const updateCampaignDraft = async (
   });
   const data = await readJson(res);
   if (!res.ok) {
-    throw new Error(getApiError(data, `Save campaign draft failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Save campaign draft failed (${res.status})`));
   }
   return parseCampaignWriteResponse(data, "Save campaign draft");
 };
@@ -1746,7 +1725,7 @@ export const publishCampaign = async (
   const data = await readJson(res);
 
   if (!res.ok) {
-    throw new Error(getApiError(data, `Publish campaign failed (${res.status})`));
+    throw new Error(readApiErrorMessage(data, `Publish campaign failed (${res.status})`));
   }
 
   return parseCampaignWriteResponse(data, "Publish campaign");
