@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AlertCircle, ExternalLink, Loader2 } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import { apiFetch } from "@/lib/auth";
+import { openPopupWindow } from "@/lib/popup";
 import { useMe } from "@/context/me-context";
 import { BillingHeader } from "../components/billing-header";
 import { BillingSidebar } from "../components/billing-sidebar";
@@ -207,8 +208,13 @@ export default function FundWalletPage() {
       return;
     }
 
-    setCardErrors((current) => ({ ...current, [key]: null }));
-    window.location.assign(billingUrl);
+    const popup = openPopupWindow(billingUrl, `${option.platform}_billing`);
+    setCardErrors((current) => ({
+      ...current,
+      [key]: popup
+        ? null
+        : `Your browser blocked the ${PLATFORM_CONFIG[option.platform].name} billing window. Allow popups for Growdex, then try again.`,
+    }));
   };
 
   return (
@@ -224,8 +230,9 @@ export default function FundWalletPage() {
               Add campaign funding
             </h1>
             <p className="mt-2 text-sm text-gray-500">
-              Meta opens its billing page directly. For TikTok, open Ads
-              Manager and choose Tools, Billing, then Payment.
+              Meta opens its billing page in a separate window, so this page
+              stays open behind it. For TikTok, open Ads Manager and choose
+              Tools, Billing, then Payment.
             </p>
 
             {pageError ? (
