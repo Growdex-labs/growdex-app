@@ -8,6 +8,7 @@ import {
   formatUsage,
   startProCheckout,
   usagePercent,
+  PRO_PLAN_CURRENCY,
   PRO_PLAN_FEATURES,
   PRO_PLAN_PRICE,
   type PlanLimit,
@@ -142,7 +143,8 @@ export function SubscriptionTab({
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 px-4 py-3 text-sm font-gilroy-semibold text-gray-950 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {upgrading && <Loader2 className="size-4 animate-spin" />}
-            Upgrade to Pro — ${PRO_PLAN_PRICE}/month
+            Upgrade to Pro — {formatPlanPrice(PRO_PLAN_PRICE, PRO_PLAN_CURRENCY)}
+            /month
           </button>
         )}
       </section>
@@ -150,7 +152,9 @@ export function SubscriptionTab({
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-2xl font-gilroy-bold text-gray-950">Pro</h2>
-          <span className="text-sm text-gray-500">${PRO_PLAN_PRICE}/month</span>
+          <span className="text-sm text-gray-500">
+            {formatPlanPrice(PRO_PLAN_PRICE, PRO_PLAN_CURRENCY)}/month
+          </span>
         </div>
         <p className="mt-2 text-sm text-gray-500">
           For businesses, marketers, freelancers, and growing teams.

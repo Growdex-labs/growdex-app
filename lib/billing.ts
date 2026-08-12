@@ -51,6 +51,7 @@ export interface Invoice {
 }
 
 export const PRO_PLAN_PRICE = 49;
+export const PRO_PLAN_CURRENCY = "USD";
 
 export const PRO_PLAN_FEATURES = [
   "Unlimited active campaigns",
