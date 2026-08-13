@@ -17,6 +17,14 @@
   --color-darkkhaki-200: #d6c34a;
   --color-mintcream-50: #f2fff7;
   --color-black-800: #332c00;
+  --color-lavender-25: #f9faff;
+  --color-lavender-100: #c8cbd7;
+  --color-lavender-200: #9095a7;
+  --color-lavender-300: #4e5673;
+  --color-bodySecondary: #808080;
+
+  --font-inter: var(--font-inter-sans), sans-serif;
+  --font-lexend: var(--font-lexend-sans), sans-serif;
 }
 
 @font-face {

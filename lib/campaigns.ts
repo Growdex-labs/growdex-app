@@ -232,6 +232,7 @@ export interface CampaignDto {
   status?: string;
   publishError?: string | null;
   createdAt?: string;
+  publishedAt?: string | null;
 }
 
 export type CampaignReviewPayload = Omit<

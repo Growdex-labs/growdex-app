@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, createContext, useContext, useMemo, useState } from "react";
 import { CollapsibleSidebar } from "./collapsible-sidebar";
 import { TopHeader } from "./top-header";
 import { BottomNavigation } from "./bottom-navigation";
@@ -11,11 +11,27 @@ interface PanelLayoutProps {
   defaultSidebarCollapsed?: boolean;
 }
 
+interface PanelChrome {
+  openNotifications: () => void;
+}
+
+const PanelChromeContext = createContext<PanelChrome>({
+  openNotifications: () => {},
+});
+
+/** Lets a page open the chrome the layout owns, such as the notification panel. */
+export const usePanelChrome = () => useContext(PanelChromeContext);
+
 export function PanelLayout({
   children,
   defaultSidebarCollapsed = false,
 }: PanelLayoutProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const chrome = useMemo<PanelChrome>(
+    () => ({ openNotifications: () => setIsNotificationOpen(true) }),
+    [],
+  );
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <TopHeader />
@@ -25,7 +41,9 @@ export function PanelLayout({
           onNotificationClick={() => setIsNotificationOpen(true)}
         />
         <main className="min-w-0 flex-1 overflow-y-auto pb-16 md:pb-0 hide-scrollbar">
-          {children}
+          <PanelChromeContext.Provider value={chrome}>
+            {children}
+          </PanelChromeContext.Provider>
         </main>
         <NotificationSidebar
           isOpen={isNotificationOpen}

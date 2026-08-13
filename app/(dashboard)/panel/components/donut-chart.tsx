@@ -1,21 +1,19 @@
 "use client";
 
-import { MetaIcon, InstagramIcon, TikTokIcon } from "./platform-icons";
+import { MetaIcon, PlatformMark } from "./platform-icons";
 
 interface DonutChartProps {
   meta: number;
-  instagram?: number;
   tiktok: number;
 }
 
 const COLORS = {
   meta: "#332c00",
-  instagram: "#d6c34a",
-  tiktok: "#fff8ce",
+  tiktok: "#d6c34a",
 };
 
-export function DonutChart({ meta, instagram = 0, tiktok }: DonutChartProps) {
-  const total = meta + instagram + tiktok;
+export function DonutChart({ meta, tiktok }: DonutChartProps) {
+  const total = meta + tiktok;
 
   const radius = 80;
   const strokeWidth = 24;
@@ -23,7 +21,6 @@ export function DonutChart({ meta, instagram = 0, tiktok }: DonutChartProps) {
 
   const segments = [
     { key: "meta", value: meta, color: COLORS.meta },
-    { key: "instagram", value: instagram, color: COLORS.instagram },
     { key: "tiktok", value: tiktok, color: COLORS.tiktok },
   ];
 
@@ -68,23 +65,15 @@ export function DonutChart({ meta, instagram = 0, tiktok }: DonutChartProps) {
         <div className="flex items-center gap-1.5">
           <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.meta }} />
           <MetaIcon className="w-4 h-4" />
-          <span className="text-[#9095a7] font-gilroy-light text-xs">
+          <span className="font-inter text-xs font-light tracking-[-0.12px] text-lavender-200">
             {formatNumber(meta)}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.instagram }} />
-          <InstagramIcon className="w-4 h-4" />
-          <span className="text-[#9095a7] font-gilroy-light text-xs">
-            {formatNumber(instagram)}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
           <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.tiktok }} />
-          <TikTokIcon className="w-4 h-4" />
-          <span className="text-[#9095a7] font-gilroy-light text-xs">
+          <PlatformMark platform="tiktok" />
+          <span className="font-inter text-xs font-light tracking-[-0.12px] text-lavender-200">
             {formatNumber(tiktok)}
           </span>
         </div>
