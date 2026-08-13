@@ -24,12 +24,52 @@ export function TikTokIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+export type PlatformName = "facebook" | "instagram" | "tiktok";
+
+const MARK_LABELS: Record<PlatformName, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+};
+
+/** The brand marks used across the dashboard, drawn at 16px in Growdex Gray 400. */
+export function PlatformMark({
+  platform,
+  className = "size-4",
+}: {
+  platform: PlatformName;
+  className?: string;
+}) {
+  if (platform === "facebook") {
+    return (
+      <span className={`relative block shrink-0 ${className}`}>
+        <img
+          src="/icons/facebook.svg"
+          alt={MARK_LABELS.facebook}
+          className="absolute inset-0 size-full"
+        />
+        <span className="absolute top-[19.53%] right-[27.73%] bottom-0 left-[29.49%]">
+          <img src="/icons/facebook-glyph.svg" alt="" className="block size-full" />
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={`/icons/${platform}.svg`}
+      alt={MARK_LABELS[platform]}
+      className={`shrink-0 ${className}`}
+    />
+  );
+}
+
 export function PlatformIconRow({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center justify-between w-full ${className}`}>
-      <MetaIcon className="w-4 h-4" />
-      <InstagramIcon className="w-4 h-4" />
-      <TikTokIcon className="w-4 h-4" />
+      <PlatformMark platform="facebook" />
+      <PlatformMark platform="instagram" />
+      <PlatformMark platform="tiktok" />
     </div>
   );
 }
