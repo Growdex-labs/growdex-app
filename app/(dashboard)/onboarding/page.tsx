@@ -251,6 +251,16 @@ function OnboardingPageContent() {
         const { personalInfo, business, goals } = res.data;
         const [first, ...rest] = personalInfo.name.split(' ');
         const existingCountry = business?.country?.trim();
+        const hydratedCountry = existingCountry || detectedCountryResponse || '';
+        const expectedBudgetCurrency = currencyForOnboardingCountry(hydratedCountry);
+        const savedBudgetCurrency = business?.advertisingBudgetCurrency
+          ?.trim()
+          .toUpperCase();
+        const hasMismatchedBudgetCurrency = Boolean(
+          business?.advertisingBudget &&
+            savedBudgetCurrency &&
+            savedBudgetCurrency !== expectedBudgetCurrency,
+        );
         setFormData((prev) => ({
           ...prev,
           firstName: first || '',
@@ -258,9 +268,11 @@ function OnboardingPageContent() {
           organizationName: personalInfo.organizationName || business?.businessName || '',
           organizationSize: personalInfo.organizationSize || '',
           website: business?.website || '',
-          country: existingCountry || detectedCountryResponse || '',
+          country: hydratedCountry,
           industry: personalInfo.industry || business?.industry || '',
-          monthlyBudget: personalInfo.monthlyBudget || business?.advertisingBudget || '',
+          monthlyBudget: hasMismatchedBudgetCurrency
+            ? ''
+            : personalInfo.monthlyBudget || business?.advertisingBudget || '',
           goals: goals?.selected || [],
           customGoal: goals?.custom || '',
         }));

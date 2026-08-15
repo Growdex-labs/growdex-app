@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { usePathname } from "next/navigation";
 import { apiFetch } from "@/lib/auth";
+import { USD } from "@/lib/onboarding-country";
 
 export type MeProfile = {
   id: string;
@@ -163,7 +164,7 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, refresh]);
 
   const value = useMemo<MeContextValue>(
-    () => ({ me, currency: me?.currency ?? "NGN", isLoading, error, refresh }),
+    () => ({ me, currency: me?.currency ?? USD, isLoading, error, refresh }),
     [me, isLoading, error, refresh],
   );
 

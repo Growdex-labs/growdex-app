@@ -359,9 +359,14 @@ export default function PanelPage() {
             ) : view === "insights" ? (
               <>
                 {rateCard}
+                {!selectedCampaignId && (
+                  <p className="mt-4 text-sm text-gray-500">
+                    Select a campaign from the dashboard to use a recommended action.
+                  </p>
+                )}
                 <RecommendedActions
                   selectedId={selectedInsightAction}
-                  disabled={assistantLoading}
+                  disabled={assistantLoading || !selectedCampaignId}
                   onSelect={(action) => {
                     setSelectedInsightAction(action.id);
                     void sendAssistantMessage(action.prompt);
