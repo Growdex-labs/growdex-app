@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/auth";
 import { fetchCampaigns, type CampaignPlatform } from "@/lib/campaigns";
 import { isVideoMedia } from "@/lib/campaign-shared";
+import type { UploadedCreative } from "@/lib/media-upload";
 
 export interface CreativeAsset {
   id: string;
@@ -34,6 +35,66 @@ export const PUBLISHED_CAMPAIGN_STATUSES = new Set([
   "completed",
 ]);
 
+export const LIBRARY_UPLOAD_LABEL = "Uploaded";
+export const LIBRARY_UPLOADS_STORAGE_KEY = "growdex_library_uploads";
+
+const isLibraryAsset = (value: unknown): value is CreativeAsset => {
+  if (!value || typeof value !== "object") return false;
+  const asset = value as Record<string, unknown>;
+  return (
+    typeof asset.id === "string" &&
+    typeof asset.name === "string" &&
+    typeof asset.url === "string" &&
+    (asset.platform === "meta" || asset.platform === "tiktok") &&
+    typeof asset.campaignId === "string" &&
+    typeof asset.campaignName === "string" &&
+    typeof asset.status === "string" &&
+    typeof asset.createdAt === "string" &&
+    asset.kind === "asset"
+  );
+};
+
+export const readLibraryUploads = (): CreativeAsset[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(LIBRARY_UPLOADS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(isLibraryAsset) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const libraryAssetFromUpload = (
+  uploaded: UploadedCreative,
+): CreativeAsset => {
+  const platform = uploaded.mediaType === "video" ? "tiktok" : "meta";
+  return {
+    id: `library:${fingerprint(uploaded.url)}`,
+    name: uploaded.name.slice(0, 80),
+    url: uploaded.url,
+    platform,
+    campaignId: "",
+    campaignName: LIBRARY_UPLOAD_LABEL,
+    status: "available",
+    createdAt: new Date().toISOString(),
+    kind: "asset",
+    mediaType: uploaded.mediaType,
+    thumbnailUrl: uploaded.thumbnailUrl,
+  };
+};
+
+export const persistLibraryUpload = (uploaded: UploadedCreative): CreativeAsset => {
+  const asset = libraryAssetFromUpload(uploaded);
+  const next = [
+    asset,
+    ...readLibraryUploads().filter((item) => item.url !== asset.url),
+  ];
+  window.localStorage.setItem(LIBRARY_UPLOADS_STORAGE_KEY, JSON.stringify(next));
+  return asset;
+};
+
 export const fetchCreativeAssets = async (options?: {
   platforms?: CampaignPlatform[];
 }): Promise<CreativeAsset[]> => {
@@ -42,6 +103,13 @@ export const fetchCreativeAssets = async (options?: {
     ? new Set(options.platforms)
     : null;
   const unique = new Map<string, CreativeAsset>();
+
+  for (const asset of readLibraryUploads()) {
+    if (requestedPlatforms && !requestedPlatforms.has(asset.platform)) {
+      continue;
+    }
+    unique.set(`${asset.platform}:${asset.url}`, asset);
+  }
 
   for (const campaign of campaigns) {
     for (const creative of campaign.creatives ?? []) {
@@ -65,6 +133,7 @@ export const fetchCreativeAssets = async (options?: {
       mediaType: isVideoMedia({
         url: creative.mediaUrl,
         platform: creative.platform,
+        mediaType: creative.mediaType,
       })
         ? "video"
         : "image",

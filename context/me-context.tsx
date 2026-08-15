@@ -45,6 +45,7 @@ export type MeResponse = {
   avatarUrl: string | null;
   onboardingCompleted: boolean;
   isAdmin: boolean;
+  currency: string;
   profile: MeProfile;
   brand: MeBrand;
   platformConnections: PlatformConnection[];
@@ -52,6 +53,7 @@ export type MeResponse = {
 
 type MeContextValue = {
   me: MeResponse | null;
+  currency: string;
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -65,6 +67,7 @@ const MOCK_ME: MeResponse = {
   avatarUrl: null,
   onboardingCompleted: true,
   isAdmin: true,
+  currency: "NGN",
   profile: {
     id: "mock-id",
     firstName: "Dev",
@@ -160,7 +163,7 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, refresh]);
 
   const value = useMemo<MeContextValue>(
-    () => ({ me, isLoading, error, refresh }),
+    () => ({ me, currency: me?.currency ?? "NGN", isLoading, error, refresh }),
     [me, isLoading, error, refresh],
   );
 

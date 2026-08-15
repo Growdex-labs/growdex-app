@@ -99,6 +99,7 @@ export const CreativeSection = ({
                     isVideoMedia({
                       url: creativesByPlatform.meta.mediaUrl,
                       platform: "meta",
+                      mediaType: creativesByPlatform.meta.mediaType,
                     }) ? (
                       <video
                         src={creativesByPlatform.meta.mediaUrl}
@@ -168,6 +169,7 @@ export const CreativeSection = ({
                     isVideoMedia({
                       url: creativesByPlatform.tiktok.mediaUrl,
                       platform: "tiktok",
+                      mediaType: creativesByPlatform.tiktok.mediaType,
                     }) ? (
                       <video
                         src={creativesByPlatform.tiktok.mediaUrl}

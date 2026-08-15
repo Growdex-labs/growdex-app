@@ -387,32 +387,49 @@ export function CreativeSetupScreen({
 
   const handleLibraryUpload = (file: File) => {
     setUploadError(null);
-    const platform = file.type.startsWith("image/")
-      ? "meta"
-      : file.type.startsWith("video/") && destination === "VIDEO"
-        ? platformFilter !== "all"
-          ? platformFilter
-          : platforms.length === 1
-            ? platforms[0]
-            : null
-        : file.type.startsWith("video/")
-          ? "tiktok"
+    const platform =
+      platformFilter !== "all"
+        ? platformFilter
+        : platforms.length === 1
+          ? platforms[0]
           : null;
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
 
     if (!platform) {
       setUploadError(
-        destination === "VIDEO" && platforms.length > 1
-          ? "Choose Meta or TikTok in the platform filter before uploading its video."
-          : "Choose an image for Meta or a video for TikTok.",
+        platforms.length === 0
+          ? "Choose an ad platform before uploading creative."
+          : "Choose Meta or TikTok in the platform filter before uploading creative.",
       );
       return;
     }
     if (!platforms.includes(platform)) {
       setUploadError(
         platform === "meta"
-          ? "This campaign does not include Meta. Upload a TikTok video instead."
-          : "This campaign does not include TikTok. Upload a Meta image instead.",
+          ? "This campaign does not include Meta. Choose TikTok before uploading its creative."
+          : "This campaign does not include TikTok. Choose Meta before uploading its creative.",
       );
+      return;
+    }
+    if (destination === "VIDEO" && !isVideo) {
+      setUploadError("This campaign requires a video creative.");
+      return;
+    }
+    if (destination !== "VIDEO" && platform === "meta" && !isImage) {
+      setUploadError("Meta campaigns require an image creative.");
+      return;
+    }
+    if (
+      platform === "tiktok" &&
+      isImage &&
+      !["image/jpeg", "image/png"].includes(file.type)
+    ) {
+      setUploadError("TikTok images must be JPG, JPEG, or PNG files.");
+      return;
+    }
+    if (!isImage && !isVideo) {
+      setUploadError("Upload an image or a video file.");
       return;
     }
 
@@ -434,6 +451,22 @@ export function CreativeSetupScreen({
         connectionError={connectionError}
         onConnect={onConnect}
       />
+    );
+  }
+
+  if (!platforms.length) {
+    return (
+      <section className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <p className="text-xs font-gilroy-semibold uppercase tracking-[0.14em] text-violet-500">
+          Creative setup
+        </p>
+        <h2 className="mt-2 text-2xl font-gilroy-bold text-gray-950">
+          Choose an ad platform first
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
+          Select Meta or TikTok in the previous step, then return here to upload the right creative.
+        </p>
+      </section>
     );
   }
 
@@ -470,12 +503,12 @@ export function CreativeSetupScreen({
       : platformFilter === "meta"
         ? "image/*"
         : platformFilter === "tiktok"
-          ? "video/*"
+          ? "image/jpeg,image/png,video/*"
       : platforms.length > 1
         ? "image/*,video/*"
         : platforms[0] === "meta"
           ? "image/*"
-          : "video/*";
+          : "image/jpeg,image/png,video/*";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -487,7 +520,7 @@ export function CreativeSetupScreen({
           Choose the media for your ads
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-          Select up to six saved assets or upload from your computer. Meta uses images and TikTok uses video.
+          Select up to six saved assets or upload from your computer. Meta uses images; TikTok supports JPG/PNG images and video.
         </p>
       </header>
 
@@ -523,7 +556,7 @@ export function CreativeSetupScreen({
                           : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                       }`}
                     >
-                      {platform === "meta" ? "Meta image" : "TikTok video"}
+                      {platform === "meta" ? "Meta image" : "TikTok image or video"}
                     </button>
                   );
                 })}
@@ -558,7 +591,7 @@ export function CreativeSetupScreen({
                       Use the same creative across platforms
                     </span>
                     <span className="mt-1 block text-xs leading-5 text-violet-700">
-                      Copy stays in sync while each platform keeps its required media type.
+                      Copy and the call-to-action stay in sync. Choose media that fits each platform.
                     </span>
                   </span>
                   <Switch
@@ -783,7 +816,7 @@ export function CreativeSetupScreen({
                     <span>
                       <span className="block text-sm font-gilroy-semibold text-violet-950">Use the same creative across platforms</span>
                       <span className="mt-1 block text-xs leading-5 text-violet-700">
-                        Copy and call-to-action stay in sync. Meta still uses an image and TikTok still uses a video.
+                        Copy and call-to-action stay in sync. Choose media that fits each platform.
                       </span>
                     </span>
                     <Switch

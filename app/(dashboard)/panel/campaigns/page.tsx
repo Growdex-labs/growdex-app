@@ -1,17 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Search } from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
 import { CampaignsSidebar } from "../components/campaigns-sidebar";
 import { CampaignsMobileHeader } from "../components/campaigns-mobile-header";
 import {
   fetchCampaigns,
-  fetchCampaignMetrics,
+  fetchCampaignMetricsById,
+  fetchCampaignOptimizations,
+  requestCampaignAdvice,
+  summariseCampaignMetrics,
   type CampaignDto,
 } from "@/lib/campaigns";
-import { CampaignCard } from "../components/campaign-card";
+import { PUBLISHED_CAMPAIGN_STATUSES } from "@/lib/assets";
+import { fetchPanelMetrics, type SpendByCurrency } from "@/lib/panel";
+import {
+  CampaignCard,
+  type CampaignCardStats,
+} from "../components/campaign-card";
+import { CampaignsAiFab } from "../components/campaigns-ai-fab";
+import {
+  CampaignsAiPanel,
+  type AiMessage,
+} from "../components/campaigns-ai-panel";
+import {
+  takeAdviceAction,
+  withAdviceActionState,
+} from "../components/take-advice-action";
 import { SegmentedTabs } from "../components/segmented-tabs";
 
 type CampaignTab = "active" | "draft" | "inactive";
@@ -24,23 +42,55 @@ const TABS: Array<{ id: CampaignTab; label: string; emptyTitle: string }> = [
   { id: "inactive", label: "Inactive", emptyTitle: "No inactive campaigns" },
 ];
 
+/**
+ * Advertising accounts can bill in different currencies, so the card keeps
+ * those amounts separate instead of adding unlike amounts together.
+ */
+const formatSpend = (spendByCurrency: SpendByCurrency[]) => {
+  const validSpend = spendByCurrency.filter(
+    ({ currency, amount }) =>
+      /^[A-Z]{3}$/.test(currency) && Number.isFinite(amount),
+  );
+
+  if (validSpend.length === 0) return "—";
+
+  return validSpend
+    .map(({ currency, amount }) =>
+      new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 2,
+      }).format(amount),
+    )
+    .join(" + ");
+};
+
 export default function CampaignsPage() {
+  const router = useRouter();
   const [chosenTab, setChosenTab] = useState<CampaignTab | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [totalSpend, setTotalSpend] = useState(0);
+  const [spendByCurrency, setSpendByCurrency] = useState<SpendByCurrency[]>([]);
   const [search, setSearch] = useState("");
+  const [statsById, setStatsById] = useState<Record<string, CampaignCardStats>>(
+    {},
+  );
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<AiMessage[]>([]);
+  const assistantRequestRef = useRef(0);
 
   useEffect(() => {
     let active = true;
-    void Promise.allSettled([fetchCampaigns(), fetchCampaignMetrics()])
+    void Promise.allSettled([fetchCampaigns(), fetchPanelMetrics()])
       .then(([campaignResult, metricsResult]) => {
         if (!active) return;
         if (campaignResult.status === "rejected") throw campaignResult.reason;
         setCampaigns(campaignResult.value);
-        if (metricsResult.status === "fulfilled") {
-          setTotalSpend(metricsResult.value.summary.totalSpend);
+        if (metricsResult.status === "fulfilled" && metricsResult.value) {
+          setSpendByCurrency(metricsResult.value.spendByCurrency);
         }
       })
       .catch((failure) => {
@@ -56,6 +106,70 @@ export default function CampaignsPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!campaigns.length) return;
+    let active = true;
+
+    void Promise.all(
+      campaigns.map(async (campaign) => {
+        const currency =
+          campaign.audienceStrategies[0]?.budget.currency ?? "NGN";
+        const [metricsResult, optimizationResult] = await Promise.allSettled([
+          fetchCampaignMetricsById(campaign.id).then((metrics) => ({
+            ...summariseCampaignMetrics(metrics.byPlatform),
+            trend: metrics.trend,
+          })),
+          PUBLISHED_CAMPAIGN_STATUSES.has(
+            (campaign.status ?? "draft").toLowerCase(),
+          )
+            ? fetchCampaignOptimizations(campaign.id)
+            : Promise.resolve(null),
+        ]);
+
+        return {
+          id: campaign.id,
+          stats: {
+            spend:
+              metricsResult.status === "fulfilled"
+                ? metricsResult.value.spend
+                : null,
+            ctr:
+              metricsResult.status === "fulfilled"
+                ? metricsResult.value.ctr
+                : null,
+            cpc:
+              metricsResult.status === "fulfilled"
+                ? metricsResult.value.cpc
+                : null,
+            cpa:
+              metricsResult.status === "fulfilled"
+                ? metricsResult.value.cpa
+                : null,
+            trend:
+              metricsResult.status === "fulfilled"
+                ? metricsResult.value.trend.map((point) => point.ctr)
+                : [],
+            currency,
+            recommendationCount:
+              optimizationResult.status === "fulfilled" &&
+              optimizationResult.value
+                ? optimizationResult.value.proposals.length
+                : 0,
+          } satisfies CampaignCardStats,
+        };
+      }),
+    ).then((rows) => {
+      if (!active) return;
+      setStatsById(
+        Object.fromEntries(rows.map((row) => [row.id, row.stats])),
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [campaigns]);
 
   const groups = useMemo(() => {
     const result: Record<CampaignTab, CampaignDto[]> = {
@@ -82,6 +196,62 @@ export default function CampaignsPage() {
     campaign.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
+  const recommendedCampaigns = campaigns.filter(
+    (campaign) => (statsById[campaign.id]?.recommendationCount ?? 0) > 0,
+  );
+  const recommendationCount = recommendedCampaigns.reduce(
+    (total, campaign) =>
+      total + (statsById[campaign.id]?.recommendationCount ?? 0),
+    0,
+  );
+  const sendAssistantMessage = async (text: string) => {
+    if (assistantLoading) return;
+
+    const requestId = assistantRequestRef.current + 1;
+    assistantRequestRef.current = requestId;
+    const userMessage: AiMessage = {
+      id: crypto.randomUUID(),
+      sender: "user",
+      text,
+    };
+    setMessages((current) => [...current, userMessage]);
+    setAssistantOpen(true);
+    setAssistantLoading(true);
+    setAssistantError(null);
+
+    try {
+      const response = await requestCampaignAdvice(
+        undefined,
+        text,
+        messages.map((message) => ({
+          role: message.sender === "user" ? "user" : "assistant",
+          content: message.text,
+        })),
+      );
+      if (assistantRequestRef.current !== requestId) return;
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          sender: "ai",
+          text: response.answer,
+          actions: response.actions,
+        },
+      ]);
+    } catch (failure) {
+      if (assistantRequestRef.current !== requestId) return;
+      setAssistantError(
+        failure instanceof Error
+          ? failure.message
+          : "The campaign assistant could not answer right now.",
+      );
+    } finally {
+      if (assistantRequestRef.current === requestId) {
+        setAssistantLoading(false);
+      }
+    }
+  };
+
   return (
     <PanelLayout>
       <div className="flex h-full">
@@ -103,11 +273,7 @@ export default function CampaignsPage() {
               <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
                 <p className="text-xs text-dimGray">Total amount spent</p>
                 <p className="mt-1 text-2xl font-gilroy-bold text-gray-900">
-                  {new Intl.NumberFormat(undefined, {
-                    style: "currency",
-                    currency: "NGN",
-                    maximumFractionDigits: 2,
-                  }).format(totalSpend)}
+                  {formatSpend(spendByCurrency)}
                 </p>
               </div>
 
@@ -146,7 +312,15 @@ export default function CampaignsPage() {
                     const href = canPublish
                       ? `/panel/campaigns/new/publish?id=${encodeURIComponent(campaign.id)}`
                       : `/panel/campaigns/${encodeURIComponent(campaign.id)}`;
-                    return <CampaignCard key={campaign.id} campaign={campaign} href={href} />;
+                    return (
+                      <CampaignCard
+                        key={campaign.id}
+                        campaign={campaign}
+                        href={href}
+                        stats={statsById[campaign.id]}
+                        loading={!statsById[campaign.id]}
+                      />
+                    );
                   })}
                 </div>
               )}
@@ -154,6 +328,38 @@ export default function CampaignsPage() {
           </main>
         </div>
       </div>
+      <CampaignsAiFab
+        onClick={() => setAssistantOpen(true)}
+        recommendationCount={recommendationCount}
+      />
+      <CampaignsAiPanel
+        open={assistantOpen}
+        onClose={() => setAssistantOpen(false)}
+        messages={messages}
+        onSend={(text) => void sendAssistantMessage(text)}
+        loading={assistantLoading}
+        error={assistantError}
+        onTakeAction={(message, action) => {
+          if (action.type === "open") {
+            router.push(`/panel/campaigns/${action.campaignId}`);
+            return;
+          }
+          setMessages((current) =>
+            withAdviceActionState(current, message.id, action, "applying"),
+          );
+          void takeAdviceAction(action)
+            .then(() => {
+              setMessages((current) =>
+                withAdviceActionState(current, message.id, action, "applied"),
+              );
+            })
+            .catch(() => {
+              setMessages((current) =>
+                withAdviceActionState(current, message.id, action, "failed"),
+              );
+            });
+        }}
+      />
     </PanelLayout>
   );
 }

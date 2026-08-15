@@ -48,6 +48,8 @@ interface ReviewPublishScreenProps {
   saving?: boolean;
   error?: string | null;
   publishLabel?: string;
+  title?: string;
+  description?: string;
 }
 
 const goalLabels: Record<CampaignReviewPayload["campaign"]["goal"], string> = {
@@ -82,6 +84,8 @@ export function ReviewPublishScreen({
   saving = false,
   error,
   publishLabel = "Publish ad",
+  title = "Review and publish",
+  description = "This is the exact campaign Growdex will save and send to your ad platforms.",
 }: ReviewPublishScreenProps) {
   const validationError = validateCampaignPayload(campaign);
   const busy = publishing || saving;
@@ -102,10 +106,8 @@ export function ReviewPublishScreen({
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-gilroy-bold text-gray-900">Review and publish</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            This is the exact campaign Growdex will save and send to your ad platforms.
-          </p>
+          <h1 className="text-2xl font-gilroy-bold text-gray-900">{title}</h1>
+          <p className="mt-1 text-sm text-gray-500">{description}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           {onBack && (

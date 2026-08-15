@@ -21,9 +21,9 @@ Title: *Manage Your Advertising in One Place*
 | Last name | `lastName` | string | yes | ✅ | |
 | Organization name | `organizationName` | string | yes | ✅ | Shows a "Required" badge until filled; also sent as `businessName` |
 | Website | `website` | string (URL) | no | 🆕 | Validate as URL |
-| Country | `country` | string | no | 🆕 | Free text today; could become ISO country code |
+| Country | `country` | string | no | ✅ | Automatically pre-filled from the visitor's country, but remains editable |
 | Industry | `industry` | string (enum) | no | 🆕 | Dropdown |
-| Monthly advertising budget | `monthlyBudget` | string (enum) | no | 🆕 | Dropdown — also sent as `advertisingBudget` |
+| Monthly advertising budget | `monthlyBudget` | string (enum) | no | ✅ | Dropdown — saved with the currency used to display it |
 | Company size | `organizationSize` | numeric string | no | ✅ | Dropdown — each band is sent as the numeric string below; omitted when unanswered |
 
 The step saves to two endpoints in turn: the profile fields to `POST /users/onboarding`, then the
@@ -73,7 +73,7 @@ POST /users/onboarding
 }
 ```
 
-**`monthlyBudget` and `advertisingBudget` allowed values** (from `components/options.ts`):
+**`advertisingBudget` allowed values** (from `components/options.ts`):
 
 ```
 "0-500"        // $0 - $499 / month
@@ -81,6 +81,16 @@ POST /users/onboarding
 "1000-5000"    // $1,000 - $4,999 / month
 "5000-10000"   // $5,000 - $9,999 / month
 "10000+"       // $10,000+ / month
+```
+
+For Nigeria, the form uses naira-specific ranges and sends `advertisingBudgetCurrency: "NGN"`:
+
+```
+"0-100000"          // ₦0 - ₦99,999 / month
+"100000-500000"     // ₦100,000 - ₦499,999 / month
+"500000-1000000"    // ₦500,000 - ₦999,999 / month
+"1000000-5000000"   // ₦1,000,000 - ₦4,999,999 / month
+"5000000+"          // ₦5,000,000+ / month
 ```
 
 ### Business endpoint (proposed)
@@ -92,6 +102,7 @@ POST /users/onboarding/business
   "businessName": "Doe Junior",
   "website": "https://legalbusiness.com",
   "advertisingBudget": "1000-5000",
+  "advertisingBudgetCurrency": "USD",
   "industry": "Real estate",
   "country": "Spain"
 }
@@ -183,6 +194,7 @@ the persisted profile/business/goal data so the forms can pre-fill:
     "businessName": "Legal Business Ltd",
     "website": "https://legalbusiness.com",
     "advertisingBudget": "1000-5000",
+    "advertisingBudgetCurrency": "USD",
     "industry": "Real estate",
     "country": "Spain"
   },

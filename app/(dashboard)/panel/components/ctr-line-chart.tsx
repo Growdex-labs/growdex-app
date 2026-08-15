@@ -12,6 +12,7 @@ import {
 interface CTRChartProps {
   facebookData?: number[];
   tiktokData?: number[];
+  size?: "card" | "hero";
 }
 
 const SAMPLE_FACEBOOK = [30, 55, 42, 48, 65, 70, 62, 68, 72];
@@ -20,6 +21,7 @@ const SAMPLE_TIKTOK = [50, 46, 58, 52, 62, 80, 70, 66, 78];
 export function CTRLineChart({
   facebookData,
   tiktokData,
+  size = "card",
 }: CTRChartProps) {
   const fb = facebookData && facebookData.length > 0 ? facebookData : SAMPLE_FACEBOOK;
   const tt = tiktokData && tiktokData.length > 0 ? tiktokData : SAMPLE_TIKTOK;
@@ -33,7 +35,7 @@ export function CTRLineChart({
   }));
 
   return (
-    <div className="mt-6 h-48">
+    <div className={size === "hero" ? "mt-6 h-72 md:h-80" : "mt-6 h-48"}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}

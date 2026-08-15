@@ -9,6 +9,7 @@ export type CreativeDraft = {
   publicId?: string;
   folder?: string;
   platform?: "meta" | "tiktok";
+  mediaType?: "image" | "video";
 };
 
 export type FormObject = Record<
@@ -71,6 +72,13 @@ export const isVideoUrl = (url: string) => {
   return /\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(u);
 };
 
+export const isImageUrl = (url: string) => {
+  const u = String(url ?? "");
+  if (!u) return false;
+  if (u.includes("/image/upload/")) return true;
+  return /\.(avif|gif|jpe?g|png|webp)(\?|#|$)/i.test(u);
+};
+
 export const isVideoMedia = ({
   url,
   platform,
@@ -78,11 +86,16 @@ export const isVideoMedia = ({
 }: {
   url: string;
   platform?: "meta" | "tiktok";
-  mediaType?: string;
-}) =>
-  platform === "tiktok" ||
-  mediaType?.toLowerCase() === "video" ||
-  isVideoUrl(url);
+  mediaType?: string | null;
+}) => {
+  const normalizedType = mediaType?.toLowerCase();
+  if (normalizedType === "image") return false;
+  if (normalizedType === "video") return true;
+  if (isVideoUrl(url)) return true;
+  if (isImageUrl(url)) return false;
+
+  return platform === "tiktok";
+};
 
 export const startOfUtcDayIso = (d: Date) =>
   new Date(

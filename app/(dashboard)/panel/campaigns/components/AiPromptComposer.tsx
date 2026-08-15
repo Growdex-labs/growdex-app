@@ -11,6 +11,7 @@ interface AiPromptComposerProps {
   error?: string | null;
   disabledReason?: string | null;
   variant?: "panel" | "welcome";
+  placeholder?: string;
 }
 
 export function AiPromptComposer({
@@ -20,6 +21,7 @@ export function AiPromptComposer({
   error,
   disabledReason,
   variant = "panel",
+  placeholder = "Where are we starting from?",
 }: AiPromptComposerProps) {
   const [prompt, setPrompt] = useState("");
   const isWelcome = variant === "welcome";
@@ -73,7 +75,7 @@ export function AiPromptComposer({
             submit();
           }
         }}
-        placeholder="Where are we starting from?"
+        placeholder={placeholder}
         disabled={submitting || Boolean(disabledReason)}
         className={`min-w-0 flex-1 bg-transparent text-gray-700 placeholder:text-gray-400 focus:outline-none disabled:opacity-60 ${
           isWelcome ? "text-base md:text-lg" : "text-sm xl:text-base"

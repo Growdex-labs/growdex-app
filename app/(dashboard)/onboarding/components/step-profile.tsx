@@ -2,7 +2,12 @@ import { ChangeEvent } from "react";
 import { FormDataProps } from "../page";
 import { StepHeading, PrimaryButton, SkipLink } from "./onboarding-layout";
 import { OnboardingField, OnboardingSelect, FieldBadge } from "./field";
-import { COMPANY_SIZE_OPTIONS, INDUSTRY_OPTIONS, MONTHLY_BUDGET_OPTIONS } from "./options";
+import {
+  COMPANY_SIZE_OPTIONS,
+  INDUSTRY_OPTIONS,
+  monthlyBudgetOptionsForCountry,
+} from "./options";
+import { currencyForOnboardingCountry } from "@/lib/onboarding-country";
 
 type FieldChange = (
   e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -14,10 +19,19 @@ interface StepProfileProps {
   onNext: () => void;
   onSkip: () => void;
   isLoading: boolean;
+  countryWasDetected: boolean;
 }
 
-export function StepProfileOnboarding({ formData, inputChange, onNext, onSkip, isLoading }: StepProfileProps) {
+export function StepProfileOnboarding({
+  formData,
+  inputChange,
+  onNext,
+  onSkip,
+  isLoading,
+  countryWasDetected,
+}: StepProfileProps) {
   const organizationMissing = !formData.organizationName;
+  const budgetCurrency = currencyForOnboardingCountry(formData.country);
 
   return (
     <div>
@@ -63,7 +77,7 @@ export function StepProfileOnboarding({ formData, inputChange, onNext, onSkip, i
             placeholder="https://legalbusiness.com"
           />
           <OnboardingField
-            label="Country"
+            label={countryWasDetected ? "Country (detected)" : "Country"}
             name="country"
             value={formData.country}
             onChange={inputChange}
@@ -81,12 +95,12 @@ export function StepProfileOnboarding({ formData, inputChange, onNext, onSkip, i
             options={INDUSTRY_OPTIONS}
           />
           <OnboardingSelect
-            label="Monthly ad budget"
+            label={`Monthly ad budget (${budgetCurrency})`}
             name="monthlyBudget"
             value={formData.monthlyBudget}
             onChange={inputChange}
             placeholder="Choose a range"
-            options={MONTHLY_BUDGET_OPTIONS}
+            options={monthlyBudgetOptionsForCountry(formData.country)}
           />
           <OnboardingSelect
             label="Company size"

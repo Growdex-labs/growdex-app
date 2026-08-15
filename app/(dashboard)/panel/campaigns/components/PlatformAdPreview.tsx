@@ -39,7 +39,7 @@ function PreviewMedia({
       <div
         className={`flex items-center justify-center bg-gray-100 px-5 text-center text-xs text-gray-400 ${className}`}
       >
-        Upload {creative.platform === "meta" ? "an image" : "a video"} to
+        Upload {creative.platform === "meta" ? "an image" : "an image or video"} to
         preview it
       </div>
     );
@@ -47,9 +47,10 @@ function PreviewMedia({
 
   if (
     isVideoMedia({
-      url: creative.mediaUrl,
-      platform: creative.platform,
-    })
+        url: creative.mediaUrl,
+        platform: creative.platform,
+        mediaType: creative.mediaType,
+      })
   ) {
     return (
       <video

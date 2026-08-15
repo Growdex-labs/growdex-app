@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, CircleHelp, Search } from "lucide-react";
+import { BarChart3, Bell, CircleHelp, Search } from "lucide-react";
 import { useMe } from "@/context/me-context";
 import { useSocket } from "@/context/socket-context";
 import { usePanelChrome } from "./panel-layout";
@@ -15,7 +15,13 @@ const formatToday = () =>
     .format(new Date())
     .replace(/ (\d{4})$/, ", $1");
 
-export function DashboardTopBar() {
+export function DashboardTopBar({
+  variant = "default",
+  onSwitchToDefault,
+}: {
+  variant?: "default" | "insights";
+  onSwitchToDefault?: () => void;
+}) {
   const { me, isLoading } = useMe();
   const { unreadCount } = useSocket();
   const { openNotifications } = usePanelChrome();
@@ -24,20 +30,31 @@ export function DashboardTopBar() {
 
   return (
     <div className="flex flex-col gap-4 border-b border-lavender-50 pb-4 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex min-w-0 flex-col justify-center">
-        <h1 className="font-lexend text-2xl font-bold text-[#4d4d4d]">
-          Dashboard
-        </h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-inter text-xl font-medium tracking-[-0.2px] text-[#4d4d4d]">
-            Welcome back, {isLoading ? "…" : (firstName ?? "there")}
-          </p>
-          <span className="size-1 rounded-full bg-bodySecondary" aria-hidden />
-          <p className="font-inter text-sm tracking-[-0.14px] text-bodySecondary">
-            {formatToday()}
-          </p>
+      {variant === "insights" ? (
+        <button
+          type="button"
+          onClick={onSwitchToDefault}
+          className="inline-flex items-center gap-2 font-inter text-sm font-medium tracking-[-0.14px] text-[#4d4d4d] transition-colors hover:text-gray-900"
+        >
+          <BarChart3 className="size-5" aria-hidden />
+          Switch to default view
+        </button>
+      ) : (
+        <div className="flex min-w-0 flex-col justify-center">
+          <h1 className="font-lexend text-2xl font-bold text-[#4d4d4d]">
+            Dashboard
+          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-inter text-xl font-medium tracking-[-0.2px] text-[#4d4d4d]">
+              Welcome back, {isLoading ? "…" : (firstName ?? "there")}
+            </p>
+            <span className="size-1 rounded-full bg-bodySecondary" aria-hidden />
+            <p className="font-inter text-sm tracking-[-0.14px] text-bodySecondary">
+              {formatToday()}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex items-center gap-3 xl:gap-5">
         <label className="flex h-[55px] min-w-0 flex-1 items-center gap-2 rounded-full border border-lavender-50 px-4 py-1.5 xl:w-[400px]">
@@ -63,20 +80,24 @@ export function DashboardTopBar() {
           )}
         </button>
 
-        <Link
-          href="/panel/settings/support-and-help"
-          className="flex shrink-0 items-center gap-1 text-lavender-300 transition-colors hover:text-gray-900"
-        >
-          <CircleHelp className="size-6" aria-hidden />
-          <span className="font-lexend text-[15px]">Help</span>
-        </Link>
+        {variant === "default" && (
+          <>
+            <Link
+              href="/panel/settings/support-and-help"
+              className="flex shrink-0 items-center gap-1 text-lavender-300 transition-colors hover:text-gray-900"
+            >
+              <CircleHelp className="size-6" aria-hidden />
+              <span className="font-lexend text-[15px]">Help</span>
+            </Link>
 
-        <Link
-          href="/panel/campaigns/new"
-          className="shrink-0 rounded-xl bg-black px-5 py-3 text-center font-inter text-sm tracking-[-0.14px] text-white transition-colors hover:bg-[#1a1a1a]"
-        >
-          Create campaign
-        </Link>
+            <Link
+              href="/panel/campaigns/new"
+              className="shrink-0 rounded-xl bg-black px-5 py-3 text-center font-inter text-sm tracking-[-0.14px] text-white transition-colors hover:bg-[#1a1a1a]"
+            >
+              Create campaign
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );

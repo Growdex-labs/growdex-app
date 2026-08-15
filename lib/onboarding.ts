@@ -16,6 +16,7 @@ export interface OnboardingData {
     businessName?: string;
     website?: string;
     advertisingBudget?: string;
+    advertisingBudgetCurrency?: string;
     industry?: string;
     country?: string;
   } | null;
@@ -42,6 +43,7 @@ interface OnboardingStatusResponse extends SocialAccountSetupProps {
     businessName?: string | null;
     website?: string | null;
     advertisingBudget?: string | null;
+    advertisingBudgetCurrency?: string | null;
     industry?: string | null;
     country?: string | null;
   } | null;
@@ -161,6 +163,8 @@ export const fetchOnboardingStatus = async (): Promise<{
             businessName: result.business.businessName ?? undefined,
             website: result.business.website ?? undefined,
             advertisingBudget: result.business.advertisingBudget ?? undefined,
+            advertisingBudgetCurrency:
+              result.business.advertisingBudgetCurrency ?? undefined,
             industry: result.business.industry ?? undefined,
             country: result.business.country ?? undefined,
           }
@@ -224,6 +228,7 @@ export const saveBusinessInfo = async (data: {
   businessName?: string;
   website?: string;
   advertisingBudget?: string;
+  advertisingBudgetCurrency?: string;
   industry?: string;
   country?: string;
 }): Promise<{ success: boolean; error?: string }> => {
@@ -231,6 +236,10 @@ export const saveBusinessInfo = async (data: {
     const payload = {
       ...data,
       website: normalizeWebsite(data.website),
+      advertisingBudget: data.advertisingBudget || undefined,
+      advertisingBudgetCurrency: data.advertisingBudget
+        ? data.advertisingBudgetCurrency
+        : undefined,
     };
     const response = await apiFetch('/users/onboarding/business', {
       method: 'POST',

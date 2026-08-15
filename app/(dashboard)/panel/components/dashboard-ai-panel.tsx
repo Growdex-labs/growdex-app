@@ -5,6 +5,7 @@ import {
   AiSidePanel,
   type AiMessage,
 } from "../campaigns/components/AiSidePanel";
+import type { CampaignAdviceAction } from "@/lib/campaigns";
 
 export type { AiMessage };
 
@@ -14,6 +15,7 @@ interface DashboardAiPanelProps {
   onClose: () => void;
   loading?: boolean;
   error?: string | null;
+  onTakeAction?: (message: AiMessage, action: CampaignAdviceAction) => void;
 }
 
 export function DashboardAiPanel({
@@ -22,6 +24,7 @@ export function DashboardAiPanel({
   onClose,
   loading = false,
   error,
+  onTakeAction,
 }: DashboardAiPanelProps) {
   return (
     <aside className="h-[calc(100vh-8rem)] w-full shrink-0 self-stretch lg:sticky lg:top-6 lg:w-[360px]">
@@ -41,6 +44,7 @@ export function DashboardAiPanel({
           onSubmit={onSend}
           submitting={loading}
           error={error}
+          onTakeAction={onTakeAction}
         />
       </div>
     </aside>

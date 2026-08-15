@@ -67,11 +67,13 @@ export type CampaignCta =
   | "NO_BUTTON";
 
 export interface CampaignCreativeInput {
+  id?: string;
   platform: CampaignPlatform;
   primaryText: string;
   headline?: string;
   cta: CampaignCta;
   mediaUrl: string;
+  mediaType?: "image" | "video" | null;
   thumbnailUrl?: string;
   landingPageUrl?: string;
   appId?: string;
@@ -254,6 +256,19 @@ export interface CampaignPlatformMetric {
   cpa: number;
 }
 
+export interface CampaignTrendPoint {
+  date: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+}
+
+export interface CampaignMetricsDetail {
+  byPlatform: CampaignPlatformMetric[];
+  trend: CampaignTrendPoint[];
+}
+
 export interface CampaignMetricsSummary {
   spend: number;
   impressions: number;
@@ -277,8 +292,30 @@ export interface CampaignMetrics {
   campaigns: CampaignDto[];
 }
 
+export type CampaignAdviceApplyAction = {
+  type: "apply";
+  campaignId: string;
+  campaignName: string;
+  revision: number;
+  proposalId: string;
+  title: string;
+  summary: string;
+};
+
+export type CampaignAdviceOpenAction = {
+  type: "open";
+  campaignId: string;
+  campaignName: string;
+  label: string;
+};
+
+export type CampaignAdviceAction =
+  | CampaignAdviceApplyAction
+  | CampaignAdviceOpenAction;
+
 export interface CampaignAdviceResponse {
   answer: string;
+  actions: CampaignAdviceAction[];
 }
 
 export interface CampaignOptimizationProposal {
@@ -588,9 +625,11 @@ const parseGeneratedCampaignDraft = (
       ["image", "video"],
       "creative media requirement",
     );
-    const expectedMediaRequirement =
-      platform === "tiktok" || destination === "VIDEO" ? "video" : "image";
-    if (mediaRequirement !== expectedMediaRequirement) {
+    const expectedMediaRequirement = destination === "VIDEO" ? "video" : platform === "meta" ? "image" : null;
+    if (
+      expectedMediaRequirement &&
+      mediaRequirement !== expectedMediaRequirement
+    ) {
       return invalidAiResponse(`creative ${index + 1} has the wrong media requirement.`);
     }
     const mediaStatus = enumValue(
@@ -608,6 +647,7 @@ const parseGeneratedCampaignDraft = (
       headline: optionalString(creative.headline, "creative headline"),
       cta: enumValue(creative.cta, CAMPAIGN_CTAS, "creative CTA"),
       mediaUrl,
+      mediaType: mediaRequirement,
       landingPageUrl: optionalString(creative.landingPageUrl, "landing page URL"),
       appId: optionalString(creative.appId, "app ID"),
       leadFormId: optionalString(creative.leadFormId, "lead form ID"),
@@ -849,7 +889,9 @@ export const ensureCampaignPayloadScheduleLeadTime = <
   return changed ? { ...payload, audienceStrategies } : payload;
 };
 
-export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
+export const createInitialCampaignPayload = (
+  currency: CampaignCurrency = "NGN",
+): CreateCampaignPayload => ({
   creationMode: "manual",
   campaign: {
     name: "",
@@ -862,11 +904,12 @@ export const createInitialCampaignPayload = (): CreateCampaignPayload => ({
       budgetOptimization: "audience_strategy",
     },
   },
-  audienceStrategies: [createAudienceStrategy()],
+  audienceStrategies: [createAudienceStrategy("Audience Strategy 1", currency)],
 });
 
 export const createAudienceStrategy = (
   name = "Audience Strategy 1",
+  currency: CampaignCurrency = "NGN",
 ): AudienceStrategy => ({
   id: crypto.randomUUID(),
   name,
@@ -888,7 +931,7 @@ export const createAudienceStrategy = (
   },
   budget: {
     amount: 0,
-    currency: "NGN",
+    currency,
     type: "daily",
     startDate: futureIso(30),
   },
@@ -912,8 +955,11 @@ export const validateCampaignCreativeSetup = (
           !ad.mediaUrl.includes("/video/upload/") &&
           !/\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(ad.mediaUrl)
         ) return `Upload a video for ${label}.`;
-        if (platform === "meta" && strategy.configuration.destination === "WEBSITE" && !ad.landingPageUrl?.trim()) {
-          return "Enter a landing page URL for Meta.";
+        if (
+          strategy.configuration.destination === "WEBSITE" &&
+          !ad.landingPageUrl?.trim()
+        ) {
+          return `Enter a landing page URL for ${label}.`;
         }
         if (strategy.configuration.destination === "INSTANT_FORM" && !ad.leadFormId?.trim()) {
           return `Enter a lead form ID for ${label}.`;
@@ -1160,14 +1206,18 @@ export const reviseAiCampaignDraft = async (input: {
 };
 
 export const requestCampaignAdvice = async (
-  campaignId: string,
+  campaignId: string | undefined,
   prompt: string,
   messages: Array<{ role: "user" | "assistant"; content: string }> = [],
 ): Promise<CampaignAdviceResponse> => {
   const res = await apiFetch("/ai/campaign-advice", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ campaignId, prompt, messages }),
+    body: JSON.stringify({
+      ...(campaignId ? { campaignId } : {}),
+      prompt,
+      messages,
+    }),
   });
   const data = await readJson(res);
   if (!res.ok) {
@@ -1175,15 +1225,75 @@ export const requestCampaignAdvice = async (
       readApiErrorMessage(data, "The campaign assistant could not answer right now."),
     );
   }
-  const answer =
-    data && typeof data === "object" && "answer" in data
-      ? (data as { answer?: unknown }).answer
-      : undefined;
-  if (typeof answer !== "string" || !answer.trim()) {
+  return parseCampaignAdviceResponse(data);
+};
+
+const ADVICE_ACTION_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const parseCampaignAdviceAction = (
+  value: unknown,
+): CampaignAdviceAction | null => {
+  if (!isRecord(value) || typeof value.type !== "string") return null;
+  if (
+    typeof value.campaignId !== "string" ||
+    !ADVICE_ACTION_ID.test(value.campaignId) ||
+    typeof value.campaignName !== "string" ||
+    !value.campaignName.trim()
+  ) {
+    return null;
+  }
+  if (value.type === "open") {
+    if (typeof value.label !== "string" || !value.label.trim()) return null;
+    return {
+      type: "open",
+      campaignId: value.campaignId,
+      campaignName: value.campaignName.trim(),
+      label: value.label.trim(),
+    };
+  }
+  if (value.type !== "apply") return null;
+  if (
+    typeof value.proposalId !== "string" ||
+    !ADVICE_ACTION_ID.test(value.proposalId) ||
+    typeof value.revision !== "number" ||
+    !Number.isInteger(value.revision) ||
+    value.revision < 1 ||
+    typeof value.title !== "string" ||
+    !value.title.trim() ||
+    typeof value.summary !== "string" ||
+    !value.summary.trim()
+  ) {
+    return null;
+  }
+  return {
+    type: "apply",
+    campaignId: value.campaignId,
+    campaignName: value.campaignName.trim(),
+    revision: value.revision,
+    proposalId: value.proposalId,
+    title: value.title.trim(),
+    summary: value.summary.trim(),
+  };
+};
+
+export const parseCampaignAdviceResponse = (
+  data: unknown,
+): CampaignAdviceResponse => {
+  if (!isRecord(data) || typeof data.answer !== "string" || !data.answer.trim()) {
     throw new Error("The campaign assistant returned an invalid response.");
   }
-  return { answer: answer.trim() };
+  const actions = Array.isArray(data.actions)
+    ? data.actions
+        .map(parseCampaignAdviceAction)
+        .filter((action): action is CampaignAdviceAction => action !== null)
+        .slice(0, 6)
+    : [];
+  return { answer: data.answer.trim(), actions };
 };
+
+export const adviceActionKey = (action: CampaignAdviceAction) =>
+  action.type === "apply" ? action.proposalId : `open:${action.campaignId}`;
 
 export const requestCampaignName = async (input: {
   brandName: string;
@@ -1498,6 +1608,7 @@ export const normalizeCampaignPayloadForWrite = (
           primaryText: ad.primaryText.trim(),
           headline: ad.headline?.trim() || undefined,
           mediaUrl: ad.mediaUrl.trim(),
+          mediaType: ad.mediaType ?? undefined,
           landingPageUrl: ad.landingPageUrl?.trim() || undefined,
           appId: ad.appId?.trim() || undefined,
           leadFormId: ad.leadFormId?.trim() || undefined,
@@ -1613,7 +1724,7 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
 
 export const fetchCampaignMetricsById = async (
   campaignId: string,
-): Promise<CampaignPlatformMetric[]> => {
+): Promise<CampaignMetricsDetail> => {
   const res = await apiFetch(
     `/campaigns/metrics/${encodeURIComponent(campaignId)}`,
     { method: "GET" },
@@ -1626,8 +1737,10 @@ export const fetchCampaignMetricsById = async (
     );
   }
 
-  const rows = Array.isArray(data) ? data : data?.data;
-  if (!Array.isArray(rows)) {
+  const body = data?.byPlatform ? data : data?.data;
+  const rows = body?.byPlatform;
+  const trend = body?.trend;
+  if (!Array.isArray(rows) || !Array.isArray(trend)) {
     throw new Error("Fetch campaign metrics returned an invalid response shape");
   }
 
@@ -1652,7 +1765,24 @@ export const fetchCampaignMetricsById = async (
     throw new Error("Fetch campaign metrics returned an invalid response shape");
   }
 
-  return rows as CampaignPlatformMetric[];
+  if (
+    !trend.every(
+      (point) =>
+        point &&
+        typeof point === "object" &&
+        typeof point.date === "string" &&
+        ["spend", "impressions", "clicks", "ctr"].every(
+          (key) => typeof point[key] === "number",
+        ),
+    )
+  ) {
+    throw new Error("Fetch campaign metrics returned an invalid response shape");
+  }
+
+  return {
+    byPlatform: rows as CampaignPlatformMetric[],
+    trend: trend as CampaignTrendPoint[],
+  };
 };
 
 export const summariseCampaignMetrics = (
@@ -1677,6 +1807,29 @@ export const summariseCampaignMetrics = (
     cpa: totals.conversions > 0 ? totals.spend / totals.conversions : 0,
     byPlatform: rows,
   };
+};
+
+export const updateCampaignStatus = async (
+  id: string,
+  status: "active" | "paused" | "completed",
+): Promise<CampaignDto> => {
+  const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}/status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ campaign_status: status }),
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      readApiErrorMessage(data, `Update campaign status failed (${res.status})`),
+    );
+  }
+  const campaign =
+    isRecord(data) && isRecord(data.campaign) ? data.campaign : data;
+  if (!isRecord(campaign) || typeof campaign.id !== "string") {
+    throw new Error("Update campaign status returned an invalid campaign.");
+  }
+  return campaign as unknown as CampaignDto;
 };
 
 export const updateCampaign = async (
@@ -1764,6 +1917,7 @@ export const campaignDtoToPayload = (
   audienceStrategies: campaign.audienceStrategies.map((strategy) => ({
     ...strategy,
     ads: (campaign.creatives ?? []).filter((ad) => ad.audienceStrategyId === strategy.id).map((ad) => ({
+      id: ad.id,
       platform: ad.platform,
       primaryText: ad.primaryText,
       headline: ad.headline ?? undefined,

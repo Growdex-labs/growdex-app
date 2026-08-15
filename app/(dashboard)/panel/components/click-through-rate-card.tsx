@@ -28,6 +28,8 @@ interface ClickThroughRateCardProps {
   /** CPA and ROAS are money-derived, so each reads its own currency bucket. */
   platformCpa: (platform: PanelPlatform) => number | undefined;
   platformRoas: (platform: PanelPlatform) => number | undefined;
+  expanded?: boolean;
+  onExpand?: () => void;
 }
 
 export function ClickThroughRateCard({
@@ -37,6 +39,8 @@ export function ClickThroughRateCard({
   formatMetric,
   platformCpa,
   platformRoas,
+  expanded = false,
+  onExpand,
 }: ClickThroughRateCardProps) {
   const [metric, setMetric] = useState<RateMetric>("ctr");
 
@@ -99,7 +103,21 @@ export function ClickThroughRateCard({
         </div>
       </div>
 
-      <CTRLineChart />
+      <div
+        role={onExpand ? "button" : undefined}
+        tabIndex={onExpand ? 0 : undefined}
+        onClick={onExpand}
+        onKeyDown={(event) => {
+          if (!onExpand) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onExpand();
+          }
+        }}
+        className={onExpand ? "cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-violet-300" : undefined}
+      >
+        <CTRLineChart size={expanded ? "hero" : "card"} />
+      </div>
     </div>
   );
 }

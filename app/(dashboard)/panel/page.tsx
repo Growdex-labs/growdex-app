@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, MoreVertical } from "lucide-react";
 import { PanelLayout } from "./components/panel-layout";
 import { DashboardTopBar } from "./components/dashboard-top-bar";
@@ -18,6 +19,18 @@ import {
   DashboardAiPanel,
   type AiMessage,
 } from "./components/dashboard-ai-panel";
+import {
+  takeAdviceAction,
+  withAdviceActionState,
+} from "./components/take-advice-action";
+import {
+  RecommendedActions,
+  type InsightActionId,
+} from "./components/recommended-actions";
+import {
+  buildDashboardInsights,
+  insightMessageText,
+} from "@/lib/dashboard-insights";
 import {
   fetchPanelMetrics,
   type PanelCurrencyMetrics,
@@ -99,6 +112,7 @@ const EMPTY_METRICS: PanelMetrics = {
 };
 
 export default function PanelPage() {
+  const router = useRouter();
   const [metrics, setMetrics] = useState<PanelMetrics>(EMPTY_METRICS);
   const [recentCampaigns, setRecentCampaigns] = useState<CampaignDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,10 +120,13 @@ export default function PanelPage() {
     [],
   );
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
+  const [view, setView] = useState<"default" | "insights">("default");
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantError, setAssistantError] = useState<string | null>(null);
   const [messages, setMessages] = useState<AiMessage[]>([]);
+  const [selectedInsightAction, setSelectedInsightAction] =
+    useState<InsightActionId | null>(null);
   const assistantRequestRef = useRef(0);
   const selectedCampaignRef = useRef(selectedCampaignId);
 
@@ -201,7 +218,12 @@ export default function PanelPage() {
       }
       setMessages((current) => [
         ...current,
-        { id: crypto.randomUUID(), sender: "ai", text: response.answer },
+        {
+          id: crypto.randomUUID(),
+          sender: "ai",
+          text: response.answer,
+          actions: response.actions,
+        },
       ]);
     } catch (failure) {
       if (
@@ -280,15 +302,72 @@ export default function PanelPage() {
     metrics.totalImpressions > 0 ||
     recentCampaigns.length > 0;
 
+  const openInsights = () => {
+    setView("insights");
+    setAssistantOpen(true);
+    setSelectedInsightAction(null);
+    setMessages((current) =>
+      current.length
+        ? current
+        : [
+            {
+              id: crypto.randomUUID(),
+              sender: "ai",
+              text: insightMessageText(buildDashboardInsights(metrics)),
+            },
+          ],
+    );
+  };
+
+  const closeInsights = () => {
+    setView("default");
+    setAssistantOpen(false);
+    setSelectedInsightAction(null);
+  };
+
+  const rateCard = (
+    <ClickThroughRateCard
+      totals={{
+        ctr: metrics.ctr,
+        clicks: metrics.totalClicks,
+        conversions: metrics.totalConversions,
+        cpa: soleCurrency?.cpa,
+        roas: soleCurrency?.roas ?? undefined,
+      }}
+      trend={0}
+      byPlatform={platforms}
+      formatMetric={formatRate}
+      platformCpa={platformCpa}
+      platformRoas={platformRoas}
+      expanded={view === "insights"}
+      onExpand={view === "default" ? openInsights : undefined}
+    />
+  );
+
   return (
     <PanelLayout>
       <div className="p-4 bg-[#f2f2f2] min-h-full">
         <div className="flex flex-col items-start gap-4 lg:flex-row">
           <div className="min-h-[calc(100vh-2rem)] min-w-0 flex-1 flex-col gap-6 rounded-xl bg-white p-4 md:flex md:p-6">
-            <DashboardTopBar />
+            <DashboardTopBar
+              variant={view}
+              onSwitchToDefault={closeInsights}
+            />
 
             {isLoading ? null : !hasData ? (
               <DashboardEmptyState />
+            ) : view === "insights" ? (
+              <>
+                {rateCard}
+                <RecommendedActions
+                  selectedId={selectedInsightAction}
+                  disabled={assistantLoading}
+                  onSelect={(action) => {
+                    setSelectedInsightAction(action.id);
+                    void sendAssistantMessage(action.prompt);
+                  }}
+                />
+              </>
             ) : (
               <>
                 <section className="flex flex-col gap-3">
@@ -360,20 +439,7 @@ export default function PanelPage() {
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                  <ClickThroughRateCard
-                    totals={{
-                      ctr: metrics.ctr,
-                      clicks: metrics.totalClicks,
-                      conversions: metrics.totalConversions,
-                      cpa: soleCurrency?.cpa,
-                      roas: soleCurrency?.roas ?? undefined,
-                    }}
-                    trend={0}
-                    byPlatform={platforms}
-                    formatMetric={formatRate}
-                    platformCpa={platformCpa}
-                    platformRoas={platformRoas}
-                  />
+                  {rateCard}
 
                   <div className="rounded-xl border border-lavender-100 p-4">
                     <div className="flex items-center justify-between">
@@ -402,7 +468,7 @@ export default function PanelPage() {
               </>
             )}
 
-            {hasData && !assistantOpen && (
+            {hasData && view === "default" && !assistantOpen && (
               <DashboardAiBar
                 campaigns={campaigns}
                 selectedCampaignId={selectedCampaignId}
@@ -421,9 +487,43 @@ export default function PanelPage() {
             <DashboardAiPanel
               messages={messages}
               onSend={(text) => void sendAssistantMessage(text)}
-              onClose={() => setAssistantOpen(false)}
+              onClose={
+                view === "insights"
+                  ? closeInsights
+                  : () => setAssistantOpen(false)
+              }
               loading={assistantLoading}
               error={assistantError}
+              onTakeAction={(message, action) => {
+                if (action.type === "open") {
+                  router.push(`/panel/campaigns/${action.campaignId}`);
+                  return;
+                }
+                setMessages((current) =>
+                  withAdviceActionState(current, message.id, action, "applying"),
+                );
+                void takeAdviceAction(action)
+                  .then(() => {
+                    setMessages((current) =>
+                      withAdviceActionState(
+                        current,
+                        message.id,
+                        action,
+                        "applied",
+                      ),
+                    );
+                  })
+                  .catch(() => {
+                    setMessages((current) =>
+                      withAdviceActionState(
+                        current,
+                        message.id,
+                        action,
+                        "failed",
+                      ),
+                    );
+                  });
+              }}
             />
           )}
         </div>
