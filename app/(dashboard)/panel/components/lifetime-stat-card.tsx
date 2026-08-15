@@ -31,7 +31,7 @@ export function LifetimeStatCard({
     <div className="flex h-full flex-col justify-between rounded-xl border border-lavender-100 bg-lavender-25 p-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="font-inter text-sm font-bold tracking-[-0.14px] text-[#333]">
+          <span className="font-gilroy-bold text-sm tracking-[-0.14px] text-[#333]">
             {label}
           </span>
           <button

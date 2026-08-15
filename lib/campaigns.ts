@@ -1729,9 +1729,13 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
 
 export const fetchCampaignMetricsById = async (
   campaignId: string,
+  strategyId?: string,
 ): Promise<CampaignMetricsDetail> => {
+  const query = strategyId
+    ? `?strategyId=${encodeURIComponent(strategyId)}`
+    : "";
   const res = await apiFetch(
-    `/campaigns/metrics/${encodeURIComponent(campaignId)}`,
+    `/campaigns/metrics/${encodeURIComponent(campaignId)}${query}`,
     { method: "GET" },
   );
   const data = await readJson(res);

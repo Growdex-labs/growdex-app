@@ -37,7 +37,7 @@ export function RecentCampaignsCard({ campaigns }: RecentCampaignsCardProps) {
       <div>
         <div className="flex items-center gap-2 border-b border-lavender-100 bg-lavender-25 px-4 pt-[9px] pb-2">
           <Megaphone className="size-6 shrink-0 text-[#4d4d4d]" aria-hidden />
-          <h3 className="flex-1 font-inter text-sm font-bold tracking-[-0.14px] text-[#4d4d4d]">
+          <h3 className="flex-1 font-gilroy-bold text-sm tracking-[-0.14px] text-[#4d4d4d]">
             Last 7 Campaigns
           </h3>
           <button
@@ -51,7 +51,7 @@ export function RecentCampaignsCard({ campaigns }: RecentCampaignsCardProps) {
 
         <div className="flex flex-col gap-6 p-4 pt-[26px]">
           {campaigns.length === 0 ? (
-            <p className="font-inter text-sm tracking-[-0.14px] text-bodySecondary">
+            <p className="font-gilroy-regular text-sm tracking-[-0.14px] text-bodySecondary">
               No campaigns published yet.
             </p>
           ) : (
@@ -69,10 +69,10 @@ export function RecentCampaignsCard({ campaigns }: RecentCampaignsCardProps) {
                     className="size-4 shrink-0"
                   />
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="font-inter text-sm tracking-[-0.14px] text-[#4d4d4d]">
+                    <span className="font-gilroy-regular text-sm tracking-[-0.14px] text-[#4d4d4d]">
                       {campaign.name}
                     </span>
-                    <span className="font-inter text-[10px] tracking-[-0.1px] text-bodySecondary">
+                    <span className="font-gilroy-regular text-[10px] tracking-[-0.1px] text-bodySecondary">
                       {published ? (
                         <>
                           Published{" "}
@@ -94,7 +94,7 @@ export function RecentCampaignsCard({ campaigns }: RecentCampaignsCardProps) {
       <div className="px-4">
         <Link
           href="/panel/campaigns"
-          className="flex items-center justify-center rounded-lg border border-[#b0b4c2] px-6 py-2 font-inter text-sm tracking-[-0.14px] text-[#b0b4c2] transition-colors hover:border-lavender-300 hover:text-lavender-300"
+          className="flex items-center justify-center rounded-lg border border-[#b0b4c2] px-6 py-2 font-gilroy-regular text-sm tracking-[-0.14px] text-[#b0b4c2] transition-colors hover:border-lavender-300 hover:text-lavender-300"
         >
           See all campaigns
         </Link>

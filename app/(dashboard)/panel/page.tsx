@@ -377,10 +377,10 @@ export default function PanelPage() {
               <>
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center gap-4">
-                    <h2 className="flex-1 font-inter text-base font-medium tracking-[-0.16px] text-[#333]">
+                    <h2 className="flex-1 font-gilroy-medium text-base tracking-[-0.16px] text-[#333]">
                       All-time Performance
                     </h2>
-                    <span className="flex items-center gap-2.5 rounded-md bg-white p-2 font-inter text-sm tracking-[-0.14px] text-[#4d4d4d]">
+                    <span className="flex items-center gap-2.5 rounded-md bg-white p-2 font-gilroy-regular text-sm tracking-[-0.14px] text-[#4d4d4d]">
                       Filter by:
                       <span className="flex items-center gap-1">
                         Date
@@ -448,7 +448,7 @@ export default function PanelPage() {
 
                   <div className="rounded-xl border border-lavender-100 p-4">
                     <div className="flex items-center justify-between">
-                      <span className="font-inter text-sm font-bold tracking-[-0.14px] text-[#333]">
+                      <span className="font-gilroy-bold text-sm tracking-[-0.14px] text-[#333]">
                         Total Impressions
                       </span>
                       <button

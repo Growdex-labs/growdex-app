@@ -44,7 +44,9 @@ export default function CampaignDetailPage({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const campaignAds = campaignDto?.creatives ?? [];
+  const strategies = campaignDto?.audienceStrategies ?? [];
+  const selectedStrategy =
+    strategies.find((strategy) => strategy.id === activeTab) ?? null;
 
   useEffect(() => {
     if (searchParams.get("optimize") === "1") {
@@ -54,8 +56,10 @@ export default function CampaignDetailPage({
 
   useEffect(() => {
     let isMounted = true;
+    setMetrics(null);
+    setMetricsError(null);
 
-    void fetchCampaignMetricsById(campaignId)
+    void fetchCampaignMetricsById(campaignId, selectedStrategy?.id)
       .then((result) => {
         if (isMounted) setMetrics(summariseCampaignMetrics(result.byPlatform));
       })
@@ -71,7 +75,7 @@ export default function CampaignDetailPage({
     return () => {
       isMounted = false;
     };
-  }, [campaignId]);
+  }, [campaignId, selectedStrategy?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -215,10 +219,8 @@ export default function CampaignDetailPage({
               </div>
             )} */}
 
-            {/* Ad tabs */}
             <div className="mb-6 bg-white rounded-lg p-4">
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* Overview Tab - Fixed */}
                 <button
                   onClick={() => setActiveTab("overview")}
                   className={`flex-shrink-0 px-2.5 sm:px-8 py-4 rounded-xl font-gilroy-semibold transition-colors whitespace-nowrap ${
@@ -230,20 +232,19 @@ export default function CampaignDetailPage({
                   Overview
                 </button>
 
-                {/* Dynamic Ad Tabs - Scrollable */}
                 <div className="flex-1 overflow-x-auto hide-scrollbar">
                   <div className="flex items-center gap-2 sm:gap-3">
-                    {campaignAds.map((ad, index) => (
+                    {strategies.map((strategy, index) => (
                       <button
-                        key={ad.id}
-                        onClick={() => setActiveTab(ad.id)}
+                        key={strategy.id}
+                        onClick={() => setActiveTab(strategy.id)}
                         className={`flex-shrink-0 whitespace-nowrap rounded-xl px-6 py-4 font-gilroy-semibold transition-colors sm:px-8 ${
-                          activeTab === ad.id
+                          activeTab === strategy.id
                             ? "bg-gray-200 text-gray-900"
                             : "bg-gray-100 text-dimGray hover:bg-gray-200"
                         }`}
                       >
-                        {ad.headline?.trim() || `Ad ${index + 1}`}
+                        {strategy.name.trim() || `Audience Strategy ${index + 1}`}
                       </button>
                     ))}
                   </div>
@@ -251,13 +252,12 @@ export default function CampaignDetailPage({
               </div>
             </div>
 
-            {/* Tab Content */}
-
-            {activeTab === "overview" && (
-              <div className="bg-white p-4 md:p-6 rounded-lg mb-6">
+            <div className="bg-white p-4 md:p-6 rounded-lg mb-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 md:mb-6">
                   <h2 className="text-base md:text-lg font-gilroy-semibold">
-                    Performance
+                    {selectedStrategy
+                      ? selectedStrategy.name.trim() || "Audience strategy"
+                      : "Performance"}
                   </h2>
                   <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-4">
                     {/* Filter Dropdown - Hidden label on mobile */}
@@ -356,7 +356,6 @@ export default function CampaignDetailPage({
                   />
                 )}
               </div>
-            )}
           </div>
         </div>
 

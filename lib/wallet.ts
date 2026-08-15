@@ -1,6 +1,6 @@
 import { apiFetch } from "./auth";
 
-export type WalletCurrency = "NGN" | "USD";
+export type WalletCurrency = string;
 export type WalletPlatform = "meta" | "tiktok";
 export type WalletTransactionStatus = "success" | "failed" | "pending";
 
@@ -18,8 +18,12 @@ export interface WalletOverview {
   balances: Record<WalletCurrency, number>;
   adAccounts: Array<{
     platform: WalletPlatform;
+    accountId: string;
+    accountName: string;
     balance: number;
     currency: WalletCurrency;
+    amountSpent: number;
+    isPrepayAccount: boolean;
   }>;
   spending: Array<{
     label: string;
@@ -41,7 +45,7 @@ const readJson = async (response: Response): Promise<unknown> => {
 };
 
 const isCurrency = (value: unknown): value is WalletCurrency =>
-  value === "NGN" || value === "USD";
+  typeof value === "string" && /^[A-Z]{3}$/.test(value);
 
 const isTransaction = (value: unknown): value is WalletTransaction => {
   if (!value || typeof value !== "object") return false;
@@ -73,14 +77,17 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
   const balances = overview.balances;
   if (
     !balances ||
-    typeof balances.NGN !== "number" ||
-    typeof balances.USD !== "number" ||
+    !Object.values(balances).every((balance) => typeof balance === "number") ||
     !Array.isArray(overview.adAccounts) ||
     !overview.adAccounts.every(
       (account) =>
         (account.platform === "meta" || account.platform === "tiktok") &&
+        typeof account.accountId === "string" &&
+        typeof account.accountName === "string" &&
         typeof account.balance === "number" &&
-        isCurrency(account.currency),
+        isCurrency(account.currency) &&
+        typeof account.amountSpent === "number" &&
+        typeof account.isPrepayAccount === "boolean",
     ) ||
     !Array.isArray(overview.spending) ||
     !overview.spending.every(

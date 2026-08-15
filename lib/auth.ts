@@ -295,8 +295,24 @@ const getMockResponse = (url: string, options?: RequestInit): Response => {
     data = {
       balances: { NGN: 30000000, USD: 18542.71 },
       adAccounts: [
-        { platform: "meta", balance: 15900000, currency: "NGN" },
-        { platform: "tiktok", balance: 14100000, currency: "NGN" },
+        {
+          platform: "meta",
+          accountId: "mock-meta-123",
+          accountName: "Growdex Meta Ads",
+          balance: 15900000,
+          currency: "NGN",
+          amountSpent: 0,
+          isPrepayAccount: true,
+        },
+        {
+          platform: "tiktok",
+          accountId: "mock-tiktok-123",
+          accountName: "Growdex TikTok Ads",
+          balance: 14100000,
+          currency: "NGN",
+          amountSpent: 0,
+          isPrepayAccount: true,
+        },
       ],
       spending: [
         { label: "Feb", meta: 2300000, tiktok: 3100000 },

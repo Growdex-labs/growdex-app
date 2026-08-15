@@ -60,7 +60,7 @@ export function ClickThroughRateCard({
               type="button"
               onClick={() => setMetric(tab.id)}
               aria-pressed={metric === tab.id}
-              className={`font-inter text-sm leading-5 tracking-[-0.14px] transition-colors ${
+              className={`font-gilroy-regular text-sm leading-5 tracking-[-0.14px] transition-colors ${
                 metric === tab.id
                   ? "font-bold text-[#4d4d4d]"
                   : "text-lavender-100 hover:text-lavender-300"
@@ -91,7 +91,7 @@ export function ClickThroughRateCard({
               ) : (
                 <PlatformMark platform="tiktok" />
               )}
-              <span className="font-inter text-sm tracking-[-0.14px] text-[#333]">
+              <span className="font-gilroy-regular text-sm tracking-[-0.14px] text-[#333]">
                 {formatMetric(metric, platformValue(platform))}
               </span>
               <TrendBadge

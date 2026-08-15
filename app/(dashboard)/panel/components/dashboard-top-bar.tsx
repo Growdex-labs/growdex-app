@@ -45,11 +45,11 @@ export function DashboardTopBar({
             Dashboard
           </h1>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-inter text-xl font-medium tracking-[-0.2px] text-[#4d4d4d]">
+            <p className="font-gilroy-medium text-xl tracking-[-0.2px] text-[#4d4d4d]">
               Welcome back, {isLoading ? "…" : (firstName ?? "there")}
             </p>
             <span className="size-1 rounded-full bg-bodySecondary" aria-hidden />
-            <p className="font-inter text-sm tracking-[-0.14px] text-bodySecondary">
+            <p className="font-gilroy-medium text-sm tracking-[-0.14px] text-bodySecondary">
               {formatToday()}
             </p>
           </div>
@@ -62,7 +62,7 @@ export function DashboardTopBar({
           <input
             type="search"
             placeholder="Search for anything"
-            className="min-w-0 flex-1 bg-transparent font-inter text-sm tracking-[-0.14px] text-[#333] outline-none placeholder:text-bodySecondary"
+            className="min-w-0 flex-1 bg-transparent font-gilroy-medium text-sm tracking-[-0.14px] text-[#333] outline-none placeholder:text-bodySecondary"
           />
         </label>
 
@@ -74,7 +74,7 @@ export function DashboardTopBar({
         >
           <Bell className="size-6" aria-hidden />
           {unreadCount > 0 && (
-            <span className="flex h-4 min-w-[23px] items-center justify-center rounded-full bg-khaki-200 px-1 font-inter text-[10px] tracking-[-0.1px] text-black-800">
+            <span className="flex h-4 min-w-[23px] items-center justify-center rounded-full bg-khaki-200 px-1 font-gilroy-medium text-[10px] tracking-[-0.1px] text-black-800">
               {unreadCount}
             </span>
           )}
@@ -92,7 +92,7 @@ export function DashboardTopBar({
 
             <Link
               href="/panel/campaigns/new"
-              className="shrink-0 rounded-xl bg-black px-5 py-3 text-center font-inter text-sm tracking-[-0.14px] text-white transition-colors hover:bg-[#1a1a1a]"
+              className="shrink-0 rounded-xl bg-black px-5 py-3 text-center font-gilroy-medium text-sm tracking-[-0.14px] text-white transition-colors hover:bg-[#1a1a1a]"
             >
               Create campaign
             </Link>
