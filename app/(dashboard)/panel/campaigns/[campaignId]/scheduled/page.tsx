@@ -908,7 +908,8 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                 progressTab={progressTab}
                 setProgressTab={setProgressTab}
                 currency={currency}
-                currencySource="account"
+                setCurrency={setCurrency}
+                CURRENCY_OPTIONS={currency ? [currency] : []}
                 brandName={brandName}
                 useSeparateBudgets={useSeparateBudgets}
                 setUseSeparateBudgets={() => {}}
