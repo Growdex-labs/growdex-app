@@ -30,6 +30,8 @@ import {
   fetchMetaSocialPosts,
   fetchTikTokCreativeAssets,
   fetchTikTokSocialPosts,
+  assetPlatformLabel,
+  assetServesPlatform,
   persistLibraryUpload,
   type CreativeAsset,
 } from "@/lib/assets";
@@ -44,7 +46,10 @@ const statusLabel = (status: string) =>
   status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const isVideoAsset = (asset: CreativeAsset) =>
-  isVideoMedia(asset);
+  isVideoMedia({
+    url: asset.url,
+    mediaType: asset.mediaType,
+  });
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<CreativeAsset[]>([]);
@@ -114,7 +119,9 @@ export default function AssetsPage() {
   const visibleAssets = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return assets.filter((asset) => {
-      if (platform !== "all" && asset.platform !== platform) return false;
+      if (platform !== "all" && !assetServesPlatform(asset, platform)) {
+        return false;
+      }
       if (tab === "posts" && asset.kind !== "post") return false;
       if (tab === "assets" && asset.kind !== "asset") return false;
       return (
@@ -128,8 +135,9 @@ export default function AssetsPage() {
   const counts = useMemo(
     () => ({
       all: assets.length,
-      meta: assets.filter((asset) => asset.platform === "meta").length,
-      tiktok: assets.filter((asset) => asset.platform === "tiktok").length,
+      meta: assets.filter((asset) => assetServesPlatform(asset, "meta")).length,
+      tiktok: assets.filter((asset) => assetServesPlatform(asset, "tiktok"))
+        .length,
     }),
     [assets],
   );
@@ -354,7 +362,7 @@ export default function AssetsPage() {
                           />
                         )}
                         <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] uppercase tracking-wide text-white">
-                          {asset.platform}
+                          {assetPlatformLabel(asset)}
                         </span>
                       </span>
                       <span className={`min-w-0 ${view === "grid" ? "block p-3" : "flex-1"}`}>

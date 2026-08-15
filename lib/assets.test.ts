@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   LIBRARY_UPLOADS_STORAGE_KEY,
+  assetServesPlatform,
   libraryAssetFromUpload,
   persistLibraryUpload,
   readLibraryUploads,
@@ -29,21 +30,21 @@ afterEach(() => {
 });
 
 describe("libraryAssetFromUpload", () => {
-  it("tags images as Meta library assets", () => {
+  it("keeps uploaded images available for Meta and TikTok", () => {
     const asset = libraryAssetFromUpload({
       url: "https://res.example.test/image/upload/creative.jpg",
       name: "Spring launch",
       mediaType: "image",
     });
 
-    expect(asset.platform).toBe("meta");
+    expect(asset.platform).toBe("both");
     expect(asset.kind).toBe("asset");
     expect(asset.campaignName).toBe("Uploaded");
     expect(asset.mediaType).toBe("image");
     expect(asset.id.startsWith("library:")).toBe(true);
   });
 
-  it("tags videos as TikTok library assets", () => {
+  it("keeps uploaded videos available for Meta and TikTok", () => {
     const asset = libraryAssetFromUpload({
       url: "https://res.example.test/video/upload/creative.mp4",
       name: "Store walkthrough",
@@ -51,7 +52,7 @@ describe("libraryAssetFromUpload", () => {
       thumbnailUrl: "https://res.example.test/video/upload/so_0/creative.jpg",
     });
 
-    expect(asset.platform).toBe("tiktok");
+    expect(asset.platform).toBe("both");
     expect(asset.mediaType).toBe("video");
     expect(asset.thumbnailUrl).toBe(
       "https://res.example.test/video/upload/so_0/creative.jpg",
@@ -98,5 +99,26 @@ describe("library upload persistence", () => {
   it("ignores corrupt storage instead of throwing", () => {
     window.localStorage.setItem(LIBRARY_UPLOADS_STORAGE_KEY, "{not-json");
     expect(readLibraryUploads()).toEqual([]);
+  });
+
+  it("treats older Meta- or TikTok-tagged uploads as available on both", () => {
+    persistLibraryUpload({
+      url: "https://res.example.test/image/upload/legacy.jpg",
+      name: "Legacy",
+      mediaType: "image",
+    });
+    const stored = JSON.parse(
+      window.localStorage.getItem(LIBRARY_UPLOADS_STORAGE_KEY) ?? "[]",
+    ) as Array<Record<string, unknown>>;
+    stored[0] = { ...stored[0], platform: "meta" };
+    window.localStorage.setItem(
+      LIBRARY_UPLOADS_STORAGE_KEY,
+      JSON.stringify(stored),
+    );
+
+    const asset = readLibraryUploads()[0];
+    expect(asset?.platform).toBe("both");
+    expect(assetServesPlatform(asset!, "meta")).toBe(true);
+    expect(assetServesPlatform(asset!, "tiktok")).toBe(true);
   });
 });
