@@ -1,5 +1,6 @@
 import { readApiErrorMessage } from "./api-error";
 import { apiFetch } from "./auth";
+import { isVideoMedia } from "./campaign-shared";
 
 export type CampaignGoal =
   | "AWARENESS"
@@ -950,11 +951,15 @@ export const validateCampaignCreativeSetup = (
       for (const ad of ads) {
         if (!ad.primaryText.trim()) return `Enter primary text for ${label}.`;
         if (!ad.mediaUrl.trim()) return `Upload media for ${label}.`;
-        if (
-          strategy.configuration.destination === "VIDEO" &&
-          !ad.mediaUrl.includes("/video/upload/") &&
-          !/\.(mp4|mov|webm|m4v|avi)(\?|#|$)/i.test(ad.mediaUrl)
-        ) return `Upload a video for ${label}.`;
+        const isVideo = isVideoMedia({
+          url: ad.mediaUrl,
+          platform,
+          mediaType: ad.mediaType,
+        });
+        if (platform === "meta" && isVideo) return "Upload an image for Meta.";
+        if (strategy.configuration.destination === "VIDEO" && !isVideo) {
+          return `Upload a video for ${label}.`;
+        }
         if (
           strategy.configuration.destination === "WEBSITE" &&
           !ad.landingPageUrl?.trim()
@@ -1923,6 +1928,7 @@ export const campaignDtoToPayload = (
       headline: ad.headline ?? undefined,
       cta: ad.cta,
       mediaUrl: ad.mediaUrl,
+      mediaType: ad.mediaType ?? undefined,
       landingPageUrl: ad.landingPageUrl,
       appId: ad.appId,
       leadFormId: ad.leadFormId,

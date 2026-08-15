@@ -105,10 +105,23 @@ export const fetchCreativeAssets = async (options?: {
   const unique = new Map<string, CreativeAsset>();
 
   for (const asset of readLibraryUploads()) {
-    if (requestedPlatforms && !requestedPlatforms.has(asset.platform)) {
-      continue;
+    // An uploaded image can serve either platform. Keep the stored record
+    // backwards-compatible while presenting it with the requested platform.
+    const assetPlatforms =
+      asset.mediaType === "image"
+        ? requestedPlatforms
+          ? [...requestedPlatforms]
+          : [asset.platform]
+        : [asset.platform];
+
+    for (const platform of assetPlatforms) {
+      if (requestedPlatforms && !requestedPlatforms.has(platform)) continue;
+      const compatibleAsset =
+        platform === asset.platform
+          ? asset
+          : { ...asset, id: `${asset.id}:${platform}`, platform };
+      unique.set(`${platform}:${asset.url}`, compatibleAsset);
     }
-    unique.set(`${asset.platform}:${asset.url}`, asset);
   }
 
   for (const campaign of campaigns) {

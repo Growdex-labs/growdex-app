@@ -15,23 +15,32 @@ interface CTRChartProps {
   size?: "card" | "hero";
 }
 
-const SAMPLE_FACEBOOK = [30, 55, 42, 48, 65, 70, 62, 68, 72];
-const SAMPLE_TIKTOK = [50, 46, 58, 52, 62, 80, 70, 66, 78];
-
 export function CTRLineChart({
   facebookData,
   tiktokData,
   size = "card",
 }: CTRChartProps) {
-  const fb = facebookData && facebookData.length > 0 ? facebookData : SAMPLE_FACEBOOK;
-  const tt = tiktokData && tiktokData.length > 0 ? tiktokData : SAMPLE_TIKTOK;
+  const fb = facebookData?.filter(Number.isFinite) ?? [];
+  const tt = tiktokData?.filter(Number.isFinite) ?? [];
+
+  if (!fb.length && !tt.length) {
+    return (
+      <div
+        className={`mt-6 flex items-center justify-center rounded-lg border border-dashed border-gray-200 text-sm text-gray-500 ${
+          size === "hero" ? "h-72 md:h-80" : "h-48"
+        }`}
+      >
+        No CTR history available yet.
+      </div>
+    );
+  }
 
   // Transform data into format Recharts expects
   const longest = Math.max(fb.length, tt.length);
   const chartData = Array.from({ length: longest }, (_, index) => ({
     index,
-    facebook: fb[index] ?? 0,
-    tiktok: tt[index] ?? 0,
+    facebook: fb[index],
+    tiktok: tt[index],
   }));
 
   return (
@@ -58,23 +67,27 @@ export function CTRLineChart({
             tickLine={false}
           />
 
-          <Line
-            type="monotone"
-            dataKey="facebook"
-            stroke="#3B82F6"
-            strokeWidth={2.5}
-            dot={false}
-            animationDuration={1000}
-          />
+          {fb.length > 0 && (
+            <Line
+              type="monotone"
+              dataKey="facebook"
+              stroke="#3B82F6"
+              strokeWidth={2.5}
+              dot={false}
+              animationDuration={1000}
+            />
+          )}
 
-          <Line
-            type="monotone"
-            dataKey="tiktok"
-            stroke="#1F2937"
-            strokeWidth={2.5}
-            dot={false}
-            animationDuration={1000}
-          />
+          {tt.length > 0 && (
+            <Line
+              type="monotone"
+              dataKey="tiktok"
+              stroke="#1F2937"
+              strokeWidth={2.5}
+              dot={false}
+              animationDuration={1000}
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>
