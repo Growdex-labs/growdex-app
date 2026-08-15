@@ -1,3 +1,4 @@
+import { track } from "@/lib/analytics";
 import {
   adviceActionKey,
   applyCampaignOptimizations,
@@ -36,5 +37,6 @@ export const takeAdviceAction = async (
     proposalIds: [action.proposalId],
     idempotencyKey: crypto.randomUUID(),
   });
+  track("ai_optimization_applied");
   return "applied";
 };

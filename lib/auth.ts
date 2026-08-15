@@ -1,3 +1,5 @@
+import { clearIdentifiedUser } from "./analytics";
+
 // lib/auth.ts
 /**
  * Secure cookie-based auth utilities for Next.js
@@ -628,6 +630,7 @@ export const logout = async () => {
       body: JSON.stringify({}),
     });
   } finally {
+    clearIdentifiedUser();
     clearDevSession();
     window.location.href = "/login";
   }

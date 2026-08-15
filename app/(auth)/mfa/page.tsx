@@ -3,6 +3,11 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
+import {
+  trackScreenBlocked,
+  trackScreenCompleted,
+} from "@/lib/analytics";
+import { useScreenView } from "@/lib/use-screen-view";
 import { verifyMFA, confirmMFA } from "@/lib/auth";
 import { toast } from "sonner";
 
@@ -21,6 +26,7 @@ function MfaPageContent() {
   const [error, setError] = useState("");
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  useScreenView("signup", isSettingsMode ? null : "mfa");
 
   useEffect(() => {
     const s = sessionStorage.getItem("mfa_status");
@@ -72,6 +78,9 @@ function MfaPageContent() {
   const handleSubmit = async () => {
     const token = otp.join("");
     if (token.length < 6) {
+      if (!isSettingsMode) {
+        trackScreenBlocked("signup", "mfa", "missing_code");
+      }
       setError("Please enter a 6-digit code");
       return;
     }
@@ -95,12 +104,16 @@ function MfaPageContent() {
         return;
       }
 
+      trackScreenCompleted("signup", "mfa");
       if (res.onboardingCompleted) {
         router.push("/panel");
       } else {
         router.push("/onboarding");
       }
     } catch (err: any) {
+      if (!isSettingsMode) {
+        trackScreenBlocked("signup", "mfa", "invalid_code");
+      }
       setError(err.message || "Invalid authentication code. Please try again.");
     } finally {
       setLoading(false);

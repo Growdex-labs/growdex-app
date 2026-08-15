@@ -10,6 +10,7 @@ import React, {
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
+import { identifyUser } from "@/lib/analytics";
 import { apiFetch } from "@/lib/auth";
 import { USD } from "@/lib/onboarding-country";
 
@@ -144,6 +145,13 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
     inFlightRef.current = run;
     return run;
   }, []);
+
+  useEffect(() => {
+    if (!me) return;
+    identifyUser(me.profile.id, {
+      onboarding_completed: me.onboardingCompleted,
+    });
+  }, [me]);
 
   useEffect(() => {
     if (shouldSkipMeFetch(pathname)) {

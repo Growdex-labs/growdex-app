@@ -3,11 +3,13 @@ import { fetchCampaigns, type CampaignPlatform } from "@/lib/campaigns";
 import { isVideoMedia } from "@/lib/campaign-shared";
 import type { UploadedCreative } from "@/lib/media-upload";
 
+export type CreativeAssetPlatform = CampaignPlatform | "both";
+
 export interface CreativeAsset {
   id: string;
   name: string;
   url: string;
-  platform: CampaignPlatform;
+  platform: CreativeAssetPlatform;
   campaignId: string;
   campaignName: string;
   status: string;
@@ -45,7 +47,9 @@ const isLibraryAsset = (value: unknown): value is CreativeAsset => {
     typeof asset.id === "string" &&
     typeof asset.name === "string" &&
     typeof asset.url === "string" &&
-    (asset.platform === "meta" || asset.platform === "tiktok") &&
+    (asset.platform === "meta" ||
+      asset.platform === "tiktok" ||
+      asset.platform === "both") &&
     typeof asset.campaignId === "string" &&
     typeof asset.campaignName === "string" &&
     typeof asset.status === "string" &&
@@ -54,13 +58,29 @@ const isLibraryAsset = (value: unknown): value is CreativeAsset => {
   );
 };
 
+const isLibraryUpload = (asset: CreativeAsset) =>
+  asset.id.startsWith("library:") || asset.campaignName === LIBRARY_UPLOAD_LABEL;
+
+export const assetServesPlatform = (
+  asset: Pick<CreativeAsset, "platform">,
+  platform: CampaignPlatform,
+) => asset.platform === "both" || asset.platform === platform;
+
+export const assetPlatformLabel = (
+  asset: Pick<CreativeAsset, "platform">,
+) => (asset.platform === "both" ? "Meta · TikTok" : asset.platform);
+
 export const readLibraryUploads = (): CreativeAsset[] => {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(LIBRARY_UPLOADS_STORAGE_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isLibraryAsset) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter(isLibraryAsset).map((asset) =>
+          isLibraryUpload(asset) ? { ...asset, platform: "both" } : asset,
+        )
+      : [];
   } catch {
     return [];
   }
@@ -68,22 +88,19 @@ export const readLibraryUploads = (): CreativeAsset[] => {
 
 export const libraryAssetFromUpload = (
   uploaded: UploadedCreative,
-): CreativeAsset => {
-  const platform = uploaded.mediaType === "video" ? "tiktok" : "meta";
-  return {
-    id: `library:${fingerprint(uploaded.url)}`,
-    name: uploaded.name.slice(0, 80),
-    url: uploaded.url,
-    platform,
-    campaignId: "",
-    campaignName: LIBRARY_UPLOAD_LABEL,
-    status: "available",
-    createdAt: new Date().toISOString(),
-    kind: "asset",
-    mediaType: uploaded.mediaType,
-    thumbnailUrl: uploaded.thumbnailUrl,
-  };
-};
+): CreativeAsset => ({
+  id: `library:${fingerprint(uploaded.url)}`,
+  name: uploaded.name.slice(0, 80),
+  url: uploaded.url,
+  platform: "both",
+  campaignId: "",
+  campaignName: LIBRARY_UPLOAD_LABEL,
+  status: "available",
+  createdAt: new Date().toISOString(),
+  kind: "asset",
+  mediaType: uploaded.mediaType,
+  thumbnailUrl: uploaded.thumbnailUrl,
+});
 
 export const persistLibraryUpload = (uploaded: UploadedCreative): CreativeAsset => {
   const asset = libraryAssetFromUpload(uploaded);
@@ -105,17 +122,20 @@ export const fetchCreativeAssets = async (options?: {
   const unique = new Map<string, CreativeAsset>();
 
   for (const asset of readLibraryUploads()) {
-    // An uploaded image can serve either platform. Keep the stored record
-    // backwards-compatible while presenting it with the requested platform.
-    const assetPlatforms =
-      asset.mediaType === "image"
-        ? requestedPlatforms
-          ? [...requestedPlatforms]
-          : [asset.platform]
+    const assetPlatforms = requestedPlatforms
+      ? [...requestedPlatforms]
+      : asset.platform === "both"
+        ? (["both"] as const)
         : [asset.platform];
 
     for (const platform of assetPlatforms) {
-      if (requestedPlatforms && !requestedPlatforms.has(platform)) continue;
+      if (
+        requestedPlatforms &&
+        platform !== "both" &&
+        !requestedPlatforms.has(platform)
+      ) {
+        continue;
+      }
       const compatibleAsset =
         platform === asset.platform
           ? asset
