@@ -65,7 +65,7 @@ export function DonutChart({ meta, tiktok }: DonutChartProps) {
         <div className="flex items-center gap-1.5">
           <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.meta }} />
           <MetaIcon className="w-4 h-4" />
-          <span className="font-inter text-xs font-light tracking-[-0.12px] text-lavender-200">
+          <span className="font-gilroy-light text-xs tracking-[-0.12px] text-lavender-200">
             {formatNumber(meta)}
           </span>
         </div>
@@ -73,7 +73,7 @@ export function DonutChart({ meta, tiktok }: DonutChartProps) {
         <div className="flex items-center gap-1.5">
           <div className="w-3.5 h-3.5 rounded-sm" style={{ background: COLORS.tiktok }} />
           <PlatformMark platform="tiktok" />
-          <span className="font-inter text-xs font-light tracking-[-0.12px] text-lavender-200">
+          <span className="font-gilroy-light text-xs tracking-[-0.12px] text-lavender-200">
             {formatNumber(tiktok)}
           </span>
         </div>

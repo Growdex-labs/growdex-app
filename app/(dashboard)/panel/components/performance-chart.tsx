@@ -37,7 +37,7 @@ export function PerformanceChart({
   return (
     <div className="flex h-full flex-col gap-4 rounded-xl border border-lavender-100 p-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-inter text-sm font-bold tracking-[-0.14px] text-[#333]">
+        <h3 className="font-gilroy-bold text-sm tracking-[-0.14px] text-[#333]">
           Lifetime Ad Spend
         </h3>
         <button
@@ -54,17 +54,17 @@ export function PerformanceChart({
         </h1>
 
         {unplottableReason ? (
-          <p className="font-inter text-sm tracking-[-0.14px] text-bodySecondary">
+          <p className="font-gilroy-regular text-sm tracking-[-0.14px] text-bodySecondary">
             {unplottableReason}
           </p>
         ) : data.length === 0 ? (
-          <p className="font-inter text-sm tracking-[-0.14px] text-bodySecondary">
+          <p className="font-gilroy-regular text-sm tracking-[-0.14px] text-bodySecondary">
             No spend recorded yet.
           </p>
         ) : (
           <div className="flex gap-4">
             {/* Y axis labels */}
-            <div className="flex flex-col justify-between font-inter text-[10px] md:text-xs font-light tracking-[-0.12px] text-lavender-200 text-right pb-[70px] pt-1 shrink-0">
+            <div className="flex flex-col justify-between font-gilroy-light text-[10px] md:text-xs tracking-[-0.12px] text-lavender-200 text-right pb-[70px] pt-1 shrink-0">
               {axisLabels.map((label) => (
                 <span key={label}>{label}</span>
               ))}
@@ -97,7 +97,7 @@ export function PerformanceChart({
 
                   {/* Date pill */}
                   <div className="bg-lavender-50 rounded-xl py-1.5 px-2 text-center">
-                    <span className="font-inter text-[10px] md:text-xs font-light tracking-[-0.12px] text-lavender-200">
+                    <span className="font-gilroy-light text-[10px] md:text-xs tracking-[-0.12px] text-lavender-200">
                       {item.date}
                     </span>
                   </div>

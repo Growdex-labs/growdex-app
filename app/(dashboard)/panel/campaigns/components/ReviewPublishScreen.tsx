@@ -50,6 +50,7 @@ interface ReviewPublishScreenProps {
   publishLabel?: string;
   title?: string;
   description?: string;
+  allowStartedSchedule?: boolean;
 }
 
 const goalLabels: Record<CampaignReviewPayload["campaign"]["goal"], string> = {
@@ -86,8 +87,11 @@ export function ReviewPublishScreen({
   publishLabel = "Publish ad",
   title = "Review and publish",
   description = "This is the exact campaign Growdex will save and send to your ad platforms.",
+  allowStartedSchedule = false,
 }: ReviewPublishScreenProps) {
-  const validationError = validateCampaignPayload(campaign);
+  const validationError = validateCampaignPayload(campaign, {
+    allowStartedSchedule,
+  });
   const busy = publishing || saving;
   const accountName = (
     platform: CampaignReviewPayload["campaign"]["platforms"][number],

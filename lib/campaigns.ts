@@ -976,7 +976,10 @@ export const validateCampaignCreativeSetup = (
   return null;
 };
 
-export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
+export const validateCampaignPayload = (
+  payload: CampaignReviewPayload,
+  options?: { allowStartedSchedule?: boolean },
+) => {
   if (!payload.campaign.name.trim()) return "Enter a campaign name.";
   if (!payload.campaign.platforms.length) return "Select at least one platform.";
   if (!payload.audienceStrategies.length) return "Add an audience strategy.";
@@ -1000,7 +1003,10 @@ export const validateCampaignPayload = (payload: CampaignReviewPayload) => {
     }
     if (!Number.isFinite(strategy.budget.amount) || strategy.budget.amount <= 0) return `Enter a budget greater than zero for ${strategy.name}.`;
     const start = new Date(strategy.budget.startDate);
-    if (Number.isNaN(start.getTime()) || start.getTime() < Date.now()) return `Choose a future start time for ${strategy.name}.`;
+    if (Number.isNaN(start.getTime())) return `Choose a start time for ${strategy.name}.`;
+    if (!options?.allowStartedSchedule && start.getTime() < Date.now()) {
+      return `Choose a future start time for ${strategy.name}.`;
+    }
     if (strategy.budget.endDate) {
       const end = new Date(strategy.budget.endDate);
       if (Number.isNaN(end.getTime()) || end <= start) return `Choose an end time after the start time for ${strategy.name}.`;
@@ -1729,9 +1735,13 @@ export const fetchCampaignMetrics = async (): Promise<CampaignMetrics> => {
 
 export const fetchCampaignMetricsById = async (
   campaignId: string,
+  strategyId?: string,
 ): Promise<CampaignMetricsDetail> => {
+  const query = strategyId
+    ? `?strategyId=${encodeURIComponent(strategyId)}`
+    : "";
   const res = await apiFetch(
-    `/campaigns/metrics/${encodeURIComponent(campaignId)}`,
+    `/campaigns/metrics/${encodeURIComponent(campaignId)}${query}`,
     { method: "GET" },
   );
   const data = await readJson(res);

@@ -122,11 +122,11 @@ export function AdAccountsTab({
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-gray-500">Ad Account</dt>
                   <dd className="min-w-0 truncate text-gray-900">
-                    {accountName(accounts, platform.id)}
+                    {balance?.accountName ?? accountName(accounts, platform.id)}
                   </dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
-                  <dt className="text-gray-500">Available Balance</dt>
+                  <dt className="text-gray-500">Balance Due</dt>
                   <dd className="font-gilroy-bold text-gray-950">
                     {formatWalletMoney(balance?.balance ?? 0, currency)}
                   </dd>

@@ -418,6 +418,17 @@ describe("lifetime budget validation", () => {
 
     expect(validateCampaignPayload(campaign)).toBeNull();
   });
+
+  it("allows a live campaign to keep a start time that already passed", () => {
+    const campaign = lifetimeCampaign();
+    campaign.audienceStrategies[0].budget.type = "daily";
+    campaign.audienceStrategies[0].budget.startDate = "2020-01-01T00:00:00.000Z";
+
+    expect(validateCampaignPayload(campaign)).toContain("future start time");
+    expect(
+      validateCampaignPayload(campaign, { allowStartedSchedule: true }),
+    ).toBeNull();
+  });
 });
 
 describe("validateCampaignCreativeSetup", () => {

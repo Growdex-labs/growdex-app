@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Lexend } from "next/font/google";
+import { Lexend } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter-sans",
-  display: "swap",
-});
 
 const lexend = Lexend({
   subsets: ["latin"],
@@ -28,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${lexend.variable}`}>
+    <html lang="en" className={lexend.variable}>
       <body className="antialiased">
         <Providers>
           <main>{children}</main>

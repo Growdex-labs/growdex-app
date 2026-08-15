@@ -539,20 +539,24 @@ export function CampaignSetupWorkspace({
           throw new Error("This campaign does not have a supported setup mode.");
         }
         const openedAt = Date.now();
-        const editablePayload =
-          ensureCampaignPayloadScheduleLeadTime<CreateCampaignPayload>(
-            {
+        const editablePayload = isLiveEdit
+          ? {
               ...payload,
               creationMode: payload.creationMode,
-            },
-            openedAt,
-          );
+            }
+          : ensureCampaignPayloadScheduleLeadTime<CreateCampaignPayload>(
+              {
+                ...payload,
+                creationMode: payload.creationMode,
+              },
+              openedAt,
+            );
         const restoredFingerprint = JSON.stringify(payload);
         const restoredStrategyId =
           payload.audienceStrategies.some(({ id }) => id === editStrategyId)
             ? editStrategyId
             : payload.audienceStrategies[0]?.id ?? null;
-        if (payload.creationMode === "ai") {
+        if (payload.creationMode === "ai" && !isLiveEdit) {
           const currentDraft = campaignToAiDraft(editablePayload);
           try {
             const socialSetup = await hydrateSocialAccounts();
@@ -583,7 +587,7 @@ export function CampaignSetupWorkspace({
             setAiMessages(toUiMessages(resumed.messages));
             setAiRationale(resumed.draft.rationale);
             setAiStepRationales(resumed.draft.stepRationales);
-            setStep(isLiveEdit ? 7 : editStrategyId ? 3 : 0);
+            setStep(editStrategyId ? 3 : 0);
           } catch {
             if (!active) return;
             autosaveRef.current.lastFingerprint = restoredFingerprint;
@@ -596,23 +600,28 @@ export function CampaignSetupWorkspace({
             setAiRationale(currentDraft.rationale);
             setAiStepRationales(currentDraft.stepRationales);
             setStep(
-              isLiveEdit
-                ? 7
-                : editStrategyId
-                  ? 3
-                  : getCampaignRepairStep(editablePayload),
+              editStrategyId ? 3 : getCampaignRepairStep(editablePayload),
             );
             setError(
               "Campaign opened, but the AI assistant could not resume. Complete the missing campaign details, then save the draft.",
             );
           }
         } else {
+          const currentDraft =
+            payload.creationMode === "ai"
+              ? campaignToAiDraft(editablePayload)
+              : null;
           autosaveRef.current.lastFingerprint = restoredFingerprint;
           setCampaign(editablePayload);
           setActiveStrategyId(restoredStrategyId);
-          setMethod("manual");
+          setMethod(payload.creationMode === "ai" ? "ai" : "manual");
           setGoalConfirmed(true);
           setSavedCampaignId(result.id);
+          if (currentDraft) {
+            setAiGeneratedDraft(currentDraft);
+            setAiRationale(currentDraft.rationale);
+            setAiStepRationales(currentDraft.stepRationales);
+          }
           setStep(
             isLiveEdit
               ? 7
@@ -909,6 +918,7 @@ export function CampaignSetupWorkspace({
     platforms: CampaignPlatform[],
     accountAssetIds: Partial<Record<CampaignPlatform, string>>,
   ) => {
+    if (isLiveEdit) return;
     if (campaign.creationMode === "ai") {
       aiFlow.markReview("platform");
       aiFlow.markReview("event");
@@ -1556,7 +1566,9 @@ export function CampaignSetupWorkspace({
       return;
     }
     if (step === 6) {
-      const validation = validateCampaignPayload(campaign);
+      const validation = validateCampaignPayload(campaign, {
+        allowStartedSchedule: isLiveEdit,
+      });
       if (validation) {
         setError(validation);
         return;
@@ -1595,7 +1607,9 @@ export function CampaignSetupWorkspace({
 
   const saveLiveChanges = async () => {
     if (!editCampaignId) return;
-    const validation = validateCampaignPayload(campaign);
+    const validation = validateCampaignPayload(campaign, {
+      allowStartedSchedule: true,
+    });
     if (validation) {
       setError(validation);
       setConfirmLiveSave(false);
@@ -1677,6 +1691,7 @@ export function CampaignSetupWorkspace({
       "destination" | "optimizationGoal"
     >,
   ) => {
+    if (isLiveEdit) return;
     if (campaign.creationMode === "ai") {
       aiFlow.markReview("goals");
       aiFlow.markReview("event");
@@ -1689,6 +1704,7 @@ export function CampaignSetupWorkspace({
   const updateSpecialAdCategories = (
     specialAdCategories: MetaSpecialAdCategory[],
   ) => {
+    if (isLiveEdit) return;
     if (campaign.creationMode === "ai") {
       aiFlow.markReview("goals");
       aiFlow.markReview("audience");
@@ -1708,6 +1724,13 @@ export function CampaignSetupWorkspace({
   const updateEventManagement = (
     next: Partial<CampaignConfiguration & AudienceStrategyConfiguration>,
   ) => {
+    if (
+      isLiveEdit &&
+      next.destination &&
+      next.destination !== activeStrategy.configuration.destination
+    ) {
+      return;
+    }
     if (campaign.creationMode === "ai") aiFlow.markReview("event");
     patchStrategyConfiguration(eventManagementPatch(next));
     setError(null);
@@ -2075,6 +2098,19 @@ export function CampaignSetupWorkspace({
                     </div>
                   )}
 
+                  {isLiveEdit && (step === 1 || step === 2) && (
+                    <p className="mb-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+                      Goal, platforms, and ad accounts stay as published. Meta
+                      does not let those change on a live campaign.
+                    </p>
+                  )}
+                  {isLiveEdit && step === 3 && (
+                    <p className="mb-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+                      Destination stays as published. Optimization goal and
+                      event source can change.
+                    </p>
+                  )}
+
                   {step === 1 && (
                     <div>
                       <ManualPlatformScreen
@@ -2294,6 +2330,7 @@ export function CampaignSetupWorkspace({
                           ? "Confirm these changes. Growdex will update the live campaign on Meta or TikTok."
                           : "This is the exact campaign Growdex will save and send to your ad platforms."
                       }
+                      allowStartedSchedule={isLiveEdit}
                     />
                   )}
 
