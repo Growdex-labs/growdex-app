@@ -80,7 +80,7 @@ interface PageProps {
 }
 
 export default function ScheduledCampaignPage({ params }: PageProps) {
-  const { me } = useMe();
+  const { me, currency: countryCurrency } = useMe();
   const brandName = me?.brand?.name ?? "Your Brand";
   const instagramAccountName = (() => {
     const url = me?.brand?.instagramUrl;
@@ -103,7 +103,6 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
   )
     .map(([code, name]) => ({ code, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const CURRENCY_OPTIONS = ["NGN", "USD", "JPY"];
 
   const [selectedPlatforms, setSelectedPlatforms] = useState({
     meta: true,
@@ -136,7 +135,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
   const [lowerReach, setLowerReach] = useState(1000);
   const [upperReach, setUpperReach] = useState(5000);
 
-  const [currency, setCurrency] = useState("NGN");
+  const [currency, setCurrency] = useState(countryCurrency);
 
   const [unifiedBudgetAmount, setUnifiedBudgetAmount] = useState("");
   const [unifiedBudgetFrequency, setUnifiedBudgetFrequency] = useState<
@@ -239,7 +238,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         // Budget
         if (primaryStrategy) {
           const budget = primaryStrategy.budget;
-          setCurrency(budget.currency || "NGN");
+          setCurrency(budget.currency || countryCurrency);
 
           if (budget.type === "daily" || budget.type === "lifetime") {
             setUnifiedBudgetFrequency(budget.type);
@@ -909,8 +908,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                 progressTab={progressTab}
                 setProgressTab={setProgressTab}
                 currency={currency}
-                setCurrency={() => {}}
-                CURRENCY_OPTIONS={[]}
+                currencySource="account"
                 brandName={brandName}
                 useSeparateBudgets={useSeparateBudgets}
                 setUseSeparateBudgets={() => {}}

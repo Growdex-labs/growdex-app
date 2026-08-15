@@ -59,7 +59,7 @@ export function StepGoalsOnboarding({ formData, toggleGoal, change, onNext, onSk
 
       <div className="mt-8">
         <p className="text-xs text-dimGray">Don&apos;t see your goal?</p>
-        <p className="mb-2 text-sm font-gilroy-medium text-khaki-300">Tell Growdex what you want to achieve</p>
+        <p className="mb-2 text-sm font-gilroy-semibold text-black-800">Tell Growdex what you want to achieve</p>
         <textarea
           name="customGoal"
           value={formData.customGoal}

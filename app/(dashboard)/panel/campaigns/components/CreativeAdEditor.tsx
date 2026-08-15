@@ -11,6 +11,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { isVideoMedia } from "@/lib/campaign-shared";
 import { requestCampaignCreativeSuggestion } from "@/lib/campaigns";
 import type {
   CampaignCreativeInput,
@@ -52,6 +53,18 @@ function CreativePreview({
   brandName: string;
 }) {
   const isMeta = creative.platform === "meta";
+  const isVideo = isVideoMedia({
+    url: creative.mediaUrl,
+    platform: creative.platform,
+    mediaType: creative.mediaType,
+  });
+  const mediaLabel = creative.mediaUrl
+    ? isVideo
+      ? "Video"
+      : "Image"
+    : creative.platform === "meta"
+      ? "Image"
+      : "Image or video";
 
   return (
     <aside className="self-start overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white shadow-sm xl:sticky xl:top-6">
@@ -65,7 +78,7 @@ function CreativePreview({
           </p>
         </div>
         <span className="rounded-full bg-dimYellow px-2.5 py-1 text-[11px] font-gilroy-semibold text-gray-700">
-          {isMeta ? "Image" : "Video"}
+          {mediaLabel}
         </span>
       </div>
 
@@ -141,7 +154,17 @@ export function CreativeAdEditor({
   const platform = creative.platform;
   const headlineLimit = platform === "meta" ? 255 : 512;
   const headlineLabel = platform === "meta" ? "Headline" : "Ad name";
-  const requiresVideo = platform === "tiktok" || destination === "VIDEO";
+  const requiresVideo = destination === "VIDEO";
+  const uploadLabel = requiresVideo
+    ? "video"
+    : platform === "meta"
+      ? "image"
+      : "image or video";
+  const uploadAccept = requiresVideo
+    ? "video/*"
+    : platform === "meta"
+      ? "image/*"
+      : "image/jpeg,image/png,video/*";
   const samePlatformCount = creatives.filter((item) => item.platform === platform).length;
   const canRemove = samePlatformCount > 1;
   const generatePrimaryText = async () => {
@@ -459,12 +482,12 @@ export function CreativeAdEditor({
 
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-700 transition-colors hover:bg-gray-50">
             {uploading === activeIndex ? <Loader2 className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}
-            {uploading === activeIndex ? "Uploading…" : `Replace ${requiresVideo ? "video" : "image"}`}
+            {uploading === activeIndex ? "Uploading…" : `Replace ${uploadLabel}`}
             <input
               className="hidden"
               type="file"
               disabled={uploading !== null}
-              accept={requiresVideo ? "video/*" : "image/*"}
+              accept={uploadAccept}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) onUpload(activeIndex, platform, file);

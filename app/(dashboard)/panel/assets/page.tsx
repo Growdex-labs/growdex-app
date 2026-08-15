@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -14,7 +14,7 @@ import {
   Loader2,
   Megaphone,
   Search,
-  X,
+  Upload,
 } from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
 import { isVideoMedia } from "@/lib/campaign-shared";
@@ -30,9 +30,11 @@ import {
   fetchMetaSocialPosts,
   fetchTikTokCreativeAssets,
   fetchTikTokSocialPosts,
+  persistLibraryUpload,
   type CreativeAsset,
 } from "@/lib/assets";
 import type { CampaignPlatform } from "@/lib/campaigns";
+import { uploadCreativeToCloudinary } from "@/lib/media-upload";
 import { hydrateSocialAccounts } from "@/lib/social";
 
 type LibraryTab = "assets" | "posts";
@@ -53,32 +55,33 @@ export default function AssetsPage() {
   const [tab, setTab] = useState<LibraryTab>("assets");
   const [view, setView] = useState<LibraryView>("grid");
   const [selected, setSelected] = useState<CreativeAsset | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let active = true;
-    void Promise.all([fetchCreativeAssets(), hydrateSocialAccounts()])
-      .then(async ([campaignAssets, socialSetup]) => {
-        if (!socialSetup.success || !socialSetup.data) {
-          throw new Error(
-            socialSetup.error ?? "Could not load connected social accounts.",
+    void (async () => {
+      try {
+        const campaignAssets = await fetchCreativeAssets();
+        let providerMedia: CreativeAsset[] = [];
+        const socialSetup = await hydrateSocialAccounts();
+        if (socialSetup.success && socialSetup.data) {
+          const providerResults = await Promise.allSettled([
+            ...(socialSetup.data.meta?.assets ?? []).map((asset) =>
+              fetchMetaSocialPosts(asset.id),
+            ),
+            ...(socialSetup.data.tiktok?.assets ?? []).map((asset) =>
+              fetchTikTokCreativeAssets(asset.id),
+            ),
+            ...(socialSetup.data.tiktok?.assets ?? []).map((asset) =>
+              fetchTikTokSocialPosts(asset.id),
+            ),
+          ]);
+          providerMedia = providerResults.flatMap((result) =>
+            result.status === "fulfilled" ? result.value : [],
           );
         }
-        const providerResults = await Promise.allSettled(
-            [
-              ...(socialSetup.data.meta?.assets ?? []).map((asset) =>
-                fetchMetaSocialPosts(asset.id),
-              ),
-              ...(socialSetup.data.tiktok?.assets ?? []).map((asset) =>
-                fetchTikTokCreativeAssets(asset.id),
-              ),
-              ...(socialSetup.data.tiktok?.assets ?? []).map((asset) =>
-                fetchTikTokSocialPosts(asset.id),
-              ),
-            ],
-          );
-        const providerMedia = providerResults.flatMap((result) =>
-          result.status === "fulfilled" ? result.value : [],
-        );
         if (active) {
           setAssets(
             [...campaignAssets, ...providerMedia].filter(
@@ -91,8 +94,7 @@ export default function AssetsPage() {
             ),
           );
         }
-      })
-      .catch((failure) => {
+      } catch (failure) {
         if (active) {
           setError(
             failure instanceof Error
@@ -100,10 +102,10 @@ export default function AssetsPage() {
               : "Could not load the creative library.",
           );
         }
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    })();
     return () => {
       active = false;
     };
@@ -132,6 +134,48 @@ export default function AssetsPage() {
     [assets],
   );
 
+  const addUploadedAssets = (uploaded: CreativeAsset[]) => {
+    setAssets((current) =>
+      [...uploaded, ...current].filter(
+        (asset, index, library) =>
+          library.findIndex(
+            (candidate) =>
+              candidate.kind === asset.kind && candidate.url === asset.url,
+          ) === index,
+      ),
+    );
+    setTab("assets");
+  };
+
+  const handleUploadFiles = async (fileList: FileList | null) => {
+    const files = fileList ? Array.from(fileList) : [];
+    if (!files.length) return;
+
+    setUploading(true);
+    setUploadError(null);
+    const uploaded: CreativeAsset[] = [];
+    const failures: string[] = [];
+
+    for (const file of files) {
+      try {
+        uploaded.push(persistLibraryUpload(await uploadCreativeToCloudinary(file)));
+      } catch (failure) {
+        failures.push(
+          `${file.name}: ${
+            failure instanceof Error ? failure.message : "Upload failed."
+          }`,
+        );
+      }
+    }
+
+    if (uploaded.length) {
+      addUploadedAssets(uploaded);
+      setError(null);
+    }
+    if (failures.length) setUploadError(failures.join(" "));
+    setUploading(false);
+  };
+
   return (
     <PanelLayout>
       <main className="min-h-full bg-[#f5f5f5] p-4 sm:p-6 lg:p-8">
@@ -143,16 +187,47 @@ export default function AssetsPage() {
                 Creative library
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-gray-500">
-                Find media already used across your Meta and TikTok campaigns.
+                Upload creatives or find media already used across your Meta and TikTok campaigns.
               </p>
             </div>
-            <Link
-              href="/panel/campaigns/new"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-khaki-300"
-            >
-              <Megaphone className="size-4" /> Create campaign
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  void handleUploadFiles(event.target.files);
+                  event.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {uploading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Upload className="size-4" />
+                )}
+                {uploading ? "Uploading…" : "Upload"}
+              </button>
+              <Link
+                href="/panel/campaigns/new"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-khaki-300"
+              >
+                <Megaphone className="size-4" /> Create campaign
+              </Link>
+            </div>
           </header>
+          {uploadError && (
+            <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {uploadError}
+            </p>
+          )}
 
           <section className="mt-6 grid gap-3 sm:grid-cols-3">
             {[
@@ -307,8 +382,21 @@ export default function AssetsPage() {
                   <Images className="size-10 text-gray-300" />
                   <p className="mt-3 font-gilroy-semibold text-gray-900">No media found</p>
                   <p className="mt-1 max-w-sm text-sm text-gray-500">
-                    Change the filters or create a campaign with hosted media to add it here.
+                    Upload a creative, change the filters, or create a campaign with hosted media.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-2.5 text-sm font-gilroy-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {uploading ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Upload className="size-4" />
+                    )}
+                    {uploading ? "Uploading…" : "Upload creative"}
+                  </button>
                 </div>
               )}
             </div>

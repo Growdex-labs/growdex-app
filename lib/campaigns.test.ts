@@ -5,6 +5,7 @@ import {
   fetchMetaLeadForms,
   campaignDtoToPayload,
   parseAiCampaignDraftResponse,
+  parseCampaignAdviceResponse,
   parseCampaignNameSuggestion,
   parseCampaignOptimizationResponse,
   createInitialCampaignPayload,
@@ -235,6 +236,60 @@ const readyResponse = () => ({
       creative: "Each platform has its own compatible creative requirement.",
     },
   },
+});
+
+describe("parseCampaignAdviceResponse", () => {
+  it("keeps the answer when actions are missing", () => {
+    expect(parseCampaignAdviceResponse({ answer: "CTR is 1%." })).toEqual({
+      answer: "CTR is 1%.",
+      actions: [],
+    });
+  });
+
+  it("parses apply and open actions and drops invalid ones", () => {
+    expect(
+      parseCampaignAdviceResponse({
+        answer: "Lower the budget on Lagos leads.",
+        actions: [
+          {
+            type: "apply",
+            campaignId: "1932a9c8-c36a-4ab8-aa15-5866155db4a8",
+            campaignName: "Lagos leads",
+            revision: 3,
+            proposalId: "9c0d1e2f-3a4b-4c6d-8e8f-901234567890",
+            title: "Lower the daily budget",
+            summary: "Spend is high against conversions.",
+          },
+          {
+            type: "open",
+            campaignId: "1932a9c8-c36a-4ab8-aa15-5866155db4a8",
+            campaignName: "Lagos leads",
+            label: "Open Lagos leads",
+          },
+          { type: "apply", campaignId: "not-a-uuid" },
+        ],
+      }),
+    ).toEqual({
+      answer: "Lower the budget on Lagos leads.",
+      actions: [
+        {
+          type: "apply",
+          campaignId: "1932a9c8-c36a-4ab8-aa15-5866155db4a8",
+          campaignName: "Lagos leads",
+          revision: 3,
+          proposalId: "9c0d1e2f-3a4b-4c6d-8e8f-901234567890",
+          title: "Lower the daily budget",
+          summary: "Spend is high against conversions.",
+        },
+        {
+          type: "open",
+          campaignId: "1932a9c8-c36a-4ab8-aa15-5866155db4a8",
+          campaignName: "Lagos leads",
+          label: "Open Lagos leads",
+        },
+      ],
+    });
+  });
 });
 
 describe("parseCampaignOptimizationResponse", () => {

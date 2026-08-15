@@ -10,13 +10,22 @@ import { useRouter } from "next/navigation";
 interface CampaignHeaderProps {
   campaign: Campaign;
   onOptimizationClick?: () => void;
+  onPause?: () => void;
+  onResume?: () => void;
+  onEnd?: () => void;
+  statusBusy?: boolean;
 }
 
 export function CampaignHeader({
   campaign,
   onOptimizationClick,
+  onPause,
+  onResume,
+  onEnd,
+  statusBusy = false,
 }: CampaignHeaderProps) {
   const router = useRouter();
+  const canOperate = campaign.status === "active" || campaign.status === "paused";
 
   return (
     <div className="mb-8 bg-white p-4 rounded-xl">
@@ -106,13 +115,59 @@ export function CampaignHeader({
             </div>
           </div>
 
-          <button
-            onClick={onOptimizationClick}
-            className="text-xs text-khaki-300 flex items-center gap-2 hover:text-khaki-400 font-gilroy-semibold transition-colors cursor-pointer"
-          >
-            <SparklesIcon className="w-3 h-3" />
-            Optimize for campaign goal
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {canOperate && (
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/panel/campaigns/${encodeURIComponent(campaign.id)}/edit`,
+                  )
+                }
+                className="rounded-lg bg-khaki-200 px-3 py-2 text-xs font-gilroy-semibold text-gray-900 hover:bg-khaki-300"
+              >
+                Edit
+              </button>
+            )}
+            {campaign.status === "active" && onPause && (
+              <button
+                type="button"
+                disabled={statusBusy}
+                onClick={onPause}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-gilroy-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {statusBusy ? "Updating…" : "Pause"}
+              </button>
+            )}
+            {campaign.status === "paused" && onResume && (
+              <button
+                type="button"
+                disabled={statusBusy}
+                onClick={onResume}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-gilroy-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {statusBusy ? "Updating…" : "Resume"}
+              </button>
+            )}
+            {canOperate && onEnd && (
+              <button
+                type="button"
+                disabled={statusBusy}
+                onClick={onEnd}
+                className="rounded-lg border border-red-200 px-3 py-2 text-xs font-gilroy-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+              >
+                End
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onOptimizationClick}
+              className="text-xs text-khaki-300 flex items-center gap-2 hover:text-khaki-400 font-gilroy-semibold transition-colors cursor-pointer"
+            >
+              <SparklesIcon className="w-3 h-3" />
+              Optimize for campaign goal
+            </button>
+          </div>
         </div>
       </div>
     </div>

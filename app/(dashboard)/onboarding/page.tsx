@@ -12,6 +12,7 @@ import {
 } from '@/lib/onboarding';
 import { hydrateSocialAccounts } from '@/lib/social';
 import { SocialAccountSetupProps } from '@/types/social';
+import { currencyForOnboardingCountry } from '@/lib/onboarding-country';
 import { OnboardingLayout } from './components/onboarding-layout';
 import { StepProfileOnboarding } from './components/step-profile';
 import { StepGoalsOnboarding } from './components/step-goals';
@@ -42,6 +43,7 @@ function OnboardingPageContent() {
 
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [countryWasDetected, setCountryWasDetected] = useState(false);
 
   const [formData, setFormData] = useState<FormDataProps>({
     firstName: '',
@@ -64,9 +66,20 @@ function OnboardingPageContent() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
+    const { name, value } = e.target;
+
+    if (name === 'country') {
+      setCountryWasDetected(false);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
+      ...(name === 'country' &&
+      currencyForOnboardingCountry(prev.country) !==
+        currencyForOnboardingCountry(value)
+        ? { monthlyBudget: '' }
+        : {}),
     }));
   };
 
@@ -113,6 +126,7 @@ function OnboardingPageContent() {
       businessName: formData.organizationName,
       website: formData.website,
       advertisingBudget: formData.monthlyBudget,
+      advertisingBudgetCurrency: currencyForOnboardingCountry(formData.country),
       industry: formData.industry,
       country: formData.country,
     });
@@ -211,11 +225,32 @@ function OnboardingPageContent() {
   }, [error]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const hydrate = async () => {
-      const res = await fetchOnboardingStatus();
+      const [res, detectedCountryResponse] = await Promise.all([
+        fetchOnboardingStatus(),
+        fetch('/api/location/country', { cache: 'no-store' })
+          .then(async (response) => {
+            if (!response.ok) return null;
+            const data: unknown = await response.json();
+            return (
+              typeof data === 'object' &&
+              data !== null &&
+              typeof (data as { country?: unknown }).country === 'string'
+                ? (data as { country: string }).country
+                : null
+            );
+          })
+          .catch(() => null),
+      ]);
+
+      if (cancelled) return;
+
       if (res.success && res.data) {
         const { personalInfo, business, goals } = res.data;
         const [first, ...rest] = personalInfo.name.split(' ');
+        const existingCountry = business?.country?.trim();
         setFormData((prev) => ({
           ...prev,
           firstName: first || '',
@@ -223,7 +258,7 @@ function OnboardingPageContent() {
           organizationName: personalInfo.organizationName || business?.businessName || '',
           organizationSize: personalInfo.organizationSize || '',
           website: business?.website || '',
-          country: business?.country || '',
+          country: existingCountry || detectedCountryResponse || '',
           industry: personalInfo.industry || business?.industry || '',
           monthlyBudget: personalInfo.monthlyBudget || business?.advertisingBudget || '',
           goals: goals?.selected || [],
@@ -232,9 +267,22 @@ function OnboardingPageContent() {
         if (res.data.socialAccounts) {
           setSocialAccounts(res.data.socialAccounts);
         }
+        setCountryWasDetected(!existingCountry && Boolean(detectedCountryResponse));
+        return;
+      }
+
+      if (detectedCountryResponse) {
+        setFormData((prev) =>
+          prev.country ? prev : { ...prev, country: detectedCountryResponse },
+        );
+        setCountryWasDetected(true);
       }
     };
-    hydrate();
+
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -257,6 +305,7 @@ function OnboardingPageContent() {
           onNext={handleProfileNext}
           onSkip={handleSetupLater}
           isLoading={loadingAction === 'profile-submit'}
+          countryWasDetected={countryWasDetected}
         />
       )}
 

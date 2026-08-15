@@ -1,3 +1,8 @@
+import {
+  currencyForOnboardingCountry,
+  type OnboardingBudgetCurrency,
+} from '@/lib/onboarding-country';
+
 export const INDUSTRY_OPTIONS = [
   { label: "Advertising & Marketing", value: "Advertising & Marketing" },
   { label: "Agriculture", value: "Agriculture" },
@@ -32,10 +37,31 @@ export const COMPANY_SIZE_OPTIONS = [
   { label: "500+ people", value: "1000" },
 ];
 
-export const MONTHLY_BUDGET_OPTIONS = [
+const USD_MONTHLY_BUDGET_OPTIONS = [
   { label: "$0 - $499 / month", value: "0-500" },
   { label: "$500 - $999 / month", value: "500-1000" },
   { label: "$1,000 - $4,999 / month", value: "1000-5000" },
   { label: "$5,000 - $9,999 / month", value: "5000-10000" },
   { label: "$10,000+ / month", value: "10000+" },
 ];
+
+const NGN_MONTHLY_BUDGET_OPTIONS = [
+  { label: "₦0 - ₦99,999 / month", value: "0-100000" },
+  { label: "₦100,000 - ₦499,999 / month", value: "100000-500000" },
+  { label: "₦500,000 - ₦999,999 / month", value: "500000-1000000" },
+  { label: "₦1,000,000 - ₦4,999,999 / month", value: "1000000-5000000" },
+  { label: "₦5,000,000+ / month", value: "5000000+" },
+];
+
+const MONTHLY_BUDGET_OPTIONS_BY_CURRENCY: Record<
+  OnboardingBudgetCurrency,
+  { label: string; value: string }[]
+> = {
+  USD: USD_MONTHLY_BUDGET_OPTIONS,
+  NGN: NGN_MONTHLY_BUDGET_OPTIONS,
+};
+
+export const monthlyBudgetOptionsForCountry = (country?: string | null) =>
+  MONTHLY_BUDGET_OPTIONS_BY_CURRENCY[
+    currencyForOnboardingCountry(country)
+  ];

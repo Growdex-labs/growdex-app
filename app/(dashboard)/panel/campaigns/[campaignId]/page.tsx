@@ -5,10 +5,11 @@ import {
   fetchCampaignById,
   fetchCampaignMetricsById,
   summariseCampaignMetrics,
+  updateCampaignStatus,
   type CampaignDto,
   type CampaignMetricsSummary,
 } from "@/lib/campaigns";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { PanelLayout } from "../../components/panel-layout";
 import { CampaignsSidebar } from "../../components/campaigns-sidebar";
@@ -37,17 +38,26 @@ export default function CampaignDetailPage({
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const { campaignId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const campaignAds = campaignDto?.creatives ?? [];
+
+  useEffect(() => {
+    if (searchParams.get("optimize") === "1") {
+      setIsOptimizationOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let isMounted = true;
 
     void fetchCampaignMetricsById(campaignId)
-      .then((rows) => {
-        if (isMounted) setMetrics(summariseCampaignMetrics(rows));
+      .then((result) => {
+        if (isMounted) setMetrics(summariseCampaignMetrics(result.byPlatform));
       })
       .catch((failure) => {
         if (!isMounted) return;
@@ -94,6 +104,28 @@ export default function CampaignDetailPage({
       isMounted = false;
     };
   }, [campaignId]);
+
+  const changeStatus = async (status: "active" | "paused" | "completed") => {
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      const updated = await updateCampaignStatus(campaignId, status);
+      if (status === "completed") {
+        router.push("/panel/campaigns");
+        return;
+      }
+      setCampaignDto(updated);
+      setCampaign(mapCampaign(updated));
+    } catch (failure) {
+      setStatusError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not update campaign delivery.",
+      );
+    } finally {
+      setStatusBusy(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -142,7 +174,25 @@ export default function CampaignDetailPage({
             <CampaignHeader
               campaign={campaign}
               onOptimizationClick={() => setIsOptimizationOpen(true)}
+              statusBusy={statusBusy}
+              onPause={() => void changeStatus("paused")}
+              onResume={() => void changeStatus("active")}
+              onEnd={() => {
+                if (
+                  !window.confirm(
+                    "End this campaign? Delivery stops on Meta or TikTok.",
+                  )
+                ) {
+                  return;
+                }
+                void changeStatus("completed");
+              }}
             />
+            {statusError && (
+              <p className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+                {statusError}
+              </p>
+            )}
 
             {/* Optimization Banner - Shows when sidebar is open */}
             {/* {isOptimizationOpen && (
