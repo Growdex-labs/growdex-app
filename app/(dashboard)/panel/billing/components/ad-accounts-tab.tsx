@@ -126,7 +126,9 @@ export function AdAccountsTab({
                   </dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
-                  <dt className="text-gray-500">Balance Due</dt>
+                  <dt className="text-gray-500">
+                    {balance?.isPrepayAccount ? "Available" : "Balance Due"}
+                  </dt>
                   <dd className="font-gilroy-bold text-gray-950">
                     {formatWalletMoney(balance?.balance ?? 0, currency)}
                   </dd>
