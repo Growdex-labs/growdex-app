@@ -1,6 +1,12 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  identifyUser,
+  trackScreenBlocked,
+  trackScreenCompleted,
+} from '@/lib/analytics';
+import { useScreenView } from '@/lib/use-screen-view';
 
 const DIRECT_API = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -22,11 +28,13 @@ function GoogleCallbackContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Completing sign in…');
+  useScreenView('signup', 'google');
 
   useEffect(() => {
     const handleCallback = async () => {
       const error = searchParams.get('error');
       if (error) {
+        trackScreenBlocked('signup', 'google', 'cancelled');
         setStatus('error');
         setMessage('Google sign in was cancelled or failed. Please try again.');
         return;
@@ -36,11 +44,22 @@ function GoogleCallbackContent() {
         const user = await fetchUserDirect();
 
         if (!user) {
+          trackScreenBlocked('signup', 'google', 'session_missing');
           setStatus('error');
           setMessage('Session could not be verified. Please sign in again.');
           return;
         }
 
+        const userId =
+          typeof user.profile?.id === 'string' ? user.profile.id : undefined;
+        if (userId) {
+          identifyUser(userId, {
+            onboarding_completed: Boolean(user.onboardingCompleted),
+          });
+        }
+        if (!user.onboardingCompleted) {
+          trackScreenCompleted('signup', 'form', { method: 'google' });
+        }
         sessionStorage.setItem('growdex_user', JSON.stringify(user));
         setStatus('success');
         setMessage('Signed in successfully! Redirecting…');
@@ -48,6 +67,7 @@ function GoogleCallbackContent() {
           router.push(user.onboardingCompleted ? '/panel' : '/onboarding');
         }, 1500);
       } catch {
+        trackScreenBlocked('signup', 'google', 'callback_failed');
         setStatus('error');
         setMessage('Something went wrong. Please try again.');
       }

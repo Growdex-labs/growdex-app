@@ -1,6 +1,7 @@
 "use client";
 
 import { type Campaign } from "@/lib/mock-data";
+import { track } from "@/lib/analytics";
 import {
   fetchCampaignById,
   fetchCampaignMetricsById,
@@ -114,6 +115,9 @@ export default function CampaignDetailPage({
     setStatusError(null);
     try {
       const updated = await updateCampaignStatus(campaignId, status);
+      track("campaign_status_changed", {
+        to: status === "completed" ? "ended" : status,
+      });
       if (status === "completed") {
         router.push("/panel/campaigns");
         return;

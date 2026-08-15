@@ -32,6 +32,7 @@ export default function RootLayout({
         <Script
           src="https://rybbit.cyberverse.cloud/api/script.js"
           data-site-id="050370fdb8f7"
+          data-mask-patterns='["/panel/campaigns/**","/panel/billing/budget/**"]'
           strategy="afterInteractive"
         />
       </body>

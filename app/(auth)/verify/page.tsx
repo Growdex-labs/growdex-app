@@ -1,6 +1,11 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  trackScreenBlocked,
+  trackScreenCompleted,
+} from '@/lib/analytics';
+import { useScreenView } from '@/lib/use-screen-view';
 import { apiFetch } from '@/lib/auth';
 
 function VerifyEmailContent() {
@@ -9,10 +14,12 @@ function VerifyEmailContent() {
   const token = searchParams.get('token');
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [message, setMessage] = useState('Verifying account...');
+  useScreenView('signup', 'verify');
 
   useEffect(() => {
     const verifyToken = async () => {
       if (!token) {
+        trackScreenBlocked('signup', 'verify', 'missing_token');
         setStatus('error');
         setMessage('Invalid verification link.');
         return;
@@ -33,6 +40,7 @@ function VerifyEmailContent() {
         const data = await response.json();
         setStatus('success');
         setMessage('Account verified successfully!');
+        trackScreenCompleted('signup', 'verify');
 
         if (data.status === 'MFA_SETUP_REQUIRED' || data.status === 'MFA_CHALLENGE') {
           sessionStorage.removeItem('mfa_status');
@@ -55,6 +63,7 @@ function VerifyEmailContent() {
         }, 2000);
       } catch (error: any) {
         console.error('Error verifying email:', error);
+        trackScreenBlocked('signup', 'verify', 'verify_failed');
         setStatus('error');
         setMessage(error.message || 'Verification link has expired or is invalid.');
       }

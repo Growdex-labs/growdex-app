@@ -77,6 +77,13 @@ import {
 } from "./CreateMethodBox";
 import { ReviewPublishScreen } from "./ReviewPublishScreen";
 import { getCampaignRepairStep } from "@/lib/campaign-edit-state";
+import {
+  CAMPAIGN_CREATE_SCREENS,
+  track,
+  trackScreenBlocked,
+  trackScreenCompleted,
+  trackScreenViewed,
+} from "@/lib/analytics";
 
 const STEPS = [
   "Setup campaign",
@@ -225,7 +232,7 @@ const loadAvailableCampaignMedia = async (
 ) =>
   (
     await Promise.all([
-      fetchCreativeAssets(),
+      fetchCreativeAssets({ platforms: ["meta", "tiktok"] }),
       ...(setup.meta?.assets ?? []).map((asset) =>
         fetchMetaSocialPosts(asset.id),
       ),
@@ -237,19 +244,30 @@ const loadAvailableCampaignMedia = async (
     .flat()
     .filter(
       (media, index, catalog) =>
-        catalog.findIndex((candidate) => candidate.url === media.url) === index,
+        catalog.findIndex(
+          (candidate) =>
+            candidate.url === media.url &&
+            candidate.platform === media.platform,
+        ) === index,
     )
     .slice(0, 100)
-    .map((media) => ({
-      id: media.id.slice(0, 200),
-      name: media.name.trim().slice(0, 80) || "Untitled media",
-      url: media.url,
-      platform: media.platform,
-      mediaType: isVideoMedia(media)
-        ? ("video" as const)
-        : ("image" as const),
-      source: media.kind,
-    }));
+    .map((media) => {
+      const platform = media.platform === "tiktok" ? "tiktok" : "meta";
+      return {
+        id: media.id.slice(0, 200),
+        name: media.name.trim().slice(0, 80) || "Untitled media",
+        url: media.url,
+        platform,
+        mediaType: isVideoMedia({
+          url: media.url,
+          platform,
+          mediaType: media.mediaType,
+        })
+          ? ("video" as const)
+          : ("image" as const),
+        source: media.kind,
+      };
+    });
 
 const toUiMessages = (
   messages: AiCampaignDraftResponse["messages"],
@@ -867,6 +885,13 @@ export function CampaignSetupWorkspace({
     });
   }, [activeStrategyId, method, step]);
 
+  useEffect(() => {
+    if (isLiveEdit) return;
+    const screen = CAMPAIGN_CREATE_SCREENS[step];
+    if (!screen) return;
+    trackScreenViewed("campaign_create", screen);
+  }, [isLiveEdit, step]);
+
   const addAudienceStrategy = () => {
     const source = activeStrategy ?? campaign.audienceStrategies[0];
     const next = source
@@ -1195,8 +1220,10 @@ export function CampaignSetupWorkspace({
     setAiRationale(generated.rationale);
     setAiStepRationales(generated.stepRationales);
     setAiQuestion(null);
-    if (options?.initial) aiFlow.resetReviews();
-    else aiFlow.applyRevision(response.changedSteps);
+    if (options?.initial) {
+      aiFlow.resetReviews();
+      track("ai_draft_ready");
+    } else aiFlow.applyRevision(response.changedSteps);
     if (!options?.preserveStep) setStep(0);
   };
 
@@ -1516,14 +1543,22 @@ export function CampaignSetupWorkspace({
     setError(null);
   };
 
+  const blockCreateScreen = (reason: string, message: string) => {
+    setError(message);
+    if (!isLiveEdit) {
+      const screen = CAMPAIGN_CREATE_SCREENS[step];
+      if (screen) trackScreenBlocked("campaign_create", screen, reason);
+    }
+  };
+
   const next = async () => {
     setError(null);
     if (step === 0 && !method) {
-      setError("Choose how you want to create your campaign.");
+      blockCreateScreen("missing_method", "Choose how you want to create your campaign.");
       return;
     }
     if (step === 0 && !campaign.campaign.name.trim()) {
-      setError("Enter a campaign name.");
+      blockCreateScreen("missing_name", "Enter a campaign name.");
       return;
     }
     if (
@@ -1534,15 +1569,21 @@ export function CampaignSetupWorkspace({
             !campaign.campaign.configuration.accountAssetIds?.[platform],
         ))
     ) {
-      setError("Choose an ad account for every selected platform.");
+      blockCreateScreen(
+        "missing_account",
+        "Choose an ad account for every selected platform.",
+      );
       return;
     }
     if (step === 2 && !goalConfirmed) {
-      setError("Choose a campaign goal before continuing.");
+      blockCreateScreen("missing_goal", "Choose a campaign goal before continuing.");
       return;
     }
     if (step === 3 && !activeStrategy.name.trim()) {
-      setError("Enter an audience strategy name before continuing.");
+      blockCreateScreen(
+        "missing_strategy_name",
+        "Enter an audience strategy name before continuing.",
+      );
       return;
     }
     if (
@@ -1553,16 +1594,24 @@ export function CampaignSetupWorkspace({
           !activeStrategy.configuration.eventSourceIds?.[platform],
       )
     ) {
-      setError("Choose a conversion event source for every selected platform.");
+      blockCreateScreen(
+        "missing_event_source",
+        "Choose a conversion event source for every selected platform.",
+      );
       return;
     }
     if (step === 4 && !activeStrategy.audience.locations.length) {
-      setError("Choose at least one audience location.");
+      blockCreateScreen("missing_location", "Choose at least one audience location.");
       return;
     }
-    if (step === 4 && !(await validateMetaAudienceInterests())) return;
+    if (step === 4 && !(await validateMetaAudienceInterests())) {
+      if (!isLiveEdit) {
+        trackScreenBlocked("campaign_create", "audience", "invalid_interests");
+      }
+      return;
+    }
     if (step === 5 && activeStrategy.budget.amount <= 0) {
-      setError("Enter a budget greater than zero.");
+      blockCreateScreen("invalid_budget", "Enter a budget greater than zero.");
       return;
     }
     if (step === 6) {
@@ -1570,9 +1619,13 @@ export function CampaignSetupWorkspace({
         allowStartedSchedule: isLiveEdit,
       });
       if (validation) {
-        setError(validation);
+        blockCreateScreen("invalid_ads", validation);
         return;
       }
+    }
+    if (!isLiveEdit) {
+      const screen = CAMPAIGN_CREATE_SCREENS[step];
+      if (screen) trackScreenCompleted("campaign_create", screen);
     }
     setStep((current) => Math.min(current + 1, STEPS.length - 1));
   };
@@ -1619,6 +1672,9 @@ export function CampaignSetupWorkspace({
     setError(null);
     try {
       await updateCampaign(editCampaignId, campaign);
+      track("campaign_live_saved", {
+        platforms: campaign.campaign.platforms.join(","),
+      });
       setConfirmLiveSave(false);
       setPublishing(false);
       router.push(`/panel/campaigns/${editCampaignId}`);
@@ -1635,14 +1691,15 @@ export function CampaignSetupWorkspace({
   const createAndPublish = async () => {
     const validation = validateCampaignPayload(campaign);
     if (validation) {
-      setError(validation);
+      blockCreateScreen("invalid_review", validation);
       return;
     }
     const missingConnection = campaign.campaign.platforms.find(
       (platform) => !connected(accounts, platform),
     );
     if (missingConnection) {
-      setError(
+      blockCreateScreen(
+        "missing_connection",
         `Connect ${missingConnection === "meta" ? "Meta" : "TikTok"} before publishing. You can still save this campaign as a draft.`,
       );
       return;
@@ -1671,11 +1728,17 @@ export function CampaignSetupWorkspace({
       await publishCampaign(saved.id, {
         idempotencyKey: publishAttemptRef.current.key,
       });
+      trackScreenCompleted("campaign_create", "review");
+      track("campaign_published", {
+        platforms: campaign.campaign.platforms.join(","),
+        creation_mode: campaign.creationMode,
+      });
       setCompletion({ kind: "publish", campaignId: saved.id });
       sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
       setPublishing(false);
     } catch (failure) {
-      setError(
+      blockCreateScreen(
+        "publish_failed",
         failure instanceof Error
           ? failure.message
           : "Could not publish the campaign.",

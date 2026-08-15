@@ -10,6 +10,11 @@ import {
   resendVerification,
   verificationEmailWasSent,
 } from "@/lib/auth";
+import {
+  trackScreenBlocked,
+  trackScreenCompleted,
+} from "@/lib/analytics";
+import { useScreenView } from "@/lib/use-screen-view";
 import { useGoogleAuth } from "@/lib/use-google";
 import { toast } from "sonner";
 
@@ -85,6 +90,10 @@ export default function SignUpPage() {
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const { startGoogleAuth, loading: googleLoading } = useGoogleAuth();
+  useScreenView(
+    "signup",
+    registrationComplete ? "check_email" : "form",
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +113,7 @@ export default function SignUpPage() {
         if (response.uri) sessionStorage.setItem("mfa_uri", response.uri);
         if (response.secret)
           sessionStorage.setItem("mfa_secret", response.secret);
+        trackScreenCompleted("signup", "form", { method: "email" });
         router.push("/mfa");
         return;
       }
@@ -112,7 +122,9 @@ export default function SignUpPage() {
       setVerificationEmailSent(
         verificationEmailWasSent(response.verificationEmailSent),
       );
+      trackScreenCompleted("signup", "form", { method: "email" });
     } catch (err: unknown) {
+      trackScreenBlocked("signup", "form", "register_failed");
       setError(
         getAuthErrorMessage(
           err,

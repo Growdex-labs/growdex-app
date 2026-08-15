@@ -10,6 +10,13 @@ import {
   saveMarketingGoals,
   completeOnboarding,
 } from '@/lib/onboarding';
+import {
+  ONBOARDING_SCREENS,
+  track,
+  trackScreenBlocked,
+  trackScreenCompleted,
+} from '@/lib/analytics';
+import { useScreenView } from '@/lib/use-screen-view';
 import { hydrateSocialAccounts } from '@/lib/social';
 import { SocialAccountSetupProps } from '@/types/social';
 import { currencyForOnboardingCountry } from '@/lib/onboarding-country';
@@ -62,6 +69,11 @@ function OnboardingPageContent() {
     meta: { connected: false, needsReauth: false },
     tiktok: { connected: false, needsReauth: false },
   });
+  const onboardingScreen =
+    currentStep === 1 || currentStep === 2 || currentStep === 3
+      ? ONBOARDING_SCREENS[currentStep]
+      : null;
+  useScreenView('onboarding', onboardingScreen);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -100,10 +112,12 @@ function OnboardingPageContent() {
     setError('');
 
     if (!formData.firstName || !formData.lastName) {
+      trackScreenBlocked('onboarding', 'profile', 'missing_name');
       setError('Please fill in your first and last name');
       return;
     }
     if (!formData.organizationName) {
+      trackScreenBlocked('onboarding', 'profile', 'missing_organization');
       setError('Please fill in your organization name');
       return;
     }
@@ -118,6 +132,7 @@ function OnboardingPageContent() {
 
     if (!profile.success) {
       setLoadingAction(null);
+      trackScreenBlocked('onboarding', 'profile', 'save_failed');
       setError(profile.error || 'Failed to save information');
       return;
     }
@@ -133,10 +148,12 @@ function OnboardingPageContent() {
     setLoadingAction(null);
 
     if (!business.success) {
+      trackScreenBlocked('onboarding', 'profile', 'save_failed');
       setError(business.error || 'Failed to save business information');
       return;
     }
 
+    trackScreenCompleted('onboarding', 'profile');
     goToStep(2);
   };
 
@@ -151,10 +168,12 @@ function OnboardingPageContent() {
     setLoadingAction(null);
 
     if (!result.success) {
+      trackScreenBlocked('onboarding', 'goals', 'save_failed');
       setError(result.error || 'Failed to save marketing goals');
       return;
     }
 
+    trackScreenCompleted('onboarding', 'goals');
     goToStep(3);
   };
 
@@ -165,16 +184,24 @@ function OnboardingPageContent() {
     try {
       const result = await connectSocialAccount(platform);
       if (!result.success) {
+        trackScreenBlocked('onboarding', 'connect', 'connect_failed', {
+          platform,
+        });
         setError(result.error || `Failed to connect ${platform}`);
         return;
       }
 
+      track('platform_connected', { platform });
+      trackScreenCompleted('onboarding', 'connect', { platform });
       if (result.data) {
         setSocialAccounts(result.data);
       } else {
         await refreshSocialAccounts();
       }
     } catch (failure) {
+      trackScreenBlocked('onboarding', 'connect', 'connect_failed', {
+        platform,
+      });
       setError(
         failure instanceof Error
           ? failure.message
@@ -191,8 +218,15 @@ function OnboardingPageContent() {
     setLoadingAction(null);
 
     if (result.success) {
+      track('onboarding_completed', {
+        exit: 'skipped',
+        screen: onboardingScreen ?? 'unknown',
+        connected_meta: socialAccounts.meta.connected,
+        connected_tiktok: socialAccounts.tiktok.connected,
+      });
       router.push('/panel');
     } else {
+      trackScreenBlocked('onboarding', onboardingScreen ?? 'unknown', 'skip_failed');
       setError(result.error || 'Failed to skip onboarding');
     }
   };
@@ -203,8 +237,14 @@ function OnboardingPageContent() {
     setLoadingAction(null);
 
     if (result.success) {
+      track('onboarding_completed', {
+        exit: 'finished',
+        connected_meta: socialAccounts.meta.connected,
+        connected_tiktok: socialAccounts.tiktok.connected,
+      });
       router.push('/panel');
     } else {
+      trackScreenBlocked('onboarding', 'connect', 'complete_failed');
       setError(result.error || 'Failed to complete onboarding');
     }
   };

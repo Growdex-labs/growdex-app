@@ -8,6 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { track } from "@/lib/analytics";
 import {
   applyCampaignOptimizations,
   fetchCampaignOptimizations,
@@ -129,6 +130,7 @@ export function OptimizationSidebar({
         proposalIds: selectedIds,
         idempotencyKey: crypto.randomUUID(),
       });
+      track("ai_optimization_applied", { live: true });
       onApplied?.(updated);
       setProposals((current) =>
         current.filter((proposal) => !selectedIds.includes(proposal.id)),

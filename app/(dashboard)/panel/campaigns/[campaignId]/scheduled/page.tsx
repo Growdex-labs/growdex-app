@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { track } from "@/lib/analytics";
 import { apiFetch } from "@/lib/auth";
 import {
   createCampaign,
@@ -424,6 +425,10 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
         campaignId as string,
       );
 
+      track("campaign_published", {
+        platforms: publishedCampaign.platforms.join(","),
+        creation_mode: publishedCampaign.creationMode ?? "manual",
+      });
       setSubmissionSuccess(
         publishedCampaign.status === "active"
           ? "Campaign is live."
