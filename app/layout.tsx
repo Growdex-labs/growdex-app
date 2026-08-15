@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lexend } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
@@ -28,6 +29,11 @@ export default function RootLayout({
           <main>{children}</main>
         </Providers>
         <Toaster position="top-center" richColors />
+        <Script
+          src="https://rybbit.cyberverse.cloud/api/script.js"
+          data-site-id="050370fdb8f7"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
