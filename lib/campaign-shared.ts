@@ -85,7 +85,7 @@ export const isVideoMedia = ({
   mediaType,
 }: {
   url: string;
-  platform?: "meta" | "tiktok";
+  platform?: "meta" | "tiktok" | "both";
   mediaType?: string | null;
 }) => {
   const normalizedType = mediaType?.toLowerCase();

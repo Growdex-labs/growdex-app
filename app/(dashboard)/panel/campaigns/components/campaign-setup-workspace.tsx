@@ -229,7 +229,16 @@ const campaignToAiDraft = (
 
 const loadAvailableCampaignMedia = async (
   setup: SocialAccountSetupProps,
-) =>
+): Promise<
+  Array<{
+    id: string;
+    name: string;
+    url: string;
+    platform: CampaignPlatform;
+    mediaType: "image" | "video";
+    source: "asset" | "post";
+  }>
+> =>
   (
     await Promise.all([
       fetchCreativeAssets({ platforms: ["meta", "tiktok"] }),
@@ -252,7 +261,8 @@ const loadAvailableCampaignMedia = async (
     )
     .slice(0, 100)
     .map((media) => {
-      const platform = media.platform === "tiktok" ? "tiktok" : "meta";
+      const platform: CampaignPlatform =
+        media.platform === "tiktok" ? "tiktok" : "meta";
       return {
         id: media.id.slice(0, 200),
         name: media.name.trim().slice(0, 80) || "Untitled media",
