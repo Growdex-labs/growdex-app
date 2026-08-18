@@ -204,6 +204,19 @@ export const fetchPaymentMethods = async (): Promise<PaymentMethod[]> =>
 export const fetchInvoices = async (): Promise<Invoice[]> =>
   parseInvoices(await request("/billing/invoices", "Invoices request failed"));
 
+export const downloadInvoiceReceipt = async (invoiceId: string): Promise<Blob> => {
+  const response = await apiFetch(
+    `/billing/invoices/${encodeURIComponent(invoiceId)}/receipt`,
+    { method: "GET" },
+  );
+  if (!response.ok) {
+    throw new Error(
+      await response.text().catch(() => "Could not download this invoice."),
+    );
+  }
+  return response.blob();
+};
+
 const readHostedUrl = async (
   path: string,
   field: "checkoutUrl" | "setupUrl",

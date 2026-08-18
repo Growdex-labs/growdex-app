@@ -11,17 +11,24 @@ import { useScreenView } from "@/lib/use-screen-view";
 import { verifyMFA, confirmMFA } from "@/lib/auth";
 import { toast } from "sonner";
 
+const AUTHENTICATOR_APPS = [
+  ["google", "Google Authenticator", "Open Google Authenticator, tap Add account, then scan this code."],
+  ["microsoft", "Microsoft Authenticator", "Open Microsoft Authenticator, add an account, then scan this code."],
+  ["authy", "Authy", "Open Authy, add an authenticator account, then scan this code."],
+  ["other", "Another app", "Open your authenticator app and choose Add TOTP account or Scan QR code."],
+] as const;
+
 function MfaPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSettingsMode = searchParams.get("mode") === "settings";
 
   const [status, setStatus] = useState<string | null>(null);
-  const [uri, setUri] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
 
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [authenticatorApp, setAuthenticatorApp] = useState<(typeof AUTHENTICATOR_APPS)[number][0]>("google");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,22 +40,19 @@ function MfaPageContent() {
     const u = sessionStorage.getItem("mfa_uri");
     const sec = sessionStorage.getItem("mfa_secret");
 
-    // In settings mode, we allow access even without sessionStorage data
-    if (!s && !isSettingsMode) {
-      router.push("/login");
+    if (!s) {
+      router.push(isSettingsMode ? "/panel/settings/security-control" : "/login");
       return;
     }
 
-    // In settings mode without stored data, default to setup required
-    const resolvedStatus = s || (isSettingsMode ? "MFA_SETUP_REQUIRED" : null);
+    const resolvedStatus = s;
     if (!resolvedStatus) return;
 
     setStatus(resolvedStatus);
-    if (u) setUri(u);
     if (sec) setSecret(sec);
 
     if (u) {
-      QRCode.toDataURL(u)
+      QRCode.toDataURL(u, { width: 320, margin: 2, errorCorrectionLevel: "M", color: { dark: "#111827", light: "#ffffff" } })
         .then((url) => setQrDataUrl(url))
         .catch((err) => console.error("QR Code Generation Error:", err));
     }
@@ -136,6 +140,7 @@ function MfaPageContent() {
   if (!status) return null;
 
   const isSetup = status === "MFA_SETUP_REQUIRED";
+  const selectedAuthenticatorApp = AUTHENTICATOR_APPS.find(([id]) => id === authenticatorApp)!;
 
   return (
     <div className="flex-1 p-4 lg:p-8">
@@ -229,11 +234,13 @@ function MfaPageContent() {
                       <h3 className="text-lg font-gilroy-semibold text-gray-900 mb-1 border-b pb-1 inline-block border-transparent">
                         Open your authenticator app
                       </h3>
-                      <p className="text-sm text-gray-600 mt-2">
-                        Scan the given QR Code, with your authenticator app.
-                        Alternatively, you can manually enter your secret key by
-                        clicking:
-                      </p>
+                      <p className="text-sm text-gray-600 mt-2">Choose your authenticator, then open it on your phone and scan this code from inside the app.</p>
+                      <div role="radiogroup" aria-label="Choose your authenticator app" className="mt-4 grid grid-cols-2 gap-2">
+                        {AUTHENTICATOR_APPS.map(([id, label]) => (
+                          <button key={id} type="button" role="radio" aria-checked={id === authenticatorApp} onClick={() => setAuthenticatorApp(id)} className={`rounded-lg border px-3 py-2 text-left text-xs font-gilroy-semibold ${id === authenticatorApp ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-700"}`}>{label}</button>
+                        ))}
+                      </div>
+                      <p className="mt-3 rounded-lg bg-dimYellow/40 px-3 py-2 text-xs leading-5 text-gray-700">{selectedAuthenticatorApp[2]}</p>
                       <div className="mt-4 break-all bg-gray-50 p-2 rounded text-sm text-gray-700 font-mono">
                         {secret || "Loading secret key..."}
                       </div>
@@ -242,8 +249,8 @@ function MfaPageContent() {
                       {qrDataUrl ? (
                         <img
                           src={qrDataUrl}
-                          alt="QR Code"
-                          className="w-32 h-32 border border-gray-200 rounded-lg"
+                          alt="Scan this QR code with your authenticator app"
+                          className="size-40 border border-gray-200 rounded-lg"
                         />
                       ) : (
                         <div className="w-32 h-32 border border-gray-200 bg-gray-100 rounded-lg flex items-center justify-center text-sm text-gray-400">
