@@ -221,8 +221,8 @@ function OnboardingPageContent() {
       track('onboarding_completed', {
         exit: 'skipped',
         screen: onboardingScreen ?? 'unknown',
-        connected_meta: socialAccounts.meta.connected,
-        connected_tiktok: socialAccounts.tiktok.connected,
+        connected_meta: socialAccounts.meta?.connected ?? false,
+        connected_tiktok: socialAccounts.tiktok?.connected ?? false,
       });
       router.push('/panel');
     } else {
@@ -239,8 +239,8 @@ function OnboardingPageContent() {
     if (result.success) {
       track('onboarding_completed', {
         exit: 'finished',
-        connected_meta: socialAccounts.meta.connected,
-        connected_tiktok: socialAccounts.tiktok.connected,
+        connected_meta: socialAccounts.meta?.connected ?? false,
+        connected_tiktok: socialAccounts.tiktok?.connected ?? false,
       });
       router.push('/panel');
     } else {
