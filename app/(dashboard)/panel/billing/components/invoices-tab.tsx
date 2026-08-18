@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { AlertCircle, Download, Loader2, Receipt } from "lucide-react";
 import {
+  downloadInvoiceReceipt,
   formatInvoiceDate,
   formatPlanPrice,
   type Invoice,
@@ -20,6 +22,33 @@ interface InvoicesTabProps {
 }
 
 export function InvoicesTab({ invoices, error, onRetry }: InvoicesTabProps) {
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const downloadReceipt = async (invoice: Invoice) => {
+    setDownloadingInvoiceId(invoice.id);
+    setDownloadError(null);
+    try {
+      const file = await downloadInvoiceReceipt(invoice.id);
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `growdex-invoice-${invoice.number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (failure) {
+      setDownloadError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not download this invoice. Please try again.",
+      );
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
+  };
+
   if (error) {
     return (
       <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
@@ -59,6 +88,12 @@ export function InvoicesTab({ invoices, error, onRetry }: InvoicesTabProps) {
         </p>
       </div>
 
+      {downloadError && (
+        <p className="mx-5 mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 lg:mx-6">
+          {downloadError}
+        </p>
+      )}
+
       <div className="divide-y divide-gray-100">
         {invoices.length === 0 ? (
           <div className="px-5 py-12 text-center lg:px-6">
@@ -96,17 +131,19 @@ export function InvoicesTab({ invoices, error, onRetry }: InvoicesTabProps) {
                 >
                   {invoice.status}
                 </span>
-                {invoice.pdfUrl && (
-                  <a
-                    href={invoice.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-gray-400 transition-colors hover:text-gray-700"
+                <button
+                    type="button"
+                    onClick={() => void downloadReceipt(invoice)}
+                    disabled={downloadingInvoiceId === invoice.id}
+                    className="text-gray-400 transition-colors hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={`Download invoice ${invoice.number}`}
                   >
-                    <Download className="size-4" />
-                  </a>
-                )}
+                    {downloadingInvoiceId === invoice.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Download className="size-4" />
+                    )}
+                  </button>
               </div>
             </div>
           ))

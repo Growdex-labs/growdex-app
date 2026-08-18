@@ -190,8 +190,10 @@ export default function SecurityControlPage() {
       await disableMFA(disableToken, disablePassword);
       setIs2FAEnabled(false);
       setShowDisable2FASuccess(true);
-    } catch (err: any) {
-      setDisableError(err.message || "Failed to disable 2FA");
+    } catch (err: unknown) {
+      setDisableError(
+        err instanceof Error ? err.message : "Failed to disable 2FA",
+      );
     } finally {
       setIsDisabling(false);
     }
@@ -221,9 +223,13 @@ export default function SecurityControlPage() {
         if (res.secret) sessionStorage.setItem("mfa_secret", res.secret);
         setIs2FAModalOpen(false);
         router.push("/mfa?mode=settings");
+      } else {
+        toast.error("Two-factor authentication is already enabled.");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to initiate MFA setup");
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to initiate MFA setup",
+      );
     } finally {
       setIsRedirectingToMFA(false);
     }
@@ -402,7 +408,9 @@ export default function SecurityControlPage() {
                             Two-Factor Authentication (2FA)
                           </h3>
                           <p className="text-sm text-gray-600 mt-1">
-                            Add an extra layer of protection to your account
+                            {is2FAEnabled
+                              ? "Your account is protected with an authenticator app."
+                              : "Add an extra layer of protection to your account."}
                           </p>
                         </div>
                       </div>
@@ -410,7 +418,7 @@ export default function SecurityControlPage() {
                         onClick={handleEdit2FA}
                         className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors whitespace-nowrap"
                       >
-                        Edit 2FA
+                        {is2FAEnabled ? "Manage 2FA" : "Set up 2FA"}
                       </button>
                     </div>
                   </div>
@@ -656,19 +664,22 @@ export default function SecurityControlPage() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3">
-                    <button
-                      onClick={handleDisable2FA}
-                      className="w-full px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-gray-200 transition-colors"
-                    >
-                      Disable 2FA
-                    </button>
-                    <button
-                      onClick={handleSetup2FA}
-                      disabled={isRedirectingToMFA}
-                      className="w-full px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isRedirectingToMFA ? "Redirecting..." : "Setup 2FA →"}
-                    </button>
+                    {is2FAEnabled ? (
+                      <button
+                        onClick={handleDisable2FA}
+                        className="w-full px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-gray-200 transition-colors"
+                      >
+                        Disable 2FA
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSetup2FA}
+                        disabled={isRedirectingToMFA}
+                        className="w-full px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isRedirectingToMFA ? "Opening setup..." : "Set up 2FA"}
+                      </button>
+                    )}
                   </div>
                   <button onClick={handleCancel2FA} className="w-full mt-4 text-xs text-gray-400 font-gilroy-bold hover:text-gray-600">Close</button>
                 </>
