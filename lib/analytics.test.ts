@@ -10,6 +10,8 @@ import {
   trackScreenViewed,
 } from "./analytics";
 
+const previousAppEnv = process.env.NEXT_PUBLIC_APP_ENV;
+
 const stubRybbit = () => {
   const client = {
     event: vi.fn(),
@@ -29,6 +31,8 @@ const stubRybbit = () => {
 afterEach(() => {
   resetAnalyticsForTests();
   Reflect.deleteProperty(globalThis, "window");
+  if (previousAppEnv === undefined) delete process.env.NEXT_PUBLIC_APP_ENV;
+  else process.env.NEXT_PUBLIC_APP_ENV = previousAppEnv;
 });
 
 describe("analytics", () => {
@@ -36,7 +40,19 @@ describe("analytics", () => {
     expect(() => track("screen_viewed", { flow: "signup" })).not.toThrow();
   });
 
+  it("does nothing outside production", () => {
+    process.env.NEXT_PUBLIC_APP_ENV = "staging";
+    const client = stubRybbit();
+
+    track("screen_viewed", { flow: "signup" });
+    identifyUser("user-1");
+
+    expect(client.event).not.toHaveBeenCalled();
+    expect(client.identify).not.toHaveBeenCalled();
+  });
+
   it("sends events when Rybbit is already loaded", () => {
+    process.env.NEXT_PUBLIC_APP_ENV = "production";
     const client = stubRybbit();
 
     trackScreenViewed("onboarding", "profile");
@@ -59,6 +75,7 @@ describe("analytics", () => {
   });
 
   it("queues events until the script binds", () => {
+    process.env.NEXT_PUBLIC_APP_ENV = "production";
     Object.assign(globalThis, {
       window: {
         setInterval: globalThis.setInterval.bind(globalThis),
@@ -81,6 +98,7 @@ describe("analytics", () => {
   });
 
   it("identifies and clears users", () => {
+    process.env.NEXT_PUBLIC_APP_ENV = "production";
     const client = stubRybbit();
 
     identifyUser("user-1", { onboarding_completed: true });
