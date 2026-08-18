@@ -6,9 +6,7 @@ import Link from "next/link";
 import {
   AlertCircle,
   Calendar,
-  Film,
   Grid2X2,
-  ImageIcon,
   Images,
   List,
   Loader2,
@@ -30,12 +28,9 @@ import {
   fetchMetaSocialPosts,
   fetchTikTokCreativeAssets,
   fetchTikTokSocialPosts,
-  assetPlatformLabel,
-  assetServesPlatform,
   persistLibraryUpload,
   type CreativeAsset,
 } from "@/lib/assets";
-import type { CampaignPlatform } from "@/lib/campaigns";
 import { uploadCreativeToCloudinary } from "@/lib/media-upload";
 import { hydrateSocialAccounts } from "@/lib/social";
 
@@ -56,7 +51,6 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [platform, setPlatform] = useState<"all" | CampaignPlatform>("all");
   const [tab, setTab] = useState<LibraryTab>("assets");
   const [view, setView] = useState<LibraryView>("grid");
   const [selected, setSelected] = useState<CreativeAsset | null>(null);
@@ -119,9 +113,6 @@ export default function AssetsPage() {
   const visibleAssets = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return assets.filter((asset) => {
-      if (platform !== "all" && !assetServesPlatform(asset, platform)) {
-        return false;
-      }
       if (tab === "posts" && asset.kind !== "post") return false;
       if (tab === "assets" && asset.kind !== "asset") return false;
       return (
@@ -130,17 +121,7 @@ export default function AssetsPage() {
         asset.campaignName.toLowerCase().includes(normalized)
       );
     });
-  }, [assets, platform, query, tab]);
-
-  const counts = useMemo(
-    () => ({
-      all: assets.length,
-      meta: assets.filter((asset) => assetServesPlatform(asset, "meta")).length,
-      tiktok: assets.filter((asset) => assetServesPlatform(asset, "tiktok"))
-        .length,
-    }),
-    [assets],
-  );
+  }, [assets, query, tab]);
 
   const addUploadedAssets = (uploaded: CreativeAsset[]) => {
     setAssets((current) =>
@@ -195,7 +176,7 @@ export default function AssetsPage() {
                 Creative library
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-gray-500">
-                Upload creatives or find media already used across your Meta and TikTok campaigns.
+                Upload and reuse images or videos in any of your campaigns.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -237,30 +218,7 @@ export default function AssetsPage() {
             </p>
           )}
 
-          <section className="mt-6 grid gap-3 sm:grid-cols-3">
-            {[
-              { label: "All media", value: counts.all, icon: Images },
-              { label: "Meta assets", value: counts.meta, icon: ImageIcon },
-              { label: "TikTok assets", value: counts.tiktok, icon: Film },
-            ].map((metric) => {
-              const Icon = metric.icon;
-              return (
-                <article key={metric.label} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500">{metric.label}</p>
-                    <span className="flex size-8 items-center justify-center rounded-lg bg-dimYellow text-gray-800">
-                      <Icon className="size-4" />
-                    </span>
-                  </div>
-                  <p className="mt-4 text-2xl font-gilroy-bold text-gray-950">
-                    {loading ? "—" : metric.value}
-                  </p>
-                </article>
-              );
-            })}
-          </section>
-
-          <section className="mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <section className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-gray-100 p-4 lg:flex-row lg:items-center lg:p-5">
               <div className="relative min-w-56 flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
@@ -288,18 +246,6 @@ export default function AssetsPage() {
                   </button>
                 ))}
               </div>
-
-              <select
-                value={platform}
-                onChange={(event) =>
-                  setPlatform(event.target.value as "all" | CampaignPlatform)
-                }
-                className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-600"
-              >
-                <option value="all">All platforms</option>
-                <option value="meta">Meta</option>
-                <option value="tiktok">TikTok</option>
-              </select>
 
               <div className="flex overflow-hidden rounded-xl border border-gray-200">
                 <button
@@ -361,9 +307,6 @@ export default function AssetsPage() {
                             unoptimized
                           />
                         )}
-                        <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] uppercase tracking-wide text-white">
-                          {assetPlatformLabel(asset)}
-                        </span>
                       </span>
                       <span className={`min-w-0 ${view === "grid" ? "block p-3" : "flex-1"}`}>
                         <span className="block truncate font-gilroy-semibold text-gray-900">
@@ -390,7 +333,7 @@ export default function AssetsPage() {
                   <Images className="size-10 text-gray-300" />
                   <p className="mt-3 font-gilroy-semibold text-gray-900">No media found</p>
                   <p className="mt-1 max-w-sm text-sm text-gray-500">
-                    Upload a creative, change the filters, or create a campaign with hosted media.
+                    Upload a creative or create a campaign with hosted media.
                   </p>
                   <button
                     type="button"
