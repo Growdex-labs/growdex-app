@@ -178,7 +178,7 @@ export default function SignUpPage() {
             alt="Growdex"
             className="w-8 h-8 object-contain"
           />
-          <span className="text-gray-200 font-gilroy-bold text-xl tracking-tight">
+          <span className="text-gray-900 font-gilroy-bold text-xl tracking-tight">
             Growdex
           </span>
         </div>
@@ -198,7 +198,7 @@ export default function SignUpPage() {
       {/* Content row */}
       <div className="flex flex-1">
         {/* ── Left: dark panel as inset rounded card ── */}
-        <div className="hidden lg:flex w-[48%] shrink-0 p-5">
+        <div className="hidden">
           <div className="flex-1 bg-[#333333] rounded-3xl overflow-hidden flex flex-col relative">
             {/* Orbital rings + center logo */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -321,7 +321,7 @@ export default function SignUpPage() {
         </div>
 
         {/* ── Right: form on the cream background ── */}
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className="flex flex-1 items-center justify-center px-6 pb-8 pt-28 sm:p-10 sm:pt-28">
           <div className="w-full max-w-md space-y-6">
             {/* Mobile logo */}
             <div className="flex lg:hidden items-center justify-center mb-2">
