@@ -36,6 +36,9 @@ declare global {
 const pending: Array<(client: RybbitClient) => void> = [];
 let flushTimer: number | undefined;
 
+export const isAnalyticsEnabled = () =>
+  process.env.NEXT_PUBLIC_APP_ENV === "production";
+
 const getClient = (): RybbitClient | undefined => {
   if (typeof window === "undefined") return undefined;
   return window.rybbit;
@@ -66,7 +69,7 @@ const startFlushRetry = () => {
 };
 
 const withClient = (run: (client: RybbitClient) => void) => {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !isAnalyticsEnabled()) return;
   const client = getClient();
   if (client) {
     run(client);
