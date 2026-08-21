@@ -309,9 +309,12 @@ export default function CampaignsPage() {
                   {displayed.map((campaign) => {
                     const status = (campaign.status ?? "draft").toLowerCase();
                     const canPublish = ["draft", "failed"].includes(status);
+                    const canRecover = status === "rejected";
                     const href = canPublish
                       ? `/panel/campaigns/new/publish?id=${encodeURIComponent(campaign.id)}`
-                      : `/panel/campaigns/${encodeURIComponent(campaign.id)}`;
+                      : canRecover
+                        ? `/panel/campaigns/new?id=${encodeURIComponent(campaign.id)}`
+                        : `/panel/campaigns/${encodeURIComponent(campaign.id)}`;
                     return (
                       <CampaignCard
                         key={campaign.id}

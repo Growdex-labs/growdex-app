@@ -1826,7 +1826,7 @@ export const summariseCampaignMetrics = (
 
 export const updateCampaignStatus = async (
   id: string,
-  status: "active" | "paused" | "completed",
+  status: "draft" | "active" | "paused" | "completed",
 ): Promise<CampaignDto> => {
   const res = await apiFetch(`/campaigns/${encodeURIComponent(id)}/status`, {
     method: "POST",

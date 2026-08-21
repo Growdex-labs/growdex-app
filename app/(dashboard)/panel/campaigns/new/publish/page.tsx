@@ -80,9 +80,14 @@ export default function PublishCampaignPage() {
           );
         }
         setSourceStatus(result.status ?? "draft");
-        const payload = ensureCampaignPayloadScheduleLeadTime(
-          campaignDtoToPayload(result),
-        );
+        const savedPayload = campaignDtoToPayload(result);
+        // A draft can save a refreshed start time before publishing. A failed
+        // campaign retries its exact saved version so any partial remote work
+        // can be resumed; changing its schedule requires opening the editor.
+        const payload =
+          result.status === "failed"
+            ? savedPayload
+            : ensureCampaignPayloadScheduleLeadTime(savedPayload);
         setCampaign(payload);
         setActiveStrategyId(payload.audienceStrategies[0]?.id ?? null);
       })
@@ -117,18 +122,23 @@ export default function PublishCampaignPage() {
     setIsPublishing(true);
     setError(null);
     try {
-      const writableCampaign: CreateCampaignPayload = {
-        ...campaign,
-        creationMode: campaign.creationMode,
-      };
-      // Drafts created under an older contract can contain nullable optional
-      // fields. Re-saving converts them to the current write contract before
-      // the backend builds the provider request.
-      const savedCampaign = await updateCampaignDraft(
-        campaignId,
-        writableCampaign,
-      );
-      setCampaign(campaignDtoToPayload(savedCampaign));
+      if (sourceStatus === "draft") {
+        const writableCampaign: CreateCampaignPayload = {
+          ...campaign,
+          creationMode: campaign.creationMode,
+        };
+        // Drafts created under an older contract can contain nullable optional
+        // fields. Re-saving converts them to the current write contract before
+        // the backend builds the provider request.
+        const savedCampaign = await updateCampaignDraft(
+          campaignId,
+          writableCampaign,
+        );
+        setCampaign(campaignDtoToPayload(savedCampaign));
+      }
+      // A failed publish keeps any remote IDs that were already created. Retry
+      // the saved version directly so the publisher can continue that work
+      // without replacing it with duplicate provider objects.
       await publishCampaign(campaignId);
       router.push("/panel/campaigns");
     } catch (failure) {
