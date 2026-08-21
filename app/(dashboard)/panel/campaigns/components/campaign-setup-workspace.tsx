@@ -27,6 +27,7 @@ import {
   startAiCampaignDraft,
   updateCampaign,
   updateCampaignDraft,
+  updateCampaignStatus,
   validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
   validateCampaignPayload,
@@ -559,10 +560,17 @@ export function CampaignSetupWorkspace({
           if (!["active", "paused"].includes(status)) {
             throw new Error("Only live or paused campaigns can be edited here.");
           }
-        } else if (!["draft", "failed"].includes(status)) {
-          throw new Error("Only draft or failed campaigns can be edited.");
+        } else if (!["draft", "failed", "rejected"].includes(status)) {
+          throw new Error(
+            "Only draft, failed, or rejected campaigns can be edited.",
+          );
         }
-        const payload = campaignDtoToPayload(result);
+        const editableCampaign =
+          !isLiveEdit && ["failed", "rejected"].includes(status)
+            ? await updateCampaignStatus(editCampaignId, "draft")
+            : result;
+        if (!active) return;
+        const payload = campaignDtoToPayload(editableCampaign);
         if (payload.creationMode === "unknown") {
           throw new Error("This campaign does not have a supported setup mode.");
         }
