@@ -6,12 +6,12 @@ import {
   trackScreenCompleted,
 } from '@/lib/analytics';
 import { useScreenView } from '@/lib/use-screen-view';
-import { apiFetch } from '@/lib/auth';
+import { apiFetch, getAuthErrorMessage, readAuthError } from '@/lib/auth';
 
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams.get('token')?.replace(/\s+/g, '') ?? null;
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [message, setMessage] = useState('Verifying account...');
   useScreenView('signup', 'verify');
@@ -33,8 +33,7 @@ function VerifyEmailContent() {
         });
 
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Verification failed');
+          throw await readAuthError(response);
         }
 
         const data = await response.json();
@@ -50,22 +49,26 @@ function VerifyEmailContent() {
           sessionStorage.setItem('mfa_status', data.status);
           if (data.uri) sessionStorage.setItem('mfa_uri', data.uri);
           if (data.secret) sessionStorage.setItem('mfa_secret', data.secret);
-          
+
           setTimeout(() => {
             router.push('/mfa');
           }, 2000);
           return;
         }
 
-        // Redirect after a short delay so user sees the success message
         setTimeout(() => {
           router.push(data.onboardingCompleted ? '/panel' : '/onboarding');
         }, 2000);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error verifying email:', error);
         trackScreenBlocked('signup', 'verify', 'verify_failed');
         setStatus('error');
-        setMessage(error.message || 'Verification link has expired or is invalid.');
+        setMessage(
+          getAuthErrorMessage(
+            error,
+            'Verification link has expired or is invalid.',
+          ),
+        );
       }
     };
 

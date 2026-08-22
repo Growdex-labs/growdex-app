@@ -29,7 +29,7 @@ export class AuthRequestError extends Error {
   }
 }
 
-const readAuthError = async (response: Response): Promise<AuthRequestError> => {
+export const readAuthError = async (response: Response): Promise<AuthRequestError> => {
   let details: Record<string, unknown> | undefined;
 
   try {
