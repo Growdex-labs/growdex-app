@@ -3,6 +3,7 @@ import {
   AuthRequestError,
   getAuthErrorMessage,
   isEmailNotVerifiedError,
+  readAuthError,
   verificationEmailWasSent,
 } from "./auth";
 
@@ -67,6 +68,29 @@ describe("getAuthErrorMessage", () => {
     expect(
       getAuthErrorMessage(new TypeError("Failed to fetch"), "Service unavailable"),
     ).toBe("Service unavailable");
+  });
+});
+
+describe("readAuthError", () => {
+  it("prefers Nest's message over the generic error name", async () => {
+    const error = await readAuthError(
+      new Response(
+        JSON.stringify({
+          message: "Invalid or expired verification token",
+          error: "Bad Request",
+          statusCode: 400,
+        }),
+        { status: 400 },
+      ),
+    );
+
+    expect(error).toMatchObject({
+      message: "Invalid or expired verification token",
+      status: 400,
+    });
+    expect(
+      getAuthErrorMessage(error, "Verification link has expired or is invalid."),
+    ).toBe("Invalid or expired verification token");
   });
 });
 
