@@ -291,14 +291,14 @@ function OnboardingPageContent() {
           ...prev,
           firstName: first || '',
           lastName: rest.join(' ') || '',
-          organizationName: personalInfo.organizationName || business?.businessName || '',
-          organizationSize: personalInfo.organizationSize || '',
+          organizationName: personalInfo?.organizationName || business?.businessName || '',
+          organizationSize: personalInfo?.organizationSize || '',
           website: business?.website || '',
           country: hydratedCountry,
-          industry: personalInfo.industry || business?.industry || '',
+          industry: personalInfo?.industry || business?.industry || '',
           monthlyBudget: hasMismatchedBudgetCurrency
             ? ''
-            : personalInfo.monthlyBudget || business?.advertisingBudget || '',
+            : personalInfo?.monthlyBudget || business?.advertisingBudget || '',
           goals: goals?.selected || [],
           customGoal: goals?.custom || '',
         }));
