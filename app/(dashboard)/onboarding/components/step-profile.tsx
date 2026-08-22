@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { FormDataProps } from "../page";
+import { FormDataProps } from "../form-data";
 import { StepHeading, PrimaryButton, SkipLink } from "./onboarding-layout";
 import { OnboardingField, OnboardingSelect, FieldBadge } from "./field";
 import {

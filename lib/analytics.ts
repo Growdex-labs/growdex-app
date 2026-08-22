@@ -90,6 +90,15 @@ export const identifyUser = (
   withClient((client) => client.identify(userId, traits));
 };
 
+export const analyticsUserId = (me: {
+  id?: string | null;
+  profile?: { id?: string } | null;
+}): string | undefined => {
+  if (typeof me.id === "string" && me.id) return me.id;
+  if (typeof me.profile?.id === "string" && me.profile.id) return me.profile.id;
+  return undefined;
+};
+
 export const clearIdentifiedUser = () => {
   withClient((client) => client.clearUserId());
 };
