@@ -24,21 +24,7 @@ import { OnboardingLayout } from './components/onboarding-layout';
 import { StepProfileOnboarding } from './components/step-profile';
 import { StepGoalsOnboarding } from './components/step-goals';
 import { StepConnectOnboarding } from './components/step-connect';
-
-export interface FormDataProps {
-  // Step 1 — profile and business
-  firstName: string;
-  lastName: string;
-  organizationName: string;
-  organizationSize: string;
-  website: string;
-  country: string;
-  industry: string;
-  monthlyBudget: string;
-  // Step 2 — goals
-  goals: string[];
-  customGoal: string;
-}
+import { FormDataProps } from './form-data';
 
 const TOTAL_STEPS = 3;
 
@@ -289,7 +275,7 @@ function OnboardingPageContent() {
 
       if (res.success && res.data) {
         const { personalInfo, business, goals } = res.data;
-        const [first, ...rest] = personalInfo.name.split(' ');
+        const [first, ...rest] = (personalInfo?.name ?? '').split(' ');
         const existingCountry = business?.country?.trim();
         const hydratedCountry = existingCountry || detectedCountryResponse || '';
         const expectedBudgetCurrency = currencyForOnboardingCountry(hydratedCountry);
@@ -305,14 +291,14 @@ function OnboardingPageContent() {
           ...prev,
           firstName: first || '',
           lastName: rest.join(' ') || '',
-          organizationName: personalInfo.organizationName || business?.businessName || '',
-          organizationSize: personalInfo.organizationSize || '',
+          organizationName: personalInfo?.organizationName || business?.businessName || '',
+          organizationSize: personalInfo?.organizationSize || '',
           website: business?.website || '',
           country: hydratedCountry,
-          industry: personalInfo.industry || business?.industry || '',
+          industry: personalInfo?.industry || business?.industry || '',
           monthlyBudget: hasMismatchedBudgetCurrency
             ? ''
-            : personalInfo.monthlyBudget || business?.advertisingBudget || '',
+            : personalInfo?.monthlyBudget || business?.advertisingBudget || '',
           goals: goals?.selected || [],
           customGoal: goals?.custom || '',
         }));

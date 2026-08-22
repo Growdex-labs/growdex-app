@@ -10,7 +10,7 @@ import React, {
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import { identifyUser } from "@/lib/analytics";
+import { analyticsUserId, identifyUser } from "@/lib/analytics";
 import { apiFetch } from "@/lib/auth";
 import { USD } from "@/lib/onboarding-country";
 
@@ -43,13 +43,14 @@ export type PlatformConnection = {
 };
 
 export type MeResponse = {
+  id?: string;
   email: string;
   avatarUrl: string | null;
   onboardingCompleted: boolean;
   isAdmin: boolean;
   currency: string;
-  profile: MeProfile;
-  brand: MeBrand;
+  profile: MeProfile | null;
+  brand: MeBrand | null;
   platformConnections: PlatformConnection[];
 };
 
@@ -65,6 +66,7 @@ const MeContext = createContext<MeContextValue | undefined>(undefined);
 
 
 const MOCK_ME: MeResponse = {
+  id: "mock-id",
   email: "devtest@growdex.io",
   avatarUrl: null,
   onboardingCompleted: true,
@@ -148,7 +150,9 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!me) return;
-    identifyUser(me.profile.id, {
+    const userId = analyticsUserId(me);
+    if (!userId) return;
+    identifyUser(userId, {
       onboarding_completed: me.onboardingCompleted,
     });
   }, [me]);

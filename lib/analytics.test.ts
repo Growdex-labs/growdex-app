@@ -3,6 +3,7 @@ import {
   bindAnalyticsClient,
   clearIdentifiedUser,
   identifyUser,
+  analyticsUserId,
   resetAnalyticsForTests,
   track,
   trackScreenBlocked,
@@ -107,6 +108,12 @@ describe("analytics", () => {
     expect(client.identify).toHaveBeenCalledWith("user-1", {
       onboarding_completed: true,
     });
-    expect(client.clearUserId).toHaveBeenCalled();
+    expect(client.clearUserId).toHaveBeenCalledOnce();
+  });
+
+  it("identifies a new account without a profile row", () => {
+    expect(analyticsUserId({ id: "user-1", profile: null })).toBe("user-1");
+    expect(analyticsUserId({ profile: { id: "profile-1" } })).toBe("profile-1");
+    expect(analyticsUserId({ profile: null })).toBeUndefined();
   });
 });
