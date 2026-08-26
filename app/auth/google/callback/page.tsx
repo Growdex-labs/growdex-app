@@ -40,6 +40,13 @@ function GoogleCallbackContent() {
         return;
       }
 
+      const mfaStatus = searchParams.get('mfa');
+      if (mfaStatus === 'MFA_CHALLENGE') {
+        sessionStorage.setItem('mfa_status', mfaStatus);
+        router.replace('/mfa');
+        return;
+      }
+
       try {
         const user = await fetchUserDirect();
 
