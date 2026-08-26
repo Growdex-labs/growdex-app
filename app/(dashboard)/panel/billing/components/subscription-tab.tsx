@@ -56,7 +56,7 @@ export function SubscriptionTab({
 }: SubscriptionTabProps) {
   const [upgrading, setUpgrading] = useState(false);
 
-  const upgrade = async () => {
+  const subscribe = async () => {
     setUpgrading(true);
     try {
       const checkoutUrl = await startProCheckout();
@@ -101,53 +101,40 @@ export function SubscriptionTab({
   const isPro = subscription.plan === "pro";
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
-        <p className="text-sm text-dimGray">Current plan</p>
-        <div className="mt-2 flex items-baseline gap-3">
-          <h2 className="text-2xl font-gilroy-bold capitalize text-gray-950">
-            {subscription.plan}
-          </h2>
-          <span className="text-sm text-gray-500">
-            {formatPlanPrice(subscription.priceMonthly, subscription.currency)}
-            /month
-          </span>
-        </div>
-        {subscription.renewsAt && (
-          <p className="mt-1 text-xs text-dimGray">
-            Renews{" "}
-            {new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(
-              new Date(subscription.renewsAt),
-            )}
-          </p>
-        )}
+    <div className={isPro ? "grid gap-4 lg:grid-cols-2" : undefined}>
+      {isPro && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
+          <p className="text-sm text-dimGray">Current plan</p>
+          <div className="mt-2 flex items-baseline gap-3">
+            <h2 className="text-2xl font-gilroy-bold text-gray-950">Pro</h2>
+            <span className="text-sm text-gray-500">
+              {formatPlanPrice(subscription.priceMonthly, subscription.currency)}
+              /month
+            </span>
+          </div>
+          {subscription.renewsAt && (
+            <p className="mt-1 text-xs text-dimGray">
+              Renews{" "}
+              {new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(
+                new Date(subscription.renewsAt),
+              )}
+            </p>
+          )}
 
-        <h3 className="mt-6 text-sm font-gilroy-semibold text-gray-900">
-          Usage
-        </h3>
-        <ul className="mt-4 space-y-4">
-          {USAGE_ROWS.map((row) => (
-            <UsageRow
-              key={row.key}
-              label={row.label}
-              value={subscription.usage[row.key]}
-            />
-          ))}
-        </ul>
-
-        {!isPro && (
-          <button
-            type="button"
-            onClick={() => void upgrade()}
-            disabled={upgrading}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 px-4 py-3 text-sm font-gilroy-semibold text-gray-950 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {upgrading && <Loader2 className="size-4 animate-spin" />}
-            Upgrade to Pro — {formatPlanPrice(PRO_PLAN_PRICE, PRO_PLAN_CURRENCY)}
-            /month
-          </button>
-        )}
-      </section>
+          <h3 className="mt-6 text-sm font-gilroy-semibold text-gray-900">
+            Usage
+          </h3>
+          <ul className="mt-4 space-y-4">
+            {USAGE_ROWS.map((row) => (
+              <UsageRow
+                key={row.key}
+                label={row.label}
+                value={subscription.usage[row.key]}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6">
         <div className="flex items-baseline justify-between gap-3">
@@ -171,12 +158,14 @@ export function SubscriptionTab({
 
         <button
           type="button"
-          onClick={() => void upgrade()}
+          onClick={() => void subscribe()}
           disabled={upgrading || isPro}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 px-4 py-3 text-sm font-gilroy-semibold text-gray-950 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {upgrading && <Loader2 className="size-4 animate-spin" />}
-          {isPro ? "You are on Pro" : "Upgrade to Pro"}
+          {isPro
+            ? "You are on Pro"
+            : `Subscribe — ${formatPlanPrice(PRO_PLAN_PRICE, PRO_PLAN_CURRENCY)}/month`}
         </button>
       </section>
     </div>

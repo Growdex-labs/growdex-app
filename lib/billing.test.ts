@@ -7,28 +7,28 @@ import {
   usagePercent,
 } from "./billing";
 
-const freeSubscription = {
+const unpaidSubscription = {
   plan: "free",
   status: "active",
   priceMonthly: 0,
   currency: "USD",
   renewsAt: null,
   usage: {
-    activeCampaigns: { used: 0, limit: 3 },
-    aiChat: { used: 0, limit: 10 },
-    aiCampaignGenerations: { used: 0, limit: 5 },
-    aiCopyGenerations: { used: 0, limit: 10 },
+    activeCampaigns: { used: 0, limit: 0 },
+    aiChat: { used: 0, limit: 0 },
+    aiCampaignGenerations: { used: 0, limit: 0 },
+    aiCopyGenerations: { used: 0, limit: 0 },
   },
 };
 
 describe("parseSubscription", () => {
-  it("accepts a new free account with no renewal date", () => {
-    expect(parseSubscription(freeSubscription)).toEqual(freeSubscription);
+  it("accepts an unpaid account with no renewal date", () => {
+    expect(parseSubscription(unpaidSubscription)).toEqual(unpaidSubscription);
   });
 
   it("accepts a pro account whose limits are unlimited", () => {
     const pro = {
-      ...freeSubscription,
+      ...unpaidSubscription,
       plan: "pro",
       priceMonthly: 49,
       renewsAt: "2026-09-09T00:00:00.000Z",
@@ -45,14 +45,14 @@ describe("parseSubscription", () => {
 
   it("rejects a plan the app does not sell", () => {
     expect(() =>
-      parseSubscription({ ...freeSubscription, plan: "enterprise" }),
+      parseSubscription({ ...unpaidSubscription, plan: "enterprise" }),
     ).toThrow(/invalid response shape/);
   });
 
   it("rejects usage counters that are missing a feature", () => {
     expect(() =>
       parseSubscription({
-        ...freeSubscription,
+        ...unpaidSubscription,
         usage: { activeCampaigns: { used: 0, limit: 3 } },
       }),
     ).toThrow(/invalid response shape/);
