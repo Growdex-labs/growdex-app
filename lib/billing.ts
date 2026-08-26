@@ -67,13 +67,6 @@ export const PRO_PLAN_FEATURES = [
   "Early access to new features",
 ];
 
-export const FREE_PLAN_USAGE: SubscriptionUsage = {
-  activeCampaigns: { used: 0, limit: 3 },
-  aiChat: { used: 0, limit: 10 },
-  aiCampaignGenerations: { used: 0, limit: 5 },
-  aiCopyGenerations: { used: 0, limit: 10 },
-};
-
 const readJson = async (response: Response): Promise<unknown> => {
   const text = await response.text();
   if (!text) return null;
