@@ -118,6 +118,10 @@ export function InvoicesTab({ invoices, error, onRetry }: InvoicesTabProps) {
                 <p className="truncate text-xs text-dimGray">
                   {invoice.number}
                 </p>
+                <p className="mt-1 text-xs text-gray-500 lg:hidden">
+                  {formatInvoiceDate(invoice.date)} ·{" "}
+                  {formatPlanPrice(invoice.amount, invoice.currency)}
+                </p>
               </div>
               <span className="hidden text-gray-500 lg:block">
                 {formatInvoiceDate(invoice.date)}

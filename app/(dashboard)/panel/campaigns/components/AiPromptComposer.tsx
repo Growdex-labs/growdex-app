@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { SendHorizontal } from "lucide-react";
+import { PRO_REQUIRED_MESSAGE } from "@/lib/billing";
+import { ProRequiredNotice } from "../../components/pro-required-notice";
 import { PURPLE_GRADIENT } from "./ai-campaign-theme";
 
 interface AiPromptComposerProps {
@@ -99,11 +101,15 @@ export function AiPromptComposer({
   return (
     <div className={isWelcome ? "w-full max-w-4xl" : "w-full"}>
       {submitting && <p className="mb-2 text-sm text-violet-600">Thinking…</p>}
-      {(error || disabledReason) && (
+      {disabledReason === PRO_REQUIRED_MESSAGE ? (
+        <div className="mb-2">
+          <ProRequiredNotice />
+        </div>
+      ) : error || disabledReason ? (
         <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error || disabledReason}
         </p>
-      )}
+      ) : null}
       {isWelcome ? (
         <>
           {inputView}

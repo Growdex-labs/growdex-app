@@ -52,6 +52,26 @@ export interface Invoice {
 
 export const PRO_PLAN_PRICE = 49;
 export const PRO_PLAN_CURRENCY = "USD";
+export const PRO_REQUIRED_MESSAGE =
+  "Growdex Pro is required to use AI and publish campaigns.";
+
+type ProAccount = {
+  isPro?: boolean;
+  plan?: BillingPlanId;
+  status?: SubscriptionStatus;
+} | null;
+
+export const hasProAccess = (account?: ProAccount): boolean => {
+  if (!account) return false;
+  if (account.isPro === true) return true;
+  return (
+    account.plan === "pro" &&
+    (account.status === "active" || account.status === "past_due")
+  );
+};
+
+export const proDisabledReason = (account?: ProAccount): string | null =>
+  hasProAccess(account) ? null : PRO_REQUIRED_MESSAGE;
 
 export const PRO_PLAN_FEATURES = [
   "Unlimited active campaigns",

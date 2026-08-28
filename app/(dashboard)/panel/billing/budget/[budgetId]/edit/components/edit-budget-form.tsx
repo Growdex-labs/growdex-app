@@ -205,7 +205,7 @@ export default function EditBudgetForm({
             {/* Input Section */}
             <div className="flex-1">
               <p className="text-xs text-gray-600 mb-2">{brandName}</p>
-              <div className="flex gap-2 mb-2">
+              <div className="mb-2 flex min-w-0 flex-col gap-2 sm:flex-row">
                 <input
                   type="text"
                   placeholder="₦5,000"
@@ -214,7 +214,7 @@ export default function EditBudgetForm({
                     setFacebookAmount(e.target.value);
                     setHasChanges(true);
                   }}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-300"
+                  className="min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-300 sm:flex-1"
                 />
                 <Select
                   value={facebookFrequency}
@@ -223,7 +223,7 @@ export default function EditBudgetForm({
                     setHasChanges(true);
                   }}
                 >
-                  <SelectTrigger className="w-24 bg-transparent flex-1">
+                  <SelectTrigger className="w-full bg-transparent sm:w-28">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -256,7 +256,7 @@ export default function EditBudgetForm({
             {/* Input Section */}
             <div className="flex-1">
               <p className="text-xs text-gray-600 mb-2">{brandName}</p>
-              <div className="flex gap-2 mb-2">
+              <div className="mb-2 flex min-w-0 flex-col gap-2 sm:flex-row">
                 <input
                   type="text"
                   placeholder="₦5,000"
@@ -265,7 +265,7 @@ export default function EditBudgetForm({
                     setTiktokAmount(e.target.value);
                     setHasChanges(true);
                   }}
-                  className="sm:flex-1 border border-gray-300 rounded-md px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-300"
+                  className="min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-khaki-300 sm:flex-1"
                 />
                 <Select
                   value={tiktokFrequency}
@@ -274,7 +274,7 @@ export default function EditBudgetForm({
                     setHasChanges(true);
                   }}
                 >
-                  <SelectTrigger className="w-24 bg-transparent flex-1">
+                  <SelectTrigger className="w-full bg-transparent sm:w-28">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

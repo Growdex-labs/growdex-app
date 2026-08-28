@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PanelLayout } from "../../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
 import { useMe } from "@/context/me-context";
+import { proDisabledReason } from "@/lib/billing";
 import {
   campaignDtoToPayload,
   ensureCampaignPayloadScheduleLeadTime,
@@ -117,6 +118,11 @@ export default function PublishCampaignPage() {
     const validationError = validateCampaignPayload(campaign);
     if (validationError) {
       setError(validationError);
+      return;
+    }
+    const planBlock = proDisabledReason(me);
+    if (planBlock) {
+      setError(planBlock);
       return;
     }
     setIsPublishing(true);
@@ -337,6 +343,7 @@ export default function PublishCampaignPage() {
                   onPublish={() => void handlePublish()}
                   publishing={isPublishing}
                   error={error}
+                  disabledReason={proDisabledReason(me)}
                   publishLabel={
                     sourceStatus === "failed" ? "Retry publish" : undefined
                   }

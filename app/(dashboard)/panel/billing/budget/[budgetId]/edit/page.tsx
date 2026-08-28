@@ -79,8 +79,8 @@ export default function EditBudgetPage() {
 
           {/* Budget header with breadcrumb and status */}
           <div className="bg-white rounded-lg shadow-sm border border-khaki-300 p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-px sm:gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-1 sm:gap-2">
                 <Link
                   href="/panel/billing"
                   className="text-gray-600 hover:text-gray-900 transition-colors text-xs"

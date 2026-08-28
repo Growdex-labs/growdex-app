@@ -181,6 +181,10 @@ export function TransactionsTab({
                   <p className="truncate text-xs text-dimGray">
                     {transaction.merchant}
                   </p>
+                  <p className="mt-1 text-xs text-gray-500 lg:hidden">
+                    {formatTransactionDate(transaction.date)} ·{" "}
+                    {formatWalletMoney(transaction.amount, transaction.currency)}
+                  </p>
                 </div>
               </div>
               <span className="hidden text-gray-500 lg:block">

@@ -8,7 +8,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useMe } from "@/context/me-context";
+import { proDisabledReason, PRO_REQUIRED_MESSAGE } from "@/lib/billing";
 import { track } from "@/lib/analytics";
+import { ProRequiredNotice } from "../../../components/pro-required-notice";
 import {
   applyCampaignOptimizations,
   fetchCampaignOptimizations,
@@ -38,6 +41,8 @@ export function OptimizationSidebar({
   onClose,
   onApplied,
 }: OptimizationSidebarProps) {
+  const { me } = useMe();
+  const disabledReason = proDisabledReason(me);
   const [proposals, setProposals] = useState<CampaignOptimizationProposal[]>([]);
   const [revision, setRevision] = useState(0);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -58,7 +63,7 @@ export function OptimizationSidebar({
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || disabledReason) return;
     const controller = new AbortController();
     requestRef.current = controller;
     setLoading(true);
@@ -81,11 +86,11 @@ export function OptimizationSidebar({
     return () => {
       requestRef.current?.abort();
     };
-  }, [campaignId, isOpen]);
+  }, [campaignId, disabledReason, isOpen]);
 
   const requestNewOptimizations = async () => {
     const instruction = prompt.trim();
-    if (!instruction || loading || applying) return;
+    if (!instruction || loading || applying || disabledReason) return;
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -119,7 +124,7 @@ export function OptimizationSidebar({
     .map((proposal) => proposal.id);
 
   const applySelected = async () => {
-    if (!selectedIds.length || applying || loading) return;
+    if (!selectedIds.length || applying || loading || disabledReason) return;
     setApplying(true);
     setError(null);
     setSuccess(null);
@@ -175,11 +180,13 @@ export function OptimizationSidebar({
               <Loader2 className="h-4 w-4 animate-spin" /> Analyzing live campaign evidence…
             </div>
           )}
-          {error && (
+          {disabledReason === PRO_REQUIRED_MESSAGE ? (
+            <ProRequiredNotice className="rounded-xl bg-black/20 p-4 text-sm text-khaki-200" />
+          ) : error ? (
             <div className="flex items-start gap-2 rounded-xl bg-red-950/40 p-4 text-sm text-red-100">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
             </div>
-          )}
+          ) : null}
           {success && (
             <div className="flex items-start gap-2 rounded-xl bg-emerald-950/40 p-4 text-sm text-emerald-100">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {success}
@@ -241,7 +248,7 @@ export function OptimizationSidebar({
           <button
             type="button"
             onClick={() => void applySelected()}
-            disabled={!selectedIds.length || loading || applying}
+            disabled={!selectedIds.length || loading || applying || Boolean(disabledReason)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 py-3 font-gilroy-semibold text-gray-900 transition-colors hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {applying && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -257,14 +264,14 @@ export function OptimizationSidebar({
                   void requestNewOptimizations();
                 }
               }}
-              disabled={loading || applying}
               placeholder="What would you like to improve?"
+              disabled={loading || applying || Boolean(disabledReason)}
               className="w-full rounded-lg border border-white/40 bg-transparent px-4 py-3 pr-12 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-khaki-200 disabled:opacity-50"
             />
             <button
               type="button"
               onClick={() => void requestNewOptimizations()}
-              disabled={!prompt.trim() || loading || applying}
+              disabled={!prompt.trim() || loading || applying || Boolean(disabledReason)}
               className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-white text-black disabled:cursor-not-allowed disabled:opacity-40"
               aria-label="Ask Growdex AI to optimize"
             >

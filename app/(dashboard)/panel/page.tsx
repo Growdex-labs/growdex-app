@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMe } from "@/context/me-context";
+import { proDisabledReason } from "@/lib/billing";
 import { ChevronDown, MoreVertical } from "lucide-react";
 import { PanelLayout } from "./components/panel-layout";
 import { DashboardTopBar } from "./components/dashboard-top-bar";
@@ -113,6 +115,8 @@ const EMPTY_METRICS: PanelMetrics = {
 
 export default function PanelPage() {
   const router = useRouter();
+  const { me } = useMe();
+  const assistantDisabledReason = proDisabledReason(me);
   const [metrics, setMetrics] = useState<PanelMetrics>(EMPTY_METRICS);
   const [recentCampaigns, setRecentCampaigns] = useState<CampaignDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -183,7 +187,7 @@ export default function PanelPage() {
   }, []);
 
   const sendAssistantMessage = async (text: string) => {
-    if (!selectedCampaignId || assistantLoading) {
+    if (!selectedCampaignId || assistantLoading || assistantDisabledReason) {
       if (!selectedCampaignId) setAssistantError("Select a campaign first.");
       return;
     }
@@ -485,6 +489,7 @@ export default function PanelPage() {
                 onSend={(text) => void sendAssistantMessage(text)}
                 loading={assistantLoading}
                 error={assistantError}
+                disabledReason={assistantDisabledReason}
               />
             )}
           </div>
@@ -492,6 +497,7 @@ export default function PanelPage() {
             <DashboardAiPanel
               messages={messages}
               onSend={(text) => void sendAssistantMessage(text)}
+              disabledReason={assistantDisabledReason}
               onClose={
                 view === "insights"
                   ? closeInsights

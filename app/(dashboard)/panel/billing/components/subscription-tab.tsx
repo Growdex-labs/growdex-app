@@ -144,7 +144,8 @@ export function SubscriptionTab({
           </span>
         </div>
         <p className="mt-2 text-sm text-gray-500">
-          For businesses, marketers, freelancers, and growing teams.
+          For businesses, marketers, freelancers, and growing teams. AI tools
+          and campaign publishing are included with Pro.
         </p>
 
         <ul className="mt-5 space-y-2.5">

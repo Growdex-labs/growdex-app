@@ -15,6 +15,7 @@ interface DashboardAiPanelProps {
   onClose: () => void;
   loading?: boolean;
   error?: string | null;
+  disabledReason?: string | null;
   onTakeAction?: (message: AiMessage, action: CampaignAdviceAction) => void;
 }
 
@@ -24,6 +25,7 @@ export function DashboardAiPanel({
   onClose,
   loading = false,
   error,
+  disabledReason,
   onTakeAction,
 }: DashboardAiPanelProps) {
   return (
@@ -44,6 +46,7 @@ export function DashboardAiPanel({
           onSubmit={onSend}
           submitting={loading}
           error={error}
+          disabledReason={disabledReason}
           onTakeAction={onTakeAction}
         />
       </div>

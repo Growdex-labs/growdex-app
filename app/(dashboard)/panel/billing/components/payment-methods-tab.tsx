@@ -107,7 +107,7 @@ export function PaymentMethodsTab({
           type="button"
           onClick={() => void add()}
           disabled={adding}
-          className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-khaki-200 px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {adding ? (
             <Loader2 className="size-4 animate-spin" />
@@ -133,7 +133,7 @@ export function PaymentMethodsTab({
           {methods.map((method) => (
             <li
               key={method.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-gray-50 px-4 py-3"
+              className="flex flex-col gap-3 rounded-xl bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white">

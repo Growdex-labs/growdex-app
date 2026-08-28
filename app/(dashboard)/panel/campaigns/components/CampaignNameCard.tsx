@@ -1,6 +1,8 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import { PRO_REQUIRED_MESSAGE } from "@/lib/billing";
+import { ProRequiredNotice } from "../../components/pro-required-notice";
 
 interface CampaignNameCardProps {
   value: string;
@@ -65,9 +67,15 @@ export function CampaignNameCard({
         <p className="mt-2 text-xs leading-5 text-violet-600">{rationale}</p>
       )}
       {disabledReason && onGenerate && (
-        <p className="mt-2 text-xs leading-5 text-amber-700">
-          {disabledReason}
-        </p>
+        disabledReason === PRO_REQUIRED_MESSAGE ? (
+          <ProRequiredNotice
+            className="mt-2 text-xs leading-5 text-amber-800"
+          />
+        ) : (
+          <p className="mt-2 text-xs leading-5 text-amber-700">
+            {disabledReason}
+          </p>
+        )
       )}
     </div>
   );

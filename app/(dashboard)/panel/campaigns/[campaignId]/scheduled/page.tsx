@@ -58,6 +58,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMe } from "@/context/me-context";
+import { proDisabledReason } from "@/lib/billing";
 import {
   CreativeDraft,
   FormObject,
@@ -416,6 +417,12 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
     e.preventDefault();
     setSubmissionError(null);
     setSubmissionSuccess(null);
+
+    const planBlock = proDisabledReason(me);
+    if (planBlock) {
+      setSubmissionError(planBlock);
+      return;
+    }
 
     try {
       setIsGoingLive(true);

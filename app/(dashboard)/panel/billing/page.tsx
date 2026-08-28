@@ -16,6 +16,7 @@ import {
 import { fetchWalletOverview, type WalletOverview } from "@/lib/wallet";
 import { hydrateSocialAccounts } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
+import { BillingHeader } from "./components/billing-header";
 import { SubscriptionTab } from "./components/subscription-tab";
 import { AdAccountsTab } from "./components/ad-accounts-tab";
 import {
@@ -163,6 +164,7 @@ function BillingWorkspace() {
     <PanelLayout>
       <div className="min-h-full bg-[#f5f5f5] p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl space-y-5">
+          <BillingHeader />
           <header>
             <p className="text-sm text-dimGray">Billing</p>
             <h1 className="mt-1 text-2xl font-gilroy-bold text-gray-950">
