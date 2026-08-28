@@ -28,6 +28,7 @@ interface CampaignsAiPanelProps {
   onSend: (text: string) => void;
   loading?: boolean;
   error?: string | null;
+  disabledReason?: string | null;
   onTakeAction?: (message: AiMessage, action: CampaignAdviceAction) => void;
 }
 
@@ -38,6 +39,7 @@ export function CampaignsAiPanel({
   onSend,
   loading = false,
   error,
+  disabledReason,
   onTakeAction,
 }: CampaignsAiPanelProps) {
   return (
@@ -63,6 +65,7 @@ export function CampaignsAiPanel({
             }
             emptyState="Ask why a campaign is underperforming, which one is spending the most, or what to change next. Growdex answers from your campaign stats."
             placeholder="Ask about your campaigns"
+            disabledReason={disabledReason}
             onTakeAction={onTakeAction}
           />
         </div>

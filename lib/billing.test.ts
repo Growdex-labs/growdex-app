@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   formatUsage,
+  hasProAccess,
   parseInvoices,
   parsePaymentMethods,
   parseSubscription,
+  proDisabledReason,
+  PRO_REQUIRED_MESSAGE,
   usagePercent,
 } from "./billing";
 
@@ -120,6 +123,26 @@ describe("formatUsage", () => {
 
   it("shows unlimited when the plan has no cap", () => {
     expect(formatUsage({ used: 120, limit: null })).toBe("120 / Unlimited");
+  });
+});
+
+describe("hasProAccess", () => {
+  it("trusts the current-user flag from the API", () => {
+    expect(hasProAccess({ isPro: true, plan: "free" })).toBe(true);
+    expect(hasProAccess({ isPro: false, plan: "pro", status: "canceled" })).toBe(
+      false,
+    );
+  });
+
+  it("treats past-due Pro as still entitled", () => {
+    expect(hasProAccess({ plan: "pro", status: "past_due" })).toBe(true);
+  });
+
+  it("treats unpaid and canceled accounts as locked", () => {
+    expect(hasProAccess({ plan: "free", status: "active" })).toBe(false);
+    expect(hasProAccess({ plan: "pro", status: "canceled" })).toBe(false);
+    expect(hasProAccess(null)).toBe(false);
+    expect(proDisabledReason(null)).toBe(PRO_REQUIRED_MESSAGE);
   });
 });
 

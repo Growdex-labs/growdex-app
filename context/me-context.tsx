@@ -12,6 +12,7 @@ import React, {
 import { usePathname } from "next/navigation";
 import { analyticsUserId, identifyUser } from "@/lib/analytics";
 import { apiFetch } from "@/lib/auth";
+import type { BillingPlanId } from "@/lib/billing";
 import { USD } from "@/lib/onboarding-country";
 
 export type MeProfile = {
@@ -49,6 +50,8 @@ export type MeResponse = {
   onboardingCompleted: boolean;
   isAdmin: boolean;
   currency: string;
+  plan?: BillingPlanId;
+  isPro?: boolean;
   profile: MeProfile | null;
   brand: MeBrand | null;
   platformConnections: PlatformConnection[];
@@ -72,6 +75,8 @@ const MOCK_ME: MeResponse = {
   onboardingCompleted: true,
   isAdmin: true,
   currency: "NGN",
+  plan: "pro",
+  isPro: true,
   profile: {
     id: "mock-id",
     firstName: "Dev",

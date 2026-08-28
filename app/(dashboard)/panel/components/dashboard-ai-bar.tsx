@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { SendHorizontal, ChevronDown } from "lucide-react";
+import { PRO_REQUIRED_MESSAGE } from "@/lib/billing";
+import { ProRequiredNotice } from "./pro-required-notice";
 import { PURPLE_GRADIENT } from "../campaigns/components/ai-campaign-theme";
 
 interface DashboardAiBarProps {
@@ -11,6 +13,7 @@ interface DashboardAiBarProps {
   onSelectCampaign: (id: string) => void;
   loading?: boolean;
   error?: string | null;
+  disabledReason?: string | null;
 }
 
 export function DashboardAiBar({
@@ -20,23 +23,28 @@ export function DashboardAiBar({
   onSelectCampaign,
   loading = false,
   error,
+  disabledReason,
 }: DashboardAiBarProps) {
   const [prompt, setPrompt] = useState("");
 
   const submit = () => {
     const value = prompt.trim();
-    if (!value || !selectedCampaignId || loading) return;
+    if (!value || !selectedCampaignId || loading || disabledReason) return;
     onSend(value);
     setPrompt("");
   };
 
   return (
     <div className="sticky bottom-4 z-20 mt-6 px-4">
-      {error && (
+      {disabledReason === PRO_REQUIRED_MESSAGE ? (
+        <div className="mx-auto mb-2 max-w-3xl">
+          <ProRequiredNotice className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900" />
+        </div>
+      ) : error ? (
         <p className="mx-auto mb-2 max-w-3xl rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
           {error}
         </p>
-      )}
+      ) : null}
       <div className="flex items-center justify-center gap-2">
         <div className="relative">
           <select
@@ -66,13 +74,18 @@ export function DashboardAiBar({
               }
             }}
             placeholder="Ask anything about this campaign"
-            disabled={loading}
+            disabled={loading || Boolean(disabledReason)}
             className="flex-1 bg-transparent text-sm text-gray-700 placeholder:font-gilroy-medium placeholder:text-gray-500 focus:outline-none disabled:opacity-60"
           />
           <button
             type="button"
             onClick={submit}
-            disabled={!selectedCampaignId || loading || !prompt.trim()}
+            disabled={
+              !selectedCampaignId ||
+              loading ||
+              Boolean(disabledReason) ||
+              !prompt.trim()
+            }
             style={{ background: PURPLE_GRADIENT }}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Send"

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMe } from "@/context/me-context";
+import { proDisabledReason } from "@/lib/billing";
 import { Plus, Search } from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
 import { CampaignsSidebar } from "../components/campaigns-sidebar";
@@ -67,6 +69,8 @@ const formatSpend = (spendByCurrency: SpendByCurrency[]) => {
 
 export default function CampaignsPage() {
   const router = useRouter();
+  const { me } = useMe();
+  const assistantDisabledReason = proDisabledReason(me);
   const [chosenTab, setChosenTab] = useState<CampaignTab | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -205,7 +209,7 @@ export default function CampaignsPage() {
     0,
   );
   const sendAssistantMessage = async (text: string) => {
-    if (assistantLoading) return;
+    if (assistantLoading || assistantDisabledReason) return;
 
     const requestId = assistantRequestRef.current + 1;
     assistantRequestRef.current = requestId;
@@ -342,6 +346,7 @@ export default function CampaignsPage() {
         onSend={(text) => void sendAssistantMessage(text)}
         loading={assistantLoading}
         error={assistantError}
+        disabledReason={assistantDisabledReason}
         onTakeAction={(message, action) => {
           if (action.type === "open") {
             router.push(`/panel/campaigns/${action.campaignId}`);

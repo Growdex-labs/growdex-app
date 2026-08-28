@@ -17,6 +17,11 @@ import {
   type CampaignReviewPayload,
   validateCampaignPayload,
 } from "@/lib/campaigns";
+import { PRO_REQUIRED_MESSAGE } from "@/lib/billing";
+import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
+import type { SocialAccountSetupProps } from "@/types/social";
+import { ProRequiredNotice } from "../../components/pro-required-notice";
+import { PlatformAdPreview } from "./PlatformAdPreview";
 
 const formatBudget = (amount: number, currency: string) => {
   try {
@@ -29,9 +34,6 @@ const formatBudget = (amount: number, currency: string) => {
     return `${amount.toLocaleString()} ${currency}`.trim();
   }
 };
-import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
-import type { SocialAccountSetupProps } from "@/types/social";
-import { PlatformAdPreview } from "./PlatformAdPreview";
 
 interface ReviewPublishScreenProps {
   stepper?: ReactNode;
@@ -51,6 +53,7 @@ interface ReviewPublishScreenProps {
   title?: string;
   description?: string;
   allowStartedSchedule?: boolean;
+  disabledReason?: string | null;
 }
 
 const goalLabels: Record<CampaignReviewPayload["campaign"]["goal"], string> = {
@@ -88,6 +91,7 @@ export function ReviewPublishScreen({
   title = "Review and publish",
   description = "This is the exact campaign Growdex will save and send to your ad platforms.",
   allowStartedSchedule = false,
+  disabledReason,
 }: ReviewPublishScreenProps) {
   const validationError = validateCampaignPayload(campaign, {
     allowStartedSchedule,
@@ -137,7 +141,7 @@ export function ReviewPublishScreen({
           <button
             type="button"
             onClick={onPublish}
-            disabled={busy || Boolean(validationError)}
+            disabled={busy || Boolean(validationError) || Boolean(disabledReason)}
             className="inline-flex items-center gap-2 rounded-lg bg-khaki-200 px-5 py-2.5 text-sm font-gilroy-medium text-gray-900 hover:bg-khaki-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {publishing && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -146,11 +150,15 @@ export function ReviewPublishScreen({
         </div>
       </div>
 
-      {(error || validationError) && (
+      {disabledReason === PRO_REQUIRED_MESSAGE ? (
+        <div className="mb-6">
+          <ProRequiredNotice className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900" />
+        </div>
+      ) : error || validationError ? (
         <p className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">
           {error ?? validationError}
         </p>
-      )}
+      ) : null}
 
       <div className="space-y-6">
         <section className="overflow-hidden rounded-3xl border border-gray-200 bg-gray-950 text-white shadow-sm">

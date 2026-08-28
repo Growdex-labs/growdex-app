@@ -7,6 +7,7 @@ import { PanelLayout } from "../../components/panel-layout";
 import DottedBackground from "@/components/dotted-background";
 import { useMe } from "@/context/me-context";
 import { isDevelopmentMockSessionActive } from "@/lib/auth";
+import { proDisabledReason } from "@/lib/billing";
 import {
   createCampaignDraft,
   createAudienceStrategy,
@@ -340,7 +341,7 @@ export function CampaignSetupWorkspace({
   );
   const aiDisabledReason = isDevelopmentMockSession
     ? "Real AI is unavailable in the development quick-login session. Sign in with a real Growdex account to generate or revise campaign decisions."
-    : null;
+    : proDisabledReason(me);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
@@ -1722,6 +1723,11 @@ export function CampaignSetupWorkspace({
       );
       return;
     }
+    const planBlock = proDisabledReason(me);
+    if (planBlock) {
+      blockCreateScreen("pro_required", planBlock);
+      return;
+    }
     setPublishing(true);
     setError(null);
     try {
@@ -2404,6 +2410,7 @@ export function CampaignSetupWorkspace({
                       saving={saving}
                       publishing={publishing}
                       error={error}
+                      disabledReason={isLiveEdit ? null : proDisabledReason(me)}
                       publishLabel={isLiveEdit ? "Save changes" : "Publish ad"}
                       title={isLiveEdit ? "Review changes" : "Review and publish"}
                       description={

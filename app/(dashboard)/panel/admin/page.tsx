@@ -13,6 +13,7 @@ import {
 import { PanelLayout } from "../components/panel-layout";
 import { apiFetch } from "@/lib/auth";
 import { useMe } from "@/context/me-context";
+import { ProAccessManager } from "./components/pro-access-manager";
 
 type AdminOverview = {
   totals: {
@@ -74,7 +75,7 @@ export default function AdminDashboardPage() {
               : "Could not load the admin dashboard.",
           );
         }
-      })
+      });
     return () => {
       active = false;
     };
@@ -187,6 +188,8 @@ export default function AdminDashboardPage() {
                 ))}
               </section>
 
+              <ProAccessManager />
+
               <div className="mt-6 grid gap-6 xl:grid-cols-[0.75fr_1.5fr]">
                 <section className="rounded-[2rem] bg-gray-950 p-6 text-white">
                   <div className="flex items-center gap-2">
@@ -204,7 +207,9 @@ export default function AdminDashboardPage() {
                             <span className="capitalize text-white/65">
                               {status.replaceAll("_", " ")}
                             </span>
-                            <span className="font-gilroy-semibold">{count}</span>
+                            <span className="font-gilroy-semibold">
+                              {count}
+                            </span>
                           </div>
                           <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
                             <div
@@ -236,10 +241,18 @@ export default function AdminDashboardPage() {
                     <table className="min-w-full text-left text-sm">
                       <thead className="bg-gray-50 text-xs uppercase tracking-[0.08em] text-gray-400">
                         <tr>
-                          <th className="px-6 py-3 font-gilroy-semibold">Campaign</th>
-                          <th className="px-4 py-3 font-gilroy-semibold">Owner</th>
-                          <th className="px-4 py-3 font-gilroy-semibold">Status</th>
-                          <th className="px-6 py-3 font-gilroy-semibold">Created</th>
+                          <th className="px-6 py-3 font-gilroy-semibold">
+                            Campaign
+                          </th>
+                          <th className="px-4 py-3 font-gilroy-semibold">
+                            Owner
+                          </th>
+                          <th className="px-4 py-3 font-gilroy-semibold">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 font-gilroy-semibold">
+                            Created
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
