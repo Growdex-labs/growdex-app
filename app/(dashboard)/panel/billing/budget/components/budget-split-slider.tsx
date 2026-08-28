@@ -150,10 +150,10 @@ export default function BudgetSplitSlider({
 
           {/* Amount Distribution */}
           <div className="flex items-center justify-between text-sm">
-            <div className="bg-gray-600 text-white rounded-full px-8  font-gilroy-semibold">
+            <div className="rounded-full bg-gray-600 px-3 py-1 text-xs font-gilroy-semibold text-white sm:px-8 sm:text-sm">
               {splitPercentage}%
             </div>
-            <div className="bg-gray-600 text-white rounded-full px-8   font-gilroy-semibold">
+            <div className="rounded-full bg-gray-600 px-3 py-1 text-xs font-gilroy-semibold text-white sm:px-8 sm:text-sm">
               {100 - splitPercentage}%
             </div>
           </div>
