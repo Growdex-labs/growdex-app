@@ -65,9 +65,7 @@ function CreativePreview({
     ? isVideo
       ? "Video"
       : "Image"
-    : creative.platform === "meta"
-      ? "Image"
-      : "Image or video";
+    : "Image or video";
 
   return (
     <aside className="self-start overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white shadow-sm xl:sticky xl:top-6">
@@ -158,16 +156,12 @@ export function CreativeAdEditor({
   const headlineLimit = platform === "meta" ? 255 : 512;
   const headlineLabel = platform === "meta" ? "Headline" : "Ad name";
   const requiresVideo = destination === "VIDEO";
-  const uploadLabel = requiresVideo
-    ? "video"
-    : platform === "meta"
-      ? "image"
-      : "image or video";
+  const uploadLabel = requiresVideo ? "video" : "image or video";
   const uploadAccept = requiresVideo
     ? "video/*"
-    : platform === "meta"
-      ? "image/*"
-      : "image/jpeg,image/png,video/*";
+    : platform === "tiktok"
+      ? "image/jpeg,image/png,video/*"
+      : "image/*,video/*";
   const samePlatformCount = creatives.filter((item) => item.platform === platform).length;
   const canRemove = samePlatformCount > 1;
   const generatePrimaryText = async () => {

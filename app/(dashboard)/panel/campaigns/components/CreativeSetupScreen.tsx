@@ -416,10 +416,6 @@ export function CreativeSetupScreen({
       setUploadError("This campaign requires a video creative.");
       return;
     }
-    if (destination !== "VIDEO" && platform === "meta" && !isImage) {
-      setUploadError("Meta campaigns require an image creative.");
-      return;
-    }
     if (
       platform === "tiktok" &&
       isImage &&
@@ -501,13 +497,13 @@ export function CreativeSetupScreen({
     destination === "VIDEO"
       ? "video/*"
       : platformFilter === "meta"
-        ? "image/*"
+        ? "image/*,video/*"
         : platformFilter === "tiktok"
           ? "image/jpeg,image/png,video/*"
       : platforms.length > 1
         ? "image/*,video/*"
         : platforms[0] === "meta"
-          ? "image/*"
+          ? "image/*,video/*"
           : "image/jpeg,image/png,video/*";
 
   return (
@@ -520,7 +516,7 @@ export function CreativeSetupScreen({
           Choose the media for your ads
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-          Select up to six saved assets or upload from your computer. Meta uses images; TikTok supports JPG/PNG images and video.
+          Select up to six saved assets or upload from your computer. Meta and TikTok both support image and video creatives.
         </p>
       </header>
 
@@ -556,7 +552,7 @@ export function CreativeSetupScreen({
                           : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                       }`}
                     >
-                      {platform === "meta" ? "Meta image" : "TikTok image or video"}
+                      {platform === "meta" ? "Meta image or video" : "TikTok image or video"}
                     </button>
                   );
                 })}

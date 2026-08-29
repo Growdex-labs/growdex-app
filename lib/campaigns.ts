@@ -628,7 +628,7 @@ const parseGeneratedCampaignDraft = (
       ["image", "video"],
       "creative media requirement",
     );
-    const expectedMediaRequirement = destination === "VIDEO" ? "video" : platform === "meta" ? "image" : null;
+    const expectedMediaRequirement = destination === "VIDEO" ? "video" : null;
     if (
       expectedMediaRequirement &&
       mediaRequirement !== expectedMediaRequirement
@@ -958,7 +958,6 @@ export const validateCampaignCreativeSetup = (
           platform,
           mediaType: ad.mediaType,
         });
-        if (platform === "meta" && isVideo) return "Upload an image for Meta.";
         if (strategy.configuration.destination === "VIDEO" && !isVideo) {
           return `Upload a video for ${label}.`;
         }

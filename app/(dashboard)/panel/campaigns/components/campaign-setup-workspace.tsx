@@ -204,11 +204,13 @@ const campaignToAiDraft = (
         },
         creatives: strategy.ads.map((creative) => ({
           ...creative,
-          mediaRequirement:
-            creative.platform === "tiktok" ||
-            strategy.configuration.destination === "VIDEO"
-              ? "video" as const
-              : "image" as const,
+          mediaRequirement: isVideoMedia({
+            url: creative.mediaUrl,
+            platform: creative.platform,
+            mediaType: creative.mediaType,
+          })
+            ? "video" as const
+            : "image" as const,
           mediaStatus: creative.mediaUrl ? "ready" as const : "required" as const,
         })),
       };
@@ -1463,10 +1465,6 @@ export function CampaignSetupWorkspace({
     const requiresVideo = activeStrategy.configuration.destination === "VIDEO";
     if (requiresVideo && !isVideo) {
       setError("This campaign requires a video creative.");
-      return;
-    }
-    if (!requiresVideo && platform === "meta" && !isImage) {
-      setError("This Meta campaign requires an image creative.");
       return;
     }
     if (
