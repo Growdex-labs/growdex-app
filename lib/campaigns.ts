@@ -349,11 +349,13 @@ export interface CampaignCreativeSuggestion {
   field: "headline" | "caption";
   value: string;
   rationale: string;
+  aiRequestId?: string;
 }
 
 export interface AudienceInterestSuggestion {
   interests: string[];
   rationale: string;
+  aiRequestId?: string;
 }
 
 export interface MetaInterest {
@@ -1401,7 +1403,25 @@ export const requestCampaignCreativeSuggestion = async (
     field,
     value,
     rationale: requiredString(data.rationale, "creative suggestion rationale"),
+    aiRequestId:
+      typeof data.aiRequestId === "string" ? data.aiRequestId : undefined,
   };
+};
+
+export const recordAiRequestAcceptance = async (
+  aiRequestId: string | undefined,
+): Promise<void> => {
+  if (!aiRequestId) return;
+  const res = await apiFetch(
+    `/ai/requests/${encodeURIComponent(aiRequestId)}/accept`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    const data = await readJson(res);
+    throw new Error(
+      readApiErrorMessage(data, `Record AI acceptance failed (${res.status})`),
+    );
+  }
 };
 
 export const requestAudienceInterestSuggestions = async (
@@ -1437,6 +1457,8 @@ export const requestAudienceInterestSuggestions = async (
   return {
     interests: [...new Set(data.interests.map((interest) => interest.trim()))],
     rationale: requiredString(data.rationale, "audience interest rationale"),
+    aiRequestId:
+      typeof data.aiRequestId === "string" ? data.aiRequestId : undefined,
   };
 };
 

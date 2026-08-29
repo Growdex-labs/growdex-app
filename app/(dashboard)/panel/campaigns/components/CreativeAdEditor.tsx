@@ -12,7 +12,10 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { isVideoMedia } from "@/lib/campaign-shared";
-import { requestCampaignCreativeSuggestion } from "@/lib/campaigns";
+import {
+  recordAiRequestAcceptance,
+  requestCampaignCreativeSuggestion,
+} from "@/lib/campaigns";
 import type {
   CampaignCreativeInput,
   CampaignCta,
@@ -194,6 +197,7 @@ export function CreativeAdEditor({
         return;
       }
       onChange(requestIndex, { primaryText: suggestion.value });
+      void recordAiRequestAcceptance(suggestion.aiRequestId).catch(() => {});
       setPrimaryTextStateIndex(requestIndex);
       setPrimaryTextRationale(suggestion.rationale);
     } catch (failure) {
@@ -243,6 +247,7 @@ export function CreativeAdEditor({
         return;
       }
       onChange(requestIndex, { headline: suggestion.value });
+      void recordAiRequestAcceptance(suggestion.aiRequestId).catch(() => {});
       setHeadlineStateIndex(requestIndex);
       setHeadlineRationale(suggestion.rationale);
     } catch (failure) {

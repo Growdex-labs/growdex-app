@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { AuthRequestError, getCurrentUser } from '@/lib/auth';
+import { track } from '@/lib/analytics';
 
 export default function PanelRootLayout({
   children,
@@ -10,6 +11,7 @@ export default function PanelRootLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [accessError, setAccessError] = useState<string | null>(null);
 
@@ -49,6 +51,11 @@ export default function PanelRootLayout({
       active = false;
     };
   }, [router]);
+
+  useEffect(() => {
+    if (isLoading || accessError) return;
+    track('page_view', { pathname });
+  }, [accessError, isLoading, pathname]);
 
   if (isLoading) {
     return (

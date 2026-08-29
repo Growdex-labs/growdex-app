@@ -545,12 +545,16 @@ export const login = async (email: string, password: string) => {
  * Register user
  * Returns onboardingCompleted and other metadata from backend
  */
-export const register = async (email: string, password: string) => {
+export const register = async (
+  email: string,
+  password: string,
+  referralCode?: string,
+) => {
   clearDevSession();
   const res = await apiFetch("/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, referralCode }),
   });
 
   if (!res.ok) {

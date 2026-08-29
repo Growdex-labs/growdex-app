@@ -1,10 +1,11 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useState, type ComponentType, type FormEvent } from "react";
 import { BookOpen, Lightbulb, MessageCircle } from "lucide-react";
 import { PanelLayout } from "../../components/panel-layout";
 import { SettingsSidebar } from "../../components/settings-sidebar";
 import { SettingsHeader } from "../components/settings-header";
+import { apiFetch } from "@/lib/auth";
 
 interface SupportOption {
   id: string;
@@ -34,7 +35,7 @@ const SUPPORT_OPTIONS: SupportOption[] = [
       "Get personalised support or send a ticket straight to our team.",
     Icon: MessageCircle,
     actionLabel: "Contact Support",
-    href: "mailto:support@growdex.ai?subject=Growdex%20support%20request",
+    href: "#support-ticket",
     external: false,
   },
   {
@@ -49,6 +50,32 @@ const SUPPORT_OPTIONS: SupportOption[] = [
 ];
 
 export default function SupportAndHelpSettingsPage() {
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const submitTicket = async (event: FormEvent) => {
+    event.preventDefault();
+    setSending(true);
+    setStatus(null);
+    try {
+      const response = await apiFetch("/contact/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, message, priority: "normal" }),
+      });
+      if (!response.ok) throw new Error("Could not send this support request.");
+      setSubject("");
+      setMessage("");
+      setStatus("Your ticket is in the Growdex support queue.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not send this support request.");
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <PanelLayout>
       <div className="flex h-full overflow-hidden bg-gray-50">
@@ -103,6 +130,46 @@ export default function SupportAndHelpSettingsPage() {
                 ),
               )}
             </ul>
+
+            <form
+              id="support-ticket"
+              onSubmit={submitTicket}
+              className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:p-6"
+            >
+              <h2 className="font-gilroy-semibold text-gray-950">Send a support ticket</h2>
+              <p className="mt-1 text-sm text-gray-500">Your request appears directly in the Growdex admin support queue.</p>
+              <label className="mt-5 block text-sm font-gilroy-medium text-gray-800">
+                Subject
+                <input
+                  required
+                  maxLength={160}
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                  className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2.5 outline-none focus:border-gray-400"
+                />
+              </label>
+              <label className="mt-4 block text-sm font-gilroy-medium text-gray-800">
+                Message
+                <textarea
+                  required
+                  maxLength={5000}
+                  rows={5}
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                  className="mt-2 w-full resize-y rounded-lg border border-gray-200 px-3 py-2.5 outline-none focus:border-gray-400"
+                />
+              </label>
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="rounded-lg bg-gray-950 px-4 py-2.5 text-sm font-gilroy-semibold text-white disabled:opacity-50"
+                >
+                  {sending ? "Sending…" : "Send ticket"}
+                </button>
+                {status && <p className="text-sm text-gray-600">{status}</p>}
+              </div>
+            </form>
           </div>
         </div>
       </div>

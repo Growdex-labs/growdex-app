@@ -100,7 +100,11 @@ export default function SignUpPage() {
     setIsLoading(true);
     setError("");
     try {
-      const response = await register(email, password);
+      const response = await register(
+        email,
+        password,
+        new URLSearchParams(window.location.search).get("ref") ?? undefined,
+      );
 
       if (
         response.status === "MFA_SETUP_REQUIRED" ||

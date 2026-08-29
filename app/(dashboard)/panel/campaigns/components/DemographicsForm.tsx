@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { fetchAudiences, type Audience as SavedAudience } from "@/lib/audiences";
 import {
+  recordAiRequestAcceptance,
   searchMetaInterests,
   searchProviderLanguages,
   type AudienceStrategy,
@@ -517,6 +518,7 @@ export function DemographicsForm({
                     void onGenerateInterests()
                       .then((suggestion) => {
                         onChange({ interests: suggestion.interests });
+                        void recordAiRequestAcceptance(suggestion.aiRequestId).catch(() => {});
                         onClearUnavailableInterests();
                         setInterestRationale(suggestion.rationale);
                       })

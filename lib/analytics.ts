@@ -79,7 +79,35 @@ const withClient = (run: (client: RybbitClient) => void) => {
   startFlushRetry();
 };
 
+const internalSessionId = () => {
+  const key = "growdex_analytics_session";
+  const existing = window.sessionStorage.getItem(key);
+  if (existing) return existing;
+  const created = window.crypto.randomUUID();
+  window.sessionStorage.setItem(key, created);
+  return created;
+};
+
+const trackInternal = (name: string, properties?: AnalyticsProps) => {
+  if (typeof window === "undefined") return;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+  if (!baseUrl) return;
+  void fetch(`${baseUrl}/events/track`, {
+    method: "POST",
+    credentials: "include",
+    keepalive: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: internalSessionId(),
+      name,
+      pathname: window.location.pathname,
+      properties,
+    }),
+  }).catch(() => undefined);
+};
+
 export const track = (name: string, properties?: AnalyticsProps) => {
+  trackInternal(name, properties);
   withClient((client) => client.event(name, properties));
 };
 
