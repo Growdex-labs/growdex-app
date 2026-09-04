@@ -11,6 +11,7 @@ import {
   List,
   Loader2,
   Megaphone,
+  RefreshCw,
   Search,
   Upload,
 } from "lucide-react";
@@ -56,15 +57,22 @@ export default function AssetsPage() {
   const [selected, setSelected] = useState<CreativeAsset | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ name: string; index: number; total: number; percent: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError(null);
+    setRefreshMessage(null);
     void (async () => {
       try {
         const campaignAssets = await fetchCreativeAssets();
         let providerMedia: CreativeAsset[] = [];
         const socialSetup = await hydrateSocialAccounts();
+        const warnings: string[] = [];
         if (socialSetup.success && socialSetup.data) {
           const providerResults = await Promise.allSettled([
             ...(socialSetup.data.meta?.assets ?? []).map((asset) =>
@@ -80,10 +88,18 @@ export default function AssetsPage() {
           providerMedia = providerResults.flatMap((result) =>
             result.status === "fulfilled" ? result.value : [],
           );
+          for (const result of providerResults) {
+            if (result.status === "rejected") {
+              warnings.push(result.reason instanceof Error ? result.reason.message : "Some connected posts could not be refreshed. Please try again.");
+            }
+          }
+        } else {
+          warnings.push("Connected accounts could not be loaded. Please refresh to try again.");
         }
         if (active) {
-          setAssets(
-            [...campaignAssets, ...providerMedia].filter(
+          setRefreshMessage(warnings.length ? [...new Set(warnings)].join(" ") : refreshVersion > 0 ? "Assets and connected posts refreshed." : null);
+          setAssets((current) =>
+            [...campaignAssets, ...providerMedia, ...(warnings.length ? current : [])].filter(
               (asset, index, library) =>
                 library.findIndex(
                   (candidate) =>
@@ -108,7 +124,7 @@ export default function AssetsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshVersion]);
 
   const visibleAssets = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -145,9 +161,12 @@ export default function AssetsPage() {
     const uploaded: CreativeAsset[] = [];
     const failures: string[] = [];
 
-    for (const file of files) {
+    for (const [index, file] of files.entries()) {
+      setUploadProgress({ name: file.name, index: index + 1, total: files.length, percent: 0 });
       try {
-        uploaded.push(persistLibraryUpload(await uploadCreativeToCloudinary(file)));
+        uploaded.push(persistLibraryUpload(await uploadCreativeToCloudinary(file, (percent) => {
+          setUploadProgress({ name: file.name, index: index + 1, total: files.length, percent });
+        })));
       } catch (failure) {
         failures.push(
           `${file.name}: ${
@@ -163,6 +182,7 @@ export default function AssetsPage() {
     }
     if (failures.length) setUploadError(failures.join(" "));
     setUploading(false);
+    setUploadProgress(null);
   };
 
   return (
@@ -180,6 +200,15 @@ export default function AssetsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setRefreshVersion((version) => version + 1)}
+                disabled={loading || uploading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+                {loading ? "Refreshing…" : "Refresh"}
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -194,7 +223,7 @@ export default function AssetsPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || loading}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-gilroy-semibold text-gray-950 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {uploading ? (
@@ -212,6 +241,17 @@ export default function AssetsPage() {
               </Link>
             </div>
           </header>
+          {refreshMessage && <p role="status" className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">{refreshMessage}</p>}
+          {uploadProgress && (
+            <div className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <div className="flex justify-between gap-4 text-sm">
+                <span className="min-w-0 truncate">{uploadProgress.index} of {uploadProgress.total}: {uploadProgress.name}</span>
+                <span className="shrink-0 tabular-nums">{uploadProgress.percent}%</span>
+              </div>
+              <progress aria-label={`Upload progress for ${uploadProgress.name}`} value={uploadProgress.percent} max={100} className="mt-2 h-2 w-full accent-gray-950" />
+              <p role="status" className="mt-1 text-xs text-gray-500">{uploadProgress.percent === 100 ? "Upload sent. Finishing and saving…" : "Uploading asset…"}</p>
+            </div>
+          )}
           {uploadError && (
             <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {uploadError}

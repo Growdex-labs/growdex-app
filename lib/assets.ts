@@ -184,6 +184,7 @@ export const fetchMetaSocialPosts = async (
 ): Promise<CreativeAsset[]> => {
   const response = await apiFetch(
     `/campaigns/social-posts?assetId=${encodeURIComponent(assetId)}`,
+    { cache: "no-store" },
   );
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -240,6 +241,7 @@ export const fetchTikTokCreativeAssets = async (
 ): Promise<CreativeAsset[]> => {
   const response = await apiFetch(
     `/campaigns/tiktok-creative-assets?assetId=${encodeURIComponent(assetId)}`,
+    { cache: "no-store" },
   );
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -290,6 +292,7 @@ export const fetchTikTokSocialPosts = async (
 ): Promise<CreativeAsset[]> => {
   const response = await apiFetch(
     `/campaigns/tiktok-social-posts?assetId=${encodeURIComponent(assetId)}`,
+    { cache: "no-store" },
   );
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
