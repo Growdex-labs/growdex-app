@@ -61,6 +61,7 @@ export default function AssetsPage() {
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ name: string; index: number; total: number; percent: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const providerCache = useRef(new Map<string, CreativeAsset[]>());
 
   useEffect(() => {
     let active = true;
@@ -74,37 +75,41 @@ export default function AssetsPage() {
         const socialSetup = await hydrateSocialAccounts();
         const warnings: string[] = [];
         if (socialSetup.success && socialSetup.data) {
-          const providerResults = await Promise.allSettled([
-            ...(socialSetup.data.meta?.assets ?? []).map((asset) =>
-              fetchMetaSocialPosts(asset.id),
-            ),
-            ...(socialSetup.data.tiktok?.assets ?? []).map((asset) =>
-              fetchTikTokCreativeAssets(asset.id),
-            ),
-            ...(socialSetup.data.tiktok?.assets ?? []).map((asset) =>
-              fetchTikTokSocialPosts(asset.id),
-            ),
-          ]);
-          providerMedia = providerResults.flatMap((result) =>
-            result.status === "fulfilled" ? result.value : [],
-          );
-          for (const result of providerResults) {
+          const sources = [
+            ...(socialSetup.data.meta?.assets ?? []).map((asset) => ({
+              key: `meta-posts:${asset.id}`,
+              load: () => fetchMetaSocialPosts(asset.id),
+            })),
+            ...(socialSetup.data.tiktok?.assets ?? []).flatMap((asset) => [
+              { key: `tiktok-assets:${asset.id}`, load: () => fetchTikTokCreativeAssets(asset.id) },
+              { key: `tiktok-posts:${asset.id}`, load: () => fetchTikTokSocialPosts(asset.id) },
+            ]),
+          ];
+          const providerResults = await Promise.allSettled(sources.map((source) => source.load()));
+          if (!active) return;
+          const nextCache = new Map<string, CreativeAsset[]>();
+          for (const [index, result] of providerResults.entries()) {
+            const key = sources[index].key;
+            nextCache.set(key, result.status === "fulfilled" ? result.value : providerCache.current.get(key) ?? []);
             if (result.status === "rejected") {
               warnings.push(result.reason instanceof Error ? result.reason.message : "Some connected posts could not be refreshed. Please try again.");
             }
           }
+          providerCache.current = nextCache;
+          providerMedia = [...nextCache.values()].flat();
         } else {
           warnings.push("Connected accounts could not be loaded. Please refresh to try again.");
+          providerMedia = [...providerCache.current.values()].flat();
         }
         if (active) {
           setRefreshMessage(warnings.length ? [...new Set(warnings)].join(" ") : refreshVersion > 0 ? "Assets and connected posts refreshed." : null);
-          setAssets((current) =>
-            [...campaignAssets, ...providerMedia, ...(warnings.length ? current : [])].filter(
+          setAssets(
+            [...campaignAssets, ...providerMedia].filter(
               (asset, index, library) =>
                 library.findIndex(
                   (candidate) =>
-                    candidate.kind === asset.kind &&
-                    candidate.url === asset.url,
+                    candidate.id === asset.id ||
+                    (candidate.kind === asset.kind && candidate.url === asset.url),
                 ) === index,
             ),
           );
@@ -241,6 +246,7 @@ export default function AssetsPage() {
               </Link>
             </div>
           </header>
+          {error && assets.length > 0 && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">Refresh failed: {error} Your previously loaded assets are still available.</p>}
           {refreshMessage && <p role="status" className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">{refreshMessage}</p>}
           {uploadProgress && (
             <div className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3">
@@ -308,11 +314,11 @@ export default function AssetsPage() {
             </div>
 
             <div className="p-4 lg:p-5">
-              {loading ? (
+              {loading && assets.length === 0 ? (
                 <div className="flex min-h-80 items-center justify-center">
                   <Loader2 className="size-8 animate-spin text-gray-400" />
                 </div>
-              ) : error ? (
+              ) : error && assets.length === 0 ? (
                 <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
                   <AlertCircle className="size-8" />
                   <p className="mt-3 font-gilroy-semibold">Creative library unavailable</p>
