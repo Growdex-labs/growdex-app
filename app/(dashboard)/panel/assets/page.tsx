@@ -108,8 +108,8 @@ export default function AssetsPage() {
               (asset, index, library) =>
                 library.findIndex(
                   (candidate) =>
-                    candidate.id === asset.id ||
-                    (candidate.kind === asset.kind && candidate.url === asset.url),
+                    candidate.kind === asset.kind &&
+                    (candidate.id === asset.id || candidate.url === asset.url),
                 ) === index,
             ),
           );
