@@ -197,11 +197,12 @@ export function CreativeSetupScreen({
 
   useEffect(() => {
     let active = true;
+    const warnings: string[] = [];
     const requests: Array<Promise<CreativeAsset[]>> = [
       fetchCreativeAssets({ platforms }),
     ];
     if (platforms.includes("meta") && metaAssetId) {
-      requests.push(fetchMetaSocialPosts(metaAssetId));
+      requests.push(fetchMetaSocialPosts(metaAssetId, (messages) => warnings.push(...messages)));
     }
     if (platforms.includes("tiktok")) {
       for (const asset of accounts?.tiktok?.assets ?? []) {
@@ -221,13 +222,13 @@ export function CreativeSetupScreen({
             result.status === "rejected",
         );
         setLibraryError(
-          failures.length
-            ? failures
+          failures.length || warnings.length
+            ? [...warnings, ...failures
                 .map((failure) =>
                   failure.reason instanceof Error
                     ? failure.reason.message
                     : "Could not load creative media.",
-                )
+                )]
                 .join(" ")
             : null,
         );
@@ -430,10 +431,12 @@ export function CreativeSetupScreen({
     }
 
     const index = creatives.findIndex((creative) => creative.platform === platform);
-    if (index < 0) {
-      setUploadError(`Add ${platformName(platform)} to the campaign before uploading its creative.`);
+    if (index < 0 && creatives.length >= MAX_SELECTED_ASSETS) {
+      setUploadError(`Remove an ad before adding another. You can use up to ${MAX_SELECTED_ASSETS} creatives.`);
       return;
     }
+    // A selected platform can legitimately have no ads yet (for example an AI
+    // draft). The upload handler creates its first ad after the file succeeds.
     onUpload(index, platform, file);
   };
 
@@ -698,11 +701,14 @@ export function CreativeSetupScreen({
           </div>
 
           <div className="p-5 md:p-8">
+            {libraryError && library.length > 0 && (
+              <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{libraryError}</p>
+            )}
             {libraryLoading ? (
               <div className="flex min-h-80 items-center justify-center">
                 <Loader2 className="size-7 animate-spin text-gray-400" />
               </div>
-            ) : libraryError ? (
+            ) : libraryError && library.length === 0 ? (
               <div className="flex min-h-64 items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
                 {libraryError}
               </div>

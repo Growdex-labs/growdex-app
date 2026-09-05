@@ -1460,6 +1460,11 @@ export function CampaignSetupWorkspace({
     platform: CampaignPlatform,
     file: File,
   ) => {
+    const strategyId = activeStrategy.id;
+    if (!campaign.campaign.platforms.includes(platform)) {
+      setError("Choose this ad platform before uploading creative.");
+      return;
+    }
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
     const requiresVideo = activeStrategy.configuration.destination === "VIDEO";
@@ -1480,10 +1485,31 @@ export function CampaignSetupWorkspace({
     setError(null);
     try {
       const uploaded = await uploadCreativeToCloudinary(file);
-      patchCreative(index, {
-        mediaUrl: uploaded.url,
-        mediaType: uploaded.mediaType,
-        thumbnailUrl: uploaded.thumbnailUrl,
+      if (campaign.creationMode === "ai") aiFlow.markReview("creative");
+      setCampaign((current) => {
+        if (!current.campaign.platforms.includes(platform)) return current;
+        return {
+          ...current,
+          audienceStrategies: current.audienceStrategies.map((strategy) => {
+            if (strategy.id !== strategyId) return strategy;
+            const media = {
+              mediaUrl: uploaded.url,
+              mediaType: uploaded.mediaType,
+              thumbnailUrl: uploaded.thumbnailUrl,
+            };
+            if (index < 0) {
+              return { ...strategy, ads: [...strategy.ads, { ...emptyCreative(platform), ...media }] };
+            }
+            return {
+              ...strategy,
+              ads: strategy.ads.map((creative, creativeIndex) =>
+                creativeIndex === index && creative.platform === platform
+                  ? { ...creative, ...media }
+                  : creative,
+              ),
+            };
+          }),
+        };
       });
     } catch (failure) {
       setError(
