@@ -34,6 +34,7 @@ import {
 } from "@/lib/campaigns";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { CreativeAdEditor } from "./CreativeAdEditor";
+import { CreativeUploadProgress, type CreativeUploadStatus } from "./CreativeUploadProgress";
 import {
   MAX_SELECTED_ASSETS,
   mergeSelectedAssets,
@@ -48,6 +49,7 @@ interface CreativeSetupScreenProps {
   creatives: CampaignCreativeInput[];
   ctaOptions: Array<{ value: CampaignCta; label: string }>;
   uploading: number | null;
+  uploadProgress?: CreativeUploadStatus | null;
   sameCreativeForAll: boolean;
   accounts: SocialAccountSetupProps | null;
   accountsLoading: boolean;
@@ -159,6 +161,7 @@ export function CreativeSetupScreen({
   creatives,
   ctaOptions,
   uploading,
+  uploadProgress,
   sameCreativeForAll,
   accounts,
   accountsLoading,
@@ -482,6 +485,7 @@ export function CreativeSetupScreen({
         creatives={creatives}
         ctaOptions={ctaOptions}
         uploading={uploading}
+        uploadProgress={uploadProgress}
         activeIndex={resolvedActiveIndex}
         leadForms={leadForms}
         leadFormsLoading={leadFormsLoading}
@@ -522,6 +526,8 @@ export function CreativeSetupScreen({
           Select up to six saved assets or upload from your computer. Meta and TikTok both support image and video creatives.
         </p>
       </header>
+
+      {uploadProgress && <div className="px-6 pt-4 md:px-8"><CreativeUploadProgress status={uploadProgress} /></div>}
 
       {!libraryLoading && !libraryError && library.length === 0 ? (
         <div className="flex min-h-[440px] flex-col items-center justify-center p-6 text-center md:p-10">

@@ -54,6 +54,7 @@ import {
   fetchTikTokCreativeAssets,
 } from "@/lib/assets";
 import { uploadCreativeToCloudinary } from "@/lib/media-upload";
+import type { CreativeUploadStatus } from "./CreativeUploadProgress";
 import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts, refreshSocialAccount } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
@@ -354,6 +355,7 @@ export function CampaignSetupWorkspace({
   const [aiQuestion, setAiQuestion] = useState<AiCampaignQuestion | null>(null);
   const [aiStepRationales, setAiStepRationales] = useState(EMPTY_AI_RATIONALES);
   const [uploading, setUploading] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<CreativeUploadStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [autosaveError, setAutosaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -1482,9 +1484,12 @@ export function CampaignSetupWorkspace({
     }
 
     setUploading(index);
+    setUploadProgress({ name: file.name, percent: 0 });
     setError(null);
     try {
-      const uploaded = await uploadCreativeToCloudinary(file);
+      const uploaded = await uploadCreativeToCloudinary(file, (percent) =>
+        setUploadProgress({ name: file.name, percent }),
+      );
       if (campaign.creationMode === "ai") aiFlow.markReview("creative");
       setCampaign((current) => {
         if (!current.campaign.platforms.includes(platform)) return current;
@@ -1517,6 +1522,7 @@ export function CampaignSetupWorkspace({
       );
     } finally {
       setUploading(null);
+      setUploadProgress(null);
     }
   };
 
@@ -1987,6 +1993,7 @@ export function CampaignSetupWorkspace({
             creatives={activeStrategy.ads}
             ctaOptions={CTA_OPTIONS}
             uploading={uploading}
+            uploadProgress={uploadProgress}
             sameCreativeForAll={
               campaign.campaign.configuration.sameCreativeForAll
             }
@@ -2389,6 +2396,7 @@ export function CampaignSetupWorkspace({
                       creatives={activeStrategy.ads}
                       ctaOptions={CTA_OPTIONS}
                       uploading={uploading}
+                      uploadProgress={uploadProgress}
                       sameCreativeForAll={
                         campaign.campaign.configuration.sameCreativeForAll
                       }
