@@ -528,8 +528,11 @@ export function CreativeSetupScreen({
       </header>
 
       {uploadProgress && <div className="px-6 pt-4 md:px-8"><CreativeUploadProgress status={uploadProgress} /></div>}
+      {libraryError && (
+        <p role="status" className="mx-6 mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 md:mx-8">{libraryError}</p>
+      )}
 
-      {!libraryLoading && !libraryError && library.length === 0 ? (
+      {!libraryLoading && library.length === 0 ? (
         <div className="flex min-h-[440px] flex-col items-center justify-center p-6 text-center md:p-10">
           <span className="flex size-16 items-center justify-center rounded-2xl bg-dimYellow text-gray-800">
             <Library className="size-7" />
@@ -707,16 +710,9 @@ export function CreativeSetupScreen({
           </div>
 
           <div className="p-5 md:p-8">
-            {libraryError && library.length > 0 && (
-              <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{libraryError}</p>
-            )}
             {libraryLoading ? (
               <div className="flex min-h-80 items-center justify-center">
                 <Loader2 className="size-7 animate-spin text-gray-400" />
-              </div>
-            ) : libraryError && library.length === 0 ? (
-              <div className="flex min-h-64 items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
-                {libraryError}
               </div>
             ) : visibleAssets.length ? (
               <div className={view === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4" : "space-y-3"}>
