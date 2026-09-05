@@ -181,6 +181,7 @@ export const fetchCreativeAssets = async (options?: {
 
 export const fetchMetaSocialPosts = async (
   assetId: string,
+  onWarnings?: (warnings: string[]) => void,
 ): Promise<CreativeAsset[]> => {
   const response = await apiFetch(
     `/campaigns/social-posts?assetId=${encodeURIComponent(assetId)}`,
@@ -197,6 +198,9 @@ export const fetchMetaSocialPosts = async (
   if (!Array.isArray(body.posts)) {
     throw new Error("Meta posts returned an invalid response.");
   }
+  onWarnings?.(Array.isArray(body.warnings)
+    ? body.warnings.filter((warning: unknown): warning is string => typeof warning === "string")
+    : []);
 
   return (body.posts as unknown[])
     .filter(
@@ -224,7 +228,7 @@ export const fetchMetaSocialPosts = async (
       kind: "post" as const,
       mediaType:
         typeof post.mediaType === "string" &&
-        post.mediaType.toLowerCase() === "video"
+        post.mediaType.toLowerCase().includes("video")
           ? ("video" as const)
           : ("image" as const),
       thumbnailUrl:

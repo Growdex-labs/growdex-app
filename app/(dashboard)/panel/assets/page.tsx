@@ -78,7 +78,7 @@ export default function AssetsPage() {
           const sources = [
             ...(socialSetup.data.meta?.assets ?? []).map((asset) => ({
               key: `meta-posts:${asset.id}`,
-              load: () => fetchMetaSocialPosts(asset.id),
+              load: () => fetchMetaSocialPosts(asset.id, (messages) => warnings.push(...messages)),
             })),
             ...(socialSetup.data.tiktok?.assets ?? []).flatMap((asset) => [
               { key: `tiktok-assets:${asset.id}`, load: () => fetchTikTokCreativeAssets(asset.id) },

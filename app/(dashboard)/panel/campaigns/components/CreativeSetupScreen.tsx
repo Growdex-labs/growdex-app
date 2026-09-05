@@ -34,6 +34,7 @@ import {
 } from "@/lib/campaigns";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { CreativeAdEditor } from "./CreativeAdEditor";
+import { CreativeUploadProgress, type CreativeUploadStatus } from "./CreativeUploadProgress";
 import {
   MAX_SELECTED_ASSETS,
   mergeSelectedAssets,
@@ -48,6 +49,7 @@ interface CreativeSetupScreenProps {
   creatives: CampaignCreativeInput[];
   ctaOptions: Array<{ value: CampaignCta; label: string }>;
   uploading: number | null;
+  uploadProgress?: CreativeUploadStatus | null;
   sameCreativeForAll: boolean;
   accounts: SocialAccountSetupProps | null;
   accountsLoading: boolean;
@@ -159,6 +161,7 @@ export function CreativeSetupScreen({
   creatives,
   ctaOptions,
   uploading,
+  uploadProgress,
   sameCreativeForAll,
   accounts,
   accountsLoading,
@@ -197,11 +200,12 @@ export function CreativeSetupScreen({
 
   useEffect(() => {
     let active = true;
+    const warnings: string[] = [];
     const requests: Array<Promise<CreativeAsset[]>> = [
       fetchCreativeAssets({ platforms }),
     ];
     if (platforms.includes("meta") && metaAssetId) {
-      requests.push(fetchMetaSocialPosts(metaAssetId));
+      requests.push(fetchMetaSocialPosts(metaAssetId, (messages) => warnings.push(...messages)));
     }
     if (platforms.includes("tiktok")) {
       for (const asset of accounts?.tiktok?.assets ?? []) {
@@ -221,13 +225,13 @@ export function CreativeSetupScreen({
             result.status === "rejected",
         );
         setLibraryError(
-          failures.length
-            ? failures
+          failures.length || warnings.length
+            ? [...warnings, ...failures
                 .map((failure) =>
                   failure.reason instanceof Error
                     ? failure.reason.message
                     : "Could not load creative media.",
-                )
+                )]
                 .join(" ")
             : null,
         );
@@ -430,10 +434,12 @@ export function CreativeSetupScreen({
     }
 
     const index = creatives.findIndex((creative) => creative.platform === platform);
-    if (index < 0) {
-      setUploadError(`Add ${platformName(platform)} to the campaign before uploading its creative.`);
+    if (index < 0 && creatives.length >= MAX_SELECTED_ASSETS) {
+      setUploadError(`Remove an ad before adding another. You can use up to ${MAX_SELECTED_ASSETS} creatives.`);
       return;
     }
+    // A selected platform can legitimately have no ads yet (for example an AI
+    // draft). The upload handler creates its first ad after the file succeeds.
     onUpload(index, platform, file);
   };
 
@@ -479,6 +485,7 @@ export function CreativeSetupScreen({
         creatives={creatives}
         ctaOptions={ctaOptions}
         uploading={uploading}
+        uploadProgress={uploadProgress}
         activeIndex={resolvedActiveIndex}
         leadForms={leadForms}
         leadFormsLoading={leadFormsLoading}
@@ -520,7 +527,12 @@ export function CreativeSetupScreen({
         </p>
       </header>
 
-      {!libraryLoading && !libraryError && library.length === 0 ? (
+      {uploadProgress && <div className="px-6 pt-4 md:px-8"><CreativeUploadProgress status={uploadProgress} /></div>}
+      {libraryError && (
+        <p role="status" className="mx-6 mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 md:mx-8">{libraryError}</p>
+      )}
+
+      {!libraryLoading && library.length === 0 ? (
         <div className="flex min-h-[440px] flex-col items-center justify-center p-6 text-center md:p-10">
           <span className="flex size-16 items-center justify-center rounded-2xl bg-dimYellow text-gray-800">
             <Library className="size-7" />
@@ -701,10 +713,6 @@ export function CreativeSetupScreen({
             {libraryLoading ? (
               <div className="flex min-h-80 items-center justify-center">
                 <Loader2 className="size-7 animate-spin text-gray-400" />
-              </div>
-            ) : libraryError ? (
-              <div className="flex min-h-64 items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
-                {libraryError}
               </div>
             ) : visibleAssets.length ? (
               <div className={view === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4" : "space-y-3"}>

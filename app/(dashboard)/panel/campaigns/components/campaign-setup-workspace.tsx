@@ -54,6 +54,7 @@ import {
   fetchTikTokCreativeAssets,
 } from "@/lib/assets";
 import { uploadCreativeToCloudinary } from "@/lib/media-upload";
+import type { CreativeUploadStatus } from "./CreativeUploadProgress";
 import { connectSocialAccount } from "@/lib/oauth";
 import { hydrateSocialAccounts, refreshSocialAccount } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
@@ -354,6 +355,7 @@ export function CampaignSetupWorkspace({
   const [aiQuestion, setAiQuestion] = useState<AiCampaignQuestion | null>(null);
   const [aiStepRationales, setAiStepRationales] = useState(EMPTY_AI_RATIONALES);
   const [uploading, setUploading] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<CreativeUploadStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [autosaveError, setAutosaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -1460,6 +1462,11 @@ export function CampaignSetupWorkspace({
     platform: CampaignPlatform,
     file: File,
   ) => {
+    const strategyId = activeStrategy.id;
+    if (!campaign.campaign.platforms.includes(platform)) {
+      setError("Choose this ad platform before uploading creative.");
+      return;
+    }
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
     const requiresVideo = activeStrategy.configuration.destination === "VIDEO";
@@ -1477,13 +1484,37 @@ export function CampaignSetupWorkspace({
     }
 
     setUploading(index);
+    setUploadProgress({ name: file.name, percent: 0 });
     setError(null);
     try {
-      const uploaded = await uploadCreativeToCloudinary(file);
-      patchCreative(index, {
-        mediaUrl: uploaded.url,
-        mediaType: uploaded.mediaType,
-        thumbnailUrl: uploaded.thumbnailUrl,
+      const uploaded = await uploadCreativeToCloudinary(file, (percent) =>
+        setUploadProgress({ name: file.name, percent }),
+      );
+      if (campaign.creationMode === "ai") aiFlow.markReview("creative");
+      setCampaign((current) => {
+        if (!current.campaign.platforms.includes(platform)) return current;
+        return {
+          ...current,
+          audienceStrategies: current.audienceStrategies.map((strategy) => {
+            if (strategy.id !== strategyId) return strategy;
+            const media = {
+              mediaUrl: uploaded.url,
+              mediaType: uploaded.mediaType,
+              thumbnailUrl: uploaded.thumbnailUrl,
+            };
+            if (index < 0) {
+              return { ...strategy, ads: [...strategy.ads, { ...emptyCreative(platform), ...media }] };
+            }
+            return {
+              ...strategy,
+              ads: strategy.ads.map((creative, creativeIndex) =>
+                creativeIndex === index && creative.platform === platform
+                  ? { ...creative, ...media }
+                  : creative,
+              ),
+            };
+          }),
+        };
       });
     } catch (failure) {
       setError(
@@ -1491,6 +1522,7 @@ export function CampaignSetupWorkspace({
       );
     } finally {
       setUploading(null);
+      setUploadProgress(null);
     }
   };
 
@@ -1961,6 +1993,7 @@ export function CampaignSetupWorkspace({
             creatives={activeStrategy.ads}
             ctaOptions={CTA_OPTIONS}
             uploading={uploading}
+            uploadProgress={uploadProgress}
             sameCreativeForAll={
               campaign.campaign.configuration.sameCreativeForAll
             }
@@ -2363,6 +2396,7 @@ export function CampaignSetupWorkspace({
                       creatives={activeStrategy.ads}
                       ctaOptions={CTA_OPTIONS}
                       uploading={uploading}
+                      uploadProgress={uploadProgress}
                       sameCreativeForAll={
                         campaign.campaign.configuration.sameCreativeForAll
                       }

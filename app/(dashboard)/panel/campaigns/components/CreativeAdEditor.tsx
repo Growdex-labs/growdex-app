@@ -25,6 +25,7 @@ import type {
   MetaLeadForm,
 } from "@/lib/campaigns";
 import { PlatformAdPreview } from "./PlatformAdPreview";
+import { CreativeUploadProgress, type CreativeUploadStatus } from "./CreativeUploadProgress";
 
 interface CreativeAdEditorProps {
   brandName: string;
@@ -33,6 +34,7 @@ interface CreativeAdEditorProps {
   creatives: CampaignCreativeInput[];
   ctaOptions: Array<{ value: CampaignCta; label: string }>;
   uploading: number | null;
+  uploadProgress?: CreativeUploadStatus | null;
   activeIndex: number;
   leadForms: MetaLeadForm[];
   leadFormsLoading: boolean;
@@ -97,6 +99,7 @@ export function CreativeAdEditor({
   creatives,
   ctaOptions,
   uploading,
+  uploadProgress,
   activeIndex,
   leadForms,
   leadFormsLoading,
@@ -494,6 +497,7 @@ export function CreativeAdEditor({
               }}
             />
           </label>
+          <CreativeUploadProgress status={uploadProgress} />
         </fieldset>
 
         <CreativePreview creative={creative} brandName={brandName} />
