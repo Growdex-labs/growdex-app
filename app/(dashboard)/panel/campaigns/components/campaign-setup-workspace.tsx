@@ -13,6 +13,10 @@ import {
   createAudienceStrategy,
   createInitialCampaignPayload,
   campaignDtoToPayload,
+  copyAdForStrategy,
+  fillMissingStrategyAds,
+  firstStrategyMissingPlatformAd,
+  nextAudienceStrategyName,
   fetchCampaignById,
   hasRestrictedMetaTargeting,
   ensureCampaignPayloadScheduleLeadTime,
@@ -430,7 +434,11 @@ export function CampaignSetupWorkspace({
           ? "Add the required media for every selected platform before publishing."
           : null
     : null;
-  const aiPostReviewStep = validateCampaignCreativeSetup(campaign) ? 6 : 7;
+  const aiPostReviewStep = validateCampaignCreativeSetup(
+    fillMissingStrategyAds(campaign),
+  )
+    ? 6
+    : 7;
   const aiPostReviewLabel =
     aiPostReviewStep === 6
       ? "Continue to creative setup"
@@ -915,19 +923,30 @@ export function CampaignSetupWorkspace({
     trackScreenViewed("campaign_create", screen);
   }, [isLiveEdit, step]);
 
+  useEffect(() => {
+    if (step !== 6) return;
+    setCampaign((current) => fillMissingStrategyAds(current));
+  }, [step]);
+
   const addAudienceStrategy = () => {
     const source = activeStrategy ?? campaign.audienceStrategies[0];
     const next = source
       ? {
           ...structuredClone(source),
           id: crypto.randomUUID(),
-          name: `${source.name || "Audience Strategy"} copy`,
+          name: nextAudienceStrategyName(
+            campaign.audienceStrategies.map((strategy) => strategy.name),
+            source.name || "Audience Strategy",
+          ),
+          ads: source.ads.map(copyAdForStrategy),
         }
       : createAudienceStrategy("Audience Strategy 1", budgetCurrency);
-    setCampaign((current) => ({
-      ...current,
-      audienceStrategies: [...current.audienceStrategies, next],
-    }));
+    setCampaign((current) =>
+      fillMissingStrategyAds({
+        ...current,
+        audienceStrategies: [...current.audienceStrategies, next],
+      }),
+    );
     setActiveStrategyId(next.id);
     setStep(3);
   };
@@ -944,6 +963,7 @@ export function CampaignSetupWorkspace({
                 ...structuredClone(strategy),
                 id: duplicateId,
                 name: `Copy of ${strategy.name || "Audience Strategy"}`,
+                ads: strategy.ads.map(copyAdForStrategy),
               },
             ]
           : [strategy],
@@ -1447,14 +1467,18 @@ export function CampaignSetupWorkspace({
 
   const replaceCreatives = (creatives: CampaignCreativeInput[]) => {
     if (campaign.creationMode === "ai") aiFlow.markReview("creative");
-    setCampaign((current) => ({
-      ...current,
-      audienceStrategies: current.audienceStrategies.map((strategy) =>
-        strategy.id === (activeStrategyId ?? current.audienceStrategies[0]?.id)
-          ? { ...strategy, ads: creatives }
-          : strategy,
-      ),
-    }));
+    setCampaign((current) => {
+      const strategyId = activeStrategyId ?? current.audienceStrategies[0]?.id;
+      return fillMissingStrategyAds(
+        {
+          ...current,
+          audienceStrategies: current.audienceStrategies.map((strategy) =>
+            strategy.id === strategyId ? { ...strategy, ads: creatives } : strategy,
+          ),
+        },
+        creatives,
+      );
+    });
   };
 
   const uploadMedia = async (
@@ -1664,10 +1688,14 @@ export function CampaignSetupWorkspace({
       return;
     }
     if (step === 6) {
-      const validation = validateCampaignPayload(campaign, {
+      const prepared = fillMissingStrategyAds(campaign);
+      if (prepared !== campaign) setCampaign(prepared);
+      const validation = validateCampaignPayload(prepared, {
         allowStartedSchedule: isLiveEdit,
       });
       if (validation) {
+        const missing = firstStrategyMissingPlatformAd(prepared);
+        if (missing) setActiveStrategyId(missing.id);
         blockCreateScreen("invalid_ads", validation);
         return;
       }
@@ -1680,7 +1708,9 @@ export function CampaignSetupWorkspace({
   };
 
   const createDraft = async () => {
-    const validation = validateCampaignDraftPayload(campaign);
+    const prepared = fillMissingStrategyAds(campaign);
+    if (prepared !== campaign) setCampaign(prepared);
+    const validation = validateCampaignDraftPayload(prepared);
     if (validation) {
       setError(validation);
       return;
@@ -1689,8 +1719,8 @@ export function CampaignSetupWorkspace({
     setError(null);
     try {
       const created = savedCampaignId
-        ? await updateCampaignDraft(savedCampaignId, campaign)
-        : await createCampaignDraft(campaign, {
+        ? await updateCampaignDraft(savedCampaignId, prepared)
+        : await createCampaignDraft(prepared, {
             idempotencyKey: createIdempotencyKeyRef.current,
           });
       setSavedCampaignId(created.id);
@@ -1709,10 +1739,14 @@ export function CampaignSetupWorkspace({
 
   const saveLiveChanges = async () => {
     if (!editCampaignId) return;
-    const validation = validateCampaignPayload(campaign, {
+    const prepared = fillMissingStrategyAds(campaign);
+    if (prepared !== campaign) setCampaign(prepared);
+    const validation = validateCampaignPayload(prepared, {
       allowStartedSchedule: true,
     });
     if (validation) {
+      const missing = firstStrategyMissingPlatformAd(prepared);
+      if (missing) setActiveStrategyId(missing.id);
       setError(validation);
       setConfirmLiveSave(false);
       return;
@@ -1720,7 +1754,7 @@ export function CampaignSetupWorkspace({
     setPublishing(true);
     setError(null);
     try {
-      await updateCampaign(editCampaignId, campaign);
+      await updateCampaign(editCampaignId, prepared);
       track("campaign_live_saved", {
         platforms: campaign.campaign.platforms.join(","),
       });
@@ -1728,6 +1762,7 @@ export function CampaignSetupWorkspace({
       setPublishing(false);
       router.push(`/panel/campaigns/${editCampaignId}`);
     } catch (failure) {
+      setConfirmLiveSave(false);
       setError(
         failure instanceof Error
           ? failure.message
@@ -1738,12 +1773,16 @@ export function CampaignSetupWorkspace({
   };
 
   const createAndPublish = async () => {
-    const validation = validateCampaignPayload(campaign);
+    const prepared = fillMissingStrategyAds(campaign);
+    if (prepared !== campaign) setCampaign(prepared);
+    const validation = validateCampaignPayload(prepared);
     if (validation) {
+      const missing = firstStrategyMissingPlatformAd(prepared);
+      if (missing) setActiveStrategyId(missing.id);
       blockCreateScreen("invalid_review", validation);
       return;
     }
-    const missingConnection = campaign.campaign.platforms.find(
+    const missingConnection = prepared.campaign.platforms.find(
       (platform) => !connected(accounts, platform),
     );
     if (missingConnection) {
@@ -1762,12 +1801,12 @@ export function CampaignSetupWorkspace({
     setError(null);
     try {
       const saved = savedCampaignId
-        ? await updateCampaignDraft(savedCampaignId, campaign)
-        : await createCampaignDraft(campaign, {
+        ? await updateCampaignDraft(savedCampaignId, prepared)
+        : await createCampaignDraft(prepared, {
             idempotencyKey: createIdempotencyKeyRef.current,
           });
       setSavedCampaignId(saved.id);
-      const fingerprint = JSON.stringify(campaign);
+      const fingerprint = JSON.stringify(prepared);
       if (
         !publishAttemptRef.current ||
         publishAttemptRef.current.campaignId !== saved.id ||
@@ -1784,8 +1823,8 @@ export function CampaignSetupWorkspace({
       });
       trackScreenCompleted("campaign_create", "review");
       track("campaign_published", {
-        platforms: campaign.campaign.platforms.join(","),
-        creation_mode: campaign.creationMode,
+        platforms: prepared.campaign.platforms.join(","),
+        creation_mode: prepared.creationMode,
       });
       setCompletion({ kind: "publish", campaignId: saved.id });
       sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);

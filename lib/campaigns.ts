@@ -941,6 +941,61 @@ export const createAudienceStrategy = (
   ads: [],
 });
 
+export const nextAudienceStrategyName = (
+  existingNames: string[],
+  baseName: string,
+) => {
+  const names = new Set(existingNames);
+  const base = baseName.trim() || "Audience Strategy";
+  if (!names.has(base)) return base;
+  let suffix = 2;
+  while (names.has(`${base} ${suffix}`)) suffix += 1;
+  return `${base} ${suffix}`;
+};
+
+export const copyAdForStrategy = (
+  ad: CampaignCreativeInput,
+): CampaignCreativeInput => {
+  const rest = { ...ad };
+  delete rest.id;
+  return rest;
+};
+
+export const fillMissingStrategyAds = <T extends CampaignReviewPayload>(
+  payload: T,
+  sourceAds?: CampaignCreativeInput[],
+): T => {
+  const donorAds =
+    sourceAds ??
+    payload.audienceStrategies.find((strategy) => strategy.ads.length)?.ads ??
+    [];
+  if (!donorAds.length) return payload;
+
+  let changed = false;
+  const audienceStrategies = payload.audienceStrategies.map((strategy) => {
+    let ads = strategy.ads;
+    for (const platform of payload.campaign.platforms) {
+      if (ads.some((ad) => ad.platform === platform)) continue;
+      const donated = donorAds.filter((ad) => ad.platform === platform);
+      if (!donated.length) continue;
+      ads = [...ads, ...donated.map(copyAdForStrategy)];
+      changed = true;
+    }
+    return ads === strategy.ads ? strategy : { ...strategy, ads };
+  });
+
+  return changed ? { ...payload, audienceStrategies } : payload;
+};
+
+export const firstStrategyMissingPlatformAd = (
+  payload: CampaignReviewPayload,
+) =>
+  payload.audienceStrategies.find((strategy) =>
+    payload.campaign.platforms.some(
+      (platform) => !strategy.ads.some((ad) => ad.platform === platform),
+    ),
+  ) ?? null;
+
 export const validateCampaignCreativeSetup = (
   payload: CampaignReviewPayload,
 ) => {
@@ -949,7 +1004,7 @@ export const validateCampaignCreativeSetup = (
     for (const platform of payload.campaign.platforms) {
       const ads = strategy.ads.filter((ad) => ad.platform === platform);
       const label = platform === "meta" ? "Meta" : "TikTok";
-      if (!ads.length) return `Add at least one ${label} ad to ${strategy.name}.`;
+      if (!ads.length) return `${strategy.name} needs a ${label} ad.`;
       for (const ad of ads) {
         if (!ad.primaryText.trim()) return `Enter primary text for ${label}.`;
         if (!ad.mediaUrl.trim()) return `Upload media for ${label}.`;
