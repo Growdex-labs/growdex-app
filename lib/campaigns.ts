@@ -946,11 +946,12 @@ export const nextAudienceStrategyName = (
   baseName: string,
 ) => {
   const names = new Set(existingNames);
-  const base = baseName.trim() || "Audience Strategy";
-  if (!names.has(base)) return base;
+  const raw = baseName.trim() || "Audience Strategy";
+  const stem = raw.replace(/\s+\d+$/, "") || raw;
+  if (!names.has(stem)) return stem;
   let suffix = 2;
-  while (names.has(`${base} ${suffix}`)) suffix += 1;
-  return `${base} ${suffix}`;
+  while (names.has(`${stem} ${suffix}`)) suffix += 1;
+  return `${stem} ${suffix}`;
 };
 
 export const copyAdForStrategy = (
@@ -961,24 +962,29 @@ export const copyAdForStrategy = (
   return rest;
 };
 
+const isReadyAd = (ad: CampaignCreativeInput) =>
+  Boolean(ad.primaryText.trim() && ad.mediaUrl.trim());
+
 export const fillMissingStrategyAds = <T extends CampaignReviewPayload>(
   payload: T,
   sourceAds?: CampaignCreativeInput[],
 ): T => {
-  const donorAds =
-    sourceAds ??
-    payload.audienceStrategies.find((strategy) => strategy.ads.length)?.ads ??
-    [];
+  const donorAds = (sourceAds ?? payload.audienceStrategies.flatMap((strategy) => strategy.ads)).filter(
+    isReadyAd,
+  );
   if (!donorAds.length) return payload;
 
   let changed = false;
   const audienceStrategies = payload.audienceStrategies.map((strategy) => {
     let ads = strategy.ads;
     for (const platform of payload.campaign.platforms) {
-      if (ads.some((ad) => ad.platform === platform)) continue;
+      if (ads.some((ad) => ad.platform === platform && isReadyAd(ad))) continue;
       const donated = donorAds.filter((ad) => ad.platform === platform);
       if (!donated.length) continue;
-      ads = [...ads, ...donated.map(copyAdForStrategy)];
+      ads = [
+        ...ads.filter((ad) => ad.platform !== platform),
+        ...donated.map(copyAdForStrategy),
+      ];
       changed = true;
     }
     return ads === strategy.ads ? strategy : { ...strategy, ads };
@@ -992,7 +998,8 @@ export const firstStrategyMissingPlatformAd = (
 ) =>
   payload.audienceStrategies.find((strategy) =>
     payload.campaign.platforms.some(
-      (platform) => !strategy.ads.some((ad) => ad.platform === platform),
+      (platform) =>
+        !strategy.ads.some((ad) => ad.platform === platform && isReadyAd(ad)),
     ),
   ) ?? null;
 

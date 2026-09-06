@@ -442,7 +442,7 @@ describe("nextAudienceStrategyName", () => {
     expect(
       nextAudienceStrategyName(
         ["Nigeria Business Owners", "Nigeria Business Owners 2"],
-        "Nigeria Business Owners",
+        "Nigeria Business Owners 2",
       ),
     ).toBe("Nigeria Business Owners 3");
   });
@@ -483,6 +483,40 @@ describe("fillMissingStrategyAds", () => {
     ]);
     expect(firstStrategyMissingPlatformAd(filled)).toBeNull();
     expect(validateCampaignCreativeSetup(filled)).toBeNull();
+  });
+
+  it("replaces empty platform placeholders with a completed sibling ad", () => {
+    const campaign = createInitialCampaignPayload();
+    campaign.campaign.platforms = ["meta"];
+    campaign.audienceStrategies[0].ads = [
+      {
+        platform: "meta",
+        primaryText: "Unlock Growdex.",
+        cta: "LEARN_MORE",
+        mediaUrl: "https://cdn.example.com/ad.jpg",
+        landingPageUrl: "https://growdex.ai",
+      },
+    ];
+    campaign.audienceStrategies.push({
+      ...createInitialCampaignPayload().audienceStrategies[0],
+      id: "strategy-copy",
+      name: "Nigeria Business Owners 2",
+      ads: [
+        {
+          platform: "meta",
+          primaryText: "",
+          cta: "LEARN_MORE",
+          mediaUrl: "",
+        },
+      ],
+    });
+
+    const filled = fillMissingStrategyAds(campaign);
+    expect(filled.audienceStrategies[1]?.ads[0]).toMatchObject({
+      primaryText: "Unlock Growdex.",
+      mediaUrl: "https://cdn.example.com/ad.jpg",
+    });
+    expect(firstStrategyMissingPlatformAd(filled)).toBeNull();
   });
 });
 
