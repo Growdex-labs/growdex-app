@@ -941,6 +941,80 @@ export const createAudienceStrategy = (
   ads: [],
 });
 
+export const nextAudienceStrategyName = (
+  existingNames: string[],
+  baseName: string,
+) => {
+  const names = new Set(existingNames);
+  const raw = baseName.trim() || "Audience Strategy";
+  const stem = raw.replace(/\s+\d+$/, "") || raw;
+  if (!names.has(stem)) return stem;
+  let suffix = 2;
+  while (names.has(`${stem} ${suffix}`)) suffix += 1;
+  return `${stem} ${suffix}`;
+};
+
+export const copyAdForStrategy = (
+  ad: CampaignCreativeInput,
+): CampaignCreativeInput => {
+  const rest = { ...ad };
+  delete rest.id;
+  return rest;
+};
+
+const isEmptyAd = (ad: CampaignCreativeInput) =>
+  !ad.primaryText.trim() && !ad.mediaUrl.trim();
+
+const isReadyAd = (ad: CampaignCreativeInput) =>
+  Boolean(ad.primaryText.trim() && ad.mediaUrl.trim());
+
+const readyAdsForPlatform = (
+  payload: CampaignReviewPayload,
+  platform: CampaignPlatform,
+  sourceAds?: CampaignCreativeInput[],
+) => {
+  const pool =
+    sourceAds ??
+    payload.audienceStrategies.find((strategy) =>
+      strategy.ads.some((ad) => ad.platform === platform && isReadyAd(ad)),
+    )?.ads ??
+    [];
+  return pool.filter((ad) => ad.platform === platform && isReadyAd(ad));
+};
+
+export const fillMissingStrategyAds = <T extends CampaignReviewPayload>(
+  payload: T,
+  sourceAds?: CampaignCreativeInput[],
+): T => {
+  let changed = false;
+  const audienceStrategies = payload.audienceStrategies.map((strategy) => {
+    let ads = strategy.ads;
+    for (const platform of payload.campaign.platforms) {
+      if (ads.some((ad) => ad.platform === platform && !isEmptyAd(ad))) continue;
+      const donated = readyAdsForPlatform(payload, platform, sourceAds);
+      if (!donated.length) continue;
+      ads = [
+        ...ads.filter((ad) => ad.platform !== platform),
+        ...donated.map(copyAdForStrategy),
+      ];
+      changed = true;
+    }
+    return ads === strategy.ads ? strategy : { ...strategy, ads };
+  });
+
+  return changed ? { ...payload, audienceStrategies } : payload;
+};
+
+export const firstStrategyMissingPlatformAd = (
+  payload: CampaignReviewPayload,
+) =>
+  payload.audienceStrategies.find((strategy) =>
+    payload.campaign.platforms.some(
+      (platform) =>
+        !strategy.ads.some((ad) => ad.platform === platform && isReadyAd(ad)),
+    ),
+  ) ?? null;
+
 export const validateCampaignCreativeSetup = (
   payload: CampaignReviewPayload,
 ) => {
@@ -949,7 +1023,7 @@ export const validateCampaignCreativeSetup = (
     for (const platform of payload.campaign.platforms) {
       const ads = strategy.ads.filter((ad) => ad.platform === platform);
       const label = platform === "meta" ? "Meta" : "TikTok";
-      if (!ads.length) return `Add at least one ${label} ad to ${strategy.name}.`;
+      if (!ads.length) return `${strategy.name} needs a ${label} ad.`;
       for (const ad of ads) {
         if (!ad.primaryText.trim()) return `Enter primary text for ${label}.`;
         if (!ad.mediaUrl.trim()) return `Upload media for ${label}.`;
