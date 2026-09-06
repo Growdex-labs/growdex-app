@@ -968,24 +968,30 @@ const isEmptyAd = (ad: CampaignCreativeInput) =>
 const isReadyAd = (ad: CampaignCreativeInput) =>
   Boolean(ad.primaryText.trim() && ad.mediaUrl.trim());
 
+const readyAdsForPlatform = (
+  payload: CampaignReviewPayload,
+  platform: CampaignPlatform,
+  sourceAds?: CampaignCreativeInput[],
+) => {
+  const pool =
+    sourceAds ??
+    payload.audienceStrategies.find((strategy) =>
+      strategy.ads.some((ad) => ad.platform === platform && isReadyAd(ad)),
+    )?.ads ??
+    [];
+  return pool.filter((ad) => ad.platform === platform && isReadyAd(ad));
+};
+
 export const fillMissingStrategyAds = <T extends CampaignReviewPayload>(
   payload: T,
   sourceAds?: CampaignCreativeInput[],
 ): T => {
-  const donorAds = (
-    sourceAds ??
-    payload.audienceStrategies.find((strategy) => strategy.ads.some(isReadyAd))
-      ?.ads ??
-    []
-  ).filter(isReadyAd);
-  if (!donorAds.length) return payload;
-
   let changed = false;
   const audienceStrategies = payload.audienceStrategies.map((strategy) => {
     let ads = strategy.ads;
     for (const platform of payload.campaign.platforms) {
       if (ads.some((ad) => ad.platform === platform && !isEmptyAd(ad))) continue;
-      const donated = donorAds.filter((ad) => ad.platform === platform);
+      const donated = readyAdsForPlatform(payload, platform, sourceAds);
       if (!donated.length) continue;
       ads = [
         ...ads.filter((ad) => ad.platform !== platform),
