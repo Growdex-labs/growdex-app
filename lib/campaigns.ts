@@ -962,6 +962,9 @@ export const copyAdForStrategy = (
   return rest;
 };
 
+const isEmptyAd = (ad: CampaignCreativeInput) =>
+  !ad.primaryText.trim() && !ad.mediaUrl.trim();
+
 const isReadyAd = (ad: CampaignCreativeInput) =>
   Boolean(ad.primaryText.trim() && ad.mediaUrl.trim());
 
@@ -969,16 +972,19 @@ export const fillMissingStrategyAds = <T extends CampaignReviewPayload>(
   payload: T,
   sourceAds?: CampaignCreativeInput[],
 ): T => {
-  const donorAds = (sourceAds ?? payload.audienceStrategies.flatMap((strategy) => strategy.ads)).filter(
-    isReadyAd,
-  );
+  const donorAds = (
+    sourceAds ??
+    payload.audienceStrategies.find((strategy) => strategy.ads.some(isReadyAd))
+      ?.ads ??
+    []
+  ).filter(isReadyAd);
   if (!donorAds.length) return payload;
 
   let changed = false;
   const audienceStrategies = payload.audienceStrategies.map((strategy) => {
     let ads = strategy.ads;
     for (const platform of payload.campaign.platforms) {
-      if (ads.some((ad) => ad.platform === platform && isReadyAd(ad))) continue;
+      if (ads.some((ad) => ad.platform === platform && !isEmptyAd(ad))) continue;
       const donated = donorAds.filter((ad) => ad.platform === platform);
       if (!donated.length) continue;
       ads = [
