@@ -903,7 +903,7 @@ export function CampaignSetupWorkspace({
   };
 
   useEffect(() => {
-    if (isLiveEdit || method !== "manual" || step !== 5) return;
+    if (method !== "manual" || step !== 5) return;
 
     const now = Date.now();
     setCampaign((current) => {
@@ -912,6 +912,9 @@ export function CampaignSetupWorkspace({
       let changed = false;
       const audienceStrategies = current.audienceStrategies.map((strategy) => {
         if (strategy.id !== strategyId) return strategy;
+        if (isLiveEdit && publishedStartsRef.current[strategy.id]) {
+          return strategy;
+        }
         const budget = ensureCampaignScheduleLeadTime(
           strategy.budget,
           now,
@@ -951,6 +954,7 @@ export function CampaignSetupWorkspace({
             source.name || "Audience Strategy",
           ),
           ads: source.ads.map(copyAdForStrategy),
+          budget: ensureCampaignScheduleLeadTime(source.budget),
         }
       : createAudienceStrategy("Audience Strategy 1", budgetCurrency);
     setCampaign((current) =>
@@ -976,6 +980,7 @@ export function CampaignSetupWorkspace({
                 id: duplicateId,
                 name: `Copy of ${strategy.name || "Audience Strategy"}`,
                 ads: strategy.ads.map(copyAdForStrategy),
+                budget: ensureCampaignScheduleLeadTime(strategy.budget),
               },
             ]
           : [strategy],
