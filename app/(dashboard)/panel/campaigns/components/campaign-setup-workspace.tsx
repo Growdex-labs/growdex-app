@@ -21,6 +21,7 @@ import {
   hasRestrictedMetaTargeting,
   ensureCampaignPayloadScheduleLeadTime,
   ensureCampaignScheduleLeadTime,
+  retainStartedCampaignSchedule,
   answerAiCampaignQuestion,
   AI_CAMPAIGN_STEP_IDS,
   publishCampaign,
@@ -396,6 +397,9 @@ export function CampaignSetupWorkspace({
   const autosaveRetryTimerRef = useRef<number | null>(null);
   const aiSessionRestoredRef = useRef(false);
   const requestedMethodAppliedRef = useRef(false);
+  const publishedStartsRef = useRef<Record<string, string>>({});
+  const lockBudgetStart =
+    isLiveEdit && Boolean(publishedStartsRef.current[activeStrategy.id]);
   const openStrategyEditor = (id: string) => {
     setActiveStrategyId(id);
     setStep(3);
@@ -587,6 +591,14 @@ export function CampaignSetupWorkspace({
         if (payload.creationMode === "unknown") {
           throw new Error("This campaign does not have a supported setup mode.");
         }
+        publishedStartsRef.current = isLiveEdit
+          ? Object.fromEntries(
+              payload.audienceStrategies.map((strategy) => [
+                strategy.id,
+                strategy.budget.startDate,
+              ]),
+            )
+          : {};
         const openedAt = Date.now();
         const editablePayload = isLiveEdit
           ? {
@@ -900,6 +912,9 @@ export function CampaignSetupWorkspace({
       let changed = false;
       const audienceStrategies = current.audienceStrategies.map((strategy) => {
         if (strategy.id !== strategyId) return strategy;
+        if (isLiveEdit && publishedStartsRef.current[strategy.id]) {
+          return strategy;
+        }
         const budget = ensureCampaignScheduleLeadTime(
           strategy.budget,
           now,
@@ -914,7 +929,7 @@ export function CampaignSetupWorkspace({
 
       return changed ? { ...current, audienceStrategies } : current;
     });
-  }, [activeStrategyId, method, step]);
+  }, [activeStrategyId, isLiveEdit, method, step]);
 
   useEffect(() => {
     if (isLiveEdit) return;
@@ -939,6 +954,7 @@ export function CampaignSetupWorkspace({
             source.name || "Audience Strategy",
           ),
           ads: source.ads.map(copyAdForStrategy),
+          budget: ensureCampaignScheduleLeadTime(source.budget),
         }
       : createAudienceStrategy("Audience Strategy 1", budgetCurrency);
     setCampaign((current) =>
@@ -964,6 +980,7 @@ export function CampaignSetupWorkspace({
                 id: duplicateId,
                 name: `Copy of ${strategy.name || "Audience Strategy"}`,
                 ads: strategy.ads.map(copyAdForStrategy),
+                budget: ensureCampaignScheduleLeadTime(strategy.budget),
               },
             ]
           : [strategy],
@@ -1739,7 +1756,10 @@ export function CampaignSetupWorkspace({
 
   const saveLiveChanges = async () => {
     if (!editCampaignId) return;
-    const prepared = fillMissingStrategyAds(campaign);
+    const prepared = retainStartedCampaignSchedule(
+      fillMissingStrategyAds(campaign),
+      publishedStartsRef.current,
+    );
     if (prepared !== campaign) setCampaign(prepared);
     const validation = validateCampaignPayload(prepared, {
       allowStartedSchedule: true,
@@ -2011,6 +2031,7 @@ export function CampaignSetupWorkspace({
             budget={activeStrategy.budget}
             onChange={patchBudget}
             accountRules={selectedMetaAccountRules}
+            lockStart={lockBudgetStart}
           />
         );
       case "creative":
@@ -2412,6 +2433,7 @@ export function CampaignSetupWorkspace({
                         budget={activeStrategy.budget}
                         onChange={patchBudget}
                         accountRules={selectedMetaAccountRules}
+                        lockStart={lockBudgetStart}
                       />
                     </section>
                   )}

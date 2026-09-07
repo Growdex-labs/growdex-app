@@ -14,6 +14,7 @@ interface CampaignBudgetEditorProps {
     timezoneName: string;
     minimumDailyBudget: number;
   };
+  lockStart?: boolean;
 }
 
 const localDatePart = (iso?: string) => {
@@ -51,6 +52,7 @@ export function CampaignBudgetEditor({
   budget,
   onChange,
   accountRules,
+  lockStart = false,
 }: CampaignBudgetEditorProps) {
   const startDate = localDatePart(budget.startDate);
   const startTime = localTimePart(budget.startDate) || "09:00";
@@ -149,8 +151,9 @@ export function CampaignBudgetEditor({
                 aria-label="Campaign start date"
                 type="date"
                 value={startDate}
+                disabled={lockStart}
                 onChange={(event) => updateStart(event.target.value, startTime)}
-                className="h-14 pl-10 text-base"
+                className="h-14 pl-10 text-base disabled:bg-gray-50 disabled:text-gray-500"
               />
             </label>
             <label className="relative">
@@ -159,15 +162,23 @@ export function CampaignBudgetEditor({
                 aria-label="Campaign start time"
                 type="time"
                 value={startTime}
+                disabled={lockStart}
                 onChange={(event) => updateStart(startDate, event.target.value)}
-                className="h-14 pl-10 text-base"
+                className="h-14 pl-10 text-base disabled:bg-gray-50 disabled:text-gray-500"
               />
             </label>
           </div>
-          {startIsPast && (
-            <p className="mt-2 text-sm text-red-600" role="alert">
-              Choose a start time in the future.
+          {lockStart ? (
+            <p className="mt-2 text-sm text-gray-500">
+              This ad set already started. Growdex will keep the original start
+              time.
             </p>
+          ) : (
+            startIsPast && (
+              <p className="mt-2 text-sm text-red-600" role="alert">
+                Choose a start time in the future.
+              </p>
+            )
           )}
 
           <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm text-gray-600">
