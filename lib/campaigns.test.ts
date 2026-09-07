@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { apiFetch } from "./auth";
 import {
+  campaignScheduleAlreadyStarted,
   ensureCampaignStartLeadTime,
+  retainStartedCampaignSchedule,
   fetchMetaLeadForms,
   campaignDtoToPayload,
   parseAiCampaignDraftResponse,
@@ -431,6 +433,46 @@ describe("lifetime budget validation", () => {
     expect(
       validateCampaignPayload(campaign, { allowStartedSchedule: true }),
     ).toBeNull();
+  });
+});
+
+describe("retainStartedCampaignSchedule", () => {
+  it("restores the start time saved when the live campaign was opened", () => {
+    const campaign = createInitialCampaignPayload();
+    const strategyId = campaign.audienceStrategies[0].id;
+    campaign.audienceStrategies[0].budget.startDate =
+      "2030-06-01T09:00:00.000Z";
+
+    expect(
+      retainStartedCampaignSchedule(campaign, {
+        [strategyId]: "2020-01-01T00:00:00.000Z",
+      }).audienceStrategies[0].budget.startDate,
+    ).toBe("2020-01-01T00:00:00.000Z");
+  });
+
+  it("leaves a new live audience strategy start time alone", () => {
+    const campaign = createInitialCampaignPayload();
+    campaign.audienceStrategies[0].budget.startDate =
+      "2030-06-01T09:00:00.000Z";
+
+    expect(retainStartedCampaignSchedule(campaign, {})).toBe(campaign);
+  });
+});
+
+describe("campaignScheduleAlreadyStarted", () => {
+  it("treats a past start time as already started", () => {
+    expect(
+      campaignScheduleAlreadyStarted(
+        "2020-01-01T00:00:00.000Z",
+        Date.parse("2030-01-01T10:00:00.000Z"),
+      ),
+    ).toBe(true);
+    expect(
+      campaignScheduleAlreadyStarted(
+        "2030-06-01T00:00:00.000Z",
+        Date.parse("2030-01-01T10:00:00.000Z"),
+      ),
+    ).toBe(false);
   });
 });
 

@@ -836,6 +836,40 @@ export const parseCampaignOptimizationResponse = (
 const futureIso = (minutes: number) =>
   new Date(Date.now() + minutes * 60_000).toISOString();
 
+export const campaignScheduleAlreadyStarted = (
+  startDate: string,
+  now = Date.now(),
+) => {
+  const start = new Date(startDate).getTime();
+  return !Number.isNaN(start) && start <= now;
+};
+
+export const retainStartedCampaignSchedule = <
+  T extends {
+    audienceStrategies: Array<{
+      id: string;
+      budget: AudienceStrategy["budget"];
+    }>;
+  },
+>(
+  payload: T,
+  publishedStarts: Record<string, string>,
+): T => {
+  let changed = false;
+  const audienceStrategies = payload.audienceStrategies.map((strategy) => {
+    const publishedStart = publishedStarts[strategy.id];
+    if (!publishedStart || strategy.budget.startDate === publishedStart) {
+      return strategy;
+    }
+    changed = true;
+    return {
+      ...strategy,
+      budget: { ...strategy.budget, startDate: publishedStart },
+    };
+  });
+  return changed ? { ...payload, audienceStrategies } : payload;
+};
+
 export const ensureCampaignStartLeadTime = (
   startDate: string,
   now = Date.now(),
