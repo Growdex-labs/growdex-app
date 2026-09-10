@@ -399,8 +399,8 @@ export default function SecurityControlPage() {
               {activeTab === "2fa" && (
                 <div className="space-y-6">
                   {/* Two-Factor Authentication Card */}
-                  <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
-                    <div className="flex items-start justify-between">
+                  <div className="border border-gray-200 rounded-lg p-4 sm:p-6 bg-white shadow-sm">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-start gap-4">
                         <span className="text-3xl">🔐</span>
                         <div>
@@ -416,7 +416,7 @@ export default function SecurityControlPage() {
                       </div>
                       <button
                         onClick={handleEdit2FA}
-                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors whitespace-nowrap"
+                        className="w-full sm:w-auto px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors whitespace-nowrap shrink-0"
                       >
                         {is2FAEnabled ? "Manage 2FA" : "Set up 2FA"}
                       </button>
@@ -428,8 +428,8 @@ export default function SecurityControlPage() {
               {activeTab === "password" && (
                 <div className="space-y-6">
                   {/* Password Management Card */}
-                  <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
-                    <div className="flex items-start justify-between">
+                  <div className="border border-gray-200 rounded-lg p-4 sm:p-6 bg-white shadow-sm">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-start gap-4">
                         <span className="text-3xl">🔑</span>
                         <div>
@@ -442,9 +442,9 @@ export default function SecurityControlPage() {
                           </p>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => setIsChangePasswordModalOpen(true)}
-                        className="px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors whitespace-nowrap">
+                        className="w-full sm:w-auto px-4 py-2 bg-khaki-200 text-gray-900 rounded-lg text-sm font-gilroy-bold hover:bg-khaki-300 transition-colors whitespace-nowrap shrink-0">
                         Change Password
                       </button>
                     </div>
@@ -455,7 +455,7 @@ export default function SecurityControlPage() {
               {activeTab === "session" && (
                 <div className="space-y-6">
                   {/* Active Session Card */}
-                  <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
+                  <div className="border border-gray-200 rounded-lg p-4 sm:p-6 bg-white shadow-sm">
                     <div className="flex items-center gap-4 mb-4">
                       <span className="text-3xl">💻</span>
                       <h3 className="text-lg font-gilroy-bold text-gray-900">
@@ -469,22 +469,16 @@ export default function SecurityControlPage() {
                         location data is being shown for this account.
                       </p>
                     ) : (
-                    <div className="overflow-x-auto">
-                      <div className="min-w-full">
-                        <div className="bg-slate-100 rounded-t-lg px-4 py-3 grid grid-cols-4 gap-4 text-xs font-gilroy-bold text-gray-600">
-                          <div>Device</div>
-                          <div>Location</div>
-                          <div>Last Active</div>
-                          <div>Action</div>
-                        </div>
-
-                        <div className="divide-y divide-gray-100 border-x border-b border-gray-100 rounded-b-lg">
-                          {sessions.map((session) => (
-                            <div
-                              key={session.id}
-                              className="px-4 py-3 hover:bg-gray-50 transition-colors grid grid-cols-4 gap-4 items-center text-xs md:text-sm"
-                            >
-                              <div className="flex items-center gap-2 text-gray-700 font-gilroy-medium">
+                    <div>
+                      {/* Mobile session cards */}
+                      <div className="space-y-3 sm:hidden">
+                        {sessions.map((session) => (
+                          <div
+                            key={session.id}
+                            className="rounded-lg border border-gray-100 bg-slate-50 px-4 py-3"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 text-gray-700 font-gilroy-medium text-sm min-w-0">
                                 {session.iconType === "safari" && (
                                   <SafariIcon />
                                 )}
@@ -492,26 +486,69 @@ export default function SecurityControlPage() {
                                   <ChromeIcon />
                                 )}
                                 {session.iconType === "apple" && <AppleIcon />}
-                                <span>{session.device}</span>
+                                <span className="truncate">{session.device}</span>
                               </div>
-                              <div className="text-gray-600">
-                                {session.location}
-                              </div>
-                              <div className="text-gray-600">
-                                {session.lastActive}
-                              </div>
-                              <div>
-                                <button
-                                  onClick={() =>
-                                    handleTerminateClick(session.id)
-                                  }
-                                  className="px-3 py-1 bg-red-50 text-red-700 hover:bg-red-100 rounded text-xs font-gilroy-bold transition-colors"
-                                >
-                                  Terminate
-                                </button>
-                              </div>
+                              <button
+                                onClick={() =>
+                                  handleTerminateClick(session.id)
+                                }
+                                className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded text-xs font-gilroy-bold transition-colors shrink-0"
+                              >
+                                Terminate
+                              </button>
                             </div>
-                          ))}
+                            <p className="mt-1.5 text-xs text-gray-500">
+                              {session.location} · {session.lastActive}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop sessions table */}
+                      <div className="hidden sm:block overflow-x-auto">
+                        <div className="min-w-full">
+                          <div className="bg-slate-100 rounded-t-lg px-4 py-3 grid grid-cols-4 gap-4 text-xs font-gilroy-bold text-gray-600">
+                            <div>Device</div>
+                            <div>Location</div>
+                            <div>Last Active</div>
+                            <div>Action</div>
+                          </div>
+
+                          <div className="divide-y divide-gray-100 border-x border-b border-gray-100 rounded-b-lg">
+                            {sessions.map((session) => (
+                              <div
+                                key={session.id}
+                                className="px-4 py-3 hover:bg-gray-50 transition-colors grid grid-cols-4 gap-4 items-center text-xs md:text-sm"
+                              >
+                                <div className="flex items-center gap-2 text-gray-700 font-gilroy-medium">
+                                  {session.iconType === "safari" && (
+                                    <SafariIcon />
+                                  )}
+                                  {session.iconType === "chrome" && (
+                                    <ChromeIcon />
+                                  )}
+                                  {session.iconType === "apple" && <AppleIcon />}
+                                  <span>{session.device}</span>
+                                </div>
+                                <div className="text-gray-600">
+                                  {session.location}
+                                </div>
+                                <div className="text-gray-600">
+                                  {session.lastActive}
+                                </div>
+                                <div>
+                                  <button
+                                    onClick={() =>
+                                      handleTerminateClick(session.id)
+                                    }
+                                    className="px-3 py-1 bg-red-50 text-red-700 hover:bg-red-100 rounded text-xs font-gilroy-bold transition-colors"
+                                  >
+                                    Terminate
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>

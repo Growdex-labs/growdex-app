@@ -17,17 +17,6 @@ export function OnboardingLayout({ children }: { children: ReactNode }) {
             <img src="/logo.png" alt="Growdex" className="h-8 w-8" />
             <span className="text-lg font-gilroy-semibold">Growdex</span>
           </div>
-          <button
-            type="button"
-            className="flex items-center gap-3 rounded-xl bg-[#333] px-5 py-2.5 text-sm text-white transition-colors hover:bg-[#444]"
-          >
-            Menu
-            <span className="flex flex-col gap-[3px]">
-              <span className="block h-px w-3 bg-white/80" />
-              <span className="block h-px w-3 bg-white/80" />
-              <span className="block h-px w-3 bg-white/80" />
-            </span>
-          </button>
         </header>
 
         {/* Step content */}

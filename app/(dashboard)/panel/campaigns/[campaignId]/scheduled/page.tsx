@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, use } from "react";
 import { PanelLayout } from "../../../components/panel-layout";
 import { CampaignsSidebar } from "../../../components/campaigns-sidebar";
+import { CampaignsMobileHeader } from "../../../components/campaigns-mobile-header";
 import {
   ChevronDown,
   CircleArrowRight,
@@ -744,22 +745,25 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
   return (
     <PanelLayout>
       <div className="flex h-full">
-        <CampaignsSidebar />
+        <div className="hidden md:block">
+          <CampaignsSidebar />
+        </div>
 
         <div className="h-full flex-1 overflow-y-auto">
-          <div className="p-8">
+          <CampaignsMobileHeader />
+          <div className="p-4 sm:p-8">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-gilroy-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-gilroy-bold text-gray-900">
                 Scheduled Campaign
               </h1>
             </div>
 
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 mt-1 p-4">
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 flex gap-2 overflow-x-auto hide-scrollbar mb-6 mt-1 p-2 sm:p-4 md:grid md:grid-cols-5 md:gap-4">
               {progressTitles.map((title, index) => (
                 <button
                   key={index}
                   onClick={() => setProgressTab(index)}
-                  className={`px-2 py-3 rounded-lg font-gilroy-medium transition-colors ${
+                  className={`px-3 py-2.5 sm:px-2 sm:py-3 rounded-lg text-sm sm:text-base font-gilroy-medium transition-colors shrink-0 md:shrink ${
                     progressTab === index
                       ? "bg-khaki-200 text-gray-900 shadow-lg"
                       : "bg-transparent text-gray-600"
@@ -772,10 +776,10 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
 
             <form className="space-y-6" onSubmit={handleGoLive}>
               {/* Campaign Name & Action Header */}
-              <div className="bg-white rounded-xl p-4 flex items-center justify-between">
-                <div className="flex gap-3 items-center">
-                  <img src="/megaphone.png" alt="megaphone-icon" />
-                  <div className="flex-1">
+              <div className="bg-white rounded-xl p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex gap-3 items-center min-w-0">
+                  <img src="/megaphone.png" alt="megaphone-icon" className="shrink-0" />
+                  <div className="flex-1 min-w-0">
                     <label className="block text-sm font-gilroy-medium text-gray-500">
                       Campaign Name
                     </label>
@@ -783,7 +787,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                       type="text"
                       value={campaignName}
                       readOnly
-                      className="mt-1 block w-full focus:outline-none md:text-lg lg:text-2xl font-gilroy-bold"
+                      className="mt-1 block w-full focus:outline-none md:text-lg lg:text-2xl font-gilroy-bold truncate"
                     />
                   </div>
                 </div>
@@ -791,7 +795,7 @@ export default function ScheduledCampaignPage({ params }: PageProps) {
                 <button
                   type="submit"
                   disabled={isGoingLive}
-                  className="px-6 py-2 border bg-khaki-200 text-sm text-gray-800 rounded-lg font-gilroy-bold flex items-center gap-2 hover:bg-khaki-300 transition-colors shadow-sm"
+                  className="w-full sm:w-auto justify-center px-6 py-2.5 sm:py-2 border bg-khaki-200 text-sm text-gray-800 rounded-lg font-gilroy-bold flex items-center gap-2 hover:bg-khaki-300 transition-colors shadow-sm shrink-0"
                 >
                   {isGoingLive ? "Going live..." : "Go Live"}
                 </button>
