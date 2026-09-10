@@ -83,8 +83,8 @@ export function AiCampaignWorkspace({
     <main
       className={
         showAssistant
-          ? "grid h-full min-w-0 flex-1 grid-rows-[minmax(0,1fr)_22.5rem] overflow-hidden lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-1 xl:grid-cols-[minmax(0,1fr)_28rem] 2xl:grid-cols-[minmax(0,1fr)_30rem]"
-          : "h-full min-w-0 flex-1 overflow-hidden"
+          ? "grid h-full min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_min(22.5rem,42dvh)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-1 xl:grid-cols-[minmax(0,1fr)_28rem] 2xl:grid-cols-[minmax(0,1fr)_30rem]"
+          : "h-full min-h-0 min-w-0 flex-1 overflow-hidden"
       }
     >
       <section className="min-w-0 overflow-y-auto px-5 py-4 md:py-6 md:pl-14 md:pr-6">
@@ -204,7 +204,7 @@ export function AiCampaignWorkspace({
       </section>
 
       {showAssistant && (
-        <aside className="h-[22.5rem] min-w-0 border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:p-4 xl:px-4 xl:py-8">
+        <aside className="h-[min(22.5rem,42dvh)] min-w-0 border-t border-violet-100 bg-white/70 p-3 lg:h-full lg:border-l lg:border-t-0 lg:p-4 xl:px-4 xl:py-8">
           <AiSidePanel
             messages={messages}
             question={question?.prompt}

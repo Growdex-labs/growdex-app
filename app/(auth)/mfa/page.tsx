@@ -145,13 +145,6 @@ function MfaPageContent() {
   return (
     <div className="flex-1 p-4 lg:p-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="md:hidden flex justify-end mb-12">
-          <button className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-            Menu ☰
-          </button>
-        </div>
-
         <div className="mb-12 flex items-start justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-gilroy-bold text-gray-900 mb-2">

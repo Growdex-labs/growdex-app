@@ -8,7 +8,7 @@ import { useMe } from "@/context/me-context";
 import { proDisabledReason } from "@/lib/billing";
 import {
   campaignDtoToPayload,
-  ensureCampaignPayloadScheduleLeadTime,
+  copyAdForStrategy,
   fetchCampaignById,
   publishCampaign,
   updateCampaignDraft,
@@ -18,7 +18,10 @@ import {
 } from "@/lib/campaigns";
 import { hydrateSocialAccounts } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
-import { CampaignTreeSidebar } from "../../components/CampaignTreeSidebar";
+import {
+  CampaignTreeMobileNav,
+  CampaignTreeSidebar,
+} from "../../components/CampaignTreeSidebar";
 import { ReviewPublishScreen } from "../../components/ReviewPublishScreen";
 
 export default function PublishCampaignPage() {
@@ -82,13 +85,7 @@ export default function PublishCampaignPage() {
         }
         setSourceStatus(result.status ?? "draft");
         const savedPayload = campaignDtoToPayload(result);
-        // A draft can save a refreshed start time before publishing. A failed
-        // campaign retries its exact saved version so any partial remote work
-        // can be resumed; changing its schedule requires opening the editor.
-        const payload =
-          result.status === "failed"
-            ? savedPayload
-            : ensureCampaignPayloadScheduleLeadTime(savedPayload);
+        const payload = savedPayload;
         setCampaign(payload);
         setActiveStrategyId(payload.audienceStrategies[0]?.id ?? null);
       })
@@ -115,7 +112,7 @@ export default function PublishCampaignPage() {
       );
       return;
     }
-    const validationError = validateCampaignPayload(campaign);
+    const validationError = sourceStatus === "failed" ? null : validateCampaignPayload(campaign);
     if (validationError) {
       setError(validationError);
       return;
@@ -185,6 +182,7 @@ export default function PublishCampaignPage() {
       ...structuredClone(source),
       id: crypto.randomUUID(),
       name: `Copy of ${source.name || "Audience Strategy"}`,
+      ads: source.ads.map(copyAdForStrategy),
     };
     const sourceIndex = campaign.audienceStrategies.findIndex(
       (strategy) => strategy.id === strategyId,
@@ -308,6 +306,37 @@ export default function PublishCampaignPage() {
           />
           <main className="h-full flex-1 overflow-y-auto">
             <div className="mx-auto max-w-5xl p-4 md:p-8">
+              {campaign && (
+                <div className="mb-6 lg:hidden">
+                  <CampaignTreeMobileNav
+                    campaignName={campaign.campaign.name || "Campaign review"}
+                    campaign={campaign}
+                    activeStrategyId={activeStrategyId}
+                    activeStrategyLabel="Selected"
+                    onSelectStrategy={scrollToStrategy}
+                    onEditStrategy={(strategyId) =>
+                      router.push(
+                        `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}&strategy=${encodeURIComponent(strategyId)}`,
+                      )
+                    }
+                    onSelectAd={(strategyId, adIndex) =>
+                      router.push(
+                        `/panel/campaigns/new?id=${encodeURIComponent(campaignId ?? "")}&strategy=${encodeURIComponent(strategyId)}&ad=${adIndex}`,
+                      )
+                    }
+                    onDuplicateStrategy={
+                      sourceStatus === "draft" && !strategyMutationPending
+                        ? (strategyId) => void handleDuplicateStrategy(strategyId)
+                        : undefined
+                    }
+                    onDeleteStrategy={
+                      sourceStatus === "draft" && !strategyMutationPending
+                        ? (strategyId) => void handleDeleteStrategy(strategyId)
+                        : undefined
+                    }
+                  />
+                </div>
+              )}
               {isLoading && (
                 <p className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-600 shadow-sm">
                   Loading the saved campaign…
@@ -320,6 +349,8 @@ export default function PublishCampaignPage() {
               )}
               {campaign && (
                 <ReviewPublishScreen
+                  retrySavedCampaign={sourceStatus === "failed"}
+                  allowStartedSchedule={sourceStatus === "failed"}
                   campaign={campaign}
                   brandName={me?.brand?.name ?? "Your brand"}
                   accounts={accounts}

@@ -352,7 +352,7 @@ export default function PanelPage() {
     <PanelLayout>
       <div className="p-4 bg-[#f2f2f2] min-h-full">
         <div className="flex flex-col items-start gap-4 lg:flex-row">
-          <div className="min-h-[calc(100vh-2rem)] min-w-0 flex-1 flex-col gap-6 rounded-xl bg-white p-4 md:flex md:p-6">
+          <div className="flex min-h-[calc(100vh-2rem)] min-w-0 flex-1 flex-col gap-6 rounded-xl bg-white p-4 md:p-6">
             <DashboardTopBar
               variant={view}
               onSwitchToDefault={closeInsights}

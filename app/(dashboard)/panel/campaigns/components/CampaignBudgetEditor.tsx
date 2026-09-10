@@ -15,6 +15,10 @@ interface CampaignBudgetEditorProps {
     minimumDailyBudget: number;
   };
   lockStart?: boolean;
+  platformCount?: number;
+  tiktokDailyAverage?: boolean;
+  accountError?: string | null;
+  expectedCurrency?: string;
 }
 
 const localDatePart = (iso?: string) => {
@@ -53,6 +57,10 @@ export function CampaignBudgetEditor({
   onChange,
   accountRules,
   lockStart = false,
+  platformCount = 1,
+  tiktokDailyAverage = false,
+  accountError,
+  expectedCurrency,
 }: CampaignBudgetEditorProps) {
   const startDate = localDatePart(budget.startDate);
   const startTime = localTimePart(budget.startDate) || "09:00";
@@ -62,6 +70,8 @@ export function CampaignBudgetEditor({
   const parsedStart = new Date(budget.startDate).getTime();
   const startIsPast =
     Number.isNaN(parsedStart) || parsedStart < lastInteractionTime;
+  const durationDays = budget.endDate ? Math.max(1, Math.ceil((new Date(budget.endDate).getTime() - parsedStart) / 86_400_000)) : 1;
+  const minimumBudget = (accountRules?.minimumDailyBudget ?? 0.01) * (budget.type === "lifetime" ? durationDays : 1);
 
   const updateStart = (datePart: string, timePart: string) => {
     const value = mergeLocalDateTime(datePart, timePart);
@@ -92,7 +102,7 @@ export function CampaignBudgetEditor({
             htmlFor="aiBudgetAmount"
             className="text-base font-gilroy-medium text-gray-800"
           >
-            Setup your budget
+            Budget per platform
           </label>
           <div className="mt-3 flex min-h-14 items-center overflow-hidden rounded-xl border border-gray-300 bg-white focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-100">
             <span className="pl-4 text-base font-gilroy-semibold text-gray-500">
@@ -101,7 +111,7 @@ export function CampaignBudgetEditor({
             <Input
               id="aiBudgetAmount"
               type="number"
-              min={accountRules?.minimumDailyBudget ?? 0.01}
+              min={minimumBudget}
               step="0.01"
               value={budget.amount || ""}
               onChange={(event) =>
@@ -128,16 +138,19 @@ export function CampaignBudgetEditor({
           </div>
           {accountRules && (
             <p className="mt-2 text-xs text-gray-500">
-              Meta bills this account in {budget.currency}. Schedule times use{" "}
-              {accountRules.timezoneName}; minimum daily budget is{" "}
+              The ad account bills in {budget.currency}. Account timezone: {accountRules.timezoneName}. Dates below use your browser timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone}). Minimum daily budget is{" "}
               {currencySymbol(budget.currency)}
               {accountRules.minimumDailyBudget.toLocaleString()}.
             </p>
           )}
-          {budget.amount < (accountRules?.minimumDailyBudget ?? 0.01) && (
+          {platformCount > 1 && <p className="mt-2 text-sm font-gilroy-medium text-gray-700">Each of the {platformCount} platforms receives this amount. Combined budget: {currencySymbol(budget.currency)}{(budget.amount * platformCount).toLocaleString()} / {budget.type}.</p>}
+          {tiktokDailyAverage && budget.type === "daily" && <p className="mt-2 text-xs text-gray-500">TikTok uses a daily average: it may spend up to 125% on one day, with a weekly limit of seven times the daily budget.</p>}
+          {accountError && <p role="alert" className="mt-2 text-sm text-red-600">{accountError}</p>}
+          {expectedCurrency && expectedCurrency !== budget.currency && <button type="button" className="mt-2 text-sm underline" onClick={() => onChange({ currency: expectedCurrency, amount: 0 })}>Use {expectedCurrency} and enter a new amount</button>}
+          {budget.amount < minimumBudget && (
             <p className="mt-2 text-sm text-red-600">
               Enter at least {currencySymbol(budget.currency)}
-              {(accountRules?.minimumDailyBudget ?? 0.01).toLocaleString()}.
+              {minimumBudget.toLocaleString()}{budget.type === "lifetime" ? ` for ${durationDays} days` : ""}.
             </p>
           )}
         </div>

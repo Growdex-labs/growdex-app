@@ -15,6 +15,8 @@ import { fetchAudiences, type Audience as SavedAudience } from "@/lib/audiences"
 import {
   recordAiRequestAcceptance,
   searchMetaInterests,
+  searchTikTokInterests,
+  TIKTOK_AGE_GROUPS,
   searchProviderLanguages,
   type AudienceStrategy,
   type AudienceInterestSuggestion,
@@ -74,6 +76,9 @@ export function DemographicsForm({
   const [languageLoading, setLanguageLoading] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [interestQuery, setInterestQuery] = useState("");
+  const [interestPlatform, setInterestPlatform] = useState<CampaignPlatform>(platforms.includes("meta") ? "meta" : "tiktok");
+  const activeInterestPlatform = platforms.includes(interestPlatform) ? interestPlatform : platforms[0];
+  const [interestNames, setInterestNames] = useState<Record<string, string>>({});
   const [interestResults, setInterestResults] = useState<MetaInterest[]>([]);
   const [interestLoading, setInterestLoading] = useState(false);
   const [interestError, setInterestError] = useState<string | null>(null);
@@ -126,17 +131,19 @@ export function DemographicsForm({
     const timeout = window.setTimeout(() => {
       setInterestLoading(true);
       setInterestError(null);
-      void searchMetaInterests(query)
+      void (activeInterestPlatform === "tiktok"
+        ? searchTikTokInterests(accountAssetIds.tiktok ?? "", query)
+        : searchMetaInterests(query))
         .then((results) => {
           if (!active) return;
           const selected = new Set(
-            (audience.interests ?? []).map((interest) =>
+            (activeInterestPlatform === "tiktok" ? audience.tiktokInterestIds ?? [] : audience.interests ?? []).map((interest) =>
               interest.trim().toLowerCase(),
             ),
           );
           setInterestResults(
             results.filter(
-              (result) => !selected.has(result.name.trim().toLowerCase()),
+              (result) => !selected.has((activeInterestPlatform === "tiktok" ? result.id : result.name).trim().toLowerCase()),
             ).slice(0, 10),
           );
         })
@@ -146,7 +153,7 @@ export function DemographicsForm({
           setInterestError(
             failure instanceof Error
               ? failure.message
-              : "Could not search Meta interests.",
+              : "Could not search interests for this platform.",
           );
         })
         .finally(() => {
@@ -158,7 +165,7 @@ export function DemographicsForm({
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [audience.interests, interestQuery, tab]);
+  }, [accountAssetIds.tiktok, activeInterestPlatform, audience.interests, audience.tiktokInterestIds, interestQuery, tab]);
 
   useEffect(() => {
     if (tab !== "demographics" || languageQuery.trim().length < 2) {
@@ -221,6 +228,7 @@ export function DemographicsForm({
 
   const applySavedAudience = (saved: SavedAudience) => {
     const locations = audienceLocations(saved);
+    const savedTikTokGender = saved.tiktokConfig?.gender?.toLowerCase().replace(/^gender_/, "").replace("unlimited", "all");
     onChange({
       includeAudienceIds: [
         ...new Set([...(audience.includeAudienceIds ?? []), saved.id]),
@@ -234,8 +242,11 @@ export function DemographicsForm({
       ],
       ageMin: saved.metaConfig?.ageMin ?? audience.ageMin,
       ageMax: saved.metaConfig?.ageMax ?? audience.ageMax,
+      tiktokAgeGroups: saved.tiktokConfig?.ageRanges?.map((range) => TIKTOK_AGE_GROUPS.find((group) => group.id === range || group.label === range || group.label.replace("–", "-") === range)?.id).filter((range): range is NonNullable<typeof range> => Boolean(range)) ?? audience.tiktokAgeGroups,
       gender:
-        saved.metaConfig?.gender === "male" ||
+        !platforms.includes("meta") && ["male", "female", "all"].includes(savedTikTokGender ?? "")
+          ? savedTikTokGender as Audience["gender"]
+          : saved.metaConfig?.gender === "male" ||
         saved.metaConfig?.gender === "female" ||
         saved.metaConfig?.gender === "all"
           ? saved.metaConfig.gender
@@ -331,7 +342,7 @@ export function DemographicsForm({
                 </button>
               ))}
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            {platforms.includes("meta") && <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-gilroy-medium text-gray-700">
                 Minimum age
                 <Input
@@ -354,7 +365,14 @@ export function DemographicsForm({
                   onChange={(event) => onChange({ ageMax: Number(event.target.value) })}
                 />
               </label>
-            </div>
+            </div>}
+            {platforms.includes("tiktok") && <fieldset className="space-y-2">
+              <legend className="text-sm font-gilroy-medium text-gray-700">TikTok age groups</legend>
+              <p className="text-xs text-gray-500">TikTok targets these complete age groups. The oldest group includes everyone aged 55 and older.</p>
+              <div className="flex flex-wrap gap-2">{TIKTOK_AGE_GROUPS.map((group) => <label key={group.id} className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+                <input type="checkbox" checked={audience.tiktokAgeGroups?.includes(group.id) ?? false} onChange={(event) => onChange({ tiktokAgeGroups: event.target.checked ? [...(audience.tiktokAgeGroups ?? []), group.id] : (audience.tiktokAgeGroups ?? []).filter((id) => id !== group.id) })} />{group.label}
+              </label>)}</div>
+            </fieldset>}
             <label className="block text-sm font-gilroy-medium text-gray-700">
               Gender
               <select
@@ -506,9 +524,9 @@ export function DemographicsForm({
                 htmlFor="meta-interest-search"
                 className="block text-sm font-gilroy-medium text-gray-700"
               >
-                Meta interests
+                {activeInterestPlatform === "tiktok" ? "TikTok" : "Meta"} interests
               </label>
-              {onGenerateInterests && (
+              {onGenerateInterests && activeInterestPlatform === "meta" && (
                 <button
                   type="button"
                   disabled={generatingInterests}
@@ -542,6 +560,7 @@ export function DemographicsForm({
                 </button>
               )}
             </div>
+            {platforms.length > 1 && <select aria-label="Interest platform" className="mt-3 rounded-lg border p-2 text-sm" value={activeInterestPlatform} onChange={(event) => { setInterestPlatform(event.target.value as CampaignPlatform); setInterestResults([]); setInterestQuery(""); }}><option value="meta">Meta interests</option><option value="tiktok">TikTok interests</option></select>}
             <div className="relative mt-2">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -582,7 +601,8 @@ export function DemographicsForm({
                       role="option"
                       aria-selected="false"
                       onClick={() => {
-                        onChange({
+                        setInterestNames((current) => ({ ...current, [interest.id]: interest.name }));
+                        onChange(activeInterestPlatform === "tiktok" ? { tiktokInterestIds: [...(audience.tiktokInterestIds ?? []), interest.id] } : {
                           interests: [
                             ...(audience.interests ?? []),
                             interest.name,
@@ -602,7 +622,7 @@ export function DemographicsForm({
               )}
             </div>
             <p className="mt-2 text-xs text-dimGray">
-              Type at least two characters, then choose a Meta interest from
+              Type at least two characters, then choose an interest from
               the list.
             </p>
             {interestRationale && (
@@ -613,8 +633,13 @@ export function DemographicsForm({
             {interestError && (
               <p className="mt-2 text-xs text-red-600">{interestError}</p>
             )}
+            {!platforms.includes("meta") && Boolean(audience.interests?.length) && <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
+              <p>This draft contains older interest names: {audience.interests?.join(", ")}. Choose matching TikTok categories above, or remove these names to use broad targeting.</p>
+              <button type="button" className="mt-2 font-gilroy-semibold underline" onClick={() => onChange({ interests: [] })}>Remove old interest names</button>
+            </div>}
+            {activeInterestPlatform === "tiktok" && <div className="mt-3 flex flex-wrap gap-2">{(audience.tiktokInterestIds ?? []).map((id) => <button key={id} type="button" className="rounded-full border px-3 py-1 text-sm" onClick={() => onChange({ tiktokInterestIds: audience.tiktokInterestIds?.filter((item) => item !== id) })}>{interestNames[id] ?? `TikTok interest ${id}`} ×</button>)}</div>}
 
-            {(audience.interests ?? []).length > 0 && (
+            {activeInterestPlatform === "meta" && (audience.interests ?? []).length > 0 && (
               <div
                 className="mt-4 flex flex-wrap gap-2"
                 aria-label="Selected interests"
@@ -684,7 +709,7 @@ export function DemographicsForm({
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
                 { id: "mobile" as const, label: "Mobile & tablet", Icon: Smartphone, disabled: false },
-                { id: "desktop" as const, label: "Desktop", Icon: Monitor, disabled: false },
+                { id: "desktop" as const, label: "Desktop", Icon: Monitor, disabled: platforms.includes("tiktok") && !audience.devices?.includes("desktop") },
               ].map(({ id, label, Icon, disabled }) => {
                 const selected = (audience.devices ?? []).includes(id);
                 return (
@@ -704,6 +729,7 @@ export function DemographicsForm({
                 );
               })}
             </div>
+            {platforms.includes("tiktok") && <p className="mt-3 text-xs text-gray-500">TikTok in-feed ads use mobile delivery. Remove any saved desktop selection before publishing.</p>}
           </div>
         )}
 

@@ -104,7 +104,11 @@ export function ManualGoalScreen({
   const metaOnlyCampaign = platforms.length === 1 && platforms[0] === "meta";
   const availableGoals = GOALS.filter(
     (definition) => !definition.metaOnly || metaOnlyCampaign,
-  );
+  ).map((definition) => platforms.includes("tiktok") && definition.value === "LEADS"
+    ? { ...definition, optimizationGoal: "CONVERSIONS" as const }
+    : platforms.includes("tiktok") && definition.value === "ENGAGEMENT"
+      ? { ...definition, optimizationGoal: "VIDEO_VIEWS" as const, description: "Get more people to watch your video." }
+      : definition);
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">

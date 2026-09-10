@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   FileText,
   Globe2,
@@ -155,7 +154,12 @@ export function ManualEventManagementScreen({
     (destination) =>
       (!destination.metaOnly || metaOnlyCampaign) &&
       (!destination.tiktokOnly || tiktokOnlyCampaign),
-  );
+  ).map((destination) => ({
+    ...destination,
+    optimizationGoals: platforms.includes("tiktok")
+      ? destination.optimizationGoals.filter((optimization) => !["POST_ENGAGEMENT", "LEAD_GENERATION", "LANDING_PAGE_VIEWS"].includes(optimization.value))
+      : destination.optimizationGoals,
+  })).filter((destination) => destination.optimizationGoals.length > 0);
   const availableDestinations = destinations.filter(
     (destination) => !destination.unavailableReason,
   );
@@ -167,30 +171,9 @@ export function ManualEventManagementScreen({
     selectedDestination?.optimizationGoals.find(
       (optimization) =>
         optimization.value === configuration.optimizationGoal,
-    ) ?? selectedDestination?.optimizationGoals[0];
+    );
 
-  useEffect(() => {
-    if (
-      !selectedDestination ||
-      !selectedOptimization ||
-      (selectedDestination.value === configuration.destination &&
-        selectedOptimization.value === configuration.optimizationGoal)
-    ) {
-      return;
-    }
-    onChange({
-      destination: selectedDestination.value,
-      optimizationGoal: selectedOptimization.value,
-    });
-  }, [
-    configuration.destination,
-    configuration.optimizationGoal,
-    onChange,
-    selectedDestination,
-    selectedOptimization,
-  ]);
-
-  if (!selectedDestination || !selectedOptimization) {
+  if (!selectedDestination) {
     return (
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
         <h2 className="text-xl font-gilroy-semibold text-gray-900">
@@ -253,12 +236,13 @@ export function ManualEventManagementScreen({
       </div>
 
       <div className="mt-8 border-t border-gray-100 pt-6">
+        {!selectedOptimization && <p className="mb-3 text-sm text-amber-700">Your previous delivery choice is unavailable for these platforms. Choose a supported result below.</p>}
         <h3 className="text-base font-gilroy-semibold text-gray-900">
           What result should the platforms optimize for?
         </h3>
         <div className="mt-4 space-y-3">
           {selectedDestination.optimizationGoals.map((optimization) => {
-            const selected = optimization.value === selectedOptimization.value;
+            const selected = optimization.value === selectedOptimization?.value;
             return (
               <button
                 key={optimization.value}

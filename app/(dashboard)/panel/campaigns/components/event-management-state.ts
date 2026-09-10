@@ -18,11 +18,13 @@ export function eventManagementPatch(
     patch.optimizationGoal = next.optimizationGoal;
     if (next.optimizationGoal !== "CONVERSIONS") {
       patch.eventSourceIds = {};
+      patch.optimizationEvents = {};
     }
   }
   if (next.eventSourceIds !== undefined) {
     patch.eventSourceIds = next.eventSourceIds;
   }
+  if (next.optimizationEvents !== undefined) patch.optimizationEvents = next.optimizationEvents;
 
   return patch;
 }

@@ -8,6 +8,7 @@ describe("eventManagementPatch", () => {
     ).toEqual({
       optimizationGoal: "LANDING_PAGE_VIEWS",
       eventSourceIds: {},
+      optimizationEvents: {},
     });
   });
 
@@ -21,6 +22,7 @@ describe("eventManagementPatch", () => {
       destination: "WEBSITE",
       optimizationGoal: "LINK_CLICKS",
       eventSourceIds: {},
+      optimizationEvents: {},
     });
   });
 

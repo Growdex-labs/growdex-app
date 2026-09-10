@@ -169,14 +169,14 @@ export function CampaignCard({
           )}
         </div>
 
-        <dl className="mt-5 grid grid-cols-3 gap-3">
+        <dl className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
           {metrics.map((metric) => (
-            <div key={metric.label}>
+            <div key={metric.label} className="min-w-0">
               <dt className="text-xs text-dimGray">{metric.label}</dt>
               {loading ? (
                 <dd className="mt-1 h-4 w-12 animate-pulse rounded bg-gray-100" />
               ) : (
-                <dd className="flex items-center gap-1.5 font-gilroy-semibold text-gray-900">
+                <dd className="flex min-w-0 items-center gap-1.5 text-sm sm:text-base font-gilroy-semibold text-gray-900">
                   <span className="truncate">{metric.value}</span>
                   {metric.trend && (
                     <CampaignTrendLine

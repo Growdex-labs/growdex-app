@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/auth";
-import { fetchCampaigns, type CampaignPlatform } from "@/lib/campaigns";
+import { fetchCampaigns, type CampaignPlatform, type TikTokCreativeSettings } from "@/lib/campaigns";
 import { isVideoMedia } from "@/lib/campaign-shared";
 import type { UploadedCreative } from "@/lib/media-upload";
 
@@ -18,6 +18,7 @@ export interface CreativeAsset {
   network?: "facebook" | "instagram" | "tiktok";
   mediaType?: "image" | "video";
   thumbnailUrl?: string;
+  tiktok?: TikTokCreativeSettings;
 }
 
 const fingerprint = (value: string) => {
@@ -163,6 +164,8 @@ export const fetchCreativeAssets = async (options?: {
         status: campaign.status ?? "draft",
         createdAt: creative.createdAt ?? campaign.createdAt ?? "",
       kind: "asset",
+      thumbnailUrl: creative.thumbnailUrl,
+      tiktok: creative.tiktok,
       mediaType: isVideoMedia({
         url: creative.mediaUrl,
         platform: creative.platform,
@@ -279,6 +282,7 @@ export const fetchTikTokCreativeAssets = async (
       platform: "tiktok" as const,
       campaignId: "",
       campaignName: "TikTok creative library",
+      tiktok: asset.tiktok && typeof asset.tiktok === "object" ? asset.tiktok as TikTokCreativeSettings : undefined,
       status: "available",
       createdAt: typeof asset.createdAt === "string" ? asset.createdAt : "",
       kind: "asset" as const,
@@ -330,6 +334,7 @@ export const fetchTikTokSocialPosts = async (
       platform: "tiktok" as const,
       campaignId: "",
       campaignName: "TikTok post",
+      tiktok: post.tiktok && typeof post.tiktok === "object" ? post.tiktok as TikTokCreativeSettings : undefined,
       status: "published",
       createdAt: typeof post.createdAt === "string" ? post.createdAt : "",
       kind: "post" as const,

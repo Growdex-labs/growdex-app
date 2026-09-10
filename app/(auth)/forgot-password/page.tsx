@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex flex-col bg-linear-to-br from-white via-white to-amber-50">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-10 py-8">
+      <div className="flex items-center justify-between px-6 py-6 sm:px-10 sm:py-8">
         <div className="flex items-center gap-2.5">
           <img
             src="/logo2.png"
@@ -50,25 +50,14 @@ export default function ForgotPasswordPage() {
             Growdex
           </span>
         </div>
-        <button className="flex items-center gap-2 bg-[#1c1c1c] border border-white/10 text-white text-sm font-gilroy-medium px-4 py-2 rounded-xl hover:bg-black/80 transition-colors">
-          Menu
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M2 4h12M2 8h12M2 12h12"
-              stroke="white"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-between gap-12 px-10 lg:px-20 py-10">
+      <div className="flex-1 flex items-center justify-between gap-12 px-6 sm:px-10 lg:px-20 py-10">
         {/* ── Left: form ── */}
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <h1 className="text-5xl font-gilroy-bold text-gray-900 leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-gilroy-bold text-gray-900 leading-tight">
               Forgot your password?
             </h1>
             <p className="mt-3 text-gray-500">

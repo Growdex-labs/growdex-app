@@ -21,6 +21,7 @@ import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
   fetchTikTokCreativeAssets,
+  fetchTikTokSocialPosts,
   type CreativeAsset,
 } from "@/lib/assets";
 import {
@@ -45,6 +46,7 @@ interface CreativeSetupScreenProps {
   goal: CampaignGoal;
   destination: CampaignDestination;
   metaAssetId?: string;
+  tiktokAssetId?: string;
   platforms: CampaignPlatform[];
   creatives: CampaignCreativeInput[];
   ctaOptions: Array<{ value: CampaignCta; label: string }>;
@@ -114,7 +116,7 @@ function PlatformConnectionGate({
         </p>
       </header>
 
-      <div className="grid gap-4 p-6 md:grid-cols-2 md:p-8">
+      <div className="grid gap-4 p-4 sm:p-6 md:grid-cols-2 md:p-8">
         {disconnected.map((platform) => {
           const isConnecting = connecting === platform;
           const Icon = platform === "meta" ? ImageIcon : Film;
@@ -157,6 +159,7 @@ export function CreativeSetupScreen({
   goal,
   destination,
   metaAssetId,
+  tiktokAssetId,
   platforms,
   creatives,
   ctaOptions,
@@ -207,10 +210,8 @@ export function CreativeSetupScreen({
     if (platforms.includes("meta") && metaAssetId) {
       requests.push(fetchMetaSocialPosts(metaAssetId, (messages) => warnings.push(...messages)));
     }
-    if (platforms.includes("tiktok")) {
-      for (const asset of accounts?.tiktok?.assets ?? []) {
-        requests.push(fetchTikTokCreativeAssets(asset.id));
-      }
+    if (platforms.includes("tiktok") && tiktokAssetId) {
+      requests.push(fetchTikTokCreativeAssets(tiktokAssetId), fetchTikTokSocialPosts(tiktokAssetId));
     }
     void Promise.allSettled(requests)
       .then((results) => {
@@ -243,7 +244,7 @@ export function CreativeSetupScreen({
     return () => {
       active = false;
     };
-  }, [accounts?.tiktok?.assets, metaAssetId, platforms]);
+  }, [metaAssetId, tiktokAssetId, platforms]);
 
   useEffect(() => {
     if (destination !== "INSTANT_FORM" || !metaAssetId) return;
@@ -298,7 +299,7 @@ export function CreativeSetupScreen({
   const visibleAssets = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return library.filter((asset) => {
-      if (destination === "VIDEO" && !isVideoMedia(asset)) {
+      if ((destination === "VIDEO" || asset.platform === "tiktok" || (platforms.length === 1 && platforms[0] === "tiktok")) && !isVideoMedia(asset)) {
         return false;
       }
       if (
@@ -316,7 +317,7 @@ export function CreativeSetupScreen({
         asset.campaignName.toLowerCase().includes(normalizedQuery)
       );
     });
-  }, [destination, library, platformFilter, query, tab]);
+  }, [destination, library, platformFilter, platforms, query, tab]);
 
   const selectedAssets = useMemo(
     () => library.filter((asset) => selected.includes(asset.id)),
@@ -416,7 +417,7 @@ export function CreativeSetupScreen({
       );
       return;
     }
-    if (destination === "VIDEO" && !isVideo) {
+    if ((platform === "tiktok" || destination === "VIDEO") && !isVideo) {
       setUploadError("This campaign requires a video creative.");
       return;
     }
@@ -491,6 +492,7 @@ export function CreativeSetupScreen({
         leadFormsLoading={leadFormsLoading}
         leadFormsError={leadFormsError}
         campaignId={campaignId}
+        tiktokAssetId={tiktokAssetId}
         onActiveIndexChange={setActiveCreativeIndex}
         onBack={() => setScreen("library")}
         onChange={onChange}
@@ -506,12 +508,12 @@ export function CreativeSetupScreen({
       : platformFilter === "meta"
         ? "image/*,video/*"
         : platformFilter === "tiktok"
-          ? "image/jpeg,image/png,video/*"
+          ? ".mp4,.mov,.mpeg,.avi"
       : platforms.length > 1
         ? "image/*,video/*"
         : platforms[0] === "meta"
           ? "image/*,video/*"
-          : "image/jpeg,image/png,video/*";
+          : ".mp4,.mov,.mpeg,.avi";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -523,7 +525,7 @@ export function CreativeSetupScreen({
           Choose the media for your ads
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-          Select up to six saved assets or upload from your computer. Meta and TikTok both support image and video creatives.
+          Select up to six saved assets or upload from your computer. Meta supports images and videos; TikTok campaigns use videos or authorized TikTok posts.
         </p>
       </header>
 
@@ -564,7 +566,7 @@ export function CreativeSetupScreen({
                           : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                       }`}
                     >
-                      {platform === "meta" ? "Meta image or video" : "TikTok image or video"}
+                      {platform === "meta" ? "Meta image or video" : "TikTok video"}
                     </button>
                   );
                 })}
@@ -709,13 +711,13 @@ export function CreativeSetupScreen({
             {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
           </div>
 
-          <div className="p-5 md:p-8">
+          <div className="p-4 sm:p-5 md:p-8">
             {libraryLoading ? (
               <div className="flex min-h-80 items-center justify-center">
                 <Loader2 className="size-7 animate-spin text-gray-400" />
               </div>
             ) : visibleAssets.length ? (
-              <div className={view === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4" : "space-y-3"}>
+              <div className={view === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4" : "space-y-3"}>
                 {visibleAssets.map((asset) => {
                   const isSelected = selected.includes(asset.id);
                   return (

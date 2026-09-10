@@ -56,8 +56,8 @@ export function DashboardTopBar({
         </div>
       )}
 
-      <div className="flex items-center gap-3 xl:gap-5">
-        <label className="flex h-[55px] min-w-0 flex-1 items-center gap-2 rounded-full border border-lavender-50 px-4 py-1.5 xl:w-[400px]">
+      <div className="flex flex-wrap items-center gap-3 xl:gap-5">
+        <label className="flex h-[55px] min-w-0 w-full items-center gap-2 rounded-full border border-lavender-50 px-4 py-1.5 sm:w-auto sm:flex-1 xl:w-[400px]">
           <Search className="size-5 shrink-0 text-bodySecondary" aria-hidden />
           <input
             type="search"
@@ -87,12 +87,12 @@ export function DashboardTopBar({
               className="flex shrink-0 items-center gap-1 text-lavender-300 transition-colors hover:text-gray-900"
             >
               <CircleHelp className="size-6" aria-hidden />
-              <span className="font-lexend text-[15px]">Help</span>
+              <span className="hidden font-lexend text-[15px] sm:inline">Help</span>
             </Link>
 
             <Link
               href="/panel/campaigns/new"
-              className="shrink-0 rounded-xl bg-black px-5 py-3 text-center font-gilroy-medium text-sm tracking-[-0.14px] text-white transition-colors hover:bg-[#1a1a1a]"
+              className="shrink-0 rounded-xl bg-black px-4 py-2.5 sm:px-5 sm:py-3 text-center font-gilroy-medium text-sm tracking-[-0.14px] text-white transition-colors hover:bg-[#1a1a1a]"
             >
               Create campaign
             </Link>

@@ -282,7 +282,7 @@ export default function ManageAccountPage() {
               </Dialog>
 
               <div className="bg-white rounded-lg overflow-hidden ">
-                <div className="bg-khaki-200/50 rounded-lg px-4 py-2 mb-4 grid grid-cols-4 gap-2 md:gap-4">
+                <div className="bg-khaki-200/50 rounded-lg px-4 py-2 mb-4 hidden sm:grid grid-cols-4 gap-2 md:gap-4">
                   <div className="text-xs md:text-sm font-gilroy-semibold text-gray-700 whitespace-nowrap">
                     Platform
                   </div>
@@ -327,43 +327,71 @@ export default function ManageAccountPage() {
                   ) : (
                     <div className="">
                       {accounts.map((account) => (
-                        <div
-                          key={account.id}
-                          className="px-4 py-3 rounded-lg bg-gray-100 mb-4 hover:bg-gray-50 transition-colors grid grid-cols-4 gap-2 md:gap-4 items-center"
-                        >
-                          <div className="text-xs md:text-sm text-gray-700 flex items-center gap-1 md:gap-2">
-                            {account.icon === "meta" ? (
-                              <MetaIcon />
-                            ) : (
-                              <TiktokIcon />
-                            )}
-                            <span className="truncate">{account.platform}</span>
+                        <div key={account.id}>
+                          {/* Mobile card */}
+                          <div className="sm:hidden px-4 py-3 rounded-lg bg-gray-100 mb-4">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-xs text-gray-700 flex items-center gap-2 min-w-0">
+                                {account.icon === "meta" ? (
+                                  <MetaIcon />
+                                ) : (
+                                  <TiktokIcon />
+                                )}
+                                <span className="truncate font-gilroy-medium">{account.platform}</span>
+                              </div>
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-gilroy-medium whitespace-nowrap shrink-0">
+                                {account.status}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              <p className="text-sm text-gray-900 truncate min-w-0">
+                                {account.accountName}
+                              </p>
+                              <button
+                                onClick={() => handleDisconnect(account.id)}
+                                disabled={disconnectingId === account.id}
+                                className="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded text-xs font-gilroy-medium transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50 shrink-0"
+                              >
+                                {disconnectingId === account.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  "Disconnect"
+                                )}
+                              </button>
+                            </div>
                           </div>
-                          <div className="text-xs md:text-sm text-gray-700 truncate whitespace-nowrap">
-                            {account.accountName}
-                          </div>
-                          <div className="text-xs md:text-sm">
-                            <span className="px-1 md:px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-gilroy-medium whitespace-nowrap">
-                              {account.status}
-                            </span>
-                          </div>
-                          <div className="text-xs md:text-sm flex justify-center md:justify-start">
-                            <button
-                              onClick={() => handleDisconnect(account.id)}
-                              disabled={disconnectingId === account.id}
-                              className="px-1 md:px-3 py-1 md:bg-red-100 text-red-700 md:hover:bg-red-200 rounded text-xs font-gilroy-medium transition-colors whitespace-nowrap flex items-center justify-center md:justify-start gap-1 disabled:opacity-50"
-                            >
-                              {disconnectingId === account.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+
+                          {/* Desktop grid row */}
+                          <div className="hidden sm:grid px-4 py-3 rounded-lg bg-gray-100 mb-4 hover:bg-gray-50 transition-colors grid-cols-4 gap-2 md:gap-4 items-center">
+                            <div className="text-xs md:text-sm text-gray-700 flex items-center gap-1 md:gap-2">
+                              {account.icon === "meta" ? (
+                                <MetaIcon />
                               ) : (
-                                <>
-                                  <span className="hidden md:inline">Disconnect</span>
-                                  <span className="md:hidden text-lg leading-none">
-                                    ⋯
-                                  </span>
-                                </>
+                                <TiktokIcon />
                               )}
-                            </button>
+                              <span className="truncate">{account.platform}</span>
+                            </div>
+                            <div className="text-xs md:text-sm text-gray-700 truncate whitespace-nowrap">
+                              {account.accountName}
+                            </div>
+                            <div className="text-xs md:text-sm">
+                              <span className="px-1 md:px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-gilroy-medium whitespace-nowrap">
+                                {account.status}
+                              </span>
+                            </div>
+                            <div className="text-xs md:text-sm flex justify-center md:justify-start">
+                              <button
+                                onClick={() => handleDisconnect(account.id)}
+                                disabled={disconnectingId === account.id}
+                                className="px-1 md:px-3 py-1 md:bg-red-100 text-red-700 md:hover:bg-red-200 rounded text-xs font-gilroy-medium transition-colors whitespace-nowrap flex items-center justify-center md:justify-start gap-1 disabled:opacity-50"
+                              >
+                                {disconnectingId === account.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <span className="hidden md:inline">Disconnect</span>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}

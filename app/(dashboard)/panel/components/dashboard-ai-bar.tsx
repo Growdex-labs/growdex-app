@@ -35,7 +35,7 @@ export function DashboardAiBar({
   };
 
   return (
-    <div className="sticky bottom-4 z-20 mt-6 px-4">
+    <div className="sticky bottom-24 z-20 mt-6 px-4 md:bottom-4">
       {disabledReason === PRO_REQUIRED_MESSAGE ? (
         <div className="mx-auto mb-2 max-w-3xl">
           <ProRequiredNotice className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900" />
@@ -45,12 +45,12 @@ export function DashboardAiBar({
           {error}
         </p>
       ) : null}
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center">
         <div className="relative">
           <select
             value={selectedCampaignId}
             onChange={(event) => onSelectCampaign(event.target.value)}
-            className="appearance-none rounded-lg bg-gray-100 py-3.5 pl-4 pr-8 text-sm text-gray-600 focus:outline-none"
+            className="w-full appearance-none truncate rounded-lg bg-gray-100 py-3.5 pl-4 pr-8 text-sm text-gray-600 focus:outline-none sm:w-auto sm:max-w-48"
           >
             <option value="">Select a campaign</option>
             {campaigns.map((campaign) => (

@@ -54,6 +54,23 @@ export interface AudienceStrategyConfiguration {
   destination: CampaignDestination;
   optimizationGoal: CampaignOptimizationGoal;
   eventSourceIds?: Partial<Record<CampaignPlatform, string>>;
+  optimizationEvents?: { tiktok?: string };
+}
+export interface TikTokCreativeSettings {
+  identityType: "TT_USER" | "BC_AUTH_TT" | "AUTH_CODE";
+  identityId: string;
+  identityAuthorizedBcId?: string;
+  postId?: string;
+  videoId?: string;
+  coverImageId?: string;
+  advertiserId?: string;
+  uploadFingerprint?: string;
+}
+export interface TikTokIdentity {
+  id: string;
+  type: TikTokCreativeSettings["identityType"];
+  name: string;
+  authorizedBcId?: string;
 }
 export type CampaignCta =
   | "LEARN_MORE"
@@ -76,6 +93,7 @@ export interface CampaignCreativeInput {
   mediaUrl: string;
   mediaType?: "image" | "video" | null;
   thumbnailUrl?: string;
+  tiktok?: TikTokCreativeSettings;
   landingPageUrl?: string;
   appId?: string;
   leadFormId?: string;
@@ -116,6 +134,8 @@ export interface AudienceStrategy {
     ageMax?: number;
     gender?: CampaignGender;
     interests?: string[];
+    tiktokInterestIds?: string[];
+    tiktokAgeGroups?: string[];
     includeAudienceIds?: string[];
     excludeAudienceIds?: string[];
     languages?: string[];
@@ -137,13 +157,15 @@ export interface GeneratedCampaignDraft {
   platforms: CampaignPlatform[];
   configuration: CampaignConfiguration & AudienceStrategyConfiguration;
   audienceStrategies: Array<{
+    id?: string;
     name: string;
+    configuration?: AudienceStrategyConfiguration;
     audience: AudienceStrategy["audience"];
     budget: {
       amount: number;
       currency: CampaignCurrency;
       type: BudgetType;
-      durationDays: number;
+      durationDays: number | null;
       startDateLocal?: string | null;
       endDateLocal?: string | null;
     };
@@ -234,6 +256,7 @@ export interface CampaignDto {
   creatives?: CampaignCreativeDto[];
   status?: string;
   publishError?: string | null;
+  platformStatuses?: Partial<Record<CampaignPlatform, { status: string; detail?: string; checkedAt?: string }>>;
   createdAt?: string;
   publishedAt?: string | null;
 }
@@ -377,6 +400,8 @@ export interface CampaignEventSource {
   platform: CampaignPlatform;
   lastActiveAt: string | null;
   available: boolean;
+  events?: Array<{ id: string; name: string }>;
+  eventsPending?: boolean;
 }
 
 export interface ProviderLanguage {
@@ -606,7 +631,8 @@ const parseGeneratedCampaignDraft = (
     }
     const currency = requiredString(rawStrategy.budget.currency, "currency");
     const budgetType = enumValue(rawStrategy.budget.type, ["daily", "lifetime"], "budget type");
-    if (!/^[A-Z]{3}$/.test(currency) || typeof rawStrategy.budget.durationDays !== "number" || !Number.isInteger(rawStrategy.budget.durationDays) || rawStrategy.budget.durationDays < 1) {
+    const durationDays = rawStrategy.budget.durationDays ?? null;
+    if (!/^[A-Z]{3}$/.test(currency) || (durationDays !== null && (typeof durationDays !== "number" || !Number.isInteger(durationDays) || durationDays < 1)) || (budgetType === "lifetime" && durationDays === null && !rawStrategy.budget.endDateLocal)) {
       return invalidAiResponse("strategy budget or duration is invalid.");
     }
     const startDateLocal = optionalString(rawStrategy.budget.startDateLocal, "start date");
@@ -645,12 +671,17 @@ const parseGeneratedCampaignDraft = (
       return invalidAiResponse(`creative ${index + 1} is ready without media.`);
     }
     return {
+      id: optionalString(creative.id, "creative ID"),
       platform,
-      primaryText: requiredString(creative.primaryText, "creative primary text"),
+      primaryText: platform === "tiktok" && isRecord(creative.tiktok) && creative.tiktok.postId
+        ? optionalString(creative.primaryText, "creative primary text") ?? ""
+        : requiredString(creative.primaryText, "creative primary text"),
       headline: optionalString(creative.headline, "creative headline"),
       cta: enumValue(creative.cta, CAMPAIGN_CTAS, "creative CTA"),
       mediaUrl,
       mediaType: mediaRequirement,
+      thumbnailUrl: optionalString(creative.thumbnailUrl, "creative cover URL"),
+      tiktok: isRecord(creative.tiktok) ? creative.tiktok as unknown as TikTokCreativeSettings : undefined,
       landingPageUrl: optionalString(creative.landingPageUrl, "landing page URL"),
       appId: optionalString(creative.appId, "app ID"),
       leadFormId: optionalString(creative.leadFormId, "lead form ID"),
@@ -664,9 +695,20 @@ const parseGeneratedCampaignDraft = (
       }
     }
     return {
+      id: optionalString(rawStrategy.id, "strategy ID"),
       name: requiredString(rawStrategy.name, "strategy name"),
+      configuration: isRecord(rawStrategy.configuration)
+        ? {
+            destination: enumValue(rawStrategy.configuration.destination, CAMPAIGN_DESTINATIONS, "strategy destination"),
+            optimizationGoal: enumValue(rawStrategy.configuration.optimizationGoal, CAMPAIGN_OPTIMIZATIONS, "strategy optimization"),
+            eventSourceIds: isRecord(rawStrategy.configuration.eventSourceIds) ? rawStrategy.configuration.eventSourceIds as AudienceStrategyConfiguration["eventSourceIds"] : {},
+            optimizationEvents: isRecord(rawStrategy.configuration.optimizationEvents) ? rawStrategy.configuration.optimizationEvents as AudienceStrategyConfiguration["optimizationEvents"] : {},
+          }
+        : undefined,
       audience: {
         locations, ageMin, ageMax, gender, interests,
+        tiktokInterestIds: stringArray(audience.tiktokInterestIds ?? [], "TikTok interests"),
+        tiktokAgeGroups: Array.isArray(audience.tiktokAgeGroups) && audience.tiktokAgeGroups.length ? stringArray(audience.tiktokAgeGroups, "TikTok ages") : undefined,
         includeAudienceIds: stringArray(audience.includeAudienceIds ?? [], "included audiences"),
         excludeAudienceIds: stringArray(audience.excludeAudienceIds ?? [], "excluded audiences"),
         languages: stringArray(audience.languages ?? [], "languages"),
@@ -684,7 +726,7 @@ const parseGeneratedCampaignDraft = (
         amount: rawStrategy.budget.amount,
         currency,
         type: budgetType,
-        durationDays: rawStrategy.budget.durationDays,
+        durationDays: durationDays as number | null,
         startDateLocal,
         endDateLocal,
       },
@@ -713,8 +755,9 @@ const parseGeneratedCampaignDraft = (
       optimizationGoal,
       accountAssetIds,
       eventSourceIds,
+      optimizationEvents: isRecord(configuration.optimizationEvents) ? configuration.optimizationEvents as AudienceStrategyConfiguration["optimizationEvents"] : {},
       specialAdCategories,
-      sameCreativeForAll: false,
+      sameCreativeForAll: configuration.sameCreativeForAll === true,
       budgetOptimization: "audience_strategy",
     },
     audienceStrategies,
@@ -1049,6 +1092,31 @@ export const firstStrategyMissingPlatformAd = (
     ),
   ) ?? null;
 
+export const TIKTOK_AGE_GROUPS = [
+  { id: "AGE_18_24", label: "18–24" },
+  { id: "AGE_25_34", label: "25–34" },
+  { id: "AGE_35_44", label: "35–44" },
+  { id: "AGE_45_54", label: "45–54" },
+  { id: "AGE_55_100", label: "55+" },
+] as const;
+
+export const tikTokTextLength = (value: string) => Array.from(value).reduce(
+  (length, char) => length + (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(char) ? 2 : 1), 0,
+);
+
+export const validateTikTokStrategy = (goal: CampaignGoal, configuration: AudienceStrategyConfiguration): string | null => {
+  const allowed: Partial<Record<CampaignGoal, CampaignOptimizationGoal[]>> = {
+    AWARENESS: ["REACH", "IMPRESSIONS", "VIDEO_VIEWS"],
+    TRAFFIC: ["LINK_CLICKS"],
+    ENGAGEMENT: ["VIDEO_VIEWS"],
+    LEADS: ["CONVERSIONS", "LINK_CLICKS"],
+    SALES: ["CONVERSIONS", "LINK_CLICKS"],
+  };
+  if (!["WEBSITE", "VIDEO"].includes(configuration.destination) || !allowed[goal]?.includes(configuration.optimizationGoal)) return "Choose a supported TikTok destination and optimization. Website traffic supports clicks; website leads and sales support clicks or conversions; engagement supports video views.";
+  if (configuration.optimizationGoal === "CONVERSIONS" && (!configuration.eventSourceIds?.tiktok || !configuration.optimizationEvents?.tiktok)) return "Choose a TikTok Pixel and the exact conversion event to optimize for.";
+  return null;
+};
+
 export const validateCampaignCreativeSetup = (
   payload: CampaignReviewPayload,
 ) => {
@@ -1059,15 +1127,22 @@ export const validateCampaignCreativeSetup = (
       const label = platform === "meta" ? "Meta" : "TikTok";
       if (!ads.length) return `${strategy.name} needs a ${label} ad.`;
       for (const ad of ads) {
-        if (!ad.primaryText.trim()) return `Enter primary text for ${label}.`;
+        if (!ad.primaryText.trim() && !(platform === "tiktok" && ad.tiktok?.postId)) return `Enter primary text for ${label}.`;
         if (!ad.mediaUrl.trim()) return `Upload media for ${label}.`;
         const isVideo = isVideoMedia({
           url: ad.mediaUrl,
           platform,
           mediaType: ad.mediaType,
         });
-        if (strategy.configuration.destination === "VIDEO" && !isVideo) {
+        if ((platform === "tiktok" || strategy.configuration.destination === "VIDEO") && !isVideo) {
           return `Upload a video for ${label}.`;
+        }
+        if (platform === "tiktok") {
+          if (!ad.tiktok?.identityId) return `Choose the TikTok identity for each ad in ${strategy.name}.`;
+          if (!ad.tiktok.postId && (tikTokTextLength(ad.primaryText) > 100 || /\p{Extended_Pictographic}/u.test(ad.primaryText))) return "TikTok ad text allows 100 characters (Chinese and Japanese count twice) and no emoji.";
+          if (ad.headline && (tikTokTextLength(ad.headline) > 512 || /\p{Extended_Pictographic}/u.test(ad.headline))) return "TikTok ad names allow 512 characters and no emoji.";
+          if (ad.cta === "NO_BUTTON") return "Choose a supported call to action for TikTok.";
+          if (!ad.tiktok.postId && !ad.tiktok.coverImageId && !ad.thumbnailUrl) return "Choose a cover image for each TikTok video.";
         }
         if (
           strategy.configuration.destination === "WEBSITE" &&
@@ -1103,6 +1178,12 @@ export const validateCampaignPayload = (
       (platform) => !strategy.configuration.eventSourceIds?.[platform],
     )) return `Select an event source for every platform in ${strategy.name}.`;
     if (!strategy.audience.locations.length) return `Select at least one country for ${strategy.name}.`;
+    if (payload.campaign.platforms.includes("tiktok")) {
+      const setupError = validateTikTokStrategy(payload.campaign.goal, strategy.configuration);
+      if (setupError) return `${strategy.name}: ${setupError}`;
+      if (!strategy.audience.tiktokAgeGroups?.length) return `Choose TikTok age groups for ${strategy.name}.`;
+      if (strategy.audience.devices?.includes("desktop")) return "TikTok in-feed ads support mobile delivery. Remove desktop targeting.";
+    }
     const ageMin = strategy.audience.ageMin ?? 18;
     const ageMax = strategy.audience.ageMax ?? 65;
     if (ageMin < 18 || ageMax > 65 || ageMin > ageMax) return "Audience age must stay between 18 and 65, with the minimum before the maximum.";
@@ -1113,7 +1194,8 @@ export const validateCampaignPayload = (
     if (!Number.isFinite(strategy.budget.amount) || strategy.budget.amount <= 0) return `Enter a budget greater than zero for ${strategy.name}.`;
     const start = new Date(strategy.budget.startDate);
     if (Number.isNaN(start.getTime())) return `Choose a start time for ${strategy.name}.`;
-    if (!options?.allowStartedSchedule && start.getTime() < Date.now()) {
+    const earliestStart = Date.now() - (payload.campaign.platforms.every((platform) => platform === "tiktok") ? 12 * 60 * 60_000 : 0);
+    if (!options?.allowStartedSchedule && start.getTime() < earliestStart) {
       return `Choose a future start time for ${strategy.name}.`;
     }
     if (strategy.budget.endDate) {
@@ -1141,7 +1223,7 @@ export const validateCampaignDraftPayload = (payload: CampaignReviewPayload) => 
     if (strategy.budget.endDate) {
       const end = new Date(strategy.budget.endDate);
       if (Number.isNaN(end.getTime()) || end <= start) return "End time must be after the start time.";
-    }
+    } else if (strategy.budget.type === "lifetime") return "Choose an end time before saving a lifetime budget.";
     if (strategy.ads.length > 6) return `${strategy.name} can contain at most six ads.`;
     if (strategy.ads.some((ad) => !payload.campaign.platforms.includes(ad.platform))) return "Every saved ad must belong to a selected platform.";
   }
@@ -1236,7 +1318,7 @@ export const startAiCampaignDraft = async (input: {
 };
 
 export const resumeAiCampaignDraft = async (input: {
-  campaignId: string;
+  campaignId?: string;
   currentDraft: GeneratedCampaignDraft;
   availableMedia: Array<{
     id: string;
@@ -1296,6 +1378,7 @@ export const reviseAiCampaignDraft = async (input: {
   draftId: string;
   revision: number;
   currentDraft: GeneratedCampaignDraft;
+  availableMedia?: Parameters<typeof resumeAiCampaignDraft>[0]["availableMedia"];
   targetStep?: AiCampaignStepId;
   instruction: string;
   lockedSteps: AiCampaignStepId[];
@@ -1310,6 +1393,7 @@ export const reviseAiCampaignDraft = async (input: {
       body: JSON.stringify({
         revision: input.revision,
         currentDraft: input.currentDraft,
+        availableMedia: input.availableMedia,
         targetStep: input.targetStep,
         instruction: input.instruction,
         lockedSteps: input.lockedSteps,
@@ -1701,6 +1785,29 @@ export const fetchCampaignEventSources = async (
   return data as CampaignEventSource[];
 };
 
+export const fetchTikTokIdentities = async (assetId: string): Promise<TikTokIdentity[]> => {
+  const res = await apiFetch(`/campaigns/tiktok-identities?${new URLSearchParams({ assetId })}`, { method: "GET" });
+  const data = await readJson(res);
+  if (!res.ok) throw new Error(readApiErrorMessage(data, "Could not load TikTok identities."));
+  if (!Array.isArray(data)) throw new Error("TikTok identities returned an invalid response.");
+  return data as TikTokIdentity[];
+};
+
+export const searchTikTokInterests = async (assetId: string, query: string): Promise<MetaInterest[]> => {
+  const res = await apiFetch(`/campaigns/tiktok-interests?${new URLSearchParams({ assetId, query })}`, { method: "GET" });
+  const data = await readJson(res);
+  if (!res.ok) throw new Error(readApiErrorMessage(data, "Could not load TikTok interests."));
+  if (!Array.isArray(data)) throw new Error("TikTok interests returned an invalid response.");
+  return data as MetaInterest[];
+};
+
+export const recoverAiCampaignDraft = async (draftId: string): Promise<AiCampaignDraftResponse> => {
+  const res = await apiFetch(`/ai/campaign-drafts/${encodeURIComponent(draftId)}`, { method: "GET" });
+  const data = await readJson(res);
+  if (!res.ok) throw new Error(readApiErrorMessage(data, "This AI session has expired. Resume the saved campaign to continue."));
+  return parseAiCampaignDraftResponse(data);
+};
+
 export const searchProviderLanguages = async (
   platform: CampaignPlatform,
   assetId: string,
@@ -1737,6 +1844,7 @@ export const normalizeCampaignPayloadForWrite = (
       name: strategy.name.trim(),
       audience: {
         ...strategy.audience,
+        tiktokAgeGroups: strategy.audience.tiktokAgeGroups?.length ? strategy.audience.tiktokAgeGroups : undefined,
         locations: [...new Set(strategy.audience.locations.map((item) => item.trim()))].filter(Boolean),
         interests: [...new Set((strategy.audience.interests ?? []).map((item) => item.trim()))].filter(Boolean),
         languages: [...new Set((strategy.audience.languages ?? []).map((item) => item.trim()))].filter(Boolean),
@@ -1753,7 +1861,7 @@ export const normalizeCampaignPayloadForWrite = (
           appId: ad.appId?.trim() || undefined,
           leadFormId: ad.leadFormId?.trim() || undefined,
         };
-        delete normalized.thumbnailUrl;
+        if (ad.platform !== "tiktok") delete normalized.thumbnailUrl;
         return normalized;
       }),
     })),
@@ -2068,6 +2176,8 @@ export const campaignDtoToPayload = (
       cta: ad.cta,
       mediaUrl: ad.mediaUrl,
       mediaType: ad.mediaType ?? undefined,
+      thumbnailUrl: ad.thumbnailUrl,
+      tiktok: ad.tiktok,
       landingPageUrl: ad.landingPageUrl,
       appId: ad.appId,
       leadFormId: ad.leadFormId,

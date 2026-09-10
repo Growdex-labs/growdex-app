@@ -34,7 +34,7 @@ export function PanelLayout({
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <TopHeader />
+      <TopHeader onNotificationClick={() => setIsNotificationOpen(true)} />
       <div className="flex flex-1 overflow-hidden">
         <CollapsibleSidebar
           defaultCollapsed={defaultSidebarCollapsed}
