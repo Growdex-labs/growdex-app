@@ -15,6 +15,7 @@ import { isVideoMedia } from "@/lib/campaign-shared";
 import {
   recordAiRequestAcceptance,
   requestCampaignCreativeSuggestion,
+  tikTokTextLength,
 } from "@/lib/campaigns";
 import type {
   CampaignCreativeInput,
@@ -26,6 +27,7 @@ import type {
 } from "@/lib/campaigns";
 import { PlatformAdPreview } from "./PlatformAdPreview";
 import { CreativeUploadProgress, type CreativeUploadStatus } from "./CreativeUploadProgress";
+import { TikTokCreativeControls } from "./TikTokCreativeControls";
 
 interface CreativeAdEditorProps {
   brandName: string;
@@ -40,6 +42,7 @@ interface CreativeAdEditorProps {
   leadFormsLoading: boolean;
   leadFormsError: string | null;
   campaignId?: string | null;
+  tiktokAssetId?: string;
   onActiveIndexChange: (index: number) => void;
   onBack: () => void;
   onChange: (index: number, next: Partial<CampaignCreativeInput>) => void;
@@ -110,6 +113,7 @@ export function CreativeAdEditor({
   onRemove,
   onUpload,
   campaignId,
+  tiktokAssetId,
 }: CreativeAdEditorProps) {
   const [generatingHeadline, setGeneratingHeadline] = useState(false);
   const [headlineRationale, setHeadlineRationale] = useState<string | null>(
@@ -158,13 +162,11 @@ export function CreativeAdEditor({
   const platform = creative.platform;
   const headlineLimit = platform === "meta" ? 255 : 512;
   const headlineLabel = platform === "meta" ? "Headline" : "Ad name";
-  const requiresVideo = destination === "VIDEO";
+  const requiresVideo = destination === "VIDEO" || platform === "tiktok";
   const uploadLabel = requiresVideo ? "video" : "image or video";
   const uploadAccept = requiresVideo
     ? "video/*"
-    : platform === "tiktok"
-      ? "image/jpeg,image/png,video/*"
-      : "image/*,video/*";
+    : "image/*,video/*";
   const samePlatformCount = creatives.filter((item) => item.platform === platform).length;
   const canRemove = samePlatformCount > 1;
   const generatePrimaryText = async () => {
@@ -328,13 +330,14 @@ export function CreativeAdEditor({
       <div className="grid items-start gap-6 p-5 md:p-8 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
         <fieldset className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
           <legend className="sr-only">{platformName(platform)} ad details</legend>
+          {platform === "tiktok" && <TikTokCreativeControls key={`${activeIndex}:${tiktokAssetId}`} assetId={tiktokAssetId} creative={creative} onChange={(next) => onChange(activeIndex, next)} />}
           <label className="block text-sm font-gilroy-semibold text-gray-700">
             <span className="flex items-center justify-between gap-3">
               Primary text
               <button
                 type="button"
                 onClick={() => void generatePrimaryText()}
-                disabled={generatingPrimaryText || !campaignId}
+                disabled={generatingPrimaryText || !campaignId || Boolean(creative.tiktok?.postId)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-gilroy-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {generatingPrimaryText ? (
@@ -347,13 +350,15 @@ export function CreativeAdEditor({
             </span>
             <textarea
               className="mt-2 min-h-28 w-full rounded-xl border border-gray-200 bg-white p-3 font-gilroy-regular outline-none transition focus:border-khaki-300 focus:ring-2 focus:ring-khaki-200/30"
-              maxLength={125}
+              maxLength={creative.tiktok?.postId ? undefined : platform === "tiktok" ? 100 : 125}
               value={creative.primaryText}
+              disabled={Boolean(creative.tiktok?.postId)}
               onChange={(event) => onChange(activeIndex, { primaryText: event.target.value })}
               placeholder="Tell people why this offer matters"
             />
+            {creative.tiktok?.postId && <span className="mt-1 block text-xs font-gilroy-regular text-gray-500">This authorized post keeps its original TikTok caption and cover.</span>}
             <span className="mt-1 block text-right text-xs font-gilroy-regular text-gray-400">
-              {creative.primaryText.length}/125
+              {creative.tiktok?.postId ? "Caption comes from the original post" : <>{platform === "tiktok" ? tikTokTextLength(creative.primaryText) : creative.primaryText.length}/{platform === "tiktok" ? 100 : 125}{platform === "tiktok" && " · No emoji; Chinese and Japanese count twice"}</>}
             </span>
             {primaryTextStateIndex === activeIndex && primaryTextRationale && (
               <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-violet-600">
@@ -413,7 +418,7 @@ export function CreativeAdEditor({
                 value={creative.cta}
                 onChange={(event) => onChange(activeIndex, { cta: event.target.value as CampaignCta })}
               >
-                {ctaOptions.map((option) => (
+          {ctaOptions.filter((option) => platform !== "tiktok" || option.value !== "NO_BUTTON").map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>

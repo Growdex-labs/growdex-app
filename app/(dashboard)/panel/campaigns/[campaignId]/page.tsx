@@ -181,6 +181,7 @@ export default function CampaignDetailPage({
           <div className="p-4 sm:p-8">
             <CampaignHeader
               campaign={campaign}
+              deliveryStatus={campaignDto?.status}
               onOptimizationClick={() => setIsOptimizationOpen(true)}
               statusBusy={statusBusy}
               onPause={() => void changeStatus("paused")}
@@ -196,6 +197,14 @@ export default function CampaignDetailPage({
                 void changeStatus("completed");
               }}
             />
+            {campaignDto?.platformStatuses && <div className="mb-4 grid gap-3 sm:grid-cols-2">
+              {Object.entries(campaignDto.platformStatuses).map(([platform, delivery]) => delivery && <div key={platform} className="rounded-xl border border-gray-200 bg-white p-4 text-sm">
+                <p className="font-gilroy-semibold capitalize">{platform}: {delivery.status.replaceAll("_", " ")}</p>
+                {delivery.detail && <p className="mt-1 text-gray-600">{delivery.detail}</p>}
+                {delivery.checkedAt && <p className="mt-1 text-xs text-gray-400">Checked {new Date(delivery.checkedAt).toLocaleString()}</p>}
+              </div>)}
+            </div>}
+            {campaignDto?.publishError && <p className="mb-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{campaignDto.publishError}</p>}
             {statusError && (
               <p className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
                 {statusError}

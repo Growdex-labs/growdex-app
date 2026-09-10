@@ -16,6 +16,7 @@ import {
 import {
   type CampaignReviewPayload,
   validateCampaignPayload,
+  TIKTOK_AGE_GROUPS,
 } from "@/lib/campaigns";
 import { PRO_REQUIRED_MESSAGE } from "@/lib/billing";
 import { metaSpecialAdLocations } from "@/lib/meta-special-ad-locations";
@@ -53,6 +54,7 @@ interface ReviewPublishScreenProps {
   title?: string;
   description?: string;
   allowStartedSchedule?: boolean;
+  retrySavedCampaign?: boolean;
   disabledReason?: string | null;
 }
 
@@ -91,9 +93,10 @@ export function ReviewPublishScreen({
   title = "Review and publish",
   description = "This is the exact campaign Growdex will save and send to your ad platforms.",
   allowStartedSchedule = false,
+  retrySavedCampaign = false,
   disabledReason,
 }: ReviewPublishScreenProps) {
-  const validationError = validateCampaignPayload(campaign, {
+  const validationError = retrySavedCampaign ? null : validateCampaignPayload(campaign, {
     allowStartedSchedule,
   });
   const busy = publishing || saving;
@@ -229,14 +232,13 @@ export function ReviewPublishScreen({
             },
             {
               label: "People",
-              value: `${strategy.audience.ageMin ?? 18}–${strategy.audience.ageMax ?? 65}, ${strategy.audience.gender ?? "all"}`,
+              value: `${campaign.campaign.platforms.includes("meta") ? `Meta: ${strategy.audience.ageMin ?? 18}–${strategy.audience.ageMax ?? 65}. ` : ""}${campaign.campaign.platforms.includes("tiktok") ? `TikTok: ${(strategy.audience.tiktokAgeGroups ?? []).map((id) => TIKTOK_AGE_GROUPS.find((group) => group.id === id)?.label ?? id).join(", ") || "Choose age groups"}. ` : ""}${strategy.audience.gender ?? "all"}`,
               Icon: Users,
             },
             {
               label: "Interests",
               value:
-                strategy.audience.interests?.filter(Boolean).join(", ") ||
-                "Broad audience",
+                [strategy.audience.interests?.filter(Boolean).join(", "), strategy.audience.tiktokInterestIds?.length ? `${strategy.audience.tiktokInterestIds.length} selected TikTok interests` : ""].filter(Boolean).join(" · ") || "Broad audience",
               Icon: Target,
             },
             {
@@ -288,8 +290,9 @@ export function ReviewPublishScreen({
                   )}
                   <div className="rounded-2xl bg-gray-950 px-5 py-3 text-white">
                     <p className="flex items-center gap-2 text-xs text-white/50">
-                      <Banknote className="size-3.5" /> Budget
+                      <Banknote className="size-3.5" /> Budget per platform
                     </p>
+                    {campaign.campaign.platforms.length > 1 && <p className="mt-1 text-xs text-white/70">Combined: {formatBudget(strategy.budget.amount * campaign.campaign.platforms.length, strategy.budget.currency)} / {strategy.budget.type}</p>}
                     <p className="mt-1 text-xl font-gilroy-bold">
                       {formatBudget(
                         strategy.budget.amount,

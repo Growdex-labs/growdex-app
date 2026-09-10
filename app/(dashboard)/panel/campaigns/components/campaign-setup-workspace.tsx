@@ -34,9 +34,11 @@ import {
   updateCampaign,
   updateCampaignDraft,
   updateCampaignStatus,
+  recoverAiCampaignDraft,
   validateCampaignCreativeSetup,
   validateCampaignDraftPayload,
   validateCampaignPayload,
+  validateTikTokStrategy,
   type AiCampaignDraftResponse,
   type AiCampaignQuestion,
   type AiCampaignStepId,
@@ -52,11 +54,12 @@ import {
   type MetaSpecialAdCategory,
 } from "@/lib/campaigns";
 import { eventManagementPatch } from "./event-management-state";
-import { isVideoMedia } from "@/lib/campaign-shared";
+import { isVideoMedia, validateTikTokVideoFile } from "@/lib/campaign-shared";
 import {
   fetchCreativeAssets,
   fetchMetaSocialPosts,
   fetchTikTokCreativeAssets,
+  fetchTikTokSocialPosts,
 } from "@/lib/assets";
 import { uploadCreativeToCloudinary } from "@/lib/media-upload";
 import type { CreativeUploadStatus } from "./CreativeUploadProgress";
@@ -73,7 +76,10 @@ import { AudienceTargetingScreen } from "./AudienceTargetingScreen";
 import { CampaignBudgetEditor } from "./CampaignBudgetEditor";
 import { CampaignNameCard } from "./CampaignNameCard";
 import { CampaignStepper } from "./CampaignStepper";
-import { CampaignTreeSidebar } from "./CampaignTreeSidebar";
+import {
+  CampaignTreeMobileNav,
+  CampaignTreeSidebar,
+} from "./CampaignTreeSidebar";
 import { CreativeSetupScreen } from "./CreativeSetupScreen";
 import { ManualEventManagementScreen } from "./ManualEventManagementScreen";
 import { ManualEventScreen } from "./ManualEventScreen";
@@ -163,17 +169,16 @@ const aiStepSnapshot = (
         specialAdCategories: draft.configuration.specialAdCategories,
       };
     case "event":
-      return {
-        destination: draft.configuration.destination,
-        optimizationGoal: draft.configuration.optimizationGoal,
-        eventSourceIds: draft.configuration.eventSourceIds,
-      };
+      return draft.audienceStrategies.map((strategy) => {
+        const configuration = strategy.configuration ?? draft.configuration;
+        return { name: strategy.name, destination: configuration.destination, optimizationGoal: configuration.optimizationGoal, eventSourceIds: configuration.eventSourceIds ?? {}, optimizationEvents: configuration.optimizationEvents ?? {} };
+      });
     case "audience":
       return draft.audienceStrategies.map(({ name, audience }) => ({ name, audience }));
     case "budget":
       return draft.audienceStrategies.map(({ name, budget }) => ({ name, budget }));
     case "creative":
-      return draft.audienceStrategies.map(({ name, creatives }) => ({ name, creatives }));
+      return draft.audienceStrategies.map(({ name, creatives }) => ({ name, creatives: creatives.map((creative) => ({ platform: creative.platform, primaryText: creative.primaryText, headline: creative.headline ?? null, cta: creative.cta, mediaUrl: creative.mediaUrl, mediaType: creative.mediaType ?? creative.mediaRequirement, thumbnailUrl: creative.thumbnailUrl ?? null, tiktok: creative.tiktok ?? null, landingPageUrl: creative.landingPageUrl ?? null, appId: creative.appId ?? null, leadFormId: creative.leadFormId ?? null })) }));
   }
 };
 
@@ -192,24 +197,31 @@ const campaignToAiDraft = (
       ...campaign.campaign.configuration,
       ...campaign.audienceStrategies[0]?.configuration,
     },
-    audienceStrategies: campaign.audienceStrategies.map((strategy, index) => {
+    audienceStrategies: campaign.audienceStrategies.map((strategy) => {
       const start = new Date(strategy.budget.startDate);
       const end = strategy.budget.endDate ? new Date(strategy.budget.endDate) : null;
       return {
+        id: strategy.id,
         name: strategy.name,
-        audience: strategy.audience,
+        configuration: strategy.configuration,
+        audience: { ...strategy.audience, ageMin: strategy.audience.ageMin ?? 18, ageMax: strategy.audience.ageMax ?? 65, gender: strategy.audience.gender ?? "all", interests: strategy.audience.interests ?? [], languages: strategy.audience.languages ?? [], devices: strategy.audience.devices ?? ["mobile"], includeAudienceIds: strategy.audience.includeAudienceIds ?? [], excludeAudienceIds: strategy.audience.excludeAudienceIds ?? [] },
         budget: {
           amount: strategy.budget.amount,
           currency: strategy.budget.currency,
           type: strategy.budget.type,
           durationDays: end
             ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
-            : previous?.audienceStrategies[index]?.budget.durationDays ?? 7,
+            : null,
           startDateLocal: strategy.budget.startDate,
-          endDateLocal: strategy.budget.endDate,
+          endDateLocal: strategy.budget.endDate ?? null,
         },
         creatives: strategy.ads.map((creative) => ({
           ...creative,
+          headline: creative.headline?.trim() || undefined,
+          landingPageUrl: creative.landingPageUrl?.trim() || undefined,
+          appId: creative.appId?.trim() || undefined,
+          leadFormId: creative.leadFormId?.trim() || undefined,
+          mediaType: creative.mediaType ?? (isVideoMedia({ url: creative.mediaUrl, mediaType: creative.mediaType, platform: creative.platform }) ? "video" : "image"),
           mediaRequirement: isVideoMedia({
             url: creative.mediaUrl,
             platform: creative.platform,
@@ -237,6 +249,30 @@ const campaignToAiDraft = (
   };
 };
 
+const semanticAiSnapshot = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.every((item) => typeof item === "string")
+      ? [...value].sort()
+      : value.map(semanticAiSnapshot);
+  }
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !["id", "mediaStatus"].includes(key))
+      .map(([key, entry]): [string, unknown] => [
+        key,
+        ["startDateLocal", "endDateLocal"].includes(key) &&
+        typeof entry === "string" &&
+        Number.isFinite(new Date(entry).getTime())
+          ? new Date(entry).toISOString()
+          : semanticAiSnapshot(entry),
+      ])
+      .filter(([, entry]) => entry !== undefined && entry !== null &&
+        !(typeof entry === "object" && Object.keys(entry).length === 0))
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+};
+
 const loadAvailableCampaignMedia = async (
   setup: SocialAccountSetupProps,
 ): Promise<
@@ -248,9 +284,9 @@ const loadAvailableCampaignMedia = async (
     mediaType: "image" | "video";
     source: "asset" | "post";
   }>
-> =>
-  (
-    await Promise.all([
+> => {
+  const catalog = (
+    await Promise.allSettled([
       fetchCreativeAssets({ platforms: ["meta", "tiktok"] }),
       ...(setup.meta?.assets ?? []).map((asset) =>
         fetchMetaSocialPosts(asset.id),
@@ -258,9 +294,10 @@ const loadAvailableCampaignMedia = async (
       ...(setup.tiktok?.assets ?? []).map((asset) =>
         fetchTikTokCreativeAssets(asset.id),
       ),
+      ...(setup.tiktok?.assets ?? []).map((asset) => fetchTikTokSocialPosts(asset.id)),
     ])
   )
-    .flat()
+    .flatMap((result) => result.status === "fulfilled" ? result.value : [])
     .filter(
       (media, index, catalog) =>
         catalog.findIndex(
@@ -268,8 +305,11 @@ const loadAvailableCampaignMedia = async (
             candidate.url === media.url &&
             candidate.platform === media.platform,
         ) === index,
-    )
-    .slice(0, 100)
+    );
+  const meta = catalog.filter((media) => media.platform !== "tiktok");
+  const tiktok = catalog.filter((media) => media.platform === "tiktok");
+  const balanced = Array.from({ length: Math.max(meta.length, tiktok.length) }, (_, index) => [meta[index], tiktok[index]]).flat().filter((media): media is NonNullable<typeof media> => Boolean(media));
+  return balanced.slice(0, 1000)
     .map((media) => {
       const platform: CampaignPlatform =
         media.platform === "tiktok" ? "tiktok" : "meta";
@@ -286,8 +326,11 @@ const loadAvailableCampaignMedia = async (
           ? ("video" as const)
           : ("image" as const),
         source: media.kind,
+        thumbnailUrl: media.thumbnailUrl,
+        tiktok: media.tiktok,
       };
     });
+};
 
 const toUiMessages = (
   messages: AiCampaignDraftResponse["messages"],
@@ -381,6 +424,7 @@ export function CampaignSetupWorkspace({
   const aiRequestIdRef = useRef(0);
   const aiAbortRef = useRef<AbortController | null>(null);
   const createIdempotencyKeyRef = useRef(crypto.randomUUID());
+  const pendingCreateRef = useRef<CreateCampaignPayload | null>(null);
   const publishAttemptRef = useRef<{
     campaignId: string;
     fingerprint: string;
@@ -389,6 +433,34 @@ export function CampaignSetupWorkspace({
   const latestCampaignRef = useRef(campaign);
   const savedCampaignIdRef = useRef<string | null>(null);
   const autosaveCreatedIdRef = useRef<string | null>(null);
+  const writeQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const writingFinalRef = useRef(false);
+  const publishedRef = useRef(false);
+  const loadedStatusRef = useRef("draft");
+  const [loadedStatus, setLoadedStatus] = useState("draft");
+  const serializeWrite = <T,>(operation: () => Promise<T>): Promise<T> => {
+    const next = writeQueueRef.current.then(operation, operation);
+    writeQueueRef.current = next.catch(() => undefined);
+    return next;
+  };
+  const saveDraftSnapshot = async (payload: CreateCampaignPayload) => {
+    let id = savedCampaignIdRef.current;
+    let saved;
+    if (!id) {
+      pendingCreateRef.current ??= structuredClone(payload);
+      const submitted = pendingCreateRef.current;
+      saved = await createCampaignDraft(submitted, { idempotencyKey: createIdempotencyKeyRef.current });
+      id = saved.id;
+      autosaveCreatedIdRef.current = id;
+      savedCampaignIdRef.current = id;
+      pendingCreateRef.current = null;
+      if (JSON.stringify(submitted) !== JSON.stringify(payload)) saved = await updateCampaignDraft(id, payload);
+    } else saved = await updateCampaignDraft(id, payload);
+    savedCampaignIdRef.current = saved.id;
+    setSavedCampaignId(saved.id);
+    autosaveRef.current.lastFingerprint = JSON.stringify(payload);
+    return saved;
+  };
   const autosaveRef = useRef({
     running: false,
     requested: false,
@@ -460,9 +532,22 @@ export function CampaignSetupWorkspace({
           minimumDailyBudget: selectedMetaAsset.minDailyBudgetMinor / 100,
         }
       : undefined;
+  const selectedTikTokAsset = accounts?.tiktok?.assets?.find((asset) => asset.id === campaign.campaign.configuration.accountAssetIds?.tiktok);
+  const selectedAccountRules = campaign.campaign.platforms.includes("tiktok") && selectedTikTokAsset?.currency && selectedTikTokAsset.timezoneName && typeof selectedTikTokAsset.minDailyBudget === "number"
+    ? { timezoneName: selectedTikTokAsset.timezoneName, minimumDailyBudget: Math.max(selectedTikTokAsset.minDailyBudget, selectedMetaAccountRules?.minimumDailyBudget ?? 0) }
+    : selectedMetaAccountRules;
+  const budgetAccountError = campaign.campaign.platforms.includes("tiktok")
+    ? !selectedTikTokAsset?.currency || selectedTikTokAsset.readyForCampaigns === false
+      ? selectedTikTokAsset?.readinessError ?? "Refresh the selected TikTok advertiser to load its currency and spending limits."
+      : selectedMetaAsset?.currency && selectedMetaAsset.currency !== selectedTikTokAsset.currency
+        ? "These ad accounts use different currencies. Create separate campaigns for them so each budget is clear."
+        : campaign.audienceStrategies.some((strategy) => strategy.budget.currency !== selectedTikTokAsset.currency)
+          ? `The TikTok advertiser bills in ${selectedTikTokAsset.currency}. Update the budget currency and confirm the amount.`
+          : null
+    : null;
   // Meta bills in the ad account currency and rejects a budget in any other
   // one, so the account decides. Until an account is chosen, the country does.
-  const budgetCurrency = selectedMetaAsset?.currency ?? countryCurrency;
+  const budgetCurrency = selectedMetaAsset?.currency ?? selectedTikTokAsset?.currency ?? countryCurrency;
 
   // The advertiser country arrives after the first render, so fill it in on
   // budgets nobody has typed an amount into yet.
@@ -500,7 +585,7 @@ export function CampaignSetupWorkspace({
   );
 
   useEffect(() => {
-    if (isLiveEdit) return;
+    if (isLiveEdit || writingFinalRef.current || publishedRef.current || loadedStatusRef.current !== "draft") return;
     if (editingCampaignLoading || !method || !campaign.campaign.name.trim()) return;
     if (validateCampaignDraftPayload(campaign)) return;
 
@@ -515,16 +600,11 @@ export function CampaignSetupWorkspace({
           const fingerprint = JSON.stringify(payload);
           if (fingerprint === autosaveRef.current.lastFingerprint) continue;
           try {
-            const existingCampaignId = savedCampaignIdRef.current;
-            const saved = existingCampaignId
-              ? await updateCampaignDraft(existingCampaignId, payload)
-              : await createCampaignDraft(payload, {
-                  idempotencyKey: createIdempotencyKeyRef.current,
-                });
-            if (!existingCampaignId) autosaveCreatedIdRef.current = saved.id;
-            savedCampaignIdRef.current = saved.id;
-            setSavedCampaignId(saved.id);
-            autosaveRef.current.lastFingerprint = fingerprint;
+            const saved = await serializeWrite(async () => {
+              if (writingFinalRef.current || publishedRef.current || loadedStatusRef.current !== "draft") return null;
+              return saveDraftSnapshot(latestCampaignRef.current);
+            });
+            if (!saved) break;
             setAutosaveError(null);
             const url = new URL(window.location.href);
             if (url.searchParams.get("id") !== saved.id) {
@@ -582,10 +662,9 @@ export function CampaignSetupWorkspace({
             "Only draft, failed, or rejected campaigns can be edited.",
           );
         }
-        const editableCampaign =
-          !isLiveEdit && ["failed", "rejected"].includes(status)
-            ? await updateCampaignStatus(editCampaignId, "draft")
-            : result;
+        loadedStatusRef.current = status;
+        setLoadedStatus(status);
+        const editableCampaign = result;
         if (!active) return;
         const payload = campaignDtoToPayload(editableCampaign);
         if (payload.creationMode === "unknown") {
@@ -1025,22 +1104,24 @@ export function CampaignSetupWorkspace({
         (asset) => asset.id === accountAssetIds.meta,
       );
       const audienceStrategies = current.audienceStrategies.map((strategy) => {
+        const tiktokAccountChanged = current.campaign.configuration.accountAssetIds?.tiktok !== accountAssetIds.tiktok;
         const resetDestination = tiktokSelected && ["INSTANT_FORM", "WHATSAPP"].includes(strategy.configuration.destination);
-        const budget = selectedMetaAsset?.readyForCampaigns && selectedMetaAsset.currency && typeof selectedMetaAsset.minDailyBudgetMinor === "number"
-          ? { ...strategy.budget, currency: selectedMetaAsset.currency, amount: Math.max(strategy.budget.amount, selectedMetaAsset.minDailyBudgetMinor / 100) }
-          : strategy.budget;
+        const selectedCurrency = selectedMetaAsset?.currency ?? accounts?.tiktok?.assets?.find((asset) => asset.id === accountAssetIds.tiktok)?.currency;
+        const budget = strategy.budget.amount === 0 && selectedCurrency ? { ...strategy.budget, currency: selectedCurrency } : strategy.budget;
         const ads = platforms.flatMap((platform) => {
           const existing = strategy.ads.filter((ad) => ad.platform === platform);
-          return existing.length ? existing : [emptyCreative(platform)];
+          return existing.length ? existing.map((ad) => platform === "tiktok" && tiktokAccountChanged ? { ...ad, tiktok: undefined } : ad) : [emptyCreative(platform)];
         });
         return {
           ...strategy,
           configuration: {
             ...strategy.configuration,
-            eventSourceIds: Object.fromEntries(Object.entries(strategy.configuration.eventSourceIds ?? {}).filter(([platform]) => platforms.includes(platform as CampaignPlatform))),
+            eventSourceIds: Object.fromEntries(Object.entries(strategy.configuration.eventSourceIds ?? {}).filter(([platform]) => platforms.includes(platform as CampaignPlatform) && current.campaign.configuration.accountAssetIds?.[platform as CampaignPlatform] === accountAssetIds[platform as CampaignPlatform])),
+            optimizationEvents: tiktokAccountChanged ? {} : strategy.configuration.optimizationEvents,
             ...(resetGoal || resetDestination ? { destination: "WEBSITE" as const, optimizationGoal: "REACH" as const } : {}),
           },
           budget,
+          audience: tiktokAccountChanged ? { ...strategy.audience, tiktokInterestIds: [] } : strategy.audience,
           ads,
         };
       });
@@ -1182,8 +1263,8 @@ export function CampaignSetupWorkspace({
     if (baseDraft && lockedSteps.length) {
       const changedLockedStep = lockedSteps.find(
         (stepId) =>
-          JSON.stringify(aiStepSnapshot(baseDraft, stepId)) !==
-          JSON.stringify(aiStepSnapshot(generated, stepId)),
+          JSON.stringify(semanticAiSnapshot(aiStepSnapshot(baseDraft, stepId))) !==
+          JSON.stringify(semanticAiSnapshot(aiStepSnapshot(generated, stepId))),
       );
       if (changedLockedStep) {
         throw new Error(
@@ -1204,7 +1285,7 @@ export function CampaignSetupWorkspace({
       }
       if (
         platform === "meta" &&
-        "currency" in selectedAsset &&
+        "minDailyBudgetMinor" in selectedAsset &&
         generated.audienceStrategies.some((strategy) =>
           strategy.budget.currency !== selectedAsset.currency ||
           (strategy.budget.type === "daily" &&
@@ -1217,13 +1298,14 @@ export function CampaignSetupWorkspace({
           "Growdex AI returned a budget that does not match the selected Meta account currency and minimum. The draft was rejected.",
         );
       }
+      if (platform === "tiktok" && generated.audienceStrategies.some((strategy) => strategy.budget.currency !== selectedAsset.currency)) throw new Error("The AI budget currency does not match the selected TikTok advertiser. Confirm the account and budget before continuing.");
     }
 
     setAiDraftId(response.draftId);
     setAiDraftRevision(response.revision);
     setAiMessages(toUiMessages(response.messages));
 
-    const strategyIds = generated.audienceStrategies.map(() => crypto.randomUUID());
+    const strategyIds = generated.audienceStrategies.map((strategy, index) => strategy.id ?? (!options?.initial ? campaign.audienceStrategies[index]?.id : undefined) ?? crypto.randomUUID());
     setCampaign({
       creationMode: "ai",
       campaign: {
@@ -1233,7 +1315,7 @@ export function CampaignSetupWorkspace({
         configuration: {
           accountAssetIds: generated.configuration.accountAssetIds,
           specialAdCategories: generated.configuration.specialAdCategories,
-          sameCreativeForAll: false,
+          sameCreativeForAll: generated.configuration.sameCreativeForAll,
           budgetOptimization: generated.configuration.budgetOptimization,
         },
       },
@@ -1243,15 +1325,15 @@ export function CampaignSetupWorkspace({
           : new Date(Date.now() + 30 * 60_000);
         const end = strategy.budget.endDateLocal
           ? new Date(strategy.budget.endDateLocal)
-          : new Date(start);
-        if (!strategy.budget.endDateLocal) end.setUTCDate(end.getUTCDate() + strategy.budget.durationDays);
+          : strategy.budget.durationDays ? new Date(start.getTime() + strategy.budget.durationDays * 86_400_000) : null;
         return {
           id: strategyIds[index],
           name: strategy.name,
-          configuration: {
+          configuration: strategy.configuration ?? {
             destination: generated.configuration.destination,
             optimizationGoal: generated.configuration.optimizationGoal,
             eventSourceIds: generated.configuration.eventSourceIds,
+            optimizationEvents: generated.configuration.optimizationEvents,
           },
           audience: strategy.audience,
           budget: {
@@ -1259,14 +1341,18 @@ export function CampaignSetupWorkspace({
             currency: strategy.budget.currency,
             type: strategy.budget.type,
             startDate: start.toISOString(),
-            endDate: end.toISOString(),
+            endDate: end?.toISOString(),
           },
           ads: strategy.creatives.map((creative) => ({
+            id: creative.id,
             platform: creative.platform,
             primaryText: creative.primaryText,
             headline: creative.headline,
             cta: creative.cta,
             mediaUrl: creative.mediaUrl,
+            mediaType: creative.mediaType ?? creative.mediaRequirement,
+            thumbnailUrl: creative.thumbnailUrl,
+            tiktok: creative.tiktok,
             landingPageUrl: creative.landingPageUrl,
             appId: creative.appId,
             leadFormId: creative.leadFormId,
@@ -1351,8 +1437,8 @@ export function CampaignSetupWorkspace({
       preserveStep?: boolean;
     },
   ) => {
-    if (!aiDraftId || !aiGeneratedDraft) {
-      setError("The AI draft session is missing. Start a new AI campaign.");
+    if (!aiGeneratedDraft) {
+      setError("Create an AI draft before asking for a revision.");
       return;
     }
     const userText = options?.userText ?? instruction;
@@ -1364,7 +1450,6 @@ export function CampaignSetupWorkspace({
             : ("assistant" as const),
         content: message.text,
       })),
-      { role: "user" as const, content: userText },
     ];
     setAiMessages((current) => [
       ...current,
@@ -1374,10 +1459,30 @@ export function CampaignSetupWorkspace({
     const currentDraft = campaignToAiDraft(campaign, aiGeneratedDraft);
     const { controller, requestId } = beginAiRequest(options?.stepId);
     try {
+      let sessionId = aiDraftId;
+      let revision = aiDraftRevision;
+      const availableMedia = accounts ? await loadAvailableCampaignMedia(accounts) : [];
+      if (sessionId) {
+        try {
+          const recovered = await recoverAiCampaignDraft(sessionId);
+          revision = recovered.revision;
+        } catch {
+          sessionId = null;
+        }
+      }
+      if (!sessionId) {
+        const saved = savedCampaignIdRef.current;
+        const resumed = await resumeAiCampaignDraft({ campaignId: saved ?? undefined, currentDraft, availableMedia });
+        sessionId = resumed.draftId;
+        revision = resumed.revision;
+      }
+      setAiDraftId(sessionId);
+      setAiDraftRevision(revision);
       const response = await reviseAiCampaignDraft({
-        draftId: aiDraftId,
-        revision: aiDraftRevision,
+        draftId: sessionId,
+        revision,
         currentDraft,
+        availableMedia,
         targetStep: options?.stepId,
         instruction,
         lockedSteps,
@@ -1510,7 +1615,7 @@ export function CampaignSetupWorkspace({
     }
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
-    const requiresVideo = activeStrategy.configuration.destination === "VIDEO";
+    const requiresVideo = platform === "tiktok" || activeStrategy.configuration.destination === "VIDEO";
     if (requiresVideo && !isVideo) {
       setError("This campaign requires a video creative.");
       return;
@@ -1528,6 +1633,7 @@ export function CampaignSetupWorkspace({
     setUploadProgress({ name: file.name, percent: 0 });
     setError(null);
     try {
+      if (platform === "tiktok") await validateTikTokVideoFile(file);
       const uploaded = await uploadCreativeToCloudinary(file, (percent) =>
         setUploadProgress({ name: file.name, percent }),
       );
@@ -1538,10 +1644,22 @@ export function CampaignSetupWorkspace({
           ...current,
           audienceStrategies: current.audienceStrategies.map((strategy) => {
             if (strategy.id !== strategyId) return strategy;
+            const existingTikTok = strategy.ads[index]?.tiktok;
             const media = {
               mediaUrl: uploaded.url,
               mediaType: uploaded.mediaType,
               thumbnailUrl: uploaded.thumbnailUrl,
+              ...(existingTikTok
+                ? {
+                    tiktok: {
+                      ...existingTikTok,
+                      videoId: undefined,
+                      postId: undefined,
+                      coverImageId: undefined,
+                      uploadFingerprint: undefined,
+                    },
+                  }
+                : {}),
             };
             if (index < 0) {
               return { ...strategy, ads: [...strategy.ads, { ...emptyCreative(platform), ...media }] };
@@ -1676,6 +1794,11 @@ export function CampaignSetupWorkspace({
       );
       return;
     }
+    if (step === 3 && campaign.campaign.platforms.includes("tiktok")) {
+      const issue = validateTikTokStrategy(campaign.campaign.goal, activeStrategy.configuration);
+      if (issue) { blockCreateScreen("invalid_tiktok_delivery", issue); return; }
+    }
+    if (step === 4 && campaign.campaign.platforms.includes("tiktok") && !activeStrategy.audience.tiktokAgeGroups?.length) { blockCreateScreen("missing_tiktok_age", "Choose the complete age groups TikTok should reach."); return; }
     if (
       step === 3 &&
       activeStrategy.configuration.optimizationGoal === "CONVERSIONS" &&
@@ -1704,6 +1827,11 @@ export function CampaignSetupWorkspace({
       blockCreateScreen("invalid_budget", "Enter a budget greater than zero.");
       return;
     }
+    if (step === 5 && budgetAccountError) { blockCreateScreen("invalid_account_budget", budgetAccountError); return; }
+    if (step === 5 && selectedAccountRules) {
+      const duration = activeStrategy.budget.type === "lifetime" && activeStrategy.budget.endDate ? Math.max(1, Math.ceil((new Date(activeStrategy.budget.endDate).getTime() - new Date(activeStrategy.budget.startDate).getTime()) / 86_400_000)) : 1;
+      if (activeStrategy.budget.amount < selectedAccountRules.minimumDailyBudget * duration) { blockCreateScreen("invalid_minimum_budget", `Enter at least ${selectedAccountRules.minimumDailyBudget * duration} ${activeStrategy.budget.currency} for this schedule.`); return; }
+    }
     if (step === 6) {
       const prepared = fillMissingStrategyAds(campaign);
       if (prepared !== campaign) setCampaign(prepared);
@@ -1725,6 +1853,8 @@ export function CampaignSetupWorkspace({
   };
 
   const createDraft = async () => {
+    if (writingFinalRef.current || publishedRef.current) return;
+    if (["failed", "rejected"].includes(loadedStatusRef.current)) { setError("Pause existing ads and reopen this as a draft before saving changes."); return; }
     const prepared = fillMissingStrategyAds(campaign);
     if (prepared !== campaign) setCampaign(prepared);
     const validation = validateCampaignDraftPayload(prepared);
@@ -1733,17 +1863,15 @@ export function CampaignSetupWorkspace({
       return;
     }
     setSaving(true);
+    writingFinalRef.current = true;
     setError(null);
     try {
-      const created = savedCampaignId
-        ? await updateCampaignDraft(savedCampaignId, prepared)
-        : await createCampaignDraft(prepared, {
-            idempotencyKey: createIdempotencyKeyRef.current,
-          });
+      const created = await serializeWrite(() => saveDraftSnapshot(prepared));
       setSavedCampaignId(created.id);
       setCompletion({ kind: "draft", campaignId: created.id });
       sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
       setSaving(false);
+      writingFinalRef.current = false;
     } catch (failure) {
       setError(
         failure instanceof Error
@@ -1751,6 +1879,7 @@ export function CampaignSetupWorkspace({
           : "Could not save the campaign.",
       );
       setSaving(false);
+      writingFinalRef.current = false;
     }
   };
 
@@ -1793,6 +1922,9 @@ export function CampaignSetupWorkspace({
   };
 
   const createAndPublish = async () => {
+    if (writingFinalRef.current || publishedRef.current) return;
+    if (["failed", "rejected"].includes(loadedStatusRef.current)) { setError("Use Retry publishing to continue the saved campaign, or pause existing ads before editing it."); return; }
+    if (budgetAccountError) { setError(budgetAccountError); return; }
     const prepared = fillMissingStrategyAds(campaign);
     if (prepared !== campaign) setCampaign(prepared);
     const validation = validateCampaignPayload(prepared);
@@ -1818,13 +1950,10 @@ export function CampaignSetupWorkspace({
       return;
     }
     setPublishing(true);
+    writingFinalRef.current = true;
     setError(null);
     try {
-      const saved = savedCampaignId
-        ? await updateCampaignDraft(savedCampaignId, prepared)
-        : await createCampaignDraft(prepared, {
-            idempotencyKey: createIdempotencyKeyRef.current,
-          });
+      const saved = await serializeWrite(() => saveDraftSnapshot(prepared));
       setSavedCampaignId(saved.id);
       const fingerprint = JSON.stringify(prepared);
       if (
@@ -1841,6 +1970,7 @@ export function CampaignSetupWorkspace({
       await publishCampaign(saved.id, {
         idempotencyKey: publishAttemptRef.current.key,
       });
+      publishedRef.current = true;
       trackScreenCompleted("campaign_create", "review");
       track("campaign_published", {
         platforms: prepared.campaign.platforms.join(","),
@@ -1849,6 +1979,7 @@ export function CampaignSetupWorkspace({
       setCompletion({ kind: "publish", campaignId: saved.id });
       sessionStorage.removeItem(AI_DRAFT_STORAGE_KEY);
       setPublishing(false);
+      writingFinalRef.current = false;
     } catch (failure) {
       blockCreateScreen(
         "publish_failed",
@@ -1857,6 +1988,7 @@ export function CampaignSetupWorkspace({
           : "Could not publish the campaign.",
       );
       setPublishing(false);
+      writingFinalRef.current = false;
     }
   };
 
@@ -1976,6 +2108,8 @@ export function CampaignSetupWorkspace({
               </h4>
               <div className="mt-4">
                 <ManualEventScreen
+                  optimizationEvents={activeStrategy.configuration.optimizationEvents}
+                  onOptimizationEventsChange={(optimizationEvents) => patchStrategyConfiguration({ optimizationEvents })}
                   platforms={campaign.campaign.platforms}
                   accountAssetIds={
                     campaign.campaign.configuration.accountAssetIds ?? {}
@@ -2030,13 +2164,18 @@ export function CampaignSetupWorkspace({
           <CampaignBudgetEditor
             budget={activeStrategy.budget}
             onChange={patchBudget}
-            accountRules={selectedMetaAccountRules}
+            accountRules={selectedAccountRules}
+            platformCount={campaign.campaign.platforms.length}
+            tiktokDailyAverage={campaign.campaign.platforms.includes("tiktok") && ["TRAFFIC", "SALES", "LEADS"].includes(campaign.campaign.goal)}
+            accountError={budgetAccountError}
+            expectedCurrency={budgetCurrency}
             lockStart={lockBudgetStart}
           />
         );
       case "creative":
         return (
           <CreativeSetupScreen
+            tiktokAssetId={campaign.campaign.configuration.accountAssetIds?.tiktok}
             campaignId={savedCampaignId}
             brandName={brandName}
             goal={campaign.campaign.goal}
@@ -2107,7 +2246,28 @@ export function CampaignSetupWorkspace({
 
   return (
     <PanelLayout defaultSidebarCollapsed>
-      <div className="relative flex h-full">
+      {["failed", "rejected"].includes(loadedStatus) && <div className="relative z-20 border-b border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <p>The last publish did not complete. Retry continues the saved campaign. To change it, first pause existing ads; publishing the edited draft will create replacements.</p>
+        <div className="mt-2 flex gap-4">
+          <button type="button" disabled={publishing} className="font-gilroy-semibold underline" onClick={() => {
+            const id = savedCampaignIdRef.current;
+            if (!id || writingFinalRef.current) return;
+            writingFinalRef.current = true; setPublishing(true); setError(null);
+            void serializeWrite(() => publishCampaign(id)).then(() => { publishedRef.current = true; setCompletion({ kind: "publish", campaignId: id }); })
+              .catch((failure) => setError(failure instanceof Error ? failure.message : "Could not retry publishing."))
+              .finally(() => { writingFinalRef.current = false; setPublishing(false); });
+          }}>Retry publishing saved campaign</button>
+          <button type="button" disabled={publishing} className="font-gilroy-semibold underline" onClick={() => {
+            const id = savedCampaignIdRef.current;
+            if (!id || writingFinalRef.current) return;
+            writingFinalRef.current = true; setPublishing(true); setError(null);
+            void serializeWrite(() => updateCampaignStatus(id, "draft")).then(() => { loadedStatusRef.current = "draft"; setLoadedStatus("draft"); })
+              .catch((failure) => setError(failure instanceof Error ? failure.message : "Could not confirm existing ads are paused."))
+              .finally(() => { writingFinalRef.current = false; setPublishing(false); });
+          }}>Pause existing ads and edit draft</button>
+        </div>
+      </div>}
+      <fieldset disabled={saving || publishing} className="relative m-0 flex h-full min-w-0 border-0 p-0">
         <DottedBackground fade />
         <div className="relative z-10 flex h-full w-full">
           {editingCampaignLoading ? (
@@ -2135,7 +2295,24 @@ export function CampaignSetupWorkspace({
                   setStep(6);
                 }}
               />
-              <AiCampaignWorkspace
+              <div className="flex h-full min-w-0 flex-1 flex-col">
+                <div className="shrink-0 px-4 pt-3 lg:hidden">
+                  <CampaignTreeMobileNav
+                    campaignName={campaign.campaign.name || "Untitled campaign"}
+                    campaign={campaign}
+                    activeStrategyId={activeStrategy?.id}
+                    onSelectStrategy={openStrategyEditor}
+                    onEditStrategy={openStrategyEditor}
+                    onAddStrategy={addAudienceStrategy}
+                    onDuplicateStrategy={duplicateAudienceStrategy}
+                    onDeleteStrategy={deleteAudienceStrategy}
+                    onSelectAd={(strategyId) => {
+                      setActiveStrategyId(strategyId);
+                      setStep(6);
+                    }}
+                  />
+                </div>
+                <AiCampaignWorkspace
                 campaignName={campaign.campaign.name}
                 firstName={firstName}
                 steps={aiGeneratedDraft ? aiFlow.steps : undefined}
@@ -2182,7 +2359,7 @@ export function CampaignSetupWorkspace({
                   })
                 }
                 onPrompt={(prompt) =>
-                  void (aiDraftId
+                  void (aiGeneratedDraft
                     ? reviseAiDraft(prompt)
                     : startAiDraft(prompt))
                 }
@@ -2191,6 +2368,7 @@ export function CampaignSetupWorkspace({
                   setStep(aiPostReviewStep);
                 }}
               />
+              </div>
             </>
           ) : (
             <>
@@ -2216,7 +2394,24 @@ export function CampaignSetupWorkspace({
                 className="h-full flex-1 overflow-y-auto"
               >
                 <div className="mx-auto max-w-5xl p-4 md:p-8">
-                  <div className="mb-8">{stepper}</div>
+                  <CampaignTreeMobileNav
+                    campaignName={campaign.campaign.name || "Untitled campaign"}
+                    campaign={campaign}
+                    activeStrategyId={activeStrategy?.id}
+                    onSelectStrategy={
+                      step === 7 ? scrollToReviewStrategy : openStrategyEditor
+                    }
+                    onEditStrategy={openStrategyEditor}
+                    activeStrategyLabel={step === 7 ? "Selected" : "Editing"}
+                    onAddStrategy={addAudienceStrategy}
+                    onDuplicateStrategy={duplicateAudienceStrategy}
+                    onDeleteStrategy={deleteAudienceStrategy}
+                    onSelectAd={(strategyId) => {
+                      setActiveStrategyId(strategyId);
+                      setStep(6);
+                    }}
+                  />
+                  <div className="mt-4 mb-8 lg:mt-0">{stepper}</div>
 
                   {aiRationale && step > 0 && step < 7 && (
                     <div className="mb-6 flex items-start gap-3 rounded-2xl bg-violet-50 p-4 text-sm text-violet-800">
@@ -2351,6 +2546,8 @@ export function CampaignSetupWorkspace({
                         </p>
                         <div className="mt-5">
                           <ManualEventScreen
+                            optimizationEvents={activeStrategy.configuration.optimizationEvents}
+                            onOptimizationEventsChange={(optimizationEvents) => patchStrategyConfiguration({ optimizationEvents })}
                             platforms={campaign.campaign.platforms}
                             accountAssetIds={
                               campaign.campaign.configuration.accountAssetIds ??
@@ -2432,7 +2629,11 @@ export function CampaignSetupWorkspace({
                       <CampaignBudgetEditor
                         budget={activeStrategy.budget}
                         onChange={patchBudget}
-                        accountRules={selectedMetaAccountRules}
+                        accountRules={selectedAccountRules}
+                        platformCount={campaign.campaign.platforms.length}
+                        tiktokDailyAverage={campaign.campaign.platforms.includes("tiktok") && ["TRAFFIC", "SALES", "LEADS"].includes(campaign.campaign.goal)}
+                        accountError={budgetAccountError}
+                        expectedCurrency={budgetCurrency}
                         lockStart={lockBudgetStart}
                       />
                     </section>
@@ -2440,6 +2641,7 @@ export function CampaignSetupWorkspace({
 
                   {step === 6 && (
                     <CreativeSetupScreen
+                      tiktokAssetId={campaign.campaign.configuration.accountAssetIds?.tiktok}
                       campaignId={savedCampaignId}
                       key={activeStrategy.id}
                       brandName={brandName}
@@ -2575,7 +2777,7 @@ export function CampaignSetupWorkspace({
             router.push("/panel/campaigns");
           }}
         />
-      </div>
+      </fieldset>
     </PanelLayout>
   );
 }

@@ -36,4 +36,9 @@ export interface TikTokAssetUI {
   advertiserId: string;
   name: string;
   isPrimary: boolean;
+  currency?: string | null;
+  timezoneName?: string | null;
+  minDailyBudget?: number | null;
+  readyForCampaigns?: boolean;
+  readinessError?: string | null;
 }

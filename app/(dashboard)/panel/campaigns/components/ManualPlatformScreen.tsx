@@ -124,7 +124,7 @@ export function ManualPlatformScreen({
                         platform === "meta" && "adAccountName" in asset
                           ? asset
                           : null;
-                      const available = metaAsset?.readyForCampaigns ?? true;
+                      const available = asset.readyForCampaigns !== false;
                       return (
                         <button
                           key={id}
@@ -156,6 +156,7 @@ export function ManualPlatformScreen({
                                   : " · Refresh connection details"}
                               </span>
                             )}
+                            {platform === "tiktok" && <span className="mt-1 block text-[11px] leading-relaxed text-gray-500">{asset.currency ?? "Currency unavailable"}{asset.timezoneName ? ` · ${asset.timezoneName}` : ""}{"readinessError" in asset && asset.readinessError ? ` · ${asset.readinessError}` : ""}</span>}
                           </span>
                           {asset.isPrimary && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-gilroy-medium text-green-700">
@@ -166,22 +167,20 @@ export function ManualPlatformScreen({
                       );
                       })}
                     </div>
-                    {platform === "meta" &&
-                      assets.some(
+                    {assets.some(
                         (asset) =>
-                          "readyForCampaigns" in asset &&
-                          !asset.readyForCampaigns,
+                          asset.readyForCampaigns !== true || !asset.currency,
                       ) && (
                         <button
                           type="button"
-                          onClick={() => onRefresh("meta")}
+                          onClick={() => onRefresh(platform)}
                           disabled={connecting !== null}
                           className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-gilroy-medium text-gray-700 disabled:opacity-50"
                         >
-                          {connecting === "meta" && (
+                          {connecting === platform && (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           )}
-                          Refresh Meta connection
+                          Refresh {platform === "meta" ? "Meta" : "TikTok"} connection
                         </button>
                       )}
                   </>

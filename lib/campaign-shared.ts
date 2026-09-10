@@ -58,6 +58,37 @@ export const validateFile = (file: File): { ok: boolean; error?: string } => {
   return { ok: true };
 };
 
+export const validateTikTokVideoFile = async (file: File): Promise<void> => {
+  const validation = validateFile(file);
+  if (!validation.ok) throw new Error(validation.error);
+  if (!/\.(mp4|mov|mpeg|avi)$/i.test(file.name)) throw new Error("TikTok videos must use MP4, MOV, MPEG, or AVI format.");
+  const url = URL.createObjectURL(file);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const video = document.createElement("video");
+      const cleanup = () => { window.clearTimeout(timeout); video.onloadedmetadata = null; video.onerror = null; video.removeAttribute("src"); video.load(); };
+      const timeout = window.setTimeout(() => { cleanup(); reject(new Error("Could not inspect this video. Export an MP4 video and try again.")); }, 15_000);
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        const { videoWidth: width, videoHeight: height, duration } = video;
+        cleanup();
+        const ratio = width / height;
+        const portrait = Math.abs(ratio - 9 / 16) < 0.02 && width >= 540 && height >= 960;
+        const landscape = Math.abs(ratio - 16 / 9) < 0.02 && width >= 960 && height >= 540;
+        const square = Math.abs(ratio - 1) < 0.02 && width >= 640 && height >= 640;
+        if (!Number.isFinite(duration) || duration <= 0) reject(new Error("This video has no readable duration. Export it again before uploading."));
+        else if (duration > 600) reject(new Error("Uploaded TikTok ad videos must be no longer than 10 minutes."));
+        else if (!portrait && !landscape && !square) reject(new Error("Use a 9:16 video of at least 540×960, a 16:9 video of at least 960×540, or a square video of at least 640×640."));
+        else resolve();
+      };
+      video.onerror = () => { cleanup(); reject(new Error("Your browser cannot read this video. Export an MP4 video and try again.")); };
+      video.src = url;
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
+
 export const toDateInputValue = (d: Date) => {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -93,8 +124,7 @@ export const isVideoMedia = ({
   if (normalizedType === "video") return true;
   if (isVideoUrl(url)) return true;
   if (isImageUrl(url)) return false;
-
-  return platform === "tiktok";
+  return platform === "tiktok" && Boolean(url);
 };
 
 export const startOfUtcDayIso = (d: Date) =>

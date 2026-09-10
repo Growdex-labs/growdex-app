@@ -14,6 +14,7 @@ interface CampaignHeaderProps {
   onResume?: () => void;
   onEnd?: () => void;
   statusBusy?: boolean;
+  deliveryStatus?: string;
 }
 
 export function CampaignHeader({
@@ -23,9 +24,11 @@ export function CampaignHeader({
   onResume,
   onEnd,
   statusBusy = false,
+  deliveryStatus,
 }: CampaignHeaderProps) {
   const router = useRouter();
   const canOperate = campaign.status === "active" || campaign.status === "paused";
+  const canPause = ["active", "under_review", "scheduled"].includes(deliveryStatus ?? campaign.status);
 
   return (
     <div className="mb-8 bg-white p-4 rounded-xl">
@@ -81,7 +84,7 @@ export function CampaignHeader({
         </div>
 
         {/* Vertical Divider */}
-        <div className="w-px bg-gray-300 self-stretch"></div>
+        <div className="hidden md:block w-px bg-gray-300 self-stretch"></div>
 
         {/* Column 2: Description */}
         <div className="flex-1">
@@ -97,7 +100,7 @@ export function CampaignHeader({
         </div>
 
         {/* Vertical Divider */}
-        <div className="w-px bg-gray-300 self-stretch"></div>
+        <div className="hidden md:block w-px bg-gray-300 self-stretch"></div>
 
         {/* Column 3: Campaign Goal */}
         <div className="bg-slate-300/20 border border-gray-200 rounded-xl p-6 flex-1">
@@ -129,7 +132,7 @@ export function CampaignHeader({
                 Edit
               </button>
             )}
-            {campaign.status === "active" && onPause && (
+            {canPause && onPause && (
               <button
                 type="button"
                 disabled={statusBusy}

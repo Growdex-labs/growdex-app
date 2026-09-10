@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   AI_CAMPAIGN_STEP_IDS,
+  TIKTOK_AGE_GROUPS,
   type AiCampaignStepId,
   type CreateCampaignPayload,
 } from "@/lib/campaigns";
@@ -132,7 +133,7 @@ export function useAiCampaignFlow(
         detail: strategies
           .map(
             (current) =>
-              `${current.name}: ${current.audience.locations.join(", ")} · ages ${current.audience.ageMin ?? 18}–${current.audience.ageMax ?? 65}`,
+              `${current.name}: ${current.audience.locations.join(", ")}${campaign.campaign.platforms.includes("meta") ? ` · Meta ages ${current.audience.ageMin ?? 18}–${current.audience.ageMax ?? 65}` : ""}${campaign.campaign.platforms.includes("tiktok") ? ` · TikTok ages ${(current.audience.tiktokAgeGroups ?? []).map((id) => TIKTOK_AGE_GROUPS.find((group) => group.id === id)?.label ?? id).join(", ") || "selection required"}` : ""}`,
           )
           .join(" | "),
         chips: strategies.map((current) => current.name),
@@ -145,12 +146,12 @@ export function useAiCampaignFlow(
         status: statuses.budget,
         result:
           strategies.length === 1
-            ? `${currencySymbol(strategy.budget.currency)}${strategy.budget.amount.toLocaleString()} ${strategy.budget.type}`
+            ? `${currencySymbol(strategy.budget.currency)}${strategy.budget.amount.toLocaleString()} ${strategy.budget.type} per platform`
             : `${strategies.length} strategy budgets`,
         detail: strategies
           .map(
             (current) =>
-              `${current.name}: ${currencySymbol(current.budget.currency)}${current.budget.amount.toLocaleString()} ${current.budget.type}`,
+              `${current.name}: ${currencySymbol(current.budget.currency)}${current.budget.amount.toLocaleString()} ${current.budget.type} per platform${campaign.campaign.platforms.length > 1 ? `; combined ${currencySymbol(current.budget.currency)}${(current.budget.amount * campaign.campaign.platforms.length).toLocaleString()}` : ""}`,
           )
           .join(" | "),
       },

@@ -6,12 +6,20 @@ import {
   ChevronDown,
   ChevronLeft,
   Copy,
+  ListTree,
   MoreHorizontal,
   Pencil,
   Plus,
   Trash2,
   TriangleAlert,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import type { AudienceStrategy, CreateCampaignPayload } from "@/lib/campaigns";
 
 interface CampaignTreeSidebarProps {
@@ -39,11 +47,10 @@ const strategyNeedsAttention = (
     (platform) => !strategy.ads.some((ad) => ad.platform === platform),
   );
 
-export function CampaignTreeSidebar({
+function CampaignTreeContent({
   campaignName = "Untitled Campaign",
   campaign,
   activeStrategyId,
-  compact = false,
   activeStrategyLabel = "Editing",
   onSelectStrategy,
   onEditStrategy,
@@ -51,7 +58,7 @@ export function CampaignTreeSidebar({
   onDuplicateStrategy,
   onDeleteStrategy,
   onSelectAd,
-}: CampaignTreeSidebarProps) {
+}: Omit<CampaignTreeSidebarProps, "compact">) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const strategies = campaign?.audienceStrategies ?? [];
@@ -67,13 +74,7 @@ export function CampaignTreeSidebar({
   }, [activeId]);
 
   return (
-    <aside
-      className={`hidden h-full shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white lg:flex ${
-        compact
-          ? "w-52 p-3 xl:w-60 xl:p-4"
-          : "w-80 p-4 xl:w-96"
-      }`}
-    >
+    <>
       <Link
         href="/panel/campaigns"
         className="flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-2.5 text-sm font-gilroy-medium text-gray-700 transition-colors hover:bg-gray-100"
@@ -222,7 +223,84 @@ export function CampaignTreeSidebar({
           <Plus className="size-4" /> Add Audience Strategy
         </button>
       )}
+    </>
+  );
+}
+
+export function CampaignTreeSidebar(props: CampaignTreeSidebarProps) {
+  const { compact = false, ...contentProps } = props;
+  return (
+    <aside
+      className={`hidden h-full shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white lg:flex ${
+        compact ? "w-52 p-3 xl:w-60 xl:p-4" : "w-80 p-4 xl:w-96"
+      }`}
+    >
+      <CampaignTreeContent {...contentProps} />
     </aside>
+  );
+}
+
+export function CampaignTreeMobileNav(props: CampaignTreeSidebarProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const {
+    campaignName = "Untitled Campaign",
+    campaign,
+    activeStrategyId,
+    activeStrategyLabel,
+    onSelectStrategy,
+    onEditStrategy,
+    onAddStrategy,
+    onDuplicateStrategy,
+    onDeleteStrategy,
+    onSelectAd,
+  } = props;
+  const strategyCount = campaign?.audienceStrategies.length ?? 0;
+
+  const closeAfter =
+    <T extends unknown[]>(callback?: (...args: T) => void) =>
+    (...args: T) => {
+      callback?.(...args);
+      setIsOpen(false);
+    };
+
+  return (
+    <div className="lg:hidden">
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-left shadow-sm"
+          >
+            <ListTree className="size-4 shrink-0 text-gray-500" />
+            <span className="min-w-0 flex-1 truncate text-sm font-gilroy-semibold text-gray-900">
+              {campaignName}
+            </span>
+            <span className="shrink-0 text-xs text-gray-500">
+              {strategyCount}{" "}
+              {strategyCount === 1 ? "strategy" : "strategies"}
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-gray-500" />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-80 max-w-[85vw] overflow-y-auto p-4">
+          <SheetHeader className="p-0 pb-2">
+            <SheetTitle>Campaign plan</SheetTitle>
+          </SheetHeader>
+          <CampaignTreeContent
+            campaignName={campaignName}
+            campaign={campaign}
+            activeStrategyId={activeStrategyId}
+            activeStrategyLabel={activeStrategyLabel}
+            onSelectStrategy={closeAfter(onSelectStrategy)}
+            onEditStrategy={closeAfter(onEditStrategy)}
+            onAddStrategy={closeAfter(onAddStrategy)}
+            onDuplicateStrategy={closeAfter(onDuplicateStrategy)}
+            onDeleteStrategy={closeAfter(onDeleteStrategy)}
+            onSelectAd={closeAfter(onSelectAd)}
+          />
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 }
 

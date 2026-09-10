@@ -14,6 +14,8 @@ interface ManualEventScreenProps {
   accountAssetIds: Partial<Record<CampaignPlatform, string>>;
   eventSourceIds: Partial<Record<CampaignPlatform, string>>;
   optimizationGoal: CampaignOptimizationGoal;
+  optimizationEvents?: { tiktok?: string };
+  onOptimizationEventsChange?: (next: { tiktok?: string }) => void;
   onChange: (next: Partial<Record<CampaignPlatform, string>>) => void;
 }
 
@@ -22,6 +24,8 @@ export function ManualEventScreen({
   accountAssetIds,
   eventSourceIds,
   optimizationGoal,
+  optimizationEvents,
+  onOptimizationEventsChange,
   onChange,
 }: ManualEventScreenProps) {
   const [sources, setSources] = useState<CampaignEventSource[]>([]);
@@ -139,9 +143,10 @@ export function ManualEventScreen({
                 key={`${source.platform}-${source.id}`}
                 type="button"
                 disabled={!source.available}
-                onClick={() =>
-                  onChange({ ...eventSourceIds, [source.platform]: source.id })
-                }
+                onClick={() => {
+                  onChange({ ...eventSourceIds, [source.platform]: source.id });
+                  if (source.platform === "tiktok" && !selected) onOptimizationEventsChange?.({});
+                }}
                 className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
                   selected ? "border-khaki-300" : "border-gray-200"
                 }`}
@@ -162,6 +167,7 @@ export function ManualEventScreen({
                   <span className="block text-[11px] uppercase text-gray-400">
                     {source.platform} · {source.id}
                   </span>
+                  {source.eventsPending && <span className="block text-xs text-amber-700">TikTok is still refreshing events. This can take several hours; try again after Events Manager shows the event.</span>}
                 </span>
               </button>
             );
@@ -172,6 +178,13 @@ export function ManualEventScreen({
           No available pixels were returned by the selected account.
         </p>
       )}
+      {sources.filter((source) => source.platform === "tiktok" && eventSourceIds.tiktok === source.id).map((source) => <label key={source.id} className="mt-4 block text-sm font-gilroy-medium text-gray-700">
+        TikTok conversion event
+        <select className="mt-2 h-11 w-full rounded-lg border bg-white px-3" value={optimizationEvents?.tiktok ?? ""} onChange={(event) => onOptimizationEventsChange?.({ tiktok: event.target.value || undefined })}>
+          <option value="">Choose the result TikTok should optimize for</option>
+          {(source.events ?? []).map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
+        </select>
+      </label>)}
     </div>
   );
 }
