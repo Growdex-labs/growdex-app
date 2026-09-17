@@ -9,8 +9,25 @@ vi.mock('./auth', () => ({
   apiFetch,
 }));
 
-import { buildOAuthCallbackPayload } from './oauth-callback';
+import {
+  buildOAuthCallbackPayload,
+  readOAuthProviderCode,
+} from './oauth-callback';
 import { exchangeSocialAuthorizationCode } from './oauth';
+
+describe('readOAuthProviderCode', () => {
+  it('uses TikTok auth_code when code is missing', () => {
+    expect(readOAuthProviderCode(null, 'tiktok-auth-code')).toBe(
+      'tiktok-auth-code',
+    );
+  });
+
+  it('prefers code when both values are present', () => {
+    expect(readOAuthProviderCode('meta-code', 'tiktok-auth-code')).toBe(
+      'meta-code',
+    );
+  });
+});
 
 describe('buildOAuthCallbackPayload', () => {
   it('relays a provider authorization code', () => {

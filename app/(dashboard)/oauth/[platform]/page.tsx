@@ -2,13 +2,19 @@
 
 import { Suspense, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { buildOAuthCallbackPayload } from '@/lib/oauth-callback';
+import {
+  buildOAuthCallbackPayload,
+  readOAuthProviderCode,
+} from '@/lib/oauth-callback';
 
 function OAuthCallbackContent() {
   const params = useParams<{ platform: string }>();
   const searchParams = useSearchParams();
   const platform = params.platform;
-  const code = searchParams.get('code');
+  const code = readOAuthProviderCode(
+    searchParams.get('code'),
+    searchParams.get('auth_code'),
+  );
   const error = searchParams.get('error') || searchParams.get('error_description');
 
   const payload = useMemo(

@@ -2,6 +2,14 @@ export type OAuthCallbackPayload =
   | { type: "oauth_success"; platform: string; code: string }
   | { type: "oauth_error"; platform: string; error: string };
 
+export const readOAuthProviderCode = (
+  code: string | null,
+  authCode: string | null = null,
+) => {
+  const value = code?.trim() || authCode?.trim();
+  return value || null;
+};
+
 export const buildOAuthCallbackPayload = (
   platform: string,
   code: string | null,
