@@ -48,6 +48,23 @@ describe("getAuthErrorMessage", () => {
     );
   });
 
+  it("reads Nest field errors when formErrors is empty", () => {
+    const error = new AuthRequestError("Request failed with status 400", 400, {
+      message: {
+        formErrors: [],
+        fieldErrors: {
+          password: [
+            "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+          ],
+        },
+      },
+    });
+
+    expect(getAuthErrorMessage(error, "Service unavailable")).toBe(
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+    );
+  });
+
   it("keeps safe client error messages from the authentication service", () => {
     const error = new AuthRequestError("Account already exists", 400);
 

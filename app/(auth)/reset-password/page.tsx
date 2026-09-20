@@ -4,6 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { resetPassword } from "@/lib/auth";
+import { passwordMeetsRules } from "@/lib/password-rules";
+import { PasswordRequirements } from "../components/password-requirements";
 import { toast } from "sonner";
 
 function ResetPasswordContent() {
@@ -28,13 +30,9 @@ function ResetPasswordContent() {
     setPasswordError("");
     setConfirmError("");
 
-    if (password.length < 8) {
-      setPasswordError("Password must be at least 8 characters long");
-      return;
-    }
-    if (!password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/)) {
+    if (!passwordMeetsRules(password)) {
       setPasswordError(
-        "Password must contain an uppercase letter, lowercase letter, number and special character",
+        "Use 8 or more characters, with a mix of letters, a number, and a symbol.",
       );
       return;
     }
@@ -104,6 +102,7 @@ function ResetPasswordContent() {
                   }`}
                 />
               </div>
+              <PasswordRequirements value={password} />
               {passwordError && (
                 <p className="mt-1.5 text-sm text-red-600">{passwordError}</p>
               )}
