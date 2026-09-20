@@ -72,6 +72,18 @@ export const getAuthErrorMessage = (
       if (firstError) return firstError;
     }
 
+    const fieldErrors = validationDetails?.fieldErrors;
+    if (fieldErrors && typeof fieldErrors === "object" && !Array.isArray(fieldErrors)) {
+      const firstFieldError = Object.values(
+        fieldErrors as Record<string, unknown>,
+      )
+        .flatMap((entry) => (Array.isArray(entry) ? entry : []))
+        .find(
+          (entry): entry is string => typeof entry === "string" && !!entry.trim(),
+        );
+      if (firstFieldError) return firstFieldError;
+    }
+
     return error.message;
   }
 

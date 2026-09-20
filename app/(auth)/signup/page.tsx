@@ -14,9 +14,11 @@ import {
   trackScreenBlocked,
   trackScreenCompleted,
 } from "@/lib/analytics";
+import { passwordMeetsRules } from "@/lib/password-rules";
 import { useScreenView } from "@/lib/use-screen-view";
 import { useGoogleAuth } from "@/lib/use-google";
 import { toast } from "sonner";
+import { PasswordRequirements } from "../components/password-requirements";
 
 const OrbitRing = ({
   size,
@@ -97,8 +99,14 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
+    if (!passwordMeetsRules(password)) {
+      setError(
+        "Use 8 or more characters, with a mix of letters, a number, and a symbol.",
+      );
+      return;
+    }
+    setIsLoading(true);
     try {
       const response = await register(
         email,
@@ -393,6 +401,7 @@ export default function SignUpPage() {
                     }`}
                   />
                 </div>
+                <PasswordRequirements value={password} />
                 {error && (
                   <p className="mt-1.5 text-sm text-red-600">{error}</p>
                 )}
