@@ -21,27 +21,36 @@ export const ONBOARDING_SCREENS = {
   3: "connect",
 } as const;
 
-type RybbitClient = {
-  event: (name: string, properties?: AnalyticsProps) => void;
-  identify: (userId: string, traits?: Record<string, unknown>) => void;
-  clearUserId: () => void;
-};
+type GoogleTag = (
+  command: "event" | "set",
+  target: string | Record<string, unknown>,
+  parameters?: AnalyticsProps,
+) => void;
 
 declare global {
   interface Window {
-    rybbit?: RybbitClient;
+    dataLayer?: unknown[];
+    gtag?: GoogleTag;
   }
 }
 
-const pending: Array<(client: RybbitClient) => void> = [];
+const pending: Array<(client: GoogleTag) => void> = [];
 let flushTimer: number | undefined;
 
 export const isAnalyticsEnabled = () =>
   process.env.NEXT_PUBLIC_APP_ENV === "production";
 
-const getClient = (): RybbitClient | undefined => {
+export const maskAnalyticsPath = (pathname: string) => {
+  if (pathname.startsWith("/panel/campaigns/")) return "/panel/campaigns/**";
+  if (pathname.startsWith("/panel/billing/budget/")) {
+    return "/panel/billing/budget/**";
+  }
+  return pathname;
+};
+
+const getClient = (): GoogleTag | undefined => {
   if (typeof window === "undefined") return undefined;
-  return window.rybbit;
+  return window.gtag;
 };
 
 export const bindAnalyticsClient = () => {
@@ -68,7 +77,7 @@ const startFlushRetry = () => {
   }, 250);
 };
 
-const withClient = (run: (client: RybbitClient) => void) => {
+const withClient = (run: (client: GoogleTag) => void) => {
   if (typeof window === "undefined" || !isAnalyticsEnabled()) return;
   const client = getClient();
   if (client) {
@@ -108,14 +117,17 @@ const trackInternal = (name: string, properties?: AnalyticsProps) => {
 
 export const track = (name: string, properties?: AnalyticsProps) => {
   trackInternal(name, properties);
-  withClient((client) => client.event(name, properties));
+  withClient((client) => client("event", name, properties));
 };
 
 export const identifyUser = (
   userId: string,
   traits?: Record<string, unknown>,
 ) => {
-  withClient((client) => client.identify(userId, traits));
+  withClient((client) => {
+    client("set", { user_id: userId });
+    if (traits) client("set", { user_properties: traits });
+  });
 };
 
 export const analyticsUserId = (me: {
@@ -128,7 +140,7 @@ export const analyticsUserId = (me: {
 };
 
 export const clearIdentifiedUser = () => {
-  withClient((client) => client.clearUserId());
+  withClient((client) => client("set", { user_id: null }));
 };
 
 export const trackScreenViewed = (

@@ -4,6 +4,7 @@ import {
   clearIdentifiedUser,
   identifyUser,
   analyticsUserId,
+  maskAnalyticsPath,
   resetAnalyticsForTests,
   track,
   trackScreenBlocked,
@@ -13,15 +14,11 @@ import {
 
 const previousAppEnv = process.env.NEXT_PUBLIC_APP_ENV;
 
-const stubRybbit = () => {
-  const client = {
-    event: vi.fn(),
-    identify: vi.fn(),
-    clearUserId: vi.fn(),
-  };
+const stubGoogleTag = () => {
+  const client = vi.fn();
   Object.assign(globalThis, {
     window: {
-      rybbit: client,
+      gtag: client,
       setInterval: globalThis.setInterval.bind(globalThis),
       clearInterval: globalThis.clearInterval.bind(globalThis),
     },
@@ -43,32 +40,31 @@ describe("analytics", () => {
 
   it("does nothing outside production", () => {
     process.env.NEXT_PUBLIC_APP_ENV = "staging";
-    const client = stubRybbit();
+    const client = stubGoogleTag();
 
     track("screen_viewed", { flow: "signup" });
     identifyUser("user-1");
 
-    expect(client.event).not.toHaveBeenCalled();
-    expect(client.identify).not.toHaveBeenCalled();
+    expect(client).not.toHaveBeenCalled();
   });
 
-  it("sends events when Rybbit is already loaded", () => {
+  it("sends events when Google Analytics is already loaded", () => {
     process.env.NEXT_PUBLIC_APP_ENV = "production";
-    const client = stubRybbit();
+    const client = stubGoogleTag();
 
     trackScreenViewed("onboarding", "profile");
     trackScreenCompleted("onboarding", "profile");
     trackScreenBlocked("onboarding", "profile", "missing_name");
 
-    expect(client.event).toHaveBeenCalledWith("screen_viewed", {
+    expect(client).toHaveBeenCalledWith("event", "screen_viewed", {
       flow: "onboarding",
       screen: "profile",
     });
-    expect(client.event).toHaveBeenCalledWith("screen_completed", {
+    expect(client).toHaveBeenCalledWith("event", "screen_completed", {
       flow: "onboarding",
       screen: "profile",
     });
-    expect(client.event).toHaveBeenCalledWith("screen_blocked", {
+    expect(client).toHaveBeenCalledWith("event", "screen_blocked", {
       flow: "onboarding",
       screen: "profile",
       reason: "missing_name",
@@ -86,34 +82,44 @@ describe("analytics", () => {
 
     track("campaign_published", { creation_mode: "manual" });
 
-    const client = {
-      event: vi.fn(),
-      identify: vi.fn(),
-      clearUserId: vi.fn(),
-    };
-    window.rybbit = client;
+    const client = vi.fn();
+    window.gtag = client;
     expect(bindAnalyticsClient()).toBe(true);
-    expect(client.event).toHaveBeenCalledWith("campaign_published", {
+    expect(client).toHaveBeenCalledWith("event", "campaign_published", {
       creation_mode: "manual",
     });
   });
 
   it("identifies and clears users", () => {
     process.env.NEXT_PUBLIC_APP_ENV = "production";
-    const client = stubRybbit();
+    const client = stubGoogleTag();
 
     identifyUser("user-1", { onboarding_completed: true });
     clearIdentifiedUser();
 
-    expect(client.identify).toHaveBeenCalledWith("user-1", {
-      onboarding_completed: true,
+    expect(client).toHaveBeenCalledWith("set", { user_id: "user-1" });
+    expect(client).toHaveBeenCalledWith("set", {
+      user_properties: { onboarding_completed: true },
     });
-    expect(client.clearUserId).toHaveBeenCalledOnce();
+    expect(client).toHaveBeenCalledWith("set", { user_id: null });
   });
 
   it("identifies a new account without a profile row", () => {
     expect(analyticsUserId({ id: "user-1", profile: null })).toBe("user-1");
     expect(analyticsUserId({ profile: { id: "profile-1" } })).toBe("profile-1");
     expect(analyticsUserId({ profile: null })).toBeUndefined();
+  });
+
+  it("masks identifiers in sensitive dashboard paths", () => {
+    expect(maskAnalyticsPath("/panel/campaigns/campaign-123")).toBe(
+      "/panel/campaigns/**",
+    );
+    expect(maskAnalyticsPath("/panel/campaigns/campaign-123/edit")).toBe(
+      "/panel/campaigns/**",
+    );
+    expect(maskAnalyticsPath("/panel/billing/budget/budget-456/edit")).toBe(
+      "/panel/billing/budget/**",
+    );
+    expect(maskAnalyticsPath("/panel/assets")).toBe("/panel/assets");
   });
 });
