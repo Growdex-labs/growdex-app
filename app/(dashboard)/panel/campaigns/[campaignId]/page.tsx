@@ -275,7 +275,7 @@ export default function CampaignDetailPage({
                   </h2>
                   <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-4">
                     {/* Filter Dropdown - Hidden label on mobile */}
-                    <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${activeSubTab === "table" ? "invisible" : ""}`}>
                       <span className="hidden sm:inline text-sm text-gray-600">
                         Filter by:
                       </span>

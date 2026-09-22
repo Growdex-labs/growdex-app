@@ -102,10 +102,12 @@ export function ClickThroughRateCard({
               <span className="font-gilroy-regular text-sm tracking-[-0.14px] text-[#333]">
                 {formatMetric(metric, platformValue(platform))}
               </span>
-              <TrendBadge
-                trend={trend}
-                goodDirection={metric === "cpa" ? "down" : "up"}
-              />
+              {metric === "ctr" && (
+                <TrendBadge
+                  trend={trend}
+                  goodDirection="up"
+                />
+              )}
             </div>
           ))}
         </div>
@@ -126,15 +128,26 @@ export function ClickThroughRateCard({
       >
         <CTRLineChart
           size={expanded ? "hero" : "card"}
+          valueSuffix={metric === "ctr" ? "%" : ""}
           series={
             dailyTrend && dailyTrend.length > 1
-              ? [
-                  {
-                    key: "ctr",
-                    color: "#4E5673",
-                    data: dailyTrend.map((point) => point.ctr),
-                  },
-                ]
+              ? metric === "ctr"
+                ? [
+                    {
+                      key: "ctr",
+                      color: "#4E5673",
+                      data: dailyTrend.map((point) => point.ctr),
+                    },
+                  ]
+                : metric === "clicks"
+                  ? [
+                      {
+                        key: "clicks",
+                        color: "#4E5673",
+                        data: dailyTrend.map((point) => point.clicks),
+                      },
+                    ]
+                  : undefined
               : undefined
           }
         />

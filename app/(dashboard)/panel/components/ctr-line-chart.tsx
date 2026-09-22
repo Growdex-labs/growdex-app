@@ -20,6 +20,8 @@ interface CTRChartProps {
   tiktokData?: number[];
   /** Named series; takes precedence over the legacy platform arrays. */
   series?: ChartSeries[];
+  /** Appended to axis labels; "%" for rates, empty for counts. */
+  valueSuffix?: string;
   size?: "card" | "hero";
 }
 
@@ -27,6 +29,7 @@ export function CTRLineChart({
   facebookData,
   tiktokData,
   series,
+  valueSuffix = "%",
   size = "card",
 }: CTRChartProps) {
   const namedSeries: ChartSeries[] =
@@ -47,7 +50,7 @@ export function CTRLineChart({
           size === "hero" ? "h-72 md:h-80" : "h-48"
         }`}
       >
-        No CTR history available yet.
+        No daily history available for this metric yet.
       </div>
     );
   }
@@ -76,10 +79,11 @@ export function CTRLineChart({
           <XAxis dataKey="index" hide={true} />
 
           <YAxis
-            domain={[0, 100]}
-            ticks={[20, 40, 60, 80, 100]}
+            // Scale to the data: typical CTRs sit near 1-3%, so a fixed
+            // 0-100 axis renders them as a flat line.
+            domain={[0, (dataMax: number) => Math.max(1, Math.ceil((dataMax || 1) * 1.25))]}
             tick={{ fill: "#9CA3AF", fontSize: 11 }}
-            tickFormatter={(value) => `${value}%`}
+            tickFormatter={(value) => `${value}${valueSuffix}`}
             axisLine={false}
             tickLine={false}
           />

@@ -107,6 +107,7 @@ const objectiveKpis = (
   goal: CampaignGoal | undefined,
   totals: CampaignMetricTotals,
   currency: string,
+  isRanged: boolean,
 ): KpiCard[] => {
   const engagements =
     (totals.likes ?? 0) +
@@ -118,9 +119,15 @@ const objectiveKpis = (
       return [
         {
           metricKey: "costPerThousandReached",
-          value: formatCurrency(totals.costPerThousandReached ?? 0, currency),
+          // Reach-based metrics need the lifetime view: unique reach is not
+          // additive across days.
+          value: isRanged
+            ? "—"
+            : formatCurrency(totals.costPerThousandReached ?? 0, currency),
           goodDirection: "down",
-          sub: `${formatNumber(totals.reach)} people reached`,
+          sub: isRanged
+            ? "unique reach needs the lifetime view"
+            : `${formatNumber(totals.reach)} people reached`,
         },
         {
           metricKey: "cpm",
@@ -129,9 +136,11 @@ const objectiveKpis = (
         },
         {
           metricKey: "frequency",
-          value: (totals.frequency ?? 0).toFixed(2),
+          value: isRanged ? "—" : (totals.frequency ?? 0).toFixed(2),
           goodDirection: "down",
-          sub: "average views per person reached",
+          sub: isRanged
+            ? undefined
+            : "average views per person reached",
         },
       ];
     case "TRAFFIC":
@@ -353,6 +362,15 @@ export function Overview({
       };
     })();
 
+  const isRanged = Boolean(detail.rangedDays);
+  const watchRows = detail.byPlatform.filter((row) => (row.videoViews ?? 0) > 0);
+  const weightedWatchSeconds = watchRows.length
+    ? watchRows.reduce(
+        (sum, row) => sum + (row.videoAvgWatchSeconds ?? 0) * (row.videoViews ?? 0),
+        0,
+      ) / watchRows.reduce((sum, row) => sum + (row.videoViews ?? 0), 0)
+    : 0;
+
   const comparison = detail.comparison ?? null;
   const change = comparison?.change ?? {};
   const hasTrend = (key: string) =>
@@ -361,7 +379,7 @@ export function Overview({
     hasTrend(key) ? Math.round(change[key] as number) : undefined;
 
   const goal = detail.objective ?? campaign.goal;
-  const kpis = objectiveKpis(goal, totals, currency);
+  const kpis = objectiveKpis(goal, totals, currency, isRanged);
 
   const videoViews = totals.videoViews ?? 0;
   const engagements =
@@ -378,6 +396,10 @@ export function Overview({
   if (subTab === "table") {
     return (
       <div className="space-y-6">
+        <p className="rounded-xl bg-gray-50 p-3 text-xs text-dimGray">
+          Ad-level and breakdown metrics are live lifetime reads from the
+          platforms; the date filter applies to the modular view.
+        </p>
         <AdsTable
           campaignId={campaign.id}
           strategyId={strategyId}
@@ -453,14 +475,26 @@ export function Overview({
             {formatNumber(totals.impressions)} Impressions
           </p>
           <PlatformBreakdown rows={detail.byPlatform} field="impressions" />
+          {isRanged && (
+            <p className="mt-3 text-xs text-dimGray">
+              Platform split shows the full flight.
+            </p>
+          )}
         </div>
 
         <div className="rounded-xl bg-gray-100 p-4 md:p-6">
           <MetricLabel metricKey="reach" />
           <p className="mb-4 mt-2 text-2xl font-gilroy-bold text-gray-900 md:mb-6 md:text-3xl">
-            {formatNumber(totals.reach)} reached
+            {isRanged ? "—" : `${formatNumber(totals.reach)} reached`}
           </p>
-          <PlatformBreakdown rows={detail.byPlatform} field="reach" />
+          {isRanged ? (
+            <p className="text-xs text-dimGray">
+              Unique reach is not additive across days — switch to Lifetime
+              for reach figures.
+            </p>
+          ) : (
+            <PlatformBreakdown rows={detail.byPlatform} field="reach" />
+          )}
         </div>
       </div>
 
@@ -588,12 +622,11 @@ export function Overview({
             <KpiTile
               card={{
                 metricKey: "videoAvgWatchSeconds",
-                value: `${(
-                  detail.byPlatform.reduce(
-                    (sum, row) => sum + (row.videoAvgWatchSeconds ?? 0),
-                    0,
-                  ) / Math.max(1, detail.byPlatform.length)
-                ).toFixed(1)}s`,
+                value:
+                  isRanged || weightedWatchSeconds <= 0
+                    ? "—"
+                    : `${weightedWatchSeconds.toFixed(1)}s`,
+                sub: isRanged ? "shown for the full flight" : undefined,
               }}
               showTrend={false}
             />

@@ -434,6 +434,8 @@ export interface CampaignSignal {
 export interface CampaignMetricsDetail {
   currency?: string;
   objective?: CampaignGoal;
+  /** Days the totals cover when a date range is applied; null = lifetime. */
+  rangedDays?: number | null;
   byPlatform: CampaignPlatformMetric[];
   totals?: CampaignMetricTotals;
   trend: CampaignTrendPoint[];
@@ -2374,6 +2376,7 @@ export const sliceMetricsRange = (
 
   return {
     ...detail,
+    rangedDays: days,
     trend: points,
     totals: {
       ...(base as CampaignMetricTotals),
@@ -2381,7 +2384,9 @@ export const sliceMetricsRange = (
       impressions,
       clicks,
       conversions,
-      reach,
+      // Unique reach does not add up across days, so no windowed figure can
+      // be derived from daily rows; the UI shows an em dash for it.
+      reach: 0,
       revenue,
       videoViews,
       videoP100,
@@ -2403,7 +2408,7 @@ export const sliceMetricsRange = (
       cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
       roas: spend > 0 ? revenue / spend : null,
       conversionRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
-      frequency: reach > 0 ? impressions / reach : 0,
+      frequency: 0,
       videoCompletionRate:
         videoViews > 0 ? (videoP100 / videoViews) * 100 : 0,
       videoViewRate:
@@ -2416,7 +2421,7 @@ export const sliceMetricsRange = (
       leadConversionRate:
         leadDenominator > 0 ? (leads / leadDenominator) * 100 : 0,
       aov: purchases > 0 ? revenue / purchases : null,
-      costPerThousandReached: reach > 0 ? (spend / reach) * 1000 : 0,
+      costPerThousandReached: 0,
     },
   };
 };
