@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { isAnalyticsEnabled } from "@/lib/analytics";
 import Providers from "./providers";
 
 const lexend = localFont({
@@ -67,14 +66,6 @@ export default function RootLayout({
           <main>{children}</main>
         </Providers>
         <Toaster position="top-center" richColors />
-        {isAnalyticsEnabled() && (
-          <Script
-            src="https://app.rybbit.io/api/script.js"
-            data-site-id="bdb1f1da5e57"
-            data-mask-patterns='["/panel/campaigns/**","/panel/billing/budget/**"]'
-            strategy="afterInteractive"
-          />
-        )}
       </body>
     </html>
   );
