@@ -5,8 +5,8 @@ import { AlertCircle, Loader2, Plus } from "lucide-react";
 import {
   formatWalletMoney,
   resolveAdAccountBalance,
+  type WalletAdAccountBalance,
   type WalletCurrency,
-  type WalletOverview,
   type WalletPlatform,
 } from "@/lib/wallet";
 import type { SocialAccountSetupProps } from "@/types/social";
@@ -17,7 +17,7 @@ const PLATFORMS: Array<{ id: WalletPlatform; name: string }> = [
 ];
 
 interface AdAccountsTabProps {
-  overview: WalletOverview | null;
+  balances: WalletAdAccountBalance[] | null;
   accounts: SocialAccountSetupProps | null;
   error: string | null;
   onRetry: () => void;
@@ -41,12 +41,12 @@ const accountIdentity = (
   : accounts?.tiktok?.assets?.find((asset) => asset.isPrimary) ?? accounts?.tiktok?.assets?.[0];
 
 export function AdAccountsTab({
-  overview,
+  balances,
   accounts,
   error,
   onRetry,
 }: AdAccountsTabProps) {
-  if (!overview && !error) {
+  if (!balances && !error) {
     return (
       <div className="flex min-h-72 items-center justify-center rounded-2xl border border-gray-200 bg-white">
         <Loader2 className="size-8 animate-spin text-gray-400" />
@@ -88,8 +88,8 @@ export function AdAccountsTab({
               ? identity.adAccountId
               : "advertiserId" in identity ? identity.advertiserId : null
             : null;
-          const resolved = providerAccountId
-            ? resolveAdAccountBalance(overview, platform.id, providerAccountId)
+          const resolved = providerAccountId && balances
+            ? resolveAdAccountBalance({ adAccounts: balances }, platform.id, providerAccountId)
             : { account: null, state: "unavailable" as const };
           const balance = resolved.account;
 
@@ -117,7 +117,7 @@ export function AdAccountsTab({
           }
 
           const currency: WalletCurrency | null = balance?.currency ?? identity?.currency ?? null;
-          const balanceLabel = !balance
+          const balanceLabel = !balance || balance.isPrepayAccount === null
             ? "Balance"
             : balance.isPrepayAccount ? "Available" : "Balance Due";
           const balanceText = resolved.state === "available" && typeof balance?.balance === "number" && currency

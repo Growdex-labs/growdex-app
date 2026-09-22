@@ -34,12 +34,45 @@ export interface WalletAdAccountBalance {
     /** Null means the platform did not provide a balance; it is not zero. */
     balance: number | null;
     currency: WalletCurrency;
-    amountSpent: number;
-    isPrepayAccount: boolean;
+    amountSpent: number | null;
+    isPrepayAccount: boolean | null;
     balanceStatus?: AdBalanceStatus;
     balanceAsOf?: string | null;
     balanceError?: string | null;
 }
+
+export const fetchAdAccountBalances = async (): Promise<WalletAdAccountBalance[]> => {
+  const response = await apiFetch("/users/ad-accounts/billing", { method: "GET" });
+  const body: unknown = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(`Advertising balances failed (${response.status}).`);
+  const rows = Array.isArray(body)
+    ? body
+    : body && typeof body === "object" && "data" in body && Array.isArray((body as { data: unknown }).data)
+      ? (body as { data: unknown[] }).data
+      : null;
+  if (!rows) throw new Error("Advertising balances returned an invalid response.");
+  return rows.flatMap((value) => {
+    if (!value || typeof value !== "object") return [];
+    const row = value as Record<string, unknown>;
+    if ((row.platform !== "meta" && row.platform !== "tiktok") ||
+      typeof row.accountId !== "string" || typeof row.accountName !== "string" ||
+      !isCurrency(row.currency)) return [];
+    return [{
+      platform: row.platform,
+      accountId: row.accountId,
+      accountName: row.accountName,
+      balance: typeof row.balance === "number" ? row.balance : null,
+      currency: row.currency,
+      amountSpent: typeof row.amountSpent === "number" ? row.amountSpent : null,
+      isPrepayAccount: typeof row.isPrepayAccount === "boolean" ? row.isPrepayAccount : null,
+      balanceStatus: row.balanceStatus === "error" || row.balanceStatus === "unavailable"
+        ? row.balanceStatus
+        : typeof row.balance === "number" ? "available" : "unavailable",
+      balanceAsOf: typeof row.balanceAsOf === "string" ? row.balanceAsOf : null,
+      balanceError: typeof row.balanceError === "string" ? row.balanceError : null,
+    } satisfies WalletAdAccountBalance];
+  });
+};
 
 export interface ResolvedAdBalance {
   account: WalletAdAccountBalance | null;
@@ -50,7 +83,7 @@ const BALANCE_STALE_AFTER_MS = 6 * 60 * 60 * 1000;
 
 /** Match by provider account ID, never merely by platform or list position. */
 export const resolveAdAccountBalance = (
-  overview: WalletOverview,
+  overview: Pick<WalletOverview, "adAccounts">,
   platform: WalletPlatform,
   providerAccountId: string,
   now = Date.now(),
@@ -127,8 +160,8 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
         typeof account.accountName === "string" &&
         (typeof account.balance === "number" || account.balance === null) &&
         isCurrency(account.currency) &&
-        typeof account.amountSpent === "number" &&
-        typeof account.isPrepayAccount === "boolean" &&
+        (typeof account.amountSpent === "number" || account.amountSpent === null) &&
+        (typeof account.isPrepayAccount === "boolean" || account.isPrepayAccount === null) &&
         (account.balanceStatus === undefined || ["available", "unavailable", "error"].includes(account.balanceStatus)) &&
         (account.balanceAsOf === undefined || account.balanceAsOf === null || typeof account.balanceAsOf === "string") &&
         (account.balanceError === undefined || account.balanceError === null || typeof account.balanceError === "string"),
@@ -151,14 +184,11 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
 };
 
 export const fetchWalletOverview = async (): Promise<WalletOverview> => {
-  // The backend resolves balances from the authenticated user's connected,
-  // primary provider accounts. Force revalidation rather than reusing a
-  // browser/proxy cache that may contain another account or an old balance.
-  const response = await apiFetch("/wallet", {
-    method: "GET",
-    cache: "no-store",
-    headers: { "Cache-Control": "no-cache" },
-  });
+  // This is a browser-to-API request. Avoid non-safelisted cache headers here:
+  // they trigger a CORS preflight on cross-origin deployments and can turn a
+  // valid wallet request into the browser's generic "Failed to fetch" error.
+  // Freshness is determined from the provider's balanceAsOf value below.
+  const response = await apiFetch("/wallet", { method: "GET" });
   const data = await readJson(response);
   if (!response.ok) {
     const message =

@@ -13,7 +13,12 @@ import {
   type PaymentMethod,
   type Subscription,
 } from "@/lib/billing";
-import { fetchWalletOverview, type WalletOverview } from "@/lib/wallet";
+import {
+  fetchAdAccountBalances,
+  fetchWalletOverview,
+  type WalletAdAccountBalance,
+  type WalletOverview,
+} from "@/lib/wallet";
 import { hydrateSocialAccounts } from "@/lib/social";
 import type { SocialAccountSetupProps } from "@/types/social";
 import { BillingHeader } from "./components/billing-header";
@@ -62,6 +67,8 @@ function BillingWorkspace() {
   );
   const [overview, setOverview] = useState<WalletOverview | null>(null);
   const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [adAccountBalances, setAdAccountBalances] = useState<WalletAdAccountBalance[] | null>(null);
+  const [adAccountBalanceError, setAdAccountBalanceError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<SocialAccountSetupProps | null>(null);
   const [methods, setMethods] = useState<PaymentMethod[] | null>(null);
   const [methodsError, setMethodsError] = useState<string | null>(null);
@@ -77,6 +84,7 @@ function BillingWorkspace() {
     const load = async () => {
       setSubscriptionError(null);
       setOverviewError(null);
+      setAdAccountBalanceError(null);
       setMethodsError(null);
       setInvoicesError(null);
 
@@ -86,12 +94,14 @@ function BillingWorkspace() {
         accountsResult,
         methodsResult,
         invoicesResult,
+        adAccountBalancesResult,
       ] = await Promise.allSettled([
         fetchSubscription(),
         fetchWalletOverview(),
         hydrateSocialAccounts(),
         fetchPaymentMethods(),
         fetchInvoices(),
+        fetchAdAccountBalances(),
       ]);
 
       if (!active) return;
@@ -120,6 +130,17 @@ function BillingWorkspace() {
 
       if (accountsResult.status === "fulfilled" && accountsResult.value.data) {
         setAccounts(accountsResult.value.data);
+      }
+
+      if (adAccountBalancesResult.status === "fulfilled") {
+        setAdAccountBalances(adAccountBalancesResult.value);
+      } else {
+        setAdAccountBalanceError(
+          errorMessage(
+            adAccountBalancesResult.reason,
+            "Could not load advertising account balances.",
+          ),
+        );
       }
 
       if (methodsResult.status === "fulfilled") {
@@ -204,9 +225,9 @@ function BillingWorkspace() {
 
           {activeTab === "ad-accounts" && (
             <AdAccountsTab
-              overview={overview}
+              balances={adAccountBalances}
               accounts={accounts}
-              error={overviewError}
+              error={adAccountBalanceError}
               onRetry={reload}
             />
           )}
