@@ -5,7 +5,11 @@ import { MoreVertical } from "lucide-react";
 import { CTRLineChart } from "./ctr-line-chart";
 import { MetaIcon, PlatformMark } from "./platform-icons";
 import { TrendBadge } from "./trend-badge";
-import type { PanelPlatform, PanelPlatformMetrics } from "@/lib/panel";
+import type {
+  DailyTrendPoint,
+  PanelPlatform,
+  PanelPlatformMetrics,
+} from "@/lib/panel";
 
 export type RateMetric = "ctr" | "roas" | "clicks" | "conversions" | "cpa";
 
@@ -28,6 +32,9 @@ interface ClickThroughRateCardProps {
   /** CPA and ROAS are money-derived, so each reads its own currency bucket. */
   platformCpa: (platform: PanelPlatform) => number | undefined;
   platformRoas: (platform: PanelPlatform) => number | undefined;
+  /** Account-wide daily delivery; only the CTR tab charts it. */
+  dailyTrend?: DailyTrendPoint[];
+  /** Daily conversion history; the conversions tab charts it when present. */
   expanded?: boolean;
   onExpand?: () => void;
 }
@@ -39,6 +46,7 @@ export function ClickThroughRateCard({
   formatMetric,
   platformCpa,
   platformRoas,
+  dailyTrend,
   expanded = false,
   onExpand,
 }: ClickThroughRateCardProps) {
@@ -116,7 +124,20 @@ export function ClickThroughRateCard({
         }}
         className={onExpand ? "cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-violet-300" : undefined}
       >
-        <CTRLineChart size={expanded ? "hero" : "card"} />
+        <CTRLineChart
+          size={expanded ? "hero" : "card"}
+          series={
+            dailyTrend && dailyTrend.length > 1
+              ? [
+                  {
+                    key: "ctr",
+                    color: "#4E5673",
+                    data: dailyTrend.map((point) => point.ctr),
+                  },
+                ]
+              : undefined
+          }
+        />
       </div>
     </div>
   );
