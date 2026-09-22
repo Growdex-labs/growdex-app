@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { parseWalletOverview, resolveAdAccountBalance } from "./wallet";
 
 describe("parseWalletOverview", () => {
+  beforeEach(() => apiFetch.mockReset());
+
   it("accepts a new wallet without platform activity", () => {
     expect(
       parseWalletOverview({

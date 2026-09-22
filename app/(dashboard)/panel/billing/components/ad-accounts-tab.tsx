@@ -46,26 +46,7 @@ export function AdAccountsTab({
   error,
   onRetry,
 }: AdAccountsTabProps) {
-  if (error) {
-    return (
-      <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-        <AlertCircle className="mt-0.5 size-5 shrink-0" />
-        <div>
-          <p className="font-gilroy-semibold">Advertising accounts unavailable</p>
-          <p className="mt-1">{error}</p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="mt-3 text-xs font-gilroy-semibold underline"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!overview) {
+  if (!overview && !error) {
     return (
       <div className="flex min-h-72 items-center justify-center rounded-2xl border border-gray-200 bg-white">
         <Loader2 className="size-8 animate-spin text-gray-400" />
@@ -75,6 +56,24 @@ export function AdAccountsTab({
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+          <AlertCircle className="mt-0.5 size-5 shrink-0" />
+          <div>
+            <p className="font-gilroy-semibold">Balances temporarily unavailable</p>
+            <p className="mt-1">
+              We couldn&apos;t retrieve the latest balances. Your connected accounts are still shown below.
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 text-xs font-gilroy-semibold underline"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
       <p className="text-sm text-gray-500">
         Money here pays the advertising platforms. It is separate from your
         Growdex subscription.
