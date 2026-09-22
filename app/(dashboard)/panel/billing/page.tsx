@@ -145,6 +145,12 @@ function BillingWorkspace() {
         setAdAccountBalances([]);
         setAdAccountBalanceError(
           "The advertising platforms did not return balance data. Try again shortly.",
+      } else {
+        setAdAccountBalanceError(
+          errorMessage(
+            adAccountBalancesResult.reason,
+            "Could not load advertising account balances.",
+          ),
         );
       }
 
