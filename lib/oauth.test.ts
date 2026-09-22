@@ -10,7 +10,21 @@ vi.mock('./auth', () => ({
 }));
 
 import { buildOAuthCallbackPayload } from './oauth-callback';
-import { exchangeSocialAuthorizationCode } from './oauth';
+import { exchangeSocialAuthorizationCode, oauthPopupClosedMessage } from './oauth';
+
+describe('oauthPopupClosedMessage', () => {
+  it('identifies the Meta feature-unavailable page as a Growdex issue', () => {
+    expect(oauthPopupClosedMessage('meta')).toContain(
+      'this is a Growdex integration issue—not a problem with your Meta account',
+    );
+  });
+
+  it('keeps the cancellation message platform-specific', () => {
+    expect(oauthPopupClosedMessage('tiktok')).toBe(
+      'TikTok authentication was cancelled before the connection finished.',
+    );
+  });
+});
 
 describe('buildOAuthCallbackPayload', () => {
   it('relays a provider authorization code', () => {
