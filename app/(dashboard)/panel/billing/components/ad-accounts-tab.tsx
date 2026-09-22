@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertCircle, Loader2, Plus } from "lucide-react";
 import {
   formatWalletMoney,
+  resolveAdAccountBalance,
   type WalletCurrency,
   type WalletOverview,
   type WalletPlatform,
@@ -31,6 +32,13 @@ const accountName = (
   }
   return accounts?.tiktok?.assets?.[0]?.name ?? "TikTok ad account";
 };
+
+const accountIdentity = (
+  accounts: SocialAccountSetupProps | null,
+  platform: WalletPlatform,
+) => platform === "meta"
+  ? accounts?.meta?.assets?.find((asset) => asset.isPrimary) ?? accounts?.meta?.assets?.[0]
+  : accounts?.tiktok?.assets?.find((asset) => asset.isPrimary) ?? accounts?.tiktok?.assets?.[0];
 
 export function AdAccountsTab({
   overview,
@@ -75,9 +83,16 @@ export function AdAccountsTab({
       <div className="grid gap-4 lg:grid-cols-2">
         {PLATFORMS.map((platform) => {
           const connected = Boolean(accounts?.[platform.id]?.connected);
-          const balance = overview.adAccounts.find(
-            (account) => account.platform === platform.id,
-          );
+          const identity = accountIdentity(accounts, platform.id);
+          const providerAccountId = identity
+            ? platform.id === "meta" && "adAccountId" in identity
+              ? identity.adAccountId
+              : "advertiserId" in identity ? identity.advertiserId : null
+            : null;
+          const resolved = providerAccountId
+            ? resolveAdAccountBalance(overview, platform.id, providerAccountId)
+            : { account: null, state: "unavailable" as const };
+          const balance = resolved.account;
 
           if (!connected) {
             return (
@@ -102,7 +117,15 @@ export function AdAccountsTab({
             );
           }
 
-          const currency: WalletCurrency = balance?.currency ?? "NGN";
+          const currency: WalletCurrency | null = balance?.currency ?? identity?.currency ?? null;
+          const balanceLabel = !balance
+            ? "Balance"
+            : balance.isPrepayAccount ? "Available" : "Balance Due";
+          const balanceText = resolved.state === "available" && typeof balance?.balance === "number" && currency
+            ? formatWalletMoney(balance.balance, currency)
+            : resolved.state === "stale"
+              ? "Update required"
+              : "Not available";
 
           return (
             <section
@@ -122,24 +145,42 @@ export function AdAccountsTab({
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-gray-500">Ad Account</dt>
                   <dd className="min-w-0 truncate text-gray-900">
-                    {balance?.accountName ?? accountName(accounts, platform.id)}
+                    {accountName(accounts, platform.id)}
                   </dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
-                  <dt className="text-gray-500">
-                    {balance?.isPrepayAccount ? "Available" : "Balance Due"}
-                  </dt>
+                  <dt className="text-gray-500">Account ID</dt>
+                  <dd className="font-mono text-xs text-gray-700">{providerAccountId ?? "Not available"}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-gray-500">{balanceLabel}</dt>
                   <dd className="font-gilroy-bold text-gray-950">
-                    {formatWalletMoney(balance?.balance ?? 0, currency)}
+                    {balanceText}
                   </dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-gray-500">Currency</dt>
                   <dd className="font-gilroy-semibold text-gray-900">
-                    {currency}
+                    {currency ?? "Not available"}
                   </dd>
                 </div>
+                {balance?.balanceAsOf && (
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-gray-500">Last updated</dt>
+                    <dd className="text-xs text-gray-700">{new Date(balance.balanceAsOf).toLocaleString()}</dd>
+                  </div>
+                )}
               </dl>
+
+              {resolved.state !== "available" && (
+                <div className={`mt-4 rounded-lg p-3 text-xs ${resolved.state === "error" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>
+                  {resolved.state === "stale"
+                    ? "This balance is stale. Refresh to retrieve the latest value from the advertising platform."
+                    : resolved.state === "error"
+                      ? balance?.balanceError ?? `We couldn't retrieve this balance from ${platform.name}.`
+                      : `A balance is not available for the connected ${platform.name} account.`}
+                </div>
+              )}
 
               <div className="mt-6 flex flex-wrap gap-2">
                 <Link

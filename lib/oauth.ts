@@ -15,6 +15,11 @@ export const openOAuthPopup = (
   onSuccess: (code?: string) => void,
   onError: (error: string) => void
 ): Window | null => {
+  if (!API_BASE_URL) {
+    onError("Social account connections are not configured. Please contact support.");
+    return null;
+  }
+
   const width = 600;
   const height = 700;
   const left = window.screenX + (window.outerWidth - width) / 2;
@@ -34,10 +39,7 @@ export const openOAuthPopup = (
 
   // Track completion to avoid race condition between manual close and message receipt
   let isCompleted = false;
-  const allowedOrigins = new Set([
-    window.location.origin,
-    API_BASE_URL ? new URL(API_BASE_URL).origin : '',
-  ]);
+  const allowedOrigins = new Set([window.location.origin, new URL(API_BASE_URL).origin]);
 
   const messageHandler = (event: MessageEvent) => {
     if (!allowedOrigins.has(event.origin)) return;

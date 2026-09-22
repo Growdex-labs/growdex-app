@@ -1,5 +1,5 @@
 export type OAuthCallbackPayload =
-  | { type: "oauth_success"; platform: string; code: string }
+  | { type: "oauth_success"; platform: string; code?: string }
   | { type: "oauth_error"; platform: string; error: string };
 
 export const buildOAuthCallbackPayload = (
@@ -11,13 +11,10 @@ export const buildOAuthCallbackPayload = (
     return { type: "oauth_error", platform, error };
   }
 
-  if (!code) {
-    return {
-      type: "oauth_error",
-      platform,
-      error: "The authorization provider did not return a connection code.",
-    };
-  }
-
-  return { type: "oauth_success", platform, code };
+  // Newer backend callbacks exchange and persist the provider code before
+  // redirecting to this page. In that flow the callback intentionally has no
+  // code to relay; the opener verifies the saved connection by reloading it.
+  return code
+    ? { type: "oauth_success", platform, code }
+    : { type: "oauth_success", platform };
 };
