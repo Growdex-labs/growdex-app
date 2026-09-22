@@ -245,12 +245,6 @@ function OnboardingPageContent() {
   };
 
   useEffect(() => {
-    if (!error) return;
-    const timeout = setTimeout(() => setError(''), 3000);
-    return () => clearTimeout(timeout);
-  }, [error]);
-
-  useEffect(() => {
     let cancelled = false;
 
     const hydrate = async () => {

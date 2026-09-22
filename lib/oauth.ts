@@ -5,6 +5,59 @@ import { hydrateSocialAccounts } from './social';
 
 export type SocialPlatform = 'meta' | 'tiktok';
 
+export const oauthPopupClosedMessage = (platform: SocialPlatform): string =>
+  platform === 'meta'
+    ? 'Meta authentication closed before the connection finished. Please try again.'
+    : 'TikTok authentication was cancelled before the connection finished.';
+
+/**
+ * Make an authenticated API request before navigating the popup to the OAuth
+ * endpoint. Besides preventing a raw 401 JSON response from being rendered in
+ * the popup, apiFetch gets an opportunity to refresh an expired access cookie.
+ */
+export const validateSocialOAuthSession = async (): Promise<{
+  success: boolean;
+  error?: string;
+}> => {
+  try {
+    const response = await apiFetch('/users/onboarding/status');
+    if (response.ok) return { success: true };
+
+    if (response.status === 401) {
+      return {
+        success: false,
+        error: 'Your Growdex session has expired. Please sign in again before connecting an account.',
+      };
+    }
+
+    return {
+      success: false,
+      error: await readResponseError(
+        response,
+        `Could not start the account connection (${response.status}).`,
+      ),
+    };
+  } catch {
+    return {
+      success: false,
+      error: 'Could not verify your Growdex session. Please refresh the page and try again.',
+    };
+  }
+};
+
+const openSizedOAuthWindow = (url: string, platform: SocialPlatform): Window | null => {
+  const width = 600;
+  const height = 700;
+  const left = window.screenX + (window.outerWidth - width) / 2;
+  const top = window.screenY + (window.outerHeight - height) / 2;
+
+  return window.open(
+    url,
+    `${platform}_oauth`,
+    `width=${width},height=${height},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`,
+  );
+};
+
 /**
  * Open the OAuth popup and resolve with the authorization code returned by the
  * provider. The backend starts the provider flow; the frontend callback relays
@@ -13,29 +66,24 @@ export type SocialPlatform = 'meta' | 'tiktok';
 export const openOAuthPopup = (
   platform: SocialPlatform,
   onSuccess: (code?: string) => void,
-  onError: (error: string) => void
+  onError: (error: string) => void,
+  existingPopup?: Window,
 ): Window | null => {
   if (!API_BASE_URL) {
+    existingPopup?.close();
     onError("Social account connections are not configured. Please contact support.");
     return null;
   }
 
-  const width = 600;
-  const height = 700;
-  const left = window.screenX + (window.outerWidth - width) / 2;
-  const top = window.screenY + (window.outerHeight - height) / 2;
-
   // Backend builds the provider OAuth URL (scopes + state) and redirects.
-  const popup = window.open(
-    `${API_BASE_URL}/auth/${platform}`,
-    `${platform}_oauth`,
-    `width=${width},height=${height},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
-  );
+  const popup = existingPopup ?? openSizedOAuthWindow(`${API_BASE_URL}/auth/${platform}`, platform);
 
   if (!popup) {
     onError('Popup blocked. Please allow popups.');
     return null;
   }
+
+  if (existingPopup) popup.location.href = `${API_BASE_URL}/auth/${platform}`;
 
   // Track completion to avoid race condition between manual close and message receipt
   let isCompleted = false;
@@ -71,7 +119,7 @@ export const openOAuthPopup = (
       clearInterval(popupCheck);
       window.removeEventListener('message', messageHandler);
       if (!isCompleted) {
-        onError('Authentication cancelled');
+        onError(oauthPopupClosedMessage(platform));
       }
     }
   }, 500);
@@ -130,6 +178,17 @@ export const exchangeSocialAuthorizationCode = async (
 export const connectSocialAccount = async (
   platform: SocialPlatform
 ): Promise<{ success: boolean; data?: SocialAccountSetupProps; error?: string }> => {
+  // Open synchronously while this call still has the user's click activation;
+  // navigating a new popup after the async preflight would be blocked by browsers.
+  const popup = openSizedOAuthWindow('about:blank', platform);
+  if (!popup) return { success: false, error: 'Popup blocked. Please allow popups.' };
+
+  const session = await validateSocialOAuthSession();
+  if (!session.success) {
+    popup.close();
+    return session;
+  }
+
   const popupResult = await new Promise<{
     completed?: boolean;
     code?: string;
@@ -138,7 +197,8 @@ export const connectSocialAccount = async (
     openOAuthPopup(
       platform,
       (code) => resolve({ completed: true, code }),
-      (error) => resolve({ error })
+      (error) => resolve({ error }),
+      popup,
     );
   });
 
