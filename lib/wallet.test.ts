@@ -1,7 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { parseWalletOverview } from "./wallet";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
+vi.mock("./auth", () => ({ apiFetch }));
+
+import { fetchAdAccountBalances, fetchWalletOverview, parseWalletOverview, resolveAdAccountBalance } from "./wallet";
 
 describe("parseWalletOverview", () => {
+  beforeEach(() => apiFetch.mockReset());
+
   it("accepts a new wallet without platform activity", () => {
     expect(
       parseWalletOverview({
@@ -30,5 +36,51 @@ describe("parseWalletOverview", () => {
         transactions: [],
       }),
     ).toThrow("invalid response shape");
+  });
+
+  it("matches balances to the exact connected provider account", () => {
+    const overview = parseWalletOverview({
+      balances: { NGN: 0, USD: 0 },
+      adAccounts: [
+        { platform: "meta", accountId: "act_wrong", accountName: "Wrong", balance: 900, currency: "USD", amountSpent: 0, isPrepayAccount: true },
+        { platform: "meta", accountId: "act_connected", accountName: "Connected", balance: 50, currency: "USD", amountSpent: 0, isPrepayAccount: true },
+      ],
+      spending: [], spendChangePercent: 0, transactions: [],
+    });
+    expect(resolveAdAccountBalance(overview, "meta", "act_connected").account?.balance).toBe(50);
+    expect(resolveAdAccountBalance(overview, "meta", "act_missing").state).toBe("unavailable");
+  });
+
+  it("does not display stale or unavailable values as current balances", () => {
+    const overview = parseWalletOverview({
+      balances: { NGN: 0, USD: 0 },
+      adAccounts: [{ platform: "tiktok", accountId: "adv_1", accountName: "TikTok", balance: 10, currency: "USD", amountSpent: 0, isPrepayAccount: true, balanceAsOf: "2026-01-01T00:00:00Z" }],
+      spending: [], spendChangePercent: 0, transactions: [],
+    });
+    expect(resolveAdAccountBalance(overview, "tiktok", "adv_1", Date.parse("2026-01-02T00:00:00Z")).state).toBe("stale");
+  });
+
+  it("fetches balances without a CORS-triggering cache header", async () => {
+    apiFetch.mockResolvedValue(new Response(JSON.stringify({
+      balances: { NGN: 0, USD: 0 }, adAccounts: [], spending: [],
+      spendChangePercent: 0, transactions: [],
+    }), { status: 200 }));
+
+    await fetchWalletOverview();
+
+    expect(apiFetch).toHaveBeenCalledWith("/wallet", { method: "GET" });
+  });
+
+  it("loads ad-account balances from the existing billing-account endpoint", async () => {
+    apiFetch.mockResolvedValue(new Response(JSON.stringify([{
+      platform: "meta", accountId: "act_1", accountName: "Primary Meta",
+      currency: "USD", balance: 125.5, isPrepayAccount: true,
+      balanceAsOf: "2026-09-22T08:00:00Z",
+    }]), { status: 200 }));
+
+    await expect(fetchAdAccountBalances()).resolves.toMatchObject([
+      { platform: "meta", accountId: "act_1", balance: 125.5, balanceStatus: "available" },
+    ]);
+    expect(apiFetch).toHaveBeenCalledWith("/users/ad-accounts/billing", { method: "GET" });
   });
 });
