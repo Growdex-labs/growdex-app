@@ -29,11 +29,10 @@ describe('buildOAuthCallbackPayload', () => {
     });
   });
 
-  it('rejects a callback that has neither a code nor an error', () => {
+  it('accepts a callback without a code when the backend saved the connection', () => {
     expect(buildOAuthCallbackPayload('meta', null, null)).toEqual({
-      type: 'oauth_error',
+      type: 'oauth_success',
       platform: 'meta',
-      error: 'The authorization provider did not return a connection code.',
     });
   });
 });
