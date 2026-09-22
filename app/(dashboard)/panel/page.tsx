@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMe } from "@/context/me-context";
 import { proDisabledReason } from "@/lib/billing";
-import { ChevronDown, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { PanelLayout } from "./components/panel-layout";
 import { DashboardTopBar } from "./components/dashboard-top-bar";
 import { LifetimeStatCard } from "./components/lifetime-stat-card";
@@ -255,6 +255,32 @@ export default function PanelPage() {
   const soleCurrency =
     metrics.byCurrency.length === 1 ? metrics.byCurrency[0] : null;
 
+  // The last full 14-day window against the one before it, from the API.
+  const trendSummary = metrics.trendSummary;
+  const trendFor = (key: keyof NonNullable<typeof trendSummary>["change"]) => {
+    const value = trendSummary?.change?.[key];
+    return typeof value === "number" && Number.isFinite(value)
+      ? Math.round(value)
+      : 0;
+  };
+  const currencyTrend = (list?: Array<{ currency: string; change: number | null }>) => {
+    const entry = list?.find(
+      (candidate) => candidate.currency === soleCurrency?.currency,
+    );
+    return typeof entry?.change === "number" && Number.isFinite(entry.change)
+      ? Math.round(entry.change)
+      : 0;
+  };
+  // ROAS moves with revenue and spend together: (1+r%)/(1+s%) - 1.
+  const roasTrend = (() => {
+    const revenue = currencyTrend(trendSummary?.revenueChangeByCurrency);
+    const spend = currencyTrend(trendSummary?.spendChangeByCurrency);
+    if (!revenue && !spend) return 0;
+    const ratio =
+      (1 + revenue / 100) / (spend === -100 ? NaN : 1 + spend / 100);
+    return Number.isFinite(ratio) ? Math.round((ratio - 1) * 100) : 0;
+  })();
+
   const formatRate = (metric: RateMetric, value: number | undefined) => {
     if (typeof value !== "number" || !Number.isFinite(value)) return "—";
     if (metric === "cpa") {
@@ -338,11 +364,12 @@ export default function PanelPage() {
         cpa: soleCurrency?.cpa,
         roas: soleCurrency?.roas ?? undefined,
       }}
-      trend={0}
+      trend={trendFor("ctr")}
       byPlatform={platforms}
       formatMetric={formatRate}
       platformCpa={platformCpa}
       platformRoas={platformRoas}
+      dailyTrend={metrics.dailyTrend}
       expanded={view === "insights"}
       onExpand={view === "default" ? openInsights : undefined}
     />
@@ -385,11 +412,8 @@ export default function PanelPage() {
                       All-time Performance
                     </h2>
                     <span className="flex items-center gap-2.5 rounded-md bg-white p-2 font-gilroy-regular text-sm tracking-[-0.14px] text-[#4d4d4d]">
-                      Filter by:
-                      <span className="flex items-center gap-1">
-                        Date
-                        <ChevronDown className="size-4" aria-hidden />
-                      </span>
+                      Trend: last {trendSummary?.windowDays ?? 14} days vs the{" "}
+                      {trendSummary?.windowDays ?? 14} before
                     </span>
                   </div>
 
@@ -397,7 +421,7 @@ export default function PanelPage() {
                     <LifetimeStatCard
                       label="Lifetime ROAS"
                       value={formatRoas(metrics.byCurrency)}
-                      trend={0}
+                      trend={roasTrend}
                       breakdown={{
                         meta: formatPlatformRoas(platforms.meta),
                         tiktok: formatPlatformRoas(platforms.tiktok),
@@ -406,7 +430,7 @@ export default function PanelPage() {
                     <LifetimeStatCard
                       label="Reach"
                       value={orDash(metrics.totalReach, formatNumber)}
-                      trend={0}
+                      trend={trendFor("reach")}
                       breakdown={{
                         meta: orDash(platforms.meta?.reach, formatNumber),
                         tiktok: orDash(platforms.tiktok?.reach, formatNumber),
@@ -415,7 +439,7 @@ export default function PanelPage() {
                     <LifetimeStatCard
                       label="Conversions"
                       value={orDash(metrics.totalConversions, formatNumber)}
-                      trend={0}
+                      trend={trendFor("conversions")}
                       breakdown={{
                         meta: orDash(platforms.meta?.conversions, formatNumber),
                         tiktok: orDash(
@@ -426,6 +450,74 @@ export default function PanelPage() {
                       showAssistantHint
                     />
                   </div>
+
+                  {(metrics.totalVideoViews ?? 0) +
+                    (metrics.totalEngagements ?? 0) +
+                    (metrics.totalLeads ?? 0) +
+                    (metrics.totalPurchases ?? 0) >
+                    0 && (
+                    <div className="grid gap-6 md:grid-cols-3">
+                      {(metrics.totalVideoViews ?? 0) > 0 && (
+                        <LifetimeStatCard
+                          label="Video views"
+                          value={orDash(metrics.totalVideoViews, formatNumber)}
+                          trend={0}
+                          breakdown={{
+                            meta: orDash(platforms.meta?.videoViews, formatNumber),
+                            tiktok: orDash(
+                              platforms.tiktok?.videoViews,
+                              formatNumber,
+                            ),
+                          }}
+                        />
+                      )}
+                      {(metrics.totalEngagements ?? 0) > 0 && (
+                        <LifetimeStatCard
+                          label="Engagements"
+                          value={orDash(metrics.totalEngagements, formatNumber)}
+                          trend={0}
+                          breakdown={{
+                            meta: orDash(
+                              platforms.meta?.engagements,
+                              formatNumber,
+                            ),
+                            tiktok: orDash(
+                              platforms.tiktok?.engagements,
+                              formatNumber,
+                            ),
+                          }}
+                        />
+                      )}
+                      {(metrics.totalLeads ?? 0) > 0 && (
+                        <LifetimeStatCard
+                          label="Leads"
+                          value={orDash(metrics.totalLeads, formatNumber)}
+                          trend={0}
+                          breakdown={{
+                            meta: orDash(platforms.meta?.leads, formatNumber),
+                            tiktok: orDash(platforms.tiktok?.leads, formatNumber),
+                          }}
+                        />
+                      )}
+                      {(metrics.totalPurchases ?? 0) > 0 && (
+                        <LifetimeStatCard
+                          label="Purchases"
+                          value={orDash(metrics.totalPurchases, formatNumber)}
+                          trend={0}
+                          breakdown={{
+                            meta: orDash(
+                              platforms.meta?.purchases,
+                              formatNumber,
+                            ),
+                            tiktok: orDash(
+                              platforms.tiktok?.purchases,
+                              formatNumber,
+                            ),
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
                 </section>
 
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_298px]">

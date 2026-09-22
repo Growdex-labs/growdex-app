@@ -5,10 +5,10 @@ import { track } from "@/lib/analytics";
 import {
   fetchCampaignById,
   fetchCampaignMetricsById,
-  summariseCampaignMetrics,
+  sliceMetricsRange,
   updateCampaignStatus,
   type CampaignDto,
-  type CampaignMetricsSummary,
+  type CampaignMetricsDetail,
 } from "@/lib/campaigns";
 import { useRouter, useSearchParams } from "next/navigation";
 import { use, useEffect, useState } from "react";
@@ -35,7 +35,8 @@ export default function CampaignDetailPage({
   const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [campaignDto, setCampaignDto] = useState<CampaignDto | null>(null);
-  const [metrics, setMetrics] = useState<CampaignMetricsSummary | null>(null);
+  const [metrics, setMetrics] = useState<CampaignMetricsDetail | null>(null);
+  const [rangeDays, setRangeDays] = useState<number | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export default function CampaignDetailPage({
 
     void fetchCampaignMetricsById(campaignId, selectedStrategy?.id)
       .then((result) => {
-        if (isMounted) setMetrics(summariseCampaignMetrics(result.byPlatform));
+        if (isMounted) setMetrics(result);
       })
       .catch((failure) => {
         if (!isMounted) return;
@@ -274,14 +275,16 @@ export default function CampaignDetailPage({
                   </h2>
                   <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-4">
                     {/* Filter Dropdown - Hidden label on mobile */}
-                    <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${activeSubTab === "table" ? "invisible" : ""}`}>
                       <span className="hidden sm:inline text-sm text-gray-600">
                         Filter by:
                       </span>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors flex items-center gap-2">
-                            <span className="hidden sm:inline">Date</span>
+                            <span className="hidden sm:inline">
+                              {rangeDays ? `Last ${rangeDays} days` : "Date"}
+                            </span>
                             <svg
                               className="w-4 h-4"
                               fill="none"
@@ -298,9 +301,18 @@ export default function CampaignDetailPage({
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem>Date</DropdownMenuItem>
-                          <DropdownMenuItem>Platform</DropdownMenuItem>
-                          <DropdownMenuItem>Status</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRangeDays(7)}>
+                            Last 7 days
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRangeDays(14)}>
+                            Last 14 days
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRangeDays(28)}>
+                            Last 28 days
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRangeDays(null)}>
+                            Lifetime
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -363,8 +375,9 @@ export default function CampaignDetailPage({
                   <Overview
                     subTab={activeSubTab}
                     campaign={campaignDto}
-                    metrics={metrics}
+                    detail={metrics ? sliceMetricsRange(metrics, rangeDays) : null}
                     metricsError={metricsError}
+                    strategyId={selectedStrategy?.id}
                     onOptimizationClick={() => setIsOptimizationOpen(true)}
                   />
                 )}

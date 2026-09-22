@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Download,
   FileText,
   Globe2,
   MessageCircle,
@@ -134,7 +135,22 @@ const DESTINATIONS: Record<CampaignGoal, DestinationDefinition[]> = {
       ],
     },
   ],
-  APP_PROMOTION: [],
+  APP_PROMOTION: [
+    {
+      value: "APP",
+      label: "Install my app",
+      description: "Send people to the app store to install your app.",
+      icon: Download,
+      metaOnly: true,
+      optimizationGoals: [
+        {
+          value: "APP_INSTALLS",
+          label: "App installs",
+          description: "Prioritize people likely to install your app.",
+        },
+      ],
+    },
+  ],
 };
 
 export function ManualEventManagementScreen({

@@ -69,6 +69,14 @@ const GOALS: GoalDefinition[] = [
     destination: "WEBSITE",
     optimizationGoal: "LEAD_GENERATION",
   },
+  {
+    value: "APP_PROMOTION",
+    label: "App promotion",
+    description: "Drive installs and in-app events for your mobile app.",
+    destination: "APP",
+    optimizationGoal: "APP_INSTALLS",
+    metaOnly: true,
+  },
 ];
 
 const SPECIAL_CATEGORY_OPTIONS: Array<{

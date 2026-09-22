@@ -9,38 +9,58 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+interface ChartSeries {
+  key: string;
+  color: string;
+  data: number[];
+}
+
 interface CTRChartProps {
   facebookData?: number[];
   tiktokData?: number[];
+  /** Named series; takes precedence over the legacy platform arrays. */
+  series?: ChartSeries[];
+  /** Appended to axis labels; "%" for rates, empty for counts. */
+  valueSuffix?: string;
   size?: "card" | "hero";
 }
 
 export function CTRLineChart({
   facebookData,
   tiktokData,
+  series,
+  valueSuffix = "%",
   size = "card",
 }: CTRChartProps) {
-  const fb = facebookData?.filter(Number.isFinite) ?? [];
-  const tt = tiktokData?.filter(Number.isFinite) ?? [];
+  const namedSeries: ChartSeries[] =
+    series ??
+    [
+      facebookData ? { key: "facebook", color: "#3B82F6", data: facebookData } : null,
+      tiktokData ? { key: "tiktok", color: "#1F2937", data: tiktokData } : null,
+    ].filter((entry): entry is ChartSeries => entry !== null);
 
-  if (!fb.length && !tt.length) {
+  const usable = namedSeries.filter((entry) =>
+    entry.data.some(Number.isFinite),
+  );
+
+  if (!usable.length) {
     return (
       <div
         className={`mt-6 flex items-center justify-center rounded-lg border border-dashed border-gray-200 text-sm text-gray-500 ${
           size === "hero" ? "h-72 md:h-80" : "h-48"
         }`}
       >
-        No CTR history available yet.
+        No daily history available for this metric yet.
       </div>
     );
   }
 
-  // Transform data into format Recharts expects
-  const longest = Math.max(fb.length, tt.length);
+  const longest = Math.max(...usable.map((entry) => entry.data.length));
   const chartData = Array.from({ length: longest }, (_, index) => ({
     index,
-    facebook: fb[index],
-    tiktok: tt[index],
+    ...Object.fromEntries(
+      usable.map((entry) => [entry.key, entry.data[index]]),
+    ),
   }));
 
   return (
@@ -59,35 +79,26 @@ export function CTRLineChart({
           <XAxis dataKey="index" hide={true} />
 
           <YAxis
-            domain={[0, 100]}
-            ticks={[20, 40, 60, 80, 100]}
+            // Scale to the data: typical CTRs sit near 1-3%, so a fixed
+            // 0-100 axis renders them as a flat line.
+            domain={[0, (dataMax: number) => Math.max(1, Math.ceil((dataMax || 1) * 1.25))]}
             tick={{ fill: "#9CA3AF", fontSize: 11 }}
-            tickFormatter={(value) => `${value}%`}
+            tickFormatter={(value) => `${value}${valueSuffix}`}
             axisLine={false}
             tickLine={false}
           />
 
-          {fb.length > 0 && (
+          {usable.map((entry) => (
             <Line
+              key={entry.key}
               type="monotone"
-              dataKey="facebook"
-              stroke="#3B82F6"
+              dataKey={entry.key}
+              stroke={entry.color}
               strokeWidth={2.5}
               dot={false}
               animationDuration={1000}
             />
-          )}
-
-          {tt.length > 0 && (
-            <Line
-              type="monotone"
-              dataKey="tiktok"
-              stroke="#1F2937"
-              strokeWidth={2.5}
-              dot={false}
-              animationDuration={1000}
-            />
-          )}
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </div>
