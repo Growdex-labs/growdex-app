@@ -40,6 +40,14 @@ let flushTimer: number | undefined;
 export const isAnalyticsEnabled = () =>
   process.env.NEXT_PUBLIC_APP_ENV === "production";
 
+export const maskAnalyticsPath = (pathname: string) => {
+  if (pathname.startsWith("/panel/campaigns/")) return "/panel/campaigns/**";
+  if (pathname.startsWith("/panel/billing/budget/")) {
+    return "/panel/billing/budget/**";
+  }
+  return pathname;
+};
+
 const getClient = (): GoogleTag | undefined => {
   if (typeof window === "undefined") return undefined;
   return window.gtag;

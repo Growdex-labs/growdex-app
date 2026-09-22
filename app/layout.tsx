@@ -46,6 +46,24 @@ export default function RootLayout({
   return (
     <html lang="en" className={lexend.variable}>
       <head>
+        {isAnalyticsEnabled() && (
+          <>
+            <Script
+              async
+              src="https://www.googletagmanager.com/gtag/js?id=G-FKRPJZZ7X8"
+              strategy="afterInteractive"
+            />
+            <Script id="google-tag" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+
+                gtag('config', 'G-FKRPJZZ7X8', { send_page_view: false });
+              `}
+            </Script>
+          </>
+        )}
         <Script
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-FKRPJZZ7X8"

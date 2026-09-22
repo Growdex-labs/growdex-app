@@ -4,6 +4,7 @@ import {
   clearIdentifiedUser,
   identifyUser,
   analyticsUserId,
+  maskAnalyticsPath,
   resetAnalyticsForTests,
   track,
   trackScreenBlocked,
@@ -107,5 +108,18 @@ describe("analytics", () => {
     expect(analyticsUserId({ id: "user-1", profile: null })).toBe("user-1");
     expect(analyticsUserId({ profile: { id: "profile-1" } })).toBe("profile-1");
     expect(analyticsUserId({ profile: null })).toBeUndefined();
+  });
+
+  it("masks identifiers in sensitive dashboard paths", () => {
+    expect(maskAnalyticsPath("/panel/campaigns/campaign-123")).toBe(
+      "/panel/campaigns/**",
+    );
+    expect(maskAnalyticsPath("/panel/campaigns/campaign-123/edit")).toBe(
+      "/panel/campaigns/**",
+    );
+    expect(maskAnalyticsPath("/panel/billing/budget/budget-456/edit")).toBe(
+      "/panel/billing/budget/**",
+    );
+    expect(maskAnalyticsPath("/panel/assets")).toBe("/panel/assets");
   });
 });

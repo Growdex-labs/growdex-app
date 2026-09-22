@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthRequestError, getCurrentUser } from '@/lib/auth';
-import { track } from '@/lib/analytics';
+import { maskAnalyticsPath, track } from '@/lib/analytics';
 
 export default function PanelRootLayout({
   children,
@@ -54,7 +54,11 @@ export default function PanelRootLayout({
 
   useEffect(() => {
     if (isLoading || accessError) return;
-    track('page_view', { pathname });
+    const pagePath = maskAnalyticsPath(pathname);
+    track('page_view', {
+      page_location: `${window.location.origin}${pagePath}`,
+      page_path: pagePath,
+    });
   }, [accessError, isLoading, pathname]);
 
   if (isLoading) {
