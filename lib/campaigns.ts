@@ -256,7 +256,25 @@ export interface CampaignDto {
   creatives?: CampaignCreativeDto[];
   status?: string;
   publishError?: string | null;
-  platformStatuses?: Partial<Record<CampaignPlatform, { status: string; detail?: string; checkedAt?: string }>>;
+  platformStatuses?: Partial<
+    Record<
+      CampaignPlatform,
+      {
+        status: string;
+        detail?: string;
+        checkedAt?: string;
+        /** Child ads that need attention, e.g. disapproved creatives. */
+        ads?: Array<{
+          id?: string;
+          name?: string;
+          status: string;
+          detail?: string;
+        }>;
+        /** Meta only: the learning phase of each ad set. */
+        learning?: Array<{ adSetId?: string; name?: string; stage?: string }>;
+      }
+    >
+  >;
   createdAt?: string;
   publishedAt?: string | null;
 }
@@ -278,6 +296,39 @@ export interface CampaignPlatformMetric {
   ctr: number;
   cpc: number;
   cpa: number;
+  cpm?: number;
+  roas?: number | null;
+  frequency?: number;
+  conversionRate?: number;
+  revenue?: number;
+  videoViews?: number;
+  videoViews3s?: number;
+  videoP25?: number;
+  videoP50?: number;
+  videoP75?: number;
+  videoP100?: number;
+  videoCompletionRate?: number;
+  videoViewRate?: number;
+  videoAvgWatchSeconds?: number;
+  costPerVideoView?: number;
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  saves?: number;
+  engagements?: number;
+  engagementRate?: number;
+  costPerEngagement?: number;
+  leads?: number;
+  formOpens?: number;
+  costPerLead?: number;
+  leadConversionRate?: number;
+  landingPageViews?: number;
+  outboundClicks?: number;
+  addToCart?: number;
+  initiatedCheckout?: number;
+  purchases?: number;
+  aov?: number | null;
+  costPerThousandReached?: number;
 }
 
 export interface CampaignTrendPoint {
@@ -286,11 +337,151 @@ export interface CampaignTrendPoint {
   impressions: number;
   clicks: number;
   ctr: number;
+  conversions?: number;
+  reach?: number;
+  revenue?: number;
+  videoViews?: number;
+  videoP100?: number;
+  leads?: number;
+  purchases?: number;
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  saves?: number;
+  formOpens?: number;
+  landingPageViews?: number;
+  outboundClicks?: number;
+  addToCart?: number;
+  initiatedCheckout?: number;
+  cpm?: number;
+  frequency?: number;
+}
+
+export interface CampaignMetricTotals {
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  reach: number;
+  revenue: number;
+  engagements: number;
+  videoViews: number;
+  videoP100: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  leads: number;
+  formOpens: number;
+  landingPageViews: number;
+  outboundClicks: number;
+  addToCart: number;
+  initiatedCheckout: number;
+  purchases: number;
+  ctr: number;
+  cpc: number;
+  cpa: number;
+  cpm: number;
+  roas: number | null;
+  conversionRate: number;
+  frequency: number;
+  videoCompletionRate: number;
+  videoViewRate: number;
+  costPerVideoView: number;
+  engagementRate: number;
+  costPerEngagement: number;
+  costPerLead: number;
+  leadConversionRate: number;
+  aov: number | null;
+  costPerThousandReached: number;
+}
+
+export interface CampaignPeriodComparison {
+  currency: string;
+  current: { start: string; end: string; totals: CampaignMetricTotals };
+  previous: { start: string; end: string; totals: CampaignMetricTotals };
+  change: Record<string, number | null>;
+}
+
+export interface CampaignPacing {
+  currency: string;
+  budgetType: "daily" | "lifetime";
+  totalAllocation: number;
+  spentSoFar: number;
+  flightDays: number;
+  daysElapsed: number;
+  daysRemaining: number;
+  expectedSpendByNow: number;
+  projectedSpend: number;
+  percentSpent: number;
+  status:
+    | "not_started"
+    | "on_track"
+    | "overspending"
+    | "underspending"
+    | "completed";
+}
+
+export interface CampaignSignal {
+  id: string;
+  type: "fatigue" | "anomaly" | "pacing" | "rejection" | "learning";
+  severity: "info" | "warning" | "critical";
+  metric?: string;
+  message: string;
+  evidence: string;
 }
 
 export interface CampaignMetricsDetail {
+  currency?: string;
+  objective?: CampaignGoal;
+  /** Days the totals cover when a date range is applied; null = lifetime. */
+  rangedDays?: number | null;
   byPlatform: CampaignPlatformMetric[];
+  totals?: CampaignMetricTotals;
   trend: CampaignTrendPoint[];
+  comparison?: CampaignPeriodComparison | null;
+  pacing?: CampaignPacing | null;
+  signals?: CampaignSignal[];
+  freshness?: {
+    lastSyncedAt: string | null;
+    dataThrough: string | null;
+    status: "delayed";
+    description: string;
+    attribution: Record<
+      "meta" | "tiktok",
+      { window: string; note: string }
+    >;
+  };
+  conversionContext?: Array<{ platform: string; event: string }>;
+}
+
+export interface CampaignAdMetricRow {
+  platform: CampaignPlatform;
+  adId: string;
+  adName: string;
+  adSetId?: string;
+  metrics: CampaignPlatformMetric;
+}
+
+export interface CampaignBreakdownRow {
+  value: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  reach: number;
+  frequency: number;
+}
+
+export interface MetricDefinition {
+  key: string;
+  label: string;
+  description: string;
+  source: "platform" | "growdex";
+  unit: "currency" | "count" | "percent" | "ratio" | "seconds" | "multiple";
+  formula?: string;
+  goals: CampaignGoal[] | "all";
+  notes?: Partial<Record<CampaignPlatform, string>>;
 }
 
 export interface CampaignMetricsSummary {
@@ -2031,9 +2222,93 @@ export const fetchCampaignMetricsById = async (
     throw new Error("Fetch campaign metrics returned an invalid response shape");
   }
 
+  return body as CampaignMetricsDetail;
+};
+
+/** Ad-level performance rows, the data behind the creative comparison view. */
+export const fetchCampaignAdMetrics = async (
+  campaignId: string,
+  strategyId?: string,
+): Promise<{ ads: CampaignAdMetricRow[]; freshness: string | null }> => {
+  const query = strategyId
+    ? `?strategyId=${encodeURIComponent(strategyId)}`
+    : "";
+  const res = await apiFetch(
+    `/campaigns/metrics/${encodeURIComponent(campaignId)}/ads${query}`,
+    { method: "GET" },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      readApiErrorMessage(data, `Fetch ad metrics failed (${res.status})`),
+    );
+  }
+  const body = data?.ads ? data : data?.data;
+  if (!body || !Array.isArray(body.ads)) {
+    throw new Error("Fetch ad metrics returned an invalid response shape");
+  }
+  return { ads: body.ads as CampaignAdMetricRow[], freshness: body.freshness ?? null };
+};
+
+/** Platform-native audience or placement breakdown rows. */
+export const fetchCampaignBreakdowns = async (
+  campaignId: string,
+  dimension: "age" | "gender" | "placement" | "device",
+  strategyId?: string,
+): Promise<{
+  dimension: string;
+  byPlatform: Record<CampaignPlatform, CampaignBreakdownRow[]>;
+}> => {
+  const params = new URLSearchParams({ dimension });
+  if (strategyId) params.set("strategyId", strategyId);
+  const res = await apiFetch(
+    `/campaigns/metrics/${encodeURIComponent(campaignId)}/breakdowns?${params.toString()}`,
+    { method: "GET" },
+  );
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      readApiErrorMessage(data, `Fetch breakdowns failed (${res.status})`),
+    );
+  }
+  const body = data?.dimension ? data : data?.data;
+  if (!body || !body.byPlatform) {
+    throw new Error("Fetch breakdowns returned an invalid response shape");
+  }
   return {
-    byPlatform: rows as CampaignPlatformMetric[],
-    trend: trend as CampaignTrendPoint[],
+    dimension: body.dimension,
+    byPlatform: body.byPlatform as Record<
+      CampaignPlatform,
+      CampaignBreakdownRow[]
+    >,
+  };
+};
+
+/** The Growdex metric dictionary: labels, formulas, and provenance. */
+export const fetchMetricDefinitions = async (): Promise<{
+  definitions: MetricDefinition[];
+  attribution: Record<"meta" | "tiktok", { window: string; note: string }>;
+  dataStatus: { status: string; description: string };
+}> => {
+  const res = await apiFetch("/campaigns/metrics/definitions", {
+    method: "GET",
+  });
+  const data = await readJson(res);
+  if (!res.ok) {
+    throw new Error(
+      readApiErrorMessage(data, `Fetch metric definitions failed (${res.status})`),
+    );
+  }
+  const body = data?.definitions ? data : data?.data;
+  if (!body || !Array.isArray(body.definitions)) {
+    throw new Error(
+      "Fetch metric definitions returned an invalid response shape",
+    );
+  }
+  return {
+    definitions: body.definitions as MetricDefinition[],
+    attribution: body.attribution,
+    dataStatus: body.dataStatus,
   };
 };
 
@@ -2058,6 +2333,96 @@ export const summariseCampaignMetrics = (
     cpc: totals.clicks > 0 ? totals.spend / totals.clicks : 0,
     cpa: totals.conversions > 0 ? totals.spend / totals.conversions : 0,
     byPlatform: rows,
+  };
+};
+
+/**
+ * Narrows a metrics detail to the last `days` days of trend, recomputing the
+ * headline totals from that window. The period comparison and pacing stay as
+ * the API computed them (14-day windows / full flight), because they need the
+ * context the narrower view deliberately drops.
+ */
+export const sliceMetricsRange = (
+  detail: CampaignMetricsDetail,
+  days: number | null,
+): CampaignMetricsDetail => {
+  if (!days || detail.trend.length === 0) return detail;
+
+  const points = detail.trend.slice(-days);
+  const sum = (pick: (point: CampaignTrendPoint) => number) =>
+    points.reduce((acc, point) => acc + pick(point), 0);
+  const spend = sum((point) => point.spend);
+  const impressions = sum((point) => point.impressions);
+  const clicks = sum((point) => point.clicks);
+  const conversions = sum((point) => point.conversions ?? 0);
+  const reach = sum((point) => point.reach ?? 0);
+  const revenue = sum((point) => point.revenue ?? 0);
+  const videoViews = sum((point) => point.videoViews ?? 0);
+  const videoP100 = sum((point) => point.videoP100 ?? 0);
+  const likes = sum((point) => point.likes ?? 0);
+  const comments = sum((point) => point.comments ?? 0);
+  const shares = sum((point) => point.shares ?? 0);
+  const saves = sum((point) => point.saves ?? 0);
+  const engagements = likes + comments + shares + saves;
+  const leads = sum((point) => point.leads ?? 0);
+  const formOpens = sum((point) => point.formOpens ?? 0);
+  const landingPageViews = sum((point) => point.landingPageViews ?? 0);
+  const outboundClicks = sum((point) => point.outboundClicks ?? 0);
+  const addToCart = sum((point) => point.addToCart ?? 0);
+  const initiatedCheckout = sum((point) => point.initiatedCheckout ?? 0);
+  const purchases = sum((point) => point.purchases ?? 0);
+  const leadDenominator = Math.max(landingPageViews, clicks);
+  const base = detail.totals;
+
+  return {
+    ...detail,
+    rangedDays: days,
+    trend: points,
+    totals: {
+      ...(base as CampaignMetricTotals),
+      spend,
+      impressions,
+      clicks,
+      conversions,
+      // Unique reach does not add up across days, so no windowed figure can
+      // be derived from daily rows; the UI shows an em dash for it.
+      reach: 0,
+      revenue,
+      videoViews,
+      videoP100,
+      likes,
+      comments,
+      shares,
+      saves,
+      engagements,
+      leads,
+      formOpens,
+      landingPageViews,
+      outboundClicks,
+      addToCart,
+      initiatedCheckout,
+      purchases,
+      ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+      cpc: clicks > 0 ? spend / clicks : 0,
+      cpa: conversions > 0 ? spend / conversions : 0,
+      cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
+      roas: spend > 0 ? revenue / spend : null,
+      conversionRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
+      frequency: 0,
+      videoCompletionRate:
+        videoViews > 0 ? (videoP100 / videoViews) * 100 : 0,
+      videoViewRate:
+        impressions > 0 ? (videoViews / impressions) * 100 : 0,
+      costPerVideoView: videoViews > 0 ? spend / videoViews : 0,
+      engagementRate:
+        impressions > 0 ? (engagements / impressions) * 100 : 0,
+      costPerEngagement: engagements > 0 ? spend / engagements : 0,
+      costPerLead: leads > 0 ? spend / leads : 0,
+      leadConversionRate:
+        leadDenominator > 0 ? (leads / leadDenominator) * 100 : 0,
+      aov: purchases > 0 ? revenue / purchases : null,
+      costPerThousandReached: 0,
+    },
   };
 };
 

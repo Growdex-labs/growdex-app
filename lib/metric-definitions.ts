@@ -1,0 +1,331 @@
+import type { MetricDefinition } from "./campaigns";
+
+/**
+ * The client-side mirror of the backend metric dictionary
+ * (backend-main/src/modules/campaigns/metrics/metric-dictionary.ts). The UI
+ * renders definitions from here so tooltips never wait on a network round
+ * trip; the API endpoint serves the same metadata to external consumers.
+ */
+export const METRIC_DEFINITIONS: MetricDefinition[] = [
+  {
+    key: "spend",
+    label: "Spend",
+    description: "Total amount spent on the campaign.",
+    source: "platform",
+    unit: "currency",
+    goals: "all",
+  },
+  {
+    key: "impressions",
+    label: "Impressions",
+    description: "Number of times the ads were displayed.",
+    source: "platform",
+    unit: "count",
+    goals: "all",
+  },
+  {
+    key: "reach",
+    label: "Reach",
+    description: "Number of unique people the ads were shown to.",
+    source: "platform",
+    unit: "count",
+    goals: "all",
+  },
+  {
+    key: "frequency",
+    label: "Frequency",
+    description:
+      "Average number of times each person reached saw an ad. Rising frequency with falling engagement is the classic ad-fatigue pattern.",
+    source: "platform",
+    unit: "ratio",
+    goals: "all",
+  },
+  {
+    key: "cpm",
+    label: "CPM",
+    description: "Cost per 1,000 impressions.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spend ÷ impressions × 1000",
+    goals: "all",
+  },
+  {
+    key: "clicks",
+    label: "Clicks",
+    description: "Total clicks using the platform-defined click metric.",
+    source: "platform",
+    unit: "count",
+    goals: "all",
+  },
+  {
+    key: "ctr",
+    label: "CTR",
+    description: "Click-through rate: clicks relative to impressions.",
+    source: "platform",
+    unit: "percent",
+    goals: "all",
+  },
+  {
+    key: "cpc",
+    label: "CPC",
+    description: "Cost per click.",
+    source: "platform",
+    unit: "currency",
+    goals: "all",
+  },
+  {
+    key: "outboundClicks",
+    label: "Outbound clicks",
+    description:
+      "Clicks that took someone off the platform to your destination.",
+    source: "platform",
+    unit: "count",
+    goals: ["TRAFFIC", "SALES", "LEADS"],
+  },
+  {
+    key: "landingPageViews",
+    label: "Landing page views",
+    description:
+      "People who landed on your page after clicking, as measured by the platform pixel.",
+    source: "platform",
+    unit: "count",
+    goals: ["TRAFFIC", "SALES"],
+  },
+  {
+    key: "conversions",
+    label: "Conversions",
+    description:
+      "The campaign result, attributed to the event the campaign was optimized for. The exact event is shown per campaign.",
+    source: "platform",
+    unit: "count",
+    goals: "all",
+  },
+  {
+    key: "conversionRate",
+    label: "Conversion rate",
+    description: "Conversions relative to clicks.",
+    source: "growdex",
+    unit: "percent",
+    formula: "conversions ÷ clicks × 100",
+    goals: "all",
+  },
+  {
+    key: "cpa",
+    label: "Cost per result",
+    description: "Spend divided by the primary campaign result.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spend ÷ conversions",
+    goals: "all",
+  },
+  {
+    key: "revenue",
+    label: "Conversion value",
+    description:
+      "Value the platform attributes to conversions, in the currency the ad account bills in.",
+    source: "platform",
+    unit: "currency",
+    goals: ["SALES"],
+  },
+  {
+    key: "roas",
+    label: "ROAS",
+    description: "Return on ad spend: attributed conversion value divided by ad spend.",
+    source: "growdex",
+    unit: "multiple",
+    formula: "conversion value ÷ spend",
+    goals: ["SALES"],
+  },
+  {
+    key: "videoViews",
+    label: "Video views",
+    description:
+      "Plays of the ad video, counted the way the platform counts a view.",
+    source: "platform",
+    unit: "count",
+    goals: ["AWARENESS", "ENGAGEMENT"],
+    notes: {
+      meta: "Plays of the ad creative.",
+      tiktok: "Video play actions (2-second start).",
+    },
+  },
+  {
+    key: "videoViews3s",
+    label: "3-second views",
+    description: "Views that lasted at least 3 seconds, where the platform reports them.",
+    source: "platform",
+    unit: "count",
+    goals: ["AWARENESS", "ENGAGEMENT"],
+    notes: {
+      meta: "Read from the video_view entry of the actions list (3-second video views).",
+      tiktok: "TikTok play actions start at 2 seconds, so its play count is used here.",
+    },
+  },
+  {
+    key: "videoCompletionRate",
+    label: "Completion rate",
+    description: "Share of views that watched the video to the end.",
+    source: "growdex",
+    unit: "percent",
+    formula: "completions (100%) ÷ video views × 100",
+    goals: ["AWARENESS", "ENGAGEMENT"],
+  },
+  {
+    key: "videoAvgWatchSeconds",
+    label: "Avg. watch time",
+    description: "Average seconds watched per view.",
+    source: "platform",
+    unit: "seconds",
+    goals: ["AWARENESS", "ENGAGEMENT"],
+  },
+  {
+    key: "videoViewRate",
+    label: "View rate",
+    description: "Video views relative to impressions.",
+    source: "growdex",
+    unit: "percent",
+    formula: "video views ÷ impressions × 100",
+    goals: ["AWARENESS", "ENGAGEMENT"],
+  },
+  {
+    key: "costPerVideoView",
+    label: "Cost per view",
+    description: "Spend divided by video views.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spend ÷ video views",
+    goals: ["AWARENESS", "ENGAGEMENT"],
+  },
+  {
+    key: "engagements",
+    label: "Engagements",
+    description: "Reactions, comments, shares, and saves added together.",
+    source: "growdex",
+    unit: "count",
+    formula: "likes + comments + shares + saves",
+    goals: ["ENGAGEMENT"],
+  },
+  {
+    key: "engagementRate",
+    label: "Engagement rate",
+    description: "Engagements relative to impressions.",
+    source: "growdex",
+    unit: "percent",
+    formula: "engagements ÷ impressions × 100",
+    goals: ["ENGAGEMENT"],
+  },
+  {
+    key: "costPerEngagement",
+    label: "Cost per engagement",
+    description: "Spend divided by engagements.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spend ÷ engagements",
+    goals: ["ENGAGEMENT"],
+  },
+  {
+    key: "leads",
+    label: "Leads",
+    description: "Lead submissions the campaign generated.",
+    source: "platform",
+    unit: "count",
+    goals: ["LEADS"],
+  },
+  {
+    key: "formOpens",
+    label: "Form opens",
+    description:
+      "Times the instant form was opened, where the platform reports it.",
+    source: "platform",
+    unit: "count",
+    goals: ["LEADS"],
+  },
+  {
+    key: "costPerLead",
+    label: "Cost per lead",
+    description: "Spend divided by leads.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spend ÷ leads",
+    goals: ["LEADS"],
+  },
+  {
+    key: "leadConversionRate",
+    label: "Lead conversion rate",
+    description:
+      "Leads relative to landing page views (or clicks when views are unavailable).",
+    source: "growdex",
+    unit: "percent",
+    goals: ["LEADS"],
+  },
+  {
+    key: "addToCart",
+    label: "Add to cart",
+    description: "Add-to-cart events attributed to the campaign.",
+    source: "platform",
+    unit: "count",
+    goals: ["SALES"],
+  },
+  {
+    key: "initiatedCheckout",
+    label: "Initiated checkout",
+    description: "Checkouts started after an attributed click or view.",
+    source: "platform",
+    unit: "count",
+    goals: ["SALES"],
+  },
+  {
+    key: "purchases",
+    label: "Purchases",
+    description: "Purchase events attributed to the campaign.",
+    source: "platform",
+    unit: "count",
+    goals: ["SALES"],
+  },
+  {
+    key: "aov",
+    label: "Avg. order value",
+    description: "Average value of an attributed purchase.",
+    source: "growdex",
+    unit: "currency",
+    formula: "conversion value ÷ purchases",
+    goals: ["SALES"],
+  },
+  {
+    key: "costPerThousandReached",
+    label: "Cost per 1,000 reached",
+    description: "Spend for every thousand unique people reached.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spend ÷ reach × 1000",
+    goals: ["AWARENESS"],
+  },
+  {
+    key: "costPerInstall",
+    label: "Cost per install",
+    description: "Spend divided by attributed app installs.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spend ÷ app installs",
+    goals: ["APP_PROMOTION"],
+  },
+];
+
+const definitionIndex = new Map(METRIC_DEFINITIONS.map((d) => [d.key, d]));
+
+/** Non-metric labels the analytics surfaces title with a definition. */
+const EXTRA_LABELS: Record<string, MetricDefinition> = {
+  pacing: {
+    key: "pacing",
+    label: "Budget pacing",
+    description:
+      "Budget spent against the budget allocated over the flight so far, with the end-of-flight projection from average daily spend.",
+    source: "growdex",
+    unit: "currency",
+    formula: "spent so far vs allocation; projection = avg daily spend × flight days",
+    goals: "all",
+  },
+};
+
+export const metricDefinition = (key: string): MetricDefinition | undefined =>
+  definitionIndex.get(key) ?? EXTRA_LABELS[key];

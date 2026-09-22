@@ -20,6 +20,12 @@ describe('oauthPopupClosedMessage', () => {
   it('keeps the Meta cancellation message platform-specific', () => {
     expect(oauthPopupClosedMessage('meta')).toBe(
       'Meta authentication closed before the connection finished. Please try again.',
+import { exchangeSocialAuthorizationCode, oauthPopupClosedMessage } from './oauth';
+
+describe('oauthPopupClosedMessage', () => {
+  it('identifies the Meta feature-unavailable page as a Growdex issue', () => {
+    expect(oauthPopupClosedMessage('meta')).toContain(
+      'this is a Growdex integration issue—not a problem with your Meta account',
     );
   });
 

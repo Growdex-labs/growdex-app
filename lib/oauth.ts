@@ -58,6 +58,9 @@ const openSizedOAuthWindow = (url: string, platform: SocialPlatform): Window | n
   );
 };
 
+    ? 'Meta did not finish the connection. If Facebook showed “Feature unavailable,” this is a Growdex integration issue—not a problem with your Meta account. Please contact Growdex Support and include the time this happened.'
+    : 'TikTok authentication was cancelled before the connection finished.';
+
 /**
  * Open the OAuth popup and resolve with the authorization code returned by the
  * provider. The backend starts the provider flow; the frontend callback relays

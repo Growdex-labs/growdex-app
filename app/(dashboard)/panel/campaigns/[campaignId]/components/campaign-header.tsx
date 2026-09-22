@@ -51,11 +51,8 @@ export function CampaignHeader({
             {campaign.name}
           </h1>
           <div className="flex items-center gap-2 w-full">
-            {/* Budget Burn Badge */}
-            <button className="px-4 py-2 flex-1 md:flex-none bg-bisque-50 text-firebrick-500 rounded-lg flex items-center gap-2 hover:bg-bisque-100 transition-colors text-sm md:text-xs font-gilroy-bold">
-              <Image src="/mdi_fire.png" alt="" width={28} height={28} className="size-7" />
-              Budget Burn
-            </button>
+            {/* Budget pacing lives in the performance overview, backed by
+                real spend-versus-allocation data instead of a static badge. */}
 
             {/* Platform Icons Container */}
             <div className="bg-gray-100 rounded-xl py-2 flex flex-1 md:flex-none justify-center items-center gap-3 transition-all px-4">

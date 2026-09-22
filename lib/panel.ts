@@ -29,6 +29,10 @@ export interface PanelPlatformMetrics {
   conversions: number;
   reach: number;
   ctr: number;
+  videoViews?: number;
+  engagements?: number;
+  leads?: number;
+  purchases?: number;
   spendByCurrency: SpendByCurrency[];
   revenueByCurrency: SpendByCurrency[];
 }
@@ -41,6 +45,46 @@ export interface DailySpend {
   byPlatform: Partial<Record<PanelPlatform, SpendByCurrency[]>>;
 }
 
+/** One day of account-wide delivery, for the CTR trend chart. */
+export interface DailyTrendPoint {
+  date: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+}
+
+/** The last full window against the equal window before it. */
+export interface PanelTrendSummary {
+  windowDays: number;
+  current: {
+    start: string;
+    end: string;
+    impressions: number;
+    clicks: number;
+    conversions: number;
+    reach: number;
+    ctr: number;
+  };
+  previous: {
+    start: string;
+    end: string;
+    impressions: number;
+    clicks: number;
+    conversions: number;
+    reach: number;
+    ctr: number;
+  };
+  change: {
+    impressions: number | null;
+    clicks: number | null;
+    conversions: number | null;
+    reach: number | null;
+    ctr: number | null;
+  };
+  spendChangeByCurrency: Array<{ currency: string; change: number | null }>;
+  revenueChangeByCurrency: Array<{ currency: string; change: number | null }>;
+}
+
 export interface PanelMetrics {
   spendByCurrency: SpendByCurrency[];
   revenueByCurrency: SpendByCurrency[];
@@ -49,9 +93,15 @@ export interface PanelMetrics {
   totalClicks: number;
   totalConversions: number;
   totalReach: number;
+  totalVideoViews?: number;
+  totalEngagements?: number;
+  totalLeads?: number;
+  totalPurchases?: number;
   ctr: number;
   byPlatform: Partial<Record<PanelPlatform, PanelPlatformMetrics>>;
   dailySpend: DailySpend[];
+  dailyTrend?: DailyTrendPoint[];
+  trendSummary?: PanelTrendSummary;
 }
 
 const EMPTY_METRICS: PanelMetrics = {

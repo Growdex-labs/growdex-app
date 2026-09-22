@@ -70,7 +70,7 @@ this Next.js app—constructs the Meta authorization URL:
 GET {NEXT_PUBLIC_BACKEND_API_URL}/auth/meta
 ```
 
-Before opening that endpoint, the frontend makes an authenticated onboarding
+77777777777777777777777777777777777777777777777777777777Before opening that endpoint, the frontend makes an authenticated onboarding
 status request. This lets the shared API client refresh an expired Growdex
 session and prevents the OAuth popup from displaying a raw
 `{"message":"Unauthorized","statusCode":401}` response. If preflight still

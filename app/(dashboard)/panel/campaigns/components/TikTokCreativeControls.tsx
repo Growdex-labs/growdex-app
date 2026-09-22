@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchTikTokIdentities, type CampaignCreativeInput, type TikTokIdentity } from "@/lib/campaigns";
 import { uploadCreativeToCloudinary } from "@/lib/media-upload";
 
@@ -13,6 +13,11 @@ export function TikTokCreativeControls({ assetId, creative, onChange }: {
   const [loading, setLoading] = useState(Boolean(assetId));
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Async completions (identity fetch, cover upload) must merge over the
+  // latest creative, not the one captured when the request started — an
+  // identity auto-selected mid-upload would otherwise be wiped.
+  const creativeRef = useRef(creative);
+  creativeRef.current = creative;
   useEffect(() => {
     let active = true;
     if (!assetId) return;
@@ -25,7 +30,8 @@ export function TikTokCreativeControls({ assetId, creative, onChange }: {
     <label className="block text-sm font-gilroy-medium text-gray-700">TikTok identity
       <select className="mt-2 h-11 w-full rounded-lg border bg-white px-3" disabled={loading || !assetId} value={creative.tiktok ? `${creative.tiktok.identityType}:${creative.tiktok.identityId}` : ""} onChange={(event) => {
         const identity = identities.find((item) => `${item.type}:${item.id}` === event.target.value);
-        if (identity) onChange({ tiktok: { ...creative.tiktok, identityType: identity.type, identityId: identity.id, identityAuthorizedBcId: identity.authorizedBcId, postId: creative.tiktok?.identityId === identity.id ? creative.tiktok.postId : undefined } });
+        const tiktok = creativeRef.current.tiktok;
+        if (identity) onChange({ tiktok: { ...tiktok, identityType: identity.type, identityId: identity.id, identityAuthorizedBcId: identity.authorizedBcId, postId: tiktok?.identityId === identity.id ? tiktok.postId : undefined } });
       }}>
         <option value="">{loading ? "Loading identities…" : "Choose a linked TikTok identity"}</option>
         {identities.map((identity) => <option key={`${identity.type}:${identity.id}`} value={`${identity.type}:${identity.id}`}>{identity.name}</option>)}
@@ -37,7 +43,12 @@ export function TikTokCreativeControls({ assetId, creative, onChange }: {
         const file = event.target.files?.[0];
         if (!file) return;
         setUploading(true); setError(null);
-        void uploadCreativeToCloudinary(file).then((result) => onChange({ thumbnailUrl: result.url, tiktok: creative.tiktok ? { ...creative.tiktok, coverImageId: undefined } : undefined }))
+        void uploadCreativeToCloudinary(file).then((result) => {
+          const tiktok = creativeRef.current.tiktok;
+          onChange(tiktok
+            ? { thumbnailUrl: result.url, tiktok: { ...tiktok, coverImageId: undefined } }
+            : { thumbnailUrl: result.url });
+        })
           .catch((failure) => setError(failure instanceof Error ? failure.message : "Could not upload the cover."))
           .finally(() => setUploading(false));
       }} />
