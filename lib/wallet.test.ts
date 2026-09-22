@@ -1,9 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
-vi.mock("./auth", () => ({ apiFetch }));
-
-import { fetchWalletOverview, parseWalletOverview, resolveAdAccountBalance } from "./wallet";
+import { describe, expect, it } from "vitest";
+import { parseWalletOverview, resolveAdAccountBalance } from "./wallet";
 
 describe("parseWalletOverview", () => {
   beforeEach(() => apiFetch.mockReset());
@@ -58,16 +54,5 @@ describe("parseWalletOverview", () => {
       spending: [], spendChangePercent: 0, transactions: [],
     });
     expect(resolveAdAccountBalance(overview, "tiktok", "adv_1", Date.parse("2026-01-02T00:00:00Z")).state).toBe("stale");
-  });
-
-  it("fetches balances without a CORS-triggering cache header", async () => {
-    apiFetch.mockResolvedValue(new Response(JSON.stringify({
-      balances: { NGN: 0, USD: 0 }, adAccounts: [], spending: [],
-      spendChangePercent: 0, transactions: [],
-    }), { status: 200 }));
-
-    await fetchWalletOverview();
-
-    expect(apiFetch).toHaveBeenCalledWith("/wallet", { method: "GET" });
   });
 });

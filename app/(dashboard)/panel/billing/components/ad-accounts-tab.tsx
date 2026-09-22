@@ -88,7 +88,7 @@ export function AdAccountsTab({
               ? identity.adAccountId
               : "advertiserId" in identity ? identity.advertiserId : null
             : null;
-          const resolved = providerAccountId && overview
+          const resolved = providerAccountId
             ? resolveAdAccountBalance(overview, platform.id, providerAccountId)
             : { account: null, state: "unavailable" as const };
           const balance = resolved.account;

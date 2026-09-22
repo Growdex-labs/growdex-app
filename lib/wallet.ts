@@ -151,11 +151,14 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
 };
 
 export const fetchWalletOverview = async (): Promise<WalletOverview> => {
-  // This is a browser-to-API request. Avoid non-safelisted cache headers here:
-  // they trigger a CORS preflight on cross-origin deployments and can turn a
-  // valid wallet request into the browser's generic "Failed to fetch" error.
-  // Freshness is determined from the provider's balanceAsOf value below.
-  const response = await apiFetch("/wallet", { method: "GET" });
+  // The backend resolves balances from the authenticated user's connected,
+  // primary provider accounts. Force revalidation rather than reusing a
+  // browser/proxy cache that may contain another account or an old balance.
+  const response = await apiFetch("/wallet", {
+    method: "GET",
+    cache: "no-store",
+    headers: { "Cache-Control": "no-cache" },
+  });
   const data = await readJson(response);
   if (!response.ok) {
     const message =
