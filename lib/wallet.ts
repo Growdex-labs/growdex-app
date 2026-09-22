@@ -3,6 +3,7 @@ import { apiFetch } from "./auth";
 export type WalletCurrency = string;
 export type WalletPlatform = "meta" | "tiktok";
 export type WalletTransactionStatus = "success" | "failed" | "pending";
+export type AdBalanceStatus = "available" | "unavailable" | "error";
 
 export interface WalletTransaction {
   id: string;
@@ -16,15 +17,7 @@ export interface WalletTransaction {
 
 export interface WalletOverview {
   balances: Record<WalletCurrency, number>;
-  adAccounts: Array<{
-    platform: WalletPlatform;
-    accountId: string;
-    accountName: string;
-    balance: number;
-    currency: WalletCurrency;
-    amountSpent: number;
-    isPrepayAccount: boolean;
-  }>;
+  adAccounts: WalletAdAccountBalance[];
   spending: Array<{
     label: string;
     meta: number;
@@ -33,6 +26,52 @@ export interface WalletOverview {
   spendChangePercent: number;
   transactions: WalletTransaction[];
 }
+
+export interface WalletAdAccountBalance {
+    platform: WalletPlatform;
+    accountId: string;
+    accountName: string;
+    /** Null means the platform did not provide a balance; it is not zero. */
+    balance: number | null;
+    currency: WalletCurrency;
+    amountSpent: number;
+    isPrepayAccount: boolean;
+    balanceStatus?: AdBalanceStatus;
+    balanceAsOf?: string | null;
+    balanceError?: string | null;
+}
+
+export interface ResolvedAdBalance {
+  account: WalletAdAccountBalance | null;
+  state: "available" | "unavailable" | "error" | "stale";
+}
+
+const BALANCE_STALE_AFTER_MS = 6 * 60 * 60 * 1000;
+
+/** Match by provider account ID, never merely by platform or list position. */
+export const resolveAdAccountBalance = (
+  overview: WalletOverview,
+  platform: WalletPlatform,
+  providerAccountId: string,
+  now = Date.now(),
+): ResolvedAdBalance => {
+  const account = overview.adAccounts.find(
+    (candidate) =>
+      candidate.platform === platform && candidate.accountId === providerAccountId,
+  ) ?? null;
+  if (!account) return { account: null, state: "unavailable" };
+  if (account.balanceStatus === "error") return { account, state: "error" };
+  if (account.balanceStatus === "unavailable" || account.balance === null) {
+    return { account, state: "unavailable" };
+  }
+  if (account.balanceAsOf) {
+    const timestamp = new Date(account.balanceAsOf).getTime();
+    if (!Number.isFinite(timestamp) || now - timestamp > BALANCE_STALE_AFTER_MS) {
+      return { account, state: "stale" };
+    }
+  }
+  return { account, state: "available" };
+};
 
 const readJson = async (response: Response): Promise<unknown> => {
   const text = await response.text();
@@ -77,6 +116,8 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
   const balances = overview.balances;
   if (
     !balances ||
+    !("NGN" in balances) ||
+    !("USD" in balances) ||
     !Object.values(balances).every((balance) => typeof balance === "number") ||
     !Array.isArray(overview.adAccounts) ||
     !overview.adAccounts.every(
@@ -84,10 +125,13 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
         (account.platform === "meta" || account.platform === "tiktok") &&
         typeof account.accountId === "string" &&
         typeof account.accountName === "string" &&
-        typeof account.balance === "number" &&
+        (typeof account.balance === "number" || account.balance === null) &&
         isCurrency(account.currency) &&
         typeof account.amountSpent === "number" &&
-        typeof account.isPrepayAccount === "boolean",
+        typeof account.isPrepayAccount === "boolean" &&
+        (account.balanceStatus === undefined || ["available", "unavailable", "error"].includes(account.balanceStatus)) &&
+        (account.balanceAsOf === undefined || account.balanceAsOf === null || typeof account.balanceAsOf === "string") &&
+        (account.balanceError === undefined || account.balanceError === null || typeof account.balanceError === "string"),
     ) ||
     !Array.isArray(overview.spending) ||
     !overview.spending.every(
@@ -107,6 +151,10 @@ export const parseWalletOverview = (value: unknown): WalletOverview => {
 };
 
 export const fetchWalletOverview = async (): Promise<WalletOverview> => {
+  // This is a browser-to-API request. Avoid non-safelisted cache headers here:
+  // they trigger a CORS preflight on cross-origin deployments and can turn a
+  // valid wallet request into the browser's generic "Failed to fetch" error.
+  // Freshness is determined from the provider's balanceAsOf value below.
   const response = await apiFetch("/wallet", { method: "GET" });
   const data = await readJson(response);
   if (!response.ok) {
