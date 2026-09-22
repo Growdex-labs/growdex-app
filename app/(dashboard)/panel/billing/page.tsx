@@ -134,6 +134,17 @@ function BillingWorkspace() {
 
       if (adAccountBalancesResult.status === "fulfilled") {
         setAdAccountBalances(adAccountBalancesResult.value);
+      } else if (overviewResult.status === "fulfilled") {
+        // Older backend deployments expose provider balances only on /wallet.
+        // Keep that response as a compatibility fallback so a missing newer
+        // billing endpoint does not break the Ad Accounts tab.
+        setAdAccountBalances(overviewResult.value.adAccounts);
+      } else {
+        // The account cards can still render their explicit unavailable state.
+        // Do not leave the section loading forever after both requests fail.
+        setAdAccountBalances([]);
+        setAdAccountBalanceError(
+          "The advertising platforms did not return balance data. Try again shortly.",
       } else {
         setAdAccountBalanceError(
           errorMessage(
