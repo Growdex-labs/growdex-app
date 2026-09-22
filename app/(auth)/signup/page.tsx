@@ -194,6 +194,12 @@ export default function SignUpPage() {
             Growdex
           </span>
         </div>
+        <Link
+          href="/login"
+          className="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-gilroy-semibold text-white transition-colors hover:bg-gray-800"
+        >
+          Login
+        </Link>
       </div>
 
       {/* Content row */}
