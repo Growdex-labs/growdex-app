@@ -48,6 +48,7 @@ export const openOAuthPopup = (
 
   const messageHandler = (event: MessageEvent) => {
     if (!allowedOrigins.has(event.origin)) return;
+    if (event.source !== popup) return;
     if (event.data?.platform !== platform) return;
 
     if (event.data?.type === 'oauth_success') {
@@ -65,7 +66,11 @@ export const openOAuthPopup = (
       isCompleted = true;
       window.removeEventListener('message', messageHandler);
       popup.close();
-      onError(event.data.error);
+      onError(
+        typeof event.data.error === 'string' && event.data.error.trim()
+          ? event.data.error
+          : `Could not connect ${platform === 'meta' ? 'Meta' : 'TikTok'}. Please try again.`,
+      );
     }
   };
 
