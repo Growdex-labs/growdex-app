@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { isVideoMedia } from "@/lib/campaign-shared";
 import {
   getStrictestCampaignCreativeTextLimit,
+  CAMPAIGN_CREATIVE_TEXT_LIMITS,
   recordAiRequestAcceptance,
   requestCampaignCreativeSuggestion,
   tikTokTextLength,
@@ -174,6 +175,8 @@ export function CreativeAdEditor({
     textLimitPlatforms,
     "primaryText",
   );
+  const { headline: headlineLimit, primaryText: primaryTextLimit } =
+    CAMPAIGN_CREATIVE_TEXT_LIMITS[platform];
   const headlineLabel = platform === "meta" ? "Headline" : "Ad name";
   const requiresVideo = destination === "VIDEO" || platform === "tiktok";
   const uploadLabel = requiresVideo ? "video" : "image or video";
