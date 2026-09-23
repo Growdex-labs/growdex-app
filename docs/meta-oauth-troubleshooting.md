@@ -70,6 +70,13 @@ this Next.js app—constructs the Meta authorization URL:
 GET {NEXT_PUBLIC_BACKEND_API_URL}/auth/meta
 ```
 
+77777777777777777777777777777777777777777777777777777777Before opening that endpoint, the frontend makes an authenticated onboarding
+status request. This lets the shared API client refresh an expired Growdex
+session and prevents the OAuth popup from displaying a raw
+`{"message":"Unauthorized","statusCode":401}` response. If preflight still
+returns 401, the user is sent back through Growdex sign-in instead of starting
+Meta authorization.
+
 Use the browser Network panel (with **Preserve log** enabled) to inspect its
 redirect chain. Record these values from the final `facebook.com/.../dialog/oauth`
 request and compare them with the Meta dashboard and backend deployment:

@@ -10,6 +10,16 @@ vi.mock('./auth', () => ({
 }));
 
 import { buildOAuthCallbackPayload } from './oauth-callback';
+import {
+  exchangeSocialAuthorizationCode,
+  oauthPopupClosedMessage,
+  validateSocialOAuthSession,
+} from './oauth';
+
+describe('oauthPopupClosedMessage', () => {
+  it('keeps the Meta cancellation message platform-specific', () => {
+    expect(oauthPopupClosedMessage('meta')).toBe(
+      'Meta authentication closed before the connection finished. Please try again.',
 import { exchangeSocialAuthorizationCode, oauthPopupClosedMessage } from './oauth';
 
 describe('oauthPopupClosedMessage', () => {
@@ -23,6 +33,33 @@ describe('oauthPopupClosedMessage', () => {
     expect(oauthPopupClosedMessage('tiktok')).toBe(
       'TikTok authentication was cancelled before the connection finished.',
     );
+  });
+});
+
+describe('validateSocialOAuthSession', () => {
+  beforeEach(() => {
+    apiFetch.mockReset();
+  });
+
+  it('allows OAuth to start after the authenticated preflight succeeds', async () => {
+    apiFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+    await expect(validateSocialOAuthSession()).resolves.toEqual({ success: true });
+    expect(apiFetch).toHaveBeenCalledWith('/users/onboarding/status');
+  });
+
+  it('turns an unauthorized preflight into an actionable session message', async () => {
+    apiFetch.mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Unauthorized', statusCode: 401 }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    await expect(validateSocialOAuthSession()).resolves.toEqual({
+      success: false,
+      error: 'Your Growdex session has expired. Please sign in again before connecting an account.',
+    });
   });
 });
 
