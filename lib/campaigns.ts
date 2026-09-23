@@ -11,6 +11,25 @@ export type CampaignGoal =
   | "APP_PROMOTION";
 
 export type CampaignPlatform = "meta" | "tiktok";
+
+export const CAMPAIGN_CREATIVE_TEXT_LIMITS = {
+  meta: { primaryText: 2_200, headline: 255 },
+  tiktok: { primaryText: 100, headline: 512 },
+} as const satisfies Record<
+  CampaignPlatform,
+  { primaryText: number; headline: number }
+>;
+
+export const getStrictestCampaignCreativeTextLimit = (
+  platforms: CampaignPlatform[],
+  field: "primaryText" | "headline",
+) =>
+  Math.min(
+    ...platforms.map(
+      (platform) => CAMPAIGN_CREATIVE_TEXT_LIMITS[platform][field],
+    ),
+  );
+
 export type CampaignCreationMode = "manual" | "ai";
 export type CampaignGender = "all" | "male" | "female";
 export type BudgetType = "daily" | "lifetime";
@@ -1772,12 +1791,8 @@ export const requestCampaignCreativeSuggestion = async (
     throw new Error("The AI creative service returned a suggestion for the wrong field.");
   }
   const value = requiredString(data.value, "creative suggestion");
-  const limit =
-    field === "headline"
-      ? input.platform === "tiktok"
-        ? 512
-        : 255
-      : 2_200;
+  const limits = CAMPAIGN_CREATIVE_TEXT_LIMITS[input.platform];
+  const limit = field === "headline" ? limits.headline : limits.primaryText;
   if (value.length > limit) {
     throw new Error(`The AI creative service returned ${field} text over ${limit} characters.`);
   }

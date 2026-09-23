@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { isAnalyticsEnabled } from "@/lib/analytics";
 import Providers from "./providers";
 
 const lexend = localFont({
@@ -64,20 +65,6 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-FKRPJZZ7X8"
-          strategy="afterInteractive"
-        />
-        <Script id="google-tag" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', 'G-FKRPJZZ7X8');
-          `}
-        </Script>
       </head>
       <body className="antialiased">
         <Providers>
