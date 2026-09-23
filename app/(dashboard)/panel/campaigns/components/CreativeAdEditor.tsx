@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { isVideoMedia } from "@/lib/campaign-shared";
 import {
+  getStrictestCampaignCreativeTextLimit,
   CAMPAIGN_CREATIVE_TEXT_LIMITS,
   recordAiRequestAcceptance,
   requestCampaignCreativeSuggestion,
@@ -35,6 +36,8 @@ interface CreativeAdEditorProps {
   goal: CampaignGoal;
   destination: CampaignDestination;
   creatives: CampaignCreativeInput[];
+  platforms: CampaignPlatform[];
+  sameCreativeForAll: boolean;
   ctaOptions: Array<{ value: CampaignCta; label: string }>;
   uploading: number | null;
   uploadProgress?: CreativeUploadStatus | null;
@@ -101,6 +104,8 @@ export function CreativeAdEditor({
   goal,
   destination,
   creatives,
+  platforms,
+  sameCreativeForAll,
   ctaOptions,
   uploading,
   uploadProgress,
@@ -161,6 +166,15 @@ export function CreativeAdEditor({
   }
 
   const platform = creative.platform;
+  const textLimitPlatforms = sameCreativeForAll ? platforms : [platform];
+  const headlineLimit = getStrictestCampaignCreativeTextLimit(
+    textLimitPlatforms,
+    "headline",
+  );
+  const primaryTextLimit = getStrictestCampaignCreativeTextLimit(
+    textLimitPlatforms,
+    "primaryText",
+  );
   const { headline: headlineLimit, primaryText: primaryTextLimit } =
     CAMPAIGN_CREATIVE_TEXT_LIMITS[platform];
   const headlineLabel = platform === "meta" ? "Headline" : "Ad name";
@@ -195,6 +209,13 @@ export function CreativeAdEditor({
         primaryTextRequestRef.current !== requestId ||
         requestIndex !== activeIndex
       ) {
+        return;
+      }
+      if (suggestion.value.length > primaryTextLimit) {
+        setPrimaryTextStateIndex(requestIndex);
+        setPrimaryTextError(
+          `Shared primary text must be ${primaryTextLimit} characters or fewer.`,
+        );
         return;
       }
       onChange(requestIndex, { primaryText: suggestion.value });
@@ -245,6 +266,13 @@ export function CreativeAdEditor({
         headlineRequestRef.current !== requestId ||
         requestIndex !== activeIndex
       ) {
+        return;
+      }
+      if (suggestion.value.length > headlineLimit) {
+        setHeadlineStateIndex(requestIndex);
+        setHeadlineError(
+          `Shared headline text must be ${headlineLimit} characters or fewer.`,
+        );
         return;
       }
       onChange(requestIndex, { headline: suggestion.value });

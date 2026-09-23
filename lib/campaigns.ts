@@ -20,6 +20,16 @@ export const CAMPAIGN_CREATIVE_TEXT_LIMITS = {
   { primaryText: number; headline: number }
 >;
 
+export const getStrictestCampaignCreativeTextLimit = (
+  platforms: CampaignPlatform[],
+  field: "primaryText" | "headline",
+) =>
+  Math.min(
+    ...platforms.map(
+      (platform) => CAMPAIGN_CREATIVE_TEXT_LIMITS[platform][field],
+    ),
+  );
+
 export type CampaignCreationMode = "manual" | "ai";
 export type CampaignGender = "all" | "male" | "female";
 export type BudgetType = "daily" | "lifetime";
