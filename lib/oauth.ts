@@ -10,10 +10,19 @@ export const oauthPopupClosedMessage = (platform: SocialPlatform): string =>
     ? 'Meta did not finish the connection. If Facebook showed “Feature unavailable,” this is a Growdex integration issue—not a problem with your Meta account. Please contact Growdex Support and include the time this happened.'
     : 'TikTok authentication was cancelled before the connection finished.';
 
+export const oauthSessionExpiredMessage =
+  'Your Growdex session expired. Sign in again, then reconnect your account.';
+
 /**
  * Open the OAuth popup and resolve with the authorization code returned by the
  * provider. The backend starts the provider flow; the frontend callback relays
  * the returned code so the backend can finish and save the connection.
+ *
+ * The popup opens blank and only loads the backend URL after the session is
+ * refreshed. `/auth/{platform}` is a page navigation, so it cannot refresh an
+ * expired access cookie the way `apiFetch` does, and the backend would answer
+ * 401. The popup must still open inside the click handler, or the browser
+ * blocks it.
  */
 export const openOAuthPopup = (
   platform: SocialPlatform,
@@ -30,9 +39,8 @@ export const openOAuthPopup = (
   const left = window.screenX + (window.outerWidth - width) / 2;
   const top = window.screenY + (window.outerHeight - height) / 2;
 
-  // Backend builds the provider OAuth URL (scopes + state) and redirects.
   const popup = window.open(
-    `${API_BASE_URL}/auth/${platform}`,
+    'about:blank',
     `${platform}_oauth`,
     `width=${width},height=${height},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
   );
@@ -44,6 +52,14 @@ export const openOAuthPopup = (
 
   // Track completion to avoid race condition between manual close and message receipt
   let isCompleted = false;
+
+  const fail = (error: string) => {
+    isCompleted = true;
+    window.removeEventListener('message', messageHandler);
+    popup.close();
+    onError(error);
+  };
+
   const allowedOrigins = new Set([window.location.origin, new URL(API_BASE_URL).origin]);
 
   const messageHandler = (event: MessageEvent) => {
@@ -62,14 +78,26 @@ export const openOAuthPopup = (
     }
 
     if (event.data?.type === 'oauth_error') {
-      isCompleted = true;
-      window.removeEventListener('message', messageHandler);
-      popup.close();
-      onError(event.data.error);
+      fail(event.data.error);
     }
   };
 
   window.addEventListener('message', messageHandler);
+
+  // Backend builds the provider OAuth URL (scopes + state) and redirects.
+  apiFetch('/auth/refresh', { method: 'POST' })
+    .then((res) => {
+      if (isCompleted || popup.closed) return;
+      if (!res.ok) {
+        fail(oauthSessionExpiredMessage);
+        return;
+      }
+      popup.location.href = `${API_BASE_URL}/auth/${platform}`;
+    })
+    .catch(() => {
+      if (isCompleted || popup.closed) return;
+      fail(`Could not reach Growdex to start the ${platform === 'meta' ? 'Meta' : 'TikTok'} connection. Check your connection and try again.`);
+    });
 
   const popupCheck = setInterval(() => {
     if (popup.closed) {
