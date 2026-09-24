@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { isVideoMedia } from "@/lib/campaign-shared";
 import {
+  getStrictestCampaignCreativeTextLimit,
   recordAiRequestAcceptance,
   requestCampaignCreativeSuggestion,
   tikTokTextLength,
@@ -34,6 +35,8 @@ interface CreativeAdEditorProps {
   goal: CampaignGoal;
   destination: CampaignDestination;
   creatives: CampaignCreativeInput[];
+  platforms: CampaignPlatform[];
+  sameCreativeForAll: boolean;
   ctaOptions: Array<{ value: CampaignCta; label: string }>;
   uploading: number | null;
   uploadProgress?: CreativeUploadStatus | null;
@@ -100,6 +103,8 @@ export function CreativeAdEditor({
   goal,
   destination,
   creatives,
+  platforms,
+  sameCreativeForAll,
   ctaOptions,
   uploading,
   uploadProgress,
@@ -160,7 +165,15 @@ export function CreativeAdEditor({
   }
 
   const platform = creative.platform;
-  const headlineLimit = platform === "meta" ? 255 : 512;
+  const textLimitPlatforms = sameCreativeForAll ? platforms : [platform];
+  const headlineLimit = getStrictestCampaignCreativeTextLimit(
+    textLimitPlatforms,
+    "headline",
+  );
+  const primaryTextLimit = getStrictestCampaignCreativeTextLimit(
+    textLimitPlatforms,
+    "primaryText",
+  );
   const headlineLabel = platform === "meta" ? "Headline" : "Ad name";
   const requiresVideo = destination === "VIDEO" || platform === "tiktok";
   const uploadLabel = requiresVideo ? "video" : "image or video";
@@ -193,6 +206,13 @@ export function CreativeAdEditor({
         primaryTextRequestRef.current !== requestId ||
         requestIndex !== activeIndex
       ) {
+        return;
+      }
+      if (suggestion.value.length > primaryTextLimit) {
+        setPrimaryTextStateIndex(requestIndex);
+        setPrimaryTextError(
+          `Shared primary text must be ${primaryTextLimit} characters or fewer.`,
+        );
         return;
       }
       onChange(requestIndex, { primaryText: suggestion.value });
@@ -243,6 +263,13 @@ export function CreativeAdEditor({
         headlineRequestRef.current !== requestId ||
         requestIndex !== activeIndex
       ) {
+        return;
+      }
+      if (suggestion.value.length > headlineLimit) {
+        setHeadlineStateIndex(requestIndex);
+        setHeadlineError(
+          `Shared headline text must be ${headlineLimit} characters or fewer.`,
+        );
         return;
       }
       onChange(requestIndex, { headline: suggestion.value });
@@ -350,7 +377,7 @@ export function CreativeAdEditor({
             </span>
             <textarea
               className="mt-2 min-h-28 w-full rounded-xl border border-gray-200 bg-white p-3 font-gilroy-regular outline-none transition focus:border-khaki-300 focus:ring-2 focus:ring-khaki-200/30"
-              maxLength={creative.tiktok?.postId ? undefined : platform === "tiktok" ? 100 : 125}
+              maxLength={creative.tiktok?.postId ? undefined : primaryTextLimit}
               value={creative.primaryText}
               disabled={Boolean(creative.tiktok?.postId)}
               onChange={(event) => onChange(activeIndex, { primaryText: event.target.value })}
@@ -358,7 +385,7 @@ export function CreativeAdEditor({
             />
             {creative.tiktok?.postId && <span className="mt-1 block text-xs font-gilroy-regular text-gray-500">This authorized post keeps its original TikTok caption and cover.</span>}
             <span className="mt-1 block text-right text-xs font-gilroy-regular text-gray-400">
-              {creative.tiktok?.postId ? "Caption comes from the original post" : <>{platform === "tiktok" ? tikTokTextLength(creative.primaryText) : creative.primaryText.length}/{platform === "tiktok" ? 100 : 125}{platform === "tiktok" && " · No emoji; Chinese and Japanese count twice"}</>}
+              {creative.tiktok?.postId ? "Caption comes from the original post" : <>{platform === "tiktok" ? tikTokTextLength(creative.primaryText) : creative.primaryText.length}/{primaryTextLimit}{platform === "tiktok" && " · No emoji; Chinese and Japanese count twice"}</>}
             </span>
             {primaryTextStateIndex === activeIndex && primaryTextRationale && (
               <span className="mt-2 block text-xs font-gilroy-regular leading-5 text-violet-600">

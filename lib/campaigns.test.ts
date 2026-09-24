@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { apiFetch } from "./auth";
 import {
+  CAMPAIGN_CREATIVE_TEXT_LIMITS,
+  getStrictestCampaignCreativeTextLimit,
   campaignScheduleAlreadyStarted,
   ensureCampaignStartLeadTime,
   retainStartedCampaignSchedule,
@@ -99,6 +101,22 @@ describe("normalizeCampaignPayloadForWrite", () => {
 });
 
 describe("requestCampaignCreativeSuggestion", () => {
+  it("allows more primary text than headline text for Meta creatives", () => {
+    expect(CAMPAIGN_CREATIVE_TEXT_LIMITS.meta.primaryText).toBe(2_200);
+    expect(CAMPAIGN_CREATIVE_TEXT_LIMITS.meta.primaryText).toBeGreaterThan(
+      CAMPAIGN_CREATIVE_TEXT_LIMITS.meta.headline,
+    );
+  });
+
+  it("uses TikTok's primary text limit when Meta and TikTok share copy", () => {
+    expect(
+      getStrictestCampaignCreativeTextLimit(
+        ["meta", "tiktok"],
+        "primaryText",
+      ),
+    ).toBe(100);
+  });
+
   it("does not send legacy null creative text to the AI service", async () => {
     vi.mocked(apiFetch).mockResolvedValueOnce(
       new Response(

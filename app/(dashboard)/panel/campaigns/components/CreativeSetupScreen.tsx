@@ -484,6 +484,8 @@ export function CreativeSetupScreen({
         goal={goal}
         destination={destination}
         creatives={creatives}
+        platforms={platforms}
+        sameCreativeForAll={sameCreativeForAll}
         ctaOptions={ctaOptions}
         uploading={uploading}
         uploadProgress={uploadProgress}

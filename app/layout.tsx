@@ -3,8 +3,8 @@ import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import Providers from "./providers";
 import { isAnalyticsEnabled } from "@/lib/analytics";
+import Providers from "./providers";
 
 const lexend = localFont({
   src: [

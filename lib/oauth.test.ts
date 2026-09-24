@@ -9,7 +9,7 @@ vi.mock('./auth', () => ({
   apiFetch,
 }));
 
-import { buildOAuthCallbackPayload } from './oauth-callback';
+import { buildOAuthCallbackPayload, readOAuthCallbackPayload } from './oauth-callback';
 import {
   exchangeSocialAuthorizationCode,
   oauthPopupClosedMessage,
@@ -53,6 +53,44 @@ describe('buildOAuthCallbackPayload', () => {
       type: 'oauth_success',
       platform: 'meta',
     });
+  });
+
+  it('does not treat an explicit unsuccessful callback as connected', () => {
+    expect(buildOAuthCallbackPayload('meta', null, null, false)).toEqual({
+      type: 'oauth_error',
+      platform: 'meta',
+      error: 'The connection was not completed. Please try again.',
+    });
+  });
+});
+
+describe('readOAuthCallbackPayload', () => {
+  it('accepts the legacy auth_code returned by Meta callbacks', () => {
+    const params = new URLSearchParams('auth_code=legacy-meta-code');
+
+    expect(readOAuthCallbackPayload('meta', params)).toEqual({
+      type: 'oauth_success',
+      platform: 'meta',
+      code: 'legacy-meta-code',
+    });
+  });
+
+  it('surfaces Meta error descriptions before generic error codes', () => {
+    const params = new URLSearchParams(
+      'error=access_denied&error_description=The+user+cancelled+the+login',
+    );
+
+    expect(readOAuthCallbackPayload('meta', params)).toEqual({
+      type: 'oauth_error',
+      platform: 'meta',
+      error: 'The user cancelled the login',
+    });
+  });
+
+  it('rejects legacy callbacks that explicitly report failure', () => {
+    const params = new URLSearchParams('success=false');
+
+    expect(readOAuthCallbackPayload('meta', params).type).toBe('oauth_error');
   });
 });
 
