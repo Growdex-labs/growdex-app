@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { apiFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
@@ -10,7 +10,12 @@ vi.mock('./auth', () => ({
 }));
 
 import { buildOAuthCallbackPayload, readOAuthCallbackPayload } from './oauth-callback';
-import { exchangeSocialAuthorizationCode, oauthPopupClosedMessage } from './oauth';
+import {
+  exchangeSocialAuthorizationCode,
+  oauthPopupClosedMessage,
+  oauthSessionExpiredMessage,
+  openOAuthPopup,
+} from './oauth';
 
 describe('oauthPopupClosedMessage', () => {
   it('identifies the Meta feature-unavailable page as a Growdex issue', () => {
@@ -141,5 +146,69 @@ describe('exchangeSocialAuthorizationCode', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('connected account was not saved');
+  });
+});
+
+describe('openOAuthPopup', () => {
+  const popup = { closed: false, close: vi.fn(), location: { href: 'about:blank' } };
+  const open = vi.fn(() => popup);
+
+  beforeEach(() => {
+    apiFetch.mockReset();
+    popup.closed = false;
+    popup.close.mockReset();
+    popup.location.href = 'about:blank';
+    open.mockClear();
+    vi.stubGlobal('window', {
+      open,
+      screenX: 0,
+      screenY: 0,
+      outerWidth: 1200,
+      outerHeight: 900,
+      location: { origin: 'https://growdex.test' },
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('refreshes the session before loading the provider flow', async () => {
+    apiFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+    openOAuthPopup('meta', vi.fn(), vi.fn());
+
+    expect(open).toHaveBeenCalledWith('about:blank', 'meta_oauth', expect.any(String));
+    expect(apiFetch).toHaveBeenCalledWith('/auth/refresh', { method: 'POST' });
+    await vi.waitFor(() =>
+      expect(popup.location.href).toBe('https://api.growdex.test/auth/meta'),
+    );
+  });
+
+  it('asks the user to sign in again when the session cannot be refreshed', async () => {
+    apiFetch.mockResolvedValue(new Response(null, { status: 401 }));
+    const onError = vi.fn();
+
+    openOAuthPopup('meta', vi.fn(), onError);
+
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(oauthSessionExpiredMessage));
+    expect(popup.close).toHaveBeenCalled();
+    expect(popup.location.href).toBe('about:blank');
+  });
+
+  it('does not blame the session when the refresh service fails', async () => {
+    apiFetch.mockResolvedValue(new Response(null, { status: 503 }));
+    const onError = vi.fn();
+
+    openOAuthPopup('tiktok', vi.fn(), onError);
+
+    await vi.waitFor(() =>
+      expect(onError).toHaveBeenCalledWith(
+        'Could not start the TikTok connection. Please try again in a moment.',
+      ),
+    );
+    expect(popup.location.href).toBe('about:blank');
   });
 });

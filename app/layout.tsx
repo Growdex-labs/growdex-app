@@ -33,10 +33,17 @@ const lexend = localFont({
   display: "swap",
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
 export const metadata: Metadata = {
+  metadataBase: appUrl ? new URL(appUrl) : undefined,
   title: "Growdex AI App",
   description:
     "Increase efficiency & automate your multi Ad platform campaigns",
+  openGraph: {
+    siteName: "Growdex",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
