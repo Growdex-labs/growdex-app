@@ -159,4 +159,18 @@ describe('openOAuthPopup', () => {
     expect(popup.close).toHaveBeenCalled();
     expect(popup.location.href).toBe('about:blank');
   });
+
+  it('does not blame the session when the refresh service fails', async () => {
+    apiFetch.mockResolvedValue(new Response(null, { status: 503 }));
+    const onError = vi.fn();
+
+    openOAuthPopup('tiktok', vi.fn(), onError);
+
+    await vi.waitFor(() =>
+      expect(onError).toHaveBeenCalledWith(
+        'Could not start the TikTok connection. Please try again in a moment.',
+      ),
+    );
+    expect(popup.location.href).toBe('about:blank');
+  });
 });

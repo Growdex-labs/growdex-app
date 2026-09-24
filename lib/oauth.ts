@@ -84,19 +84,25 @@ export const openOAuthPopup = (
 
   window.addEventListener('message', messageHandler);
 
+  const startFailedMessage = `Could not start the ${platform === 'meta' ? 'Meta' : 'TikTok'} connection. Please try again in a moment.`;
+
   // Backend builds the provider OAuth URL (scopes + state) and redirects.
   apiFetch('/auth/refresh', { method: 'POST' })
     .then((res) => {
       if (isCompleted || popup.closed) return;
-      if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
         fail(oauthSessionExpiredMessage);
+        return;
+      }
+      if (!res.ok) {
+        fail(startFailedMessage);
         return;
       }
       popup.location.href = `${API_BASE_URL}/auth/${platform}`;
     })
     .catch(() => {
       if (isCompleted || popup.closed) return;
-      fail(`Could not reach Growdex to start the ${platform === 'meta' ? 'Meta' : 'TikTok'} connection. Check your connection and try again.`);
+      fail(startFailedMessage);
     });
 
   const popupCheck = setInterval(() => {
