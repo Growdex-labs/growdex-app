@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
+import { isAnalyticsEnabled } from "@/lib/analytics";
 
 const lexend = localFont({
   src: [
@@ -32,10 +33,17 @@ const lexend = localFont({
   display: "swap",
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
 export const metadata: Metadata = {
+  metadataBase: appUrl ? new URL(appUrl) : undefined,
   title: "Growdex AI App",
   description:
     "Increase efficiency & automate your multi Ad platform campaigns",
+  openGraph: {
+    siteName: "Growdex",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -64,20 +72,6 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-FKRPJZZ7X8"
-          strategy="afterInteractive"
-        />
-        <Script id="google-tag" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', 'G-FKRPJZZ7X8');
-          `}
-        </Script>
       </head>
       <body className="antialiased">
         <Providers>
