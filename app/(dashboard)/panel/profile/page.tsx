@@ -395,7 +395,7 @@ export default function MyProfilePage(): JSX.Element {
                   </h2>
                   <div className="space-y-4">
                     {/* First Name & Last Name */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           First Name
@@ -564,7 +564,7 @@ export default function MyProfilePage(): JSX.Element {
                     </div>
 
                     {/* Social Links Grid */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-xs md:text-sm font-gilroy-medium text-gray-700 mb-2">
                           Twitter Link

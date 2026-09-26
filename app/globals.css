@@ -105,6 +105,18 @@
 
 body {
   font-family: "gilroy-medium", sans-serif;
+  overflow-x: clip;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+video,
+canvas {
+  height: auto;
+  max-width: 100%;
 }
 
 @theme inline {

@@ -77,7 +77,7 @@ export function CollapsibleSidebar({
 
   return (
     <aside
-      className={`h-screen bg-[#2a2a2a] text-white hidden md:flex flex-col transition-all duration-300 relative ${
+      className={`relative hidden h-dvh flex-col bg-[#2a2a2a] text-white transition-all duration-300 lg:flex ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >

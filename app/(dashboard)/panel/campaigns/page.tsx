@@ -259,12 +259,12 @@ export default function CampaignsPage() {
   return (
     <PanelLayout>
       <div className="flex h-full">
-        <div className="hidden md:block"><CampaignsSidebar /></div>
-        <div className="flex flex-1 flex-col overflow-auto hide-scrollbar">
+        <div className="hidden lg:block"><CampaignsSidebar /></div>
+        <div className="flex min-w-0 flex-1 flex-col overflow-auto hide-scrollbar">
           <CampaignsMobileHeader />
-          <main className="flex-1 overflow-auto p-4 hide-scrollbar md:p-8">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-3 hide-scrollbar sm:p-4 md:p-8">
             <div className="mx-auto max-w-6xl">
-              <div className="mb-8 hidden items-center justify-between md:flex">
+              <div className="mb-8 hidden items-center justify-between lg:flex">
                 <div>
                   <h1 className="text-3xl font-gilroy-bold text-gray-900">Campaigns</h1>
                   <p className="mt-1 text-sm text-gray-500">Create, review, and monitor campaigns from one place.</p>
@@ -309,7 +309,7 @@ export default function CampaignsPage() {
                   <p className="mt-2 text-sm text-gray-500">Campaigns in this state will appear here.</p>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {displayed.map((campaign) => {
                     const status = (campaign.status ?? "draft").toLowerCase();
                     const canPublish = ["draft", "failed"].includes(status);

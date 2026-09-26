@@ -59,9 +59,9 @@ export function ClickThroughRateCard({
   };
 
   return (
-    <div className="rounded-xl border border-lavender-100 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+    <div className="min-w-0 rounded-xl border border-lavender-100 p-3 sm:p-4">
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 sm:gap-x-4">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -80,7 +80,7 @@ export function ClickThroughRateCard({
         </div>
         <button
           type="button"
-          className="text-lavender-200 transition-colors hover:text-[#333]"
+          className="shrink-0 text-lavender-200 transition-colors hover:text-[#333]"
           aria-label="Rate chart options"
         >
           <MoreVertical className="size-4" aria-hidden />
@@ -88,7 +88,7 @@ export function ClickThroughRateCard({
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2">
-        <p className="font-lexend text-2xl md:text-[28px] text-[#333]">
+        <p className="break-words font-lexend text-xl text-[#333] sm:text-2xl md:text-[28px]">
           {formatMetric(metric, totals[metric])}
         </p>
         <div className="flex flex-wrap items-center gap-6">

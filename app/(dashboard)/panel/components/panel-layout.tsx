@@ -33,14 +33,14 @@ export function PanelLayout({
   );
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-gray-50">
       <TopHeader onNotificationClick={() => setIsNotificationOpen(true)} />
       <div className="flex flex-1 overflow-hidden">
         <CollapsibleSidebar
           defaultCollapsed={defaultSidebarCollapsed}
           onNotificationClick={() => setIsNotificationOpen(true)}
         />
-        <main className="min-w-0 flex-1 overflow-y-auto pb-16 md:pb-0 hide-scrollbar">
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto pb-[calc(5.75rem+env(safe-area-inset-bottom))] lg:pb-0 hide-scrollbar">
           <PanelChromeContext.Provider value={chrome}>
             {children}
           </PanelChromeContext.Provider>

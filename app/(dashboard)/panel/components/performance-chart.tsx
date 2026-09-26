@@ -35,7 +35,7 @@ export function PerformanceChart({
   );
 
   return (
-    <div className="flex h-full flex-col gap-4 rounded-xl border border-lavender-100 p-4">
+    <div className="flex min-w-0 h-full flex-col gap-4 rounded-xl border border-lavender-100 p-3 sm:p-4">
       <div className="flex items-center justify-between">
         <h3 className="font-gilroy-bold text-sm tracking-[-0.14px] text-[#333]">
           Lifetime Ad Spend
@@ -48,8 +48,8 @@ export function PerformanceChart({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-8 rounded-xl bg-lavender-25 p-4">
-        <h1 className="font-lexend text-2xl md:text-[28px] text-[#333]">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 rounded-xl bg-lavender-25 p-3 sm:gap-8 sm:p-4">
+        <h1 className="break-words font-lexend text-xl text-[#333] sm:text-2xl md:text-[28px]">
           {totalSpent}
         </h1>
 
@@ -62,7 +62,7 @@ export function PerformanceChart({
             No spend recorded yet.
           </p>
         ) : (
-          <div className="flex gap-4">
+          <div className="flex min-w-0 gap-2 sm:gap-4">
             {/* Y axis labels */}
             <div className="flex flex-col justify-between font-gilroy-light text-[10px] md:text-xs tracking-[-0.12px] text-lavender-200 text-right pb-[70px] pt-1 shrink-0">
               {axisLabels.map((label) => (
@@ -71,11 +71,11 @@ export function PerformanceChart({
             </div>
 
             {/* Groups */}
-            <div className="flex-1 flex justify-between gap-4 md:gap-8 overflow-x-auto hide-scrollbar">
+            <div className="flex min-w-0 flex-1 snap-x snap-proximity justify-between gap-3 overflow-x-auto pb-1 hide-scrollbar md:gap-8">
               {data.map((item) => (
                 <div
                   key={item.date}
-                  className="flex-1 min-w-[70px] flex flex-col items-stretch"
+                  className="flex min-w-[64px] flex-1 snap-start flex-col items-stretch sm:min-w-[70px]"
                 >
                   {/* Bars */}
                   <div className="flex items-end justify-center gap-2 md:gap-3 h-[220px]">
