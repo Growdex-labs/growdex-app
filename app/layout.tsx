@@ -35,6 +35,7 @@ const lexend = localFont({
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.growdex.ai";
 const previewImage = new URL("/growdex-link-preview.png", appUrl).toString();
+const previewImage = new URL("/opengraph-image.png", appUrl).toString();
 const title = "Growdex AI App";
 const description =
   "Create, launch, manage, and optimize Meta and TikTok campaigns from one intelligent platform.";
@@ -56,6 +57,8 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         type: "image/png",
+        width: 1200,
+        height: 630,
         alt: description,
       },
     ],
