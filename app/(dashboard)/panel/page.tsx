@@ -378,6 +378,7 @@ export default function PanelPage() {
   return (
     <PanelLayout>
       <div className="min-h-full bg-[#f2f2f2] p-2 sm:p-4">
+        <div className="flex min-w-0 flex-col items-stretch gap-4 lg:flex-row lg:items-start">
         <div className="flex flex-col items-start gap-4 lg:flex-row">
           <div className="flex min-h-full min-w-0 flex-1 flex-col gap-5 rounded-xl bg-white p-4 sm:gap-6 md:p-6">
             <DashboardTopBar
@@ -520,7 +521,7 @@ export default function PanelPage() {
                   )}
                 </section>
 
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_298px]">
+                <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_298px] xl:gap-6">
                   <PerformanceChart
                     data={spendPoints}
                     totalSpent={formatSpend(metrics.spendByCurrency)}

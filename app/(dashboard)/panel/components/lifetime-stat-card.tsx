@@ -44,14 +44,14 @@ export function LifetimeStatCard({
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="font-lexend text-2xl text-[#333]">{value}</p>
+          <p className="break-words font-lexend text-xl text-[#333] sm:text-2xl">{value}</p>
           <div className="h-6">
             <TrendBadge trend={trend} goodDirection={goodDirection} />
           </div>
         </div>
       </div>
 
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex min-w-0 items-end justify-between gap-2 sm:gap-4">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           {PLATFORM_ORDER.map((platform) => (
             <span key={platform} className="flex items-center gap-1">
@@ -60,7 +60,7 @@ export function LifetimeStatCard({
               ) : (
                 <PlatformMark platform="tiktok" />
               )}
-              <span className="font-gilroy-medium text-[15px] text-lavender-300">
+              <span className="break-all font-gilroy-medium text-sm text-lavender-300 sm:text-[15px]">
                 {breakdown?.[platform] ?? "—"}
               </span>
             </span>

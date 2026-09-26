@@ -29,6 +29,7 @@ export function DashboardAiPanel({
   onTakeAction,
 }: DashboardAiPanelProps) {
   return (
+    <aside className="fixed inset-x-0 top-16 bottom-0 z-30 w-full bg-white p-2 pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(5.75rem+env(safe-area-inset-bottom))] lg:sticky lg:top-6 lg:z-auto lg:h-[calc(100dvh-8rem)] lg:w-[360px] lg:shrink-0 lg:self-stretch lg:bg-transparent lg:p-0">
     <aside className="fixed inset-x-0 top-16 bottom-0 z-30 w-full bg-white p-2 pb-24 sm:p-4 sm:pb-24 lg:sticky lg:top-6 lg:z-auto lg:h-[calc(100dvh-8rem)] lg:w-[360px] lg:shrink-0 lg:self-stretch lg:bg-transparent lg:p-0">
       <div className="relative h-full">
         <button

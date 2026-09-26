@@ -44,6 +44,14 @@ export function BottomNavigation() {
   };
 
   return (
+    <nav
+      aria-label="Primary navigation"
+      className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md lg:hidden sm:inset-x-6 sm:bottom-[max(0.75rem,env(safe-area-inset-bottom))]"
+    >
+        {/* Black background container */}
+        <div className="relative flex h-16 items-center justify-center rounded-full border border-gray-700 bg-[#333333] px-1 shadow-xl">
+          {/* Left items */}
+          <div className="mr-7 flex h-full min-w-0 flex-1 items-center justify-around sm:mr-10">
     <>
       {/* Bottom Navigation - Mobile Only */}
       <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md lg:hidden sm:inset-x-6">
@@ -59,13 +67,16 @@ export function BottomNavigation() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center h-full gap-1 transition-colors ${
+                  className={`flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${
                     active ? "text-khaki-200" : "text-gray-400 hover:text-white"
                   }`}
                   title={item.label}
                   aria-label={item.label}
                 >
                   <Icon className="w-6 h-6" />
+                  <span className="max-w-full truncate text-[9px] leading-none sm:text-[10px]">
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -82,6 +93,7 @@ export function BottomNavigation() {
           </Link>
 
           {/* Right items */}
+          <div className="ml-7 flex h-full min-w-0 flex-1 items-center justify-around sm:ml-10">
           <div className="ml-8 flex h-full flex-1 items-center justify-around sm:ml-10">
             {rightItems.map((item) => {
               const Icon = item.icon;
@@ -91,18 +103,22 @@ export function BottomNavigation() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center h-full gap-1 transition-colors ${
+                  className={`flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${
                     active ? "text-khaki-200" : "text-gray-400 hover:text-white"
                   }`}
                   title={item.label}
                   aria-label={item.label}
                 >
                   <Icon className="w-5 h-5" />
+                  <span className="max-w-full truncate text-[9px] leading-none sm:text-[10px]">
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
           </div>
         </div>
+    </nav>
       </nav>
 
       {/* Bottom Padding for mobile to account for nav height */}
