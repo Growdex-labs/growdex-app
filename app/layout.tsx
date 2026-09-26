@@ -33,19 +33,17 @@ const lexend = localFont({
   display: "swap",
 });
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.growdex.ai";
-const previewImage = new URL("/growdex-link-preview.png", appUrl).toString();
-const previewImage = new URL("/opengraph-image.png", appUrl).toString();
-const title = "Growdex AI App";
+const appUrl = "https://app.growdex.ai";
+const previewImage = `${appUrl}/og-image.png`;
 const description =
-  "Create, launch, manage, and optimize Meta and TikTok campaigns from one intelligent platform.";
+  "Create, launch, manage, and optimize your Meta and TikTok campaigns from one intelligent platform.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title,
+  title: "Growdex — The Smart Ad Management Tool for Modern Businesses",
   description,
   openGraph: {
-    title,
+    title: "Growdex — The Smart Ad Management Tool for Modern Businesses",
     description,
     url: appUrl,
     siteName: "Growdex",
@@ -57,15 +55,13 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         type: "image/png",
-        width: 1200,
-        height: 630,
         alt: description,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title,
+    title: "Growdex — The Smart Ad Management Tool for Modern Businesses",
     description,
     images: [previewImage],
   },

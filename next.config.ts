@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/growdex-link-preview.png",
+        source: "/og-image.png",
         headers: [
           {
             key: "Cache-Control",
@@ -41,13 +41,21 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     const apiBase = process.env.BACKEND_API_BASE_URL;
-    if (!apiBase) return [];
-    return [
+    const rewrites = [
       {
-        source: "/api-proxy/:path*",
-        destination: `${apiBase}/:path*`,
+        source: "/og-image.png",
+        destination: "/growdex-link-preview.png",
       },
     ];
+
+    if (apiBase) {
+      rewrites.push({
+        source: "/api-proxy/:path*",
+        destination: `${apiBase}/:path*`,
+      });
+    }
+
+    return rewrites;
   },
 };
 
