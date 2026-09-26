@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { isAnalyticsEnabled } from "@/lib/analytics";
+import { APP_TITLE } from "@/lib/site-metadata";
 import Providers from "./providers";
 
 const lexend = localFont({
@@ -42,10 +43,15 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title,
+  title: { absolute: APP_TITLE },
+  applicationName: APP_TITLE,
   description,
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    title: APP_TITLE,
+  },
   openGraph: {
-    title,
+    title: APP_TITLE,
     description,
     url: appUrl,
     siteName: "Growdex",
@@ -63,7 +69,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title,
+    title: APP_TITLE,
     description,
     images: [previewImage],
   },
