@@ -34,6 +34,7 @@ const lexend = localFont({
 });
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.growdex.ai";
+const previewImage = new URL("/growdex-link-preview.png", appUrl).toString();
 const previewImage = new URL("/opengraph-image.png", appUrl).toString();
 const title = "Growdex AI App";
 const description =
@@ -46,11 +47,16 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
+    url: appUrl,
     siteName: "Growdex",
     type: "website",
     images: [
       {
         url: previewImage,
+        secureUrl: previewImage,
+        width: 1200,
+        height: 630,
+        type: "image/png",
         width: 1200,
         height: 630,
         alt: description,
