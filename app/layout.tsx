@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { isAnalyticsEnabled } from "@/lib/analytics";
+import { APP_TITLE } from "@/lib/site-metadata";
 import Providers from "./providers";
 
 const lexend = localFont({
@@ -35,15 +36,28 @@ const lexend = localFont({
 
 const appUrl = "https://app.growdex.ai";
 const previewImage = `${appUrl}/og-image.png`;
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.growdex.ai";
+const previewImage = new URL("/growdex-link-preview.png", appUrl).toString();
+const previewImage = new URL("/opengraph-image.png", appUrl).toString();
+const title = "Growdex-The Smart Ad Management tool for Modern Businesses";
 const description =
   "Create, launch, manage, and optimize your Meta and TikTok campaigns from one intelligent platform.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: "Growdex — The Smart Ad Management Tool for Modern Businesses",
+  title: "Growdex-The Smart Ad Management tool for Modern Businesses",
+  title: { absolute: APP_TITLE },
+  applicationName: APP_TITLE,
   description,
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    title: APP_TITLE,
+  },
   openGraph: {
     title: "Growdex — The Smart Ad Management Tool for Modern Businesses",
+    title: "Growdex-The Smart Ad Management tool for Modern Businesses",
+    title: APP_TITLE,
     description,
     url: appUrl,
     siteName: "Growdex",
@@ -62,6 +76,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Growdex — The Smart Ad Management Tool for Modern Businesses",
+    title: "Growdex-The Smart Ad Management tool for Modern Businesses",
+    title: APP_TITLE,
     description,
     images: [previewImage],
   },
