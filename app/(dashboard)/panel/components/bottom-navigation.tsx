@@ -46,11 +46,11 @@ export function BottomNavigation() {
   return (
     <>
       {/* Bottom Navigation - Mobile Only */}
-      <nav className="md:hidden fixed bottom-6 left-6 right-6 z-40">
+      <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md lg:hidden sm:inset-x-6">
         {/* Black background container */}
-        <div className="relative bg-[#333333] rounded-full h-16 border border-gray-700 flex items-center justify-center">
+        <div className="relative flex h-16 items-center justify-center rounded-full border border-gray-700 bg-[#333333] px-1 shadow-xl">
           {/* Left items */}
-          <div className="flex items-center justify-around flex-1 h-full mr-10">
+          <div className="mr-8 flex h-full flex-1 items-center justify-around sm:mr-10">
             {leftItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item);
@@ -63,6 +63,7 @@ export function BottomNavigation() {
                     active ? "text-khaki-200" : "text-gray-400 hover:text-white"
                   }`}
                   title={item.label}
+                  aria-label={item.label}
                 >
                   <Icon className="w-6 h-6" />
                 </Link>
@@ -73,14 +74,15 @@ export function BottomNavigation() {
           {/* Center Create Button - Over black background */}
           <Link
             href="/panel/campaigns/new"
-            className="flex items-center justify-center w-14 h-14 bg-white text-gray-900 rounded-lg transition-all hover:scale-110 shadow-lg absolute z-10 "
+            className="absolute z-10 flex size-12 items-center justify-center rounded-xl bg-white text-gray-900 shadow-lg transition-all hover:scale-105 sm:size-14"
             title="Create Campaign"
+            aria-label="Create campaign"
           >
             <Plus className="w-7 h-7" />
           </Link>
 
           {/* Right items */}
-          <div className="flex items-center justify-around flex-1 ml-10 h-full">
+          <div className="ml-8 flex h-full flex-1 items-center justify-around sm:ml-10">
             {rightItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item);
@@ -93,6 +95,7 @@ export function BottomNavigation() {
                     active ? "text-khaki-200" : "text-gray-400 hover:text-white"
                   }`}
                   title={item.label}
+                  aria-label={item.label}
                 >
                   <Icon className="w-5 h-5" />
                 </Link>
@@ -103,7 +106,7 @@ export function BottomNavigation() {
       </nav>
 
       {/* Bottom Padding for mobile to account for nav height */}
-      <div className="md:hidden h-20" />
+      <div className="h-20 shrink-0 lg:hidden" />
     </>
   );
 }

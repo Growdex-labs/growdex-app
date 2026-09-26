@@ -377,9 +377,9 @@ export default function PanelPage() {
 
   return (
     <PanelLayout>
-      <div className="p-4 bg-[#f2f2f2] min-h-full">
+      <div className="min-h-full bg-[#f2f2f2] p-2 sm:p-4">
         <div className="flex flex-col items-start gap-4 lg:flex-row">
-          <div className="flex min-h-[calc(100vh-2rem)] min-w-0 flex-1 flex-col gap-6 rounded-xl bg-white p-4 md:p-6">
+          <div className="flex min-h-full min-w-0 flex-1 flex-col gap-5 rounded-xl bg-white p-4 sm:gap-6 md:p-6">
             <DashboardTopBar
               variant={view}
               onSwitchToDefault={closeInsights}
@@ -407,17 +407,17 @@ export default function PanelPage() {
             ) : (
               <>
                 <section className="flex flex-col gap-3">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
                     <h2 className="flex-1 font-gilroy-medium text-base tracking-[-0.16px] text-[#333]">
                       All-time Performance
                     </h2>
-                    <span className="flex items-center gap-2.5 rounded-md bg-white p-2 font-gilroy-regular text-sm tracking-[-0.14px] text-[#4d4d4d]">
+                    <span className="flex items-center gap-2.5 rounded-md bg-white py-1 font-gilroy-regular text-xs tracking-[-0.14px] text-[#4d4d4d] sm:p-2 sm:text-sm">
                       Trend: last {trendSummary?.windowDays ?? 14} days vs the{" "}
                       {trendSummary?.windowDays ?? 14} before
                     </span>
                   </div>
 
-                  <div className="grid gap-6 md:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
                     <LifetimeStatCard
                       label="Lifetime ROAS"
                       value={formatRoas(metrics.byCurrency)}
@@ -456,7 +456,7 @@ export default function PanelPage() {
                     (metrics.totalLeads ?? 0) +
                     (metrics.totalPurchases ?? 0) >
                     0 && (
-                    <div className="grid gap-6 md:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
                       {(metrics.totalVideoViews ?? 0) > 0 && (
                         <LifetimeStatCard
                           label="Video views"
@@ -539,7 +539,7 @@ export default function PanelPage() {
                   />
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 xl:gap-6">
                   {rateCard}
 
                   <div className="rounded-xl border border-lavender-100 p-4">

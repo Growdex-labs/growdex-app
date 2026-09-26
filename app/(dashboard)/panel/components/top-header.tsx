@@ -66,17 +66,17 @@ export function TopHeader({ onNotificationClick }: TopHeaderProps) {
   };
 
   return (
-    <header className="bg-white text-gray-900 px-4 py-4 flex items-center justify-between h-16 shadow-md md:hidden">
+    <header className="flex h-16 shrink-0 items-center justify-between gap-2 bg-white px-3 py-3 text-gray-900 shadow-sm sm:px-4 lg:hidden">
       {/* Left: Logo */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <div className="w-8 h-8 shrink-0">
           <Image src="/logo2.png" alt="Growdex logo" width={32} height={32} className="size-8" />
         </div>
-        <span className="font-gilroy-semibold text-lg">Growdex</span>
+        <span className="truncate font-gilroy-semibold text-base min-[360px]:text-lg">Growdex</span>
       </div>
 
       {/* Right: notifications, avatar, nav menu */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 min-[360px]:gap-3">
         <button
           type="button"
           onClick={onNotificationClick}
@@ -97,7 +97,7 @@ export function TopHeader({ onNotificationClick }: TopHeaderProps) {
             width={40}
             height={40}
             unoptimized
-            className="size-9 rounded-full object-cover"
+            className="size-8 rounded-full object-cover min-[360px]:size-9"
             alt="profile-icon"
           />
         </Link>

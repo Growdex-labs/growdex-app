@@ -100,7 +100,7 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent hideClose className="w-[320px] sm:w-[320px] bg-[#2b2b2b] text-white border-none flex flex-col gap-0 p-0">
+      <SheetContent hideClose className="flex w-full max-w-[320px] flex-col gap-0 border-none bg-[#2b2b2b] p-0 text-white sm:w-[320px]">
         {/* ── Header ────────────────────────────────────────────── */}
         <SheetHeader className="px-4 pt-5 pb-3 space-y-0">
           <div className="flex items-center gap-2">

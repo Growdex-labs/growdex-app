@@ -35,7 +35,7 @@ export function DashboardAiBar({
   };
 
   return (
-    <div className="sticky bottom-24 z-20 mt-6 px-4 md:bottom-4">
+    <div className="sticky bottom-24 z-20 mt-6 px-0 sm:px-4 lg:bottom-4">
       {disabledReason === PRO_REQUIRED_MESSAGE ? (
         <div className="mx-auto mb-2 max-w-3xl">
           <ProRequiredNotice className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900" />
@@ -62,7 +62,7 @@ export function DashboardAiBar({
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         </div>
 
-        <div className="flex max-w-2xl flex-1 items-center gap-2 rounded-lg border border-violet-200 bg-white py-1.5 pl-4 pr-1.5 shadow-sm focus-within:border-violet-300">
+        <div className="flex min-w-0 max-w-2xl flex-1 items-center gap-2 rounded-lg border border-violet-200 bg-white py-1.5 pl-3 pr-1.5 shadow-sm focus-within:border-violet-300 sm:pl-4">
           <input
             type="text"
             value={prompt}
@@ -75,7 +75,7 @@ export function DashboardAiBar({
             }}
             placeholder="Ask anything about this campaign"
             disabled={loading || Boolean(disabledReason)}
-            className="flex-1 bg-transparent text-sm text-gray-700 placeholder:font-gilroy-medium placeholder:text-gray-500 focus:outline-none disabled:opacity-60"
+            className="min-w-0 flex-1 bg-transparent text-sm text-gray-700 placeholder:font-gilroy-medium placeholder:text-gray-500 focus:outline-none disabled:opacity-60"
           />
           <button
             type="button"

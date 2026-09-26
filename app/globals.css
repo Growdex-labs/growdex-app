@@ -105,6 +105,19 @@
 
 body {
   font-family: "gilroy-medium", sans-serif;
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 @theme inline {
