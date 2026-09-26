@@ -36,6 +36,8 @@ const lexend = localFont({
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.growdex.ai";
 const previewImage = new URL("/growdex-link-preview.png", appUrl).toString();
+const previewImage = new URL("/opengraph-image.png", appUrl).toString();
+const title = "Growdex-The Smart Ad Management tool for Modern Businesses";
 const description =
   "Create, launch, manage, and optimize Meta and TikTok campaigns from one intelligent platform.";
 
