@@ -106,6 +106,8 @@
 body {
   font-family: "gilroy-medium", sans-serif;
   overflow-x: clip;
+  min-width: 320px;
+  overflow-x: hidden;
 }
 
 html {
@@ -116,6 +118,9 @@ img,
 video,
 canvas {
   height: auto;
+svg,
+video,
+canvas {
   max-width: 100%;
 }
 

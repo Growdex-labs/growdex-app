@@ -52,6 +52,13 @@ export function BottomNavigation() {
         <div className="relative flex h-16 items-center justify-center rounded-full border border-gray-700 bg-[#333333] px-1 shadow-xl">
           {/* Left items */}
           <div className="mr-7 flex h-full min-w-0 flex-1 items-center justify-around sm:mr-10">
+    <>
+      {/* Bottom Navigation - Mobile Only */}
+      <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md lg:hidden sm:inset-x-6">
+        {/* Black background container */}
+        <div className="relative flex h-16 items-center justify-center rounded-full border border-gray-700 bg-[#333333] px-1 shadow-xl">
+          {/* Left items */}
+          <div className="mr-8 flex h-full flex-1 items-center justify-around sm:mr-10">
             {leftItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item);
@@ -87,6 +94,7 @@ export function BottomNavigation() {
 
           {/* Right items */}
           <div className="ml-7 flex h-full min-w-0 flex-1 items-center justify-around sm:ml-10">
+          <div className="ml-8 flex h-full flex-1 items-center justify-around sm:ml-10">
             {rightItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item);
@@ -111,5 +119,10 @@ export function BottomNavigation() {
           </div>
         </div>
     </nav>
+      </nav>
+
+      {/* Bottom Padding for mobile to account for nav height */}
+      <div className="h-20 shrink-0 lg:hidden" />
+    </>
   );
 }
