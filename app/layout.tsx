@@ -33,16 +33,35 @@ const lexend = localFont({
   display: "swap",
 });
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.growdex.ai";
+const previewImage = new URL("/opengraph-image.png", appUrl).toString();
+const title = "Growdex AI App";
+const description =
+  "Create, launch, manage, and optimize Meta and TikTok campaigns from one intelligent platform.";
 
 export const metadata: Metadata = {
-  metadataBase: appUrl ? new URL(appUrl) : undefined,
-  title: "Growdex AI App",
-  description:
-    "Increase efficiency & automate your multi Ad platform campaigns",
+  metadataBase: new URL(appUrl),
+  title,
+  description,
   openGraph: {
+    title,
+    description,
     siteName: "Growdex",
     type: "website",
+    images: [
+      {
+        url: previewImage,
+        width: 1200,
+        height: 630,
+        alt: description,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [previewImage],
   },
 };
 
