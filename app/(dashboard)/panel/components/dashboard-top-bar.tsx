@@ -41,11 +41,11 @@ export function DashboardTopBar({
         </button>
       ) : (
         <div className="flex min-w-0 flex-col justify-center">
-          <h1 className="font-lexend text-2xl font-bold text-[#4d4d4d]">
+          <h1 className="font-lexend text-xl font-bold text-[#4d4d4d] sm:text-2xl">
             Dashboard
           </h1>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-gilroy-medium text-xl tracking-[-0.2px] text-[#4d4d4d]">
+            <p className="min-w-0 font-gilroy-medium text-lg tracking-[-0.2px] text-[#4d4d4d] sm:text-xl">
               Welcome back, {isLoading ? "…" : (firstName ?? "there")}
             </p>
             <span className="size-1 rounded-full bg-bodySecondary" aria-hidden />
@@ -56,8 +56,8 @@ export function DashboardTopBar({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 xl:gap-5">
-        <label className="flex h-[55px] min-w-0 w-full items-center gap-2 rounded-full border border-lavender-50 px-4 py-1.5 sm:w-auto sm:flex-1 xl:w-[400px]">
+      <div className="flex min-w-0 flex-wrap items-center gap-3 xl:gap-5">
+        <label className="order-last flex h-11 min-w-0 w-full items-center gap-2 rounded-full border border-lavender-50 px-4 py-1.5 sm:order-none sm:h-[55px] sm:w-auto sm:flex-1 xl:w-[400px]">
           <Search className="size-5 shrink-0 text-bodySecondary" aria-hidden />
           <input
             type="search"

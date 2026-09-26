@@ -36,7 +36,7 @@ export function CampaignsMobileHeader(): JSX.Element {
   };
 
   return (
-    <div className="md:hidden flex items-center justify-between p-4 ">
+    <div className="flex items-center justify-between border-b border-gray-100 p-4 lg:hidden">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <button className="flex items-center gap-2 font-gilroy-semibold text-gray-900 hover:text-gray-700 transition-colors">
@@ -44,7 +44,7 @@ export function CampaignsMobileHeader(): JSX.Element {
             <ChevronDown className="w-4 h-4" />
           </button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-80 p-0">
+        <SheetContent side="left" className="w-80 max-w-[90vw] p-0">
           <SheetHeader className="p-6 border-b border-gray-200">
             <SheetTitle>{getActiveLabel()}</SheetTitle>
           </SheetHeader>
