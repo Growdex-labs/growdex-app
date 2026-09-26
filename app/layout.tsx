@@ -43,6 +43,7 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
+  title: "Growdex-The Smart Ad Management tool for Modern Businesses",
   title: { absolute: APP_TITLE },
   applicationName: APP_TITLE,
   description,
@@ -51,6 +52,7 @@ export const metadata: Metadata = {
     title: APP_TITLE,
   },
   openGraph: {
+    title: "Growdex-The Smart Ad Management tool for Modern Businesses",
     title: APP_TITLE,
     description,
     url: appUrl,
@@ -69,6 +71,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    title: "Growdex-The Smart Ad Management tool for Modern Businesses",
     title: APP_TITLE,
     description,
     images: [previewImage],
