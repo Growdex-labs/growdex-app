@@ -32,6 +32,7 @@ export default function LeadsPage() {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<Lead | null>(null);
   const [selected, setSelected] = useState<Lead | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,34 @@ export default function LeadsPage() {
     } catch (failure) {
       setLeads((rows) => rows.map((row) => row.id === lead.id ? { ...row, status: previous } : row));
       setError(failure instanceof Error ? failure.message : "Could not update lead.");
+    }
+  };
+
+  const handleEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editing) return;
+    setSaving(true);
+    setError(null);
+    const data = new FormData(event.currentTarget);
+    try {
+      const saved = await updateLead(editing.id, {
+        name: String(data.get("name") ?? "").trim(),
+        email: String(data.get("email") ?? "").trim(),
+        company: String(data.get("company") ?? "").trim(),
+        phone: String(data.get("phone") ?? "").trim(),
+        source: String(data.get("source") ?? "").trim(),
+        campaignId: String(data.get("campaignId") ?? "").trim(),
+        value: Number(data.get("value") || 0),
+        currency: String(data.get("currency") || "USD"),
+      });
+      setLeads((rows) => rows.map((row) => row.id === saved.id ? saved : row));
+      setSelected(saved);
+      setEditing(null);
+      void fetchLeadSummary().then(setSummary);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Could not update lead.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -161,6 +190,8 @@ export default function LeadsPage() {
     </main>
 
     {showAdd && <Modal title="Add a new lead" description="Save a prospect to your Growdex pipeline." onClose={() => setShowAdd(false)}><form onSubmit={handleCreate} className="grid gap-4 sm:grid-cols-2"><Field label="Full name" name="name" required /><Field label="Work email" name="email" type="email" required /><Field label="Company" name="company" /><Field label="Phone number" name="phone" /><Field label="Source" name="source" placeholder="Instagram, referral..." /><Field label="Campaign ID" name="campaignId" /><Field label="Value" name="value" type="number" min="0" step="0.01" /><label className="text-sm text-gray-600">Currency<select name="currency" className="mt-1.5 h-11 w-full rounded-xl border px-3"><option>USD</option><option>NGN</option><option>GBP</option><option>EUR</option></select></label><div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border px-4 py-2.5 text-sm">Cancel</button><button disabled={saving} className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm text-white disabled:opacity-50">{saving && <Loader2 className="size-4 animate-spin" />}Add lead</button></div></form></Modal>}
+    {selected && <Modal title={selected.name} description={`${selected.company || "Independent"} · ${formatDate(selected.createdAt)}`} onClose={() => setSelected(null)}><div className="flex items-center gap-3 rounded-xl bg-gray-50 p-4"><span className="flex size-12 items-center justify-center rounded-full bg-violet-100 font-gilroy-semibold text-violet-700">{initials(selected.name)}</span><div><p className="font-gilroy-semibold">{selected.name}</p><p className="text-sm text-gray-500">{formatValue(selected)}</p></div></div><div className="mt-5 space-y-3 text-sm"><a href={`mailto:${selected.email}`} className="flex items-center gap-3"><Mail className="size-4 text-gray-400" />{selected.email}</a>{selected.phone && <a href={`tel:${selected.phone}`} className="flex items-center gap-3"><Phone className="size-4 text-gray-400" />{selected.phone}</a>}</div><label className="mt-6 block text-sm text-gray-500">Pipeline status<select value={selected.status} onChange={(e) => void handleStatus(selected, e.target.value as LeadStatus)} className="mt-2 h-11 w-full rounded-xl border px-3">{LEAD_STATUSES.map((item) => <option key={item} value={item}>{STATUS_LABEL[item]}</option>)}</select></label><div className="mt-6 flex items-center justify-between"><button onClick={() => { setEditing(selected); setSelected(null); }} className="rounded-xl border px-4 py-2.5 text-sm">Edit details</button><button disabled={saving} onClick={() => void handleDelete(selected)} className="flex items-center gap-2 text-sm text-red-600"><Trash2 className="size-4" />Delete lead</button></div></Modal>}
+    {editing && <Modal title="Edit lead" description="Update this prospect's contact and pipeline details." onClose={() => setEditing(null)}><form onSubmit={handleEdit} className="grid gap-4 sm:grid-cols-2"><Field label="Full name" name="name" defaultValue={editing.name} required /><Field label="Work email" name="email" type="email" defaultValue={editing.email} required /><Field label="Company" name="company" defaultValue={editing.company ?? ""} /><Field label="Phone number" name="phone" defaultValue={editing.phone ?? ""} /><Field label="Source" name="source" defaultValue={editing.source ?? ""} /><Field label="Campaign ID" name="campaignId" defaultValue={editing.campaignId ?? ""} /><Field label="Value" name="value" type="number" min="0" step="0.01" defaultValue={editing.value} /><label className="text-sm text-gray-600">Currency<select name="currency" defaultValue={editing.currency || "USD"} className="mt-1.5 h-11 w-full rounded-xl border px-3"><option>USD</option><option>NGN</option><option>GBP</option><option>EUR</option></select></label><div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setEditing(null)} className="rounded-xl border px-4 py-2.5 text-sm">Cancel</button><button disabled={saving} className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm text-white disabled:opacity-50">{saving && <Loader2 className="size-4 animate-spin" />}Save changes</button></div></form></Modal>}
     {selected && <Modal title={selected.name} description={`${selected.company || "Independent"} · ${formatDate(selected.createdAt)}`} onClose={() => setSelected(null)}><div className="flex items-center gap-3 rounded-xl bg-gray-50 p-4"><span className="flex size-12 items-center justify-center rounded-full bg-violet-100 font-gilroy-semibold text-violet-700">{initials(selected.name)}</span><div><p className="font-gilroy-semibold">{selected.name}</p><p className="text-sm text-gray-500">{formatValue(selected)}</p></div></div><div className="mt-5 space-y-3 text-sm"><a href={`mailto:${selected.email}`} className="flex items-center gap-3"><Mail className="size-4 text-gray-400" />{selected.email}</a>{selected.phone && <a href={`tel:${selected.phone}`} className="flex items-center gap-3"><Phone className="size-4 text-gray-400" />{selected.phone}</a>}</div><label className="mt-6 block text-sm text-gray-500">Pipeline status<select value={selected.status} onChange={(e) => void handleStatus(selected, e.target.value as LeadStatus)} className="mt-2 h-11 w-full rounded-xl border px-3">{LEAD_STATUSES.map((item) => <option key={item} value={item}>{STATUS_LABEL[item]}</option>)}</select></label><button disabled={saving} onClick={() => void handleDelete(selected)} className="mt-6 flex items-center gap-2 text-sm text-red-600"><Trash2 className="size-4" />Delete lead</button></Modal>}
   </PanelLayout>;
 }

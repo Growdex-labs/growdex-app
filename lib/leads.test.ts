@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 vi.mock("./auth", () => ({ apiFetch }));
+import { createLead, deleteLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
 import { createLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
 import { createLead, fetchLeads, fetchLeadSummary, updateLead } from "./leads";
 
@@ -39,5 +40,11 @@ describe("leads API", () => {
     apiFetch.mockResolvedValue(new Response(JSON.stringify({ data: { created: 3, updated: 1, skipped: 2 } })));
     await expect(syncMetaInstantFormLeads()).resolves.toEqual({ imported: 3, updated: 1, skipped: 2 });
     expect(apiFetch).toHaveBeenCalledWith("/leads/sync/meta", { method: "POST" });
+  });
+
+  it("deletes a lead through the authenticated backend", async () => {
+    apiFetch.mockResolvedValue(new Response(null, { status: 204 }));
+    await expect(deleteLead("lead/1")).resolves.toBeUndefined();
+    expect(apiFetch).toHaveBeenCalledWith("/leads/lead%2F1", { method: "DELETE" });
   });
 });
