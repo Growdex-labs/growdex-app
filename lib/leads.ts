@@ -79,6 +79,8 @@ const errorMessage = async (response: Response, action: string) => {
   }
   return readResponseError(response, `${action} (${response.status}).`);
 };
+const errorMessage = async (response: Response, action: string) =>
+  readResponseError(response, `${action} (${response.status}).`);
 
 const unwrap = (body: unknown): unknown => {
   if (body && typeof body === "object" && !Array.isArray(body) && "data" in body) {
@@ -115,6 +117,7 @@ export async function fetchLeads(params: ListLeadsParams = {}): Promise<LeadList
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 50));
   const response = await apiFetch(`${LEADS_API_PATH}?${query.toString()}`, { method: "GET" });
+  const response = await apiFetch(`/leads?${query.toString()}`, { method: "GET" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not load leads"));
   const payload = unwrap(await response.json());
   if (Array.isArray(payload)) {
@@ -134,6 +137,7 @@ export async function fetchLeads(params: ListLeadsParams = {}): Promise<LeadList
 
 export async function fetchLeadSummary(): Promise<LeadSummary> {
   const response = await apiFetch(`${LEADS_API_PATH}/summary`, { method: "GET" });
+  const response = await apiFetch("/leads/summary", { method: "GET" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not load lead totals"));
   const raw = unwrap(await response.json()) as Partial<Record<keyof LeadSummary | "byStatus", unknown>>;
   const byStatus = raw?.byStatus && typeof raw.byStatus === "object"
@@ -149,12 +153,14 @@ export async function fetchLeadSummary(): Promise<LeadSummary> {
 
 export async function createLead(payload: CreateLeadPayload): Promise<Lead> {
   const response = await apiFetch(LEADS_API_PATH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  const response = await apiFetch("/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not create lead"));
   return normalizeLead(unwrap(await response.json()));
 }
 
 export async function updateLead(id: string, payload: UpdateLeadPayload): Promise<Lead> {
   const response = await apiFetch(`${LEADS_API_PATH}/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  const response = await apiFetch(`/leads/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not update lead"));
   return normalizeLead(unwrap(await response.json()));
 }
@@ -185,4 +191,7 @@ export async function syncMetaInstantFormLeads(): Promise<MetaLeadSyncResult> {
     updated: Number(result.updated ?? 0),
     skipped: Number(result.skipped ?? 0),
   };
+}
+  const response = await apiFetch(`/leads/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not delete lead"));
 }
