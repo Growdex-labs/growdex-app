@@ -79,6 +79,8 @@ const errorMessage = async (response: Response, action: string) => {
   }
   return readResponseError(response, `${action} (${response.status}).`);
 };
+const errorMessage = async (response: Response, action: string) =>
+  readResponseError(response, `${action} (${response.status}).`);
 
 const unwrap = (body: unknown): unknown => {
   if (body && typeof body === "object" && !Array.isArray(body) && "data" in body) {
@@ -105,6 +107,8 @@ const normalizeLead = (value: unknown): Lead => {
     : "new";
   const status = LEAD_STATUSES.includes(normalizedStatus as LeadStatus)
     ? (normalizedStatus as LeadStatus)
+  const status = LEAD_STATUSES.includes(lead.status as LeadStatus)
+    ? (lead.status as LeadStatus)
     : "new";
   const numericValue = Number(lead.value ?? 0);
   return {
@@ -149,6 +153,7 @@ const parseLeadList = (body: unknown, params: ListLeadsParams): LeadList => {
     total: Number(result.total ?? pagination?.total ?? rows.length),
     page: Number(result.page ?? pagination?.page ?? params.page ?? 1),
     limit: Number(result.limit ?? pagination?.limit ?? params.limit ?? 50),
+    createdAt: typeof lead.createdAt === "string" ? lead.createdAt : new Date(0).toISOString(),
   };
 };
 
@@ -168,10 +173,27 @@ export async function fetchLead(id: string): Promise<Lead> {
   const response = await apiFetch(`${LEADS_API_PATH}/${encodeURIComponent(id)}`, { method: "GET" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not load lead"));
   return normalizeLead(unwrap(await response.json()));
+  const response = await apiFetch(`/leads?${query.toString()}`, { method: "GET" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load leads"));
+  const payload = unwrap(await response.json());
+  if (Array.isArray(payload)) {
+    const leads = payload.map(normalizeLead);
+    return { leads, total: leads.length, page: 1, limit: leads.length };
+  }
+  if (!payload || typeof payload !== "object") throw new Error("The leads API returned an invalid list.");
+  const result = payload as Record<string, unknown>;
+  const rows = Array.isArray(result.leads) ? result.leads : Array.isArray(result.items) ? result.items : [];
+  return {
+    leads: rows.map(normalizeLead),
+    total: Number(result.total ?? rows.length),
+    page: Number(result.page ?? params.page ?? 1),
+    limit: Number(result.limit ?? params.limit ?? 50),
+  };
 }
 
 export async function fetchLeadSummary(): Promise<LeadSummary> {
   const response = await apiFetch(`${LEADS_API_PATH}/summary`, { method: "GET" });
+  const response = await apiFetch("/leads/summary", { method: "GET" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not load lead totals"));
   const raw = unwrap(await response.json()) as Partial<Record<keyof LeadSummary | "byStatus", unknown>>;
   const byStatus = raw?.byStatus && typeof raw.byStatus === "object"
@@ -187,12 +209,14 @@ export async function fetchLeadSummary(): Promise<LeadSummary> {
 
 export async function createLead(payload: CreateLeadPayload): Promise<Lead> {
   const response = await apiFetch(LEADS_API_PATH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  const response = await apiFetch("/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not create lead"));
   return normalizeLead(unwrap(await response.json()));
 }
 
 export async function updateLead(id: string, payload: UpdateLeadPayload): Promise<Lead> {
   const response = await apiFetch(`${LEADS_API_PATH}/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  const response = await apiFetch(`/leads/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not update lead"));
   return normalizeLead(unwrap(await response.json()));
 }
@@ -223,4 +247,7 @@ export async function syncMetaInstantFormLeads(): Promise<MetaLeadSyncResult> {
     updated: Number(result.updated ?? 0),
     skipped: Number(result.skipped ?? 0),
   };
+}
+  const response = await apiFetch(`/leads/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not delete lead"));
 }

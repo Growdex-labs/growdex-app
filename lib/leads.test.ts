@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 vi.mock("./auth", () => ({ apiFetch }));
 import { createLead, deleteLead, fetchLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
+import { createLead, deleteLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
+import { createLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
+import { createLead, fetchLeads, fetchLeadSummary, updateLead } from "./leads";
 
 const lead = { id: "lead-1", name: "Ada", email: "ada@example.com", status: "new", value: "1250.50", createdAt: "2026-09-29T10:00:00.000Z" };
 
