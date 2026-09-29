@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
   Wallet,
+  ContactRound,
 } from "lucide-react";
 import {
   Sheet,
@@ -44,6 +45,7 @@ export function TopHeader({ onNotificationClick }: TopHeaderProps) {
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/panel" },
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
+    { icon: ContactRound, label: "Leads centre", href: "/panel/leads" },
     { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Plug, label: "Integrations", href: "/panel/integrations" },
     { icon: Wallet, label: "Billing", href: "/panel/billing" },
@@ -66,7 +68,6 @@ export function TopHeader({ onNotificationClick }: TopHeaderProps) {
   };
 
   return (
-    <header className="flex min-h-16 shrink-0 items-center justify-between gap-2 bg-white px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-gray-900 shadow-sm sm:px-4 lg:hidden">
     <header className="flex h-16 shrink-0 items-center justify-between gap-2 bg-white px-3 py-3 text-gray-900 shadow-sm sm:px-4 lg:hidden">
       {/* Left: Logo */}
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">

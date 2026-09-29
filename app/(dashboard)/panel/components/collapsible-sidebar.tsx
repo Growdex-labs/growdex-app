@@ -17,6 +17,7 @@ import {
   Bell,
   LogOut,
   ShieldCheck,
+  ContactRound,
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useMe } from "@/context/me-context";
@@ -54,6 +55,7 @@ export function CollapsibleSidebar({
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/panel" },
     { icon: Megaphone, label: "Campaigns", href: "/panel/campaigns" },
+    { icon: ContactRound, label: "Leads centre", href: "/panel/leads" },
     { icon: Images, label: "Assets", href: "/panel/assets" },
     { icon: Plug, label: "Integrations", href: "/panel/integrations" },
     { icon: Wallet, label: "Billing", href: "/panel/billing" },
