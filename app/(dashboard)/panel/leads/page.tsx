@@ -1,6 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { Download, LayoutGrid, List, Loader2, Mail, Phone, Plus, RefreshCw, Search, SlidersHorizontal, Trash2, TrendingUp, Users, X } from "lucide-react";
+import { PanelLayout } from "../components/panel-layout";
+import { createLead, deleteLead, fetchLeads, fetchLeadSummary, LEAD_STATUSES, syncMetaInstantFormLeads, updateLead, type Lead, type LeadStatus, type LeadSummary } from "@/lib/leads";
 import { Download, LayoutGrid, List, Loader2, Mail, Phone, Plus, Search, SlidersHorizontal, Trash2, TrendingUp, Users, X } from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
 import { createLead, deleteLead, fetchLeads, fetchLeadSummary, LEAD_STATUSES, updateLead, type Lead, type LeadStatus, type LeadSummary } from "@/lib/leads";
@@ -25,6 +28,8 @@ export default function LeadsPage() {
   const [view, setView] = useState<"list" | "board">("list");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncingMeta, setSyncingMeta] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [selected, setSelected] = useState<Lead | null>(null);
@@ -96,6 +101,25 @@ export default function LeadsPage() {
     finally { setSaving(false); }
   };
 
+  const handleMetaSync = async () => {
+    setSyncingMeta(true);
+    setSyncMessage(null);
+    setError(null);
+    try {
+      const result = await syncMetaInstantFormLeads();
+      setSyncMessage(
+        result.imported || result.updated
+          ? `Meta sync complete: ${result.imported} imported and ${result.updated} updated.`
+          : "Meta forms are up to date. No new submissions were found.",
+      );
+      await load();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Could not sync Meta leads.");
+    } finally {
+      setSyncingMeta(false);
+    }
+  };
+
   const exportCsv = () => {
     const rows = [["Name", "Company", "Email", "Phone", "Source", "Campaign", "Status", "Value"], ...leads.map((lead) => [lead.name, lead.company || "", lead.email, lead.phone || "", lead.source || "", lead.campaign?.name || lead.campaignId || "", STATUS_LABEL[lead.status], String(lead.value)])];
     const csv = rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(",")).join("\n");
@@ -109,6 +133,11 @@ export default function LeadsPage() {
       <div className="mx-auto max-w-[1440px]">
         <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="text-sm text-gray-500">Workspace / Leads centre</p><h1 className="mt-2 text-3xl font-gilroy-bold text-gray-950">Leads centre</h1><p className="mt-2 text-sm text-gray-500">Capture, organise and move every prospect towards conversion.</p></div>
+          <div className="flex flex-wrap gap-2"><button onClick={() => void handleMetaSync()} disabled={syncingMeta} className="flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm disabled:opacity-50"><RefreshCw className={`size-4 ${syncingMeta ? "animate-spin" : ""}`} />{syncingMeta ? "Syncing Meta…" : "Sync Meta leads"}</button><button onClick={exportCsv} disabled={!leads.length} className="flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm disabled:opacity-40"><Download className="size-4" />Export</button><button onClick={() => setShowAdd(true)} className="flex items-center gap-2 rounded-xl bg-[#292929] px-4 py-2.5 text-sm text-white"><Plus className="size-4" />Add lead</button></div>
+        </header>
+
+        {error && <div role="alert" className="mt-5 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span>{error}</span><button onClick={() => setError(null)} aria-label="Dismiss"><X className="size-4" /></button></div>}
+        {syncMessage && <div role="status" className="mt-5 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"><span>{syncMessage}</span><button onClick={() => setSyncMessage(null)} aria-label="Dismiss"><X className="size-4" /></button></div>}
           <div className="flex gap-2"><button onClick={exportCsv} disabled={!leads.length} className="flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm disabled:opacity-40"><Download className="size-4" />Export</button><button onClick={() => setShowAdd(true)} className="flex items-center gap-2 rounded-xl bg-[#292929] px-4 py-2.5 text-sm text-white"><Plus className="size-4" />Add lead</button></div>
         </header>
 

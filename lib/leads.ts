@@ -60,6 +60,25 @@ export interface CreateLeadPayload {
 
 export type UpdateLeadPayload = Partial<CreateLeadPayload>;
 
+export interface MetaLeadSyncResult {
+  imported: number;
+  updated: number;
+  skipped: number;
+}
+
+/**
+ * Keep the route configurable because some Growdex deployments mount feature
+ * modules below a versioned prefix (for example `/api/v1/leads`). The default
+ * matches `@Controller("leads")` in the backend LeadsModule.
+ */
+const LEADS_API_PATH = (process.env.NEXT_PUBLIC_LEADS_API_PATH || "/leads").replace(/\/$/, "");
+
+const errorMessage = async (response: Response, action: string) => {
+  if (response.status === 404) {
+    return "The Leads API is not available on this backend deployment. Deploy and register LeadsModule, or set NEXT_PUBLIC_LEADS_API_PATH to its mounted route.";
+  }
+  return readResponseError(response, `${action} (${response.status}).`);
+};
 const errorMessage = async (response: Response, action: string) =>
   readResponseError(response, `${action} (${response.status}).`);
 
@@ -97,6 +116,7 @@ export async function fetchLeads(params: ListLeadsParams = {}): Promise<LeadList
   if (params.campaignId) query.set("campaignId", params.campaignId);
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 50));
+  const response = await apiFetch(`${LEADS_API_PATH}?${query.toString()}`, { method: "GET" });
   const response = await apiFetch(`/leads?${query.toString()}`, { method: "GET" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not load leads"));
   const payload = unwrap(await response.json());
@@ -116,6 +136,7 @@ export async function fetchLeads(params: ListLeadsParams = {}): Promise<LeadList
 }
 
 export async function fetchLeadSummary(): Promise<LeadSummary> {
+  const response = await apiFetch(`${LEADS_API_PATH}/summary`, { method: "GET" });
   const response = await apiFetch("/leads/summary", { method: "GET" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not load lead totals"));
   const raw = unwrap(await response.json()) as Partial<Record<keyof LeadSummary | "byStatus", unknown>>;
@@ -131,18 +152,46 @@ export async function fetchLeadSummary(): Promise<LeadSummary> {
 }
 
 export async function createLead(payload: CreateLeadPayload): Promise<Lead> {
+  const response = await apiFetch(LEADS_API_PATH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   const response = await apiFetch("/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not create lead"));
   return normalizeLead(unwrap(await response.json()));
 }
 
 export async function updateLead(id: string, payload: UpdateLeadPayload): Promise<Lead> {
+  const response = await apiFetch(`${LEADS_API_PATH}/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   const response = await apiFetch(`/leads/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not update lead"));
   return normalizeLead(unwrap(await response.json()));
 }
 
 export async function deleteLead(id: string): Promise<void> {
+  const response = await apiFetch(`${LEADS_API_PATH}/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not delete lead"));
+}
+
+/**
+ * Ask the backend to pull submissions from the Meta Instant Forms connected to
+ * the current user's campaigns. Meta access tokens remain server-side.
+ */
+export async function syncMetaInstantFormLeads(): Promise<MetaLeadSyncResult> {
+  const response = await apiFetch(`${LEADS_API_PATH}/sync/meta`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(await errorMessage(response, "Could not sync Meta Instant Form leads"));
+  }
+  const raw = unwrap(await response.json());
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("The Meta lead sync returned an invalid response.");
+  }
+  const result = raw as Record<string, unknown>;
+  return {
+    imported: Number(result.imported ?? result.created ?? 0),
+    updated: Number(result.updated ?? 0),
+    skipped: Number(result.skipped ?? 0),
+  };
+}
   const response = await apiFetch(`/leads/${encodeURIComponent(id)}`, { method: "DELETE" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not delete lead"));
 }
