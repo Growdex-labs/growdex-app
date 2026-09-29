@@ -21,6 +21,7 @@ const formatValue = (lead: Lead) => new Intl.NumberFormat(undefined, { style: "c
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [totalLeads, setTotalLeads] = useState(0);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
@@ -49,6 +50,7 @@ export default function LeadsPage() {
         fetchLeadSummary(),
       ]);
       setLeads(list.leads);
+      setTotalLeads(list.total);
       setSummary(totals);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Could not load leads.");
@@ -181,6 +183,7 @@ export default function LeadsPage() {
 
         <section className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="flex flex-col gap-3 border-b p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div><h2 className="text-lg font-gilroy-semibold">All leads</h2><p className="text-xs text-gray-500">Showing {leads.length} of {totalLeads} records</p></div>
             <div><h2 className="text-lg font-gilroy-semibold">All leads</h2><p className="text-xs text-gray-500">{leads.length} records shown</p></div>
             <div className="flex flex-col gap-2 sm:flex-row"><label className="flex items-center gap-2 rounded-xl border bg-gray-50 px-3 sm:w-72"><Search className="size-4 text-gray-400" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search leads..." className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" /></label><label className="flex items-center gap-2 rounded-xl border px-3 text-sm"><SlidersHorizontal className="size-4" /><select value={status} onChange={(e) => setStatus(e.target.value as LeadStatus | "all")} className="h-10 bg-transparent outline-none"><option value="all">All statuses</option>{LEAD_STATUSES.map((item) => <option key={item} value={item}>{STATUS_LABEL[item]}</option>)}</select></label><div className="flex rounded-xl border p-1"><button onClick={() => setView("list")} aria-label="List view" className={`rounded-lg p-2 ${view === "list" ? "bg-gray-900 text-white" : "text-gray-400"}`}><List className="size-4" /></button><button onClick={() => setView("board")} aria-label="Board view" className={`rounded-lg p-2 ${view === "board" ? "bg-gray-900 text-white" : "text-gray-400"}`}><LayoutGrid className="size-4" /></button></div></div>
           </div>

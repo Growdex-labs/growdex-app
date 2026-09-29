@@ -89,6 +89,11 @@ const unwrap = (body: unknown): unknown => {
   return body;
 };
 
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+
 const normalizeLead = (value: unknown): Lead => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("The leads API returned an invalid lead.");
@@ -97,6 +102,11 @@ const normalizeLead = (value: unknown): Lead => {
   if (typeof lead.id !== "string" || typeof lead.name !== "string" || typeof lead.email !== "string") {
     throw new Error("The leads API returned an invalid lead.");
   }
+  const normalizedStatus = typeof lead.status === "string"
+    ? lead.status.toLowerCase()
+    : "new";
+  const status = LEAD_STATUSES.includes(normalizedStatus as LeadStatus)
+    ? (normalizedStatus as LeadStatus)
   const status = LEAD_STATUSES.includes(lead.status as LeadStatus)
     ? (lead.status as LeadStatus)
     : "new";
@@ -105,6 +115,44 @@ const normalizeLead = (value: unknown): Lead => {
     ...(lead as unknown as Lead),
     status,
     value: Number.isFinite(numericValue) ? numericValue : 0,
+    campaignId: typeof lead.campaignId === "string"
+      ? lead.campaignId
+      : typeof lead.campaign_id === "string" ? lead.campaign_id : null,
+    createdAt: typeof lead.createdAt === "string"
+      ? lead.createdAt
+      : typeof lead.created_at === "string" ? lead.created_at : new Date(0).toISOString(),
+    updatedAt: typeof lead.updatedAt === "string"
+      ? lead.updatedAt
+      : typeof lead.updated_at === "string" ? lead.updated_at : undefined,
+  };
+};
+
+const parseLeadList = (body: unknown, params: ListLeadsParams): LeadList => {
+  const envelope = asRecord(body);
+  const unwrapped = unwrap(body);
+
+  if (Array.isArray(unwrapped)) {
+    const pagination = asRecord(envelope?.pagination) ?? asRecord(envelope?.meta);
+    const leads = unwrapped.map(normalizeLead);
+    return {
+      leads,
+      total: Number(envelope?.total ?? pagination?.total ?? leads.length),
+      page: Number(envelope?.page ?? pagination?.page ?? params.page ?? 1),
+      limit: Number(envelope?.limit ?? pagination?.limit ?? params.limit ?? 50),
+    };
+  }
+
+  const result = asRecord(unwrapped);
+  if (!result) throw new Error("The leads API returned an invalid list.");
+  const rows = Array.isArray(result.leads)
+    ? result.leads
+    : Array.isArray(result.items) ? result.items : [];
+  const pagination = asRecord(result.pagination) ?? asRecord(result.meta);
+  return {
+    leads: rows.map(normalizeLead),
+    total: Number(result.total ?? pagination?.total ?? rows.length),
+    page: Number(result.page ?? pagination?.page ?? params.page ?? 1),
+    limit: Number(result.limit ?? pagination?.limit ?? params.limit ?? 50),
     createdAt: typeof lead.createdAt === "string" ? lead.createdAt : new Date(0).toISOString(),
   };
 };
@@ -117,6 +165,14 @@ export async function fetchLeads(params: ListLeadsParams = {}): Promise<LeadList
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 50));
   const response = await apiFetch(`${LEADS_API_PATH}?${query.toString()}`, { method: "GET" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load leads"));
+  return parseLeadList(await response.json(), params);
+}
+
+export async function fetchLead(id: string): Promise<Lead> {
+  const response = await apiFetch(`${LEADS_API_PATH}/${encodeURIComponent(id)}`, { method: "GET" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load lead"));
+  return normalizeLead(unwrap(await response.json()));
   const response = await apiFetch(`/leads?${query.toString()}`, { method: "GET" });
   if (!response.ok) throw new Error(await errorMessage(response, "Could not load leads"));
   const payload = unwrap(await response.json());

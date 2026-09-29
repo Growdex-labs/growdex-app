@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 vi.mock("./auth", () => ({ apiFetch }));
+import { createLead, deleteLead, fetchLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
 import { createLead, deleteLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
 import { createLead, fetchLeads, fetchLeadSummary, syncMetaInstantFormLeads, updateLead } from "./leads";
 import { createLead, fetchLeads, fetchLeadSummary, updateLead } from "./leads";
@@ -21,6 +22,17 @@ describe("leads API", () => {
   it("loads normalized summary totals", async () => {
     apiFetch.mockResolvedValue(new Response(JSON.stringify({ data: { total: "4", converted: 2, totalValue: "9000" } })));
     await expect(fetchLeadSummary()).resolves.toMatchObject({ total: 4, converted: 2, totalValue: 9000, new: 0 });
+  });
+
+  it("preserves backend pagination when data is the list envelope", async () => {
+    apiFetch.mockResolvedValue(new Response(JSON.stringify({ data: [lead], pagination: { total: 81, page: 2, limit: 20 } })));
+    await expect(fetchLeads({ page: 2, limit: 20 })).resolves.toMatchObject({ total: 81, page: 2, limit: 20 });
+  });
+
+  it("loads one lead and normalizes database field casing", async () => {
+    apiFetch.mockResolvedValue(new Response(JSON.stringify({ data: { ...lead, status: "QUALIFIED", campaign_id: "campaign-1", createdAt: undefined, created_at: lead.createdAt } })));
+    await expect(fetchLead("lead/1")).resolves.toMatchObject({ status: "qualified", campaignId: "campaign-1", createdAt: lead.createdAt });
+    expect(apiFetch).toHaveBeenCalledWith("/leads/lead%2F1", { method: "GET" });
   });
 
   it("creates and updates leads through authenticated requests", async () => {
