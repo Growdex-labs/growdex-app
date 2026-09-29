@@ -4,6 +4,9 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Download, LayoutGrid, List, Loader2, Mail, Phone, Plus, RefreshCw, Search, SlidersHorizontal, Trash2, TrendingUp, Users, X } from "lucide-react";
 import { PanelLayout } from "../components/panel-layout";
 import { createLead, deleteLead, fetchLeads, fetchLeadSummary, LEAD_STATUSES, syncMetaInstantFormLeads, updateLead, type Lead, type LeadStatus, type LeadSummary } from "@/lib/leads";
+import { Download, LayoutGrid, List, Loader2, Mail, Phone, Plus, Search, SlidersHorizontal, Trash2, TrendingUp, Users, X } from "lucide-react";
+import { PanelLayout } from "../components/panel-layout";
+import { createLead, deleteLead, fetchLeads, fetchLeadSummary, LEAD_STATUSES, updateLead, type Lead, type LeadStatus, type LeadSummary } from "@/lib/leads";
 
 const STATUS_LABEL: Record<LeadStatus, string> = { new: "New", contacted: "Contacted", qualified: "Qualified", converted: "Converted", lost: "Lost" };
 const STATUS_STYLE: Record<LeadStatus, string> = {
@@ -135,6 +138,10 @@ export default function LeadsPage() {
 
         {error && <div role="alert" className="mt-5 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span>{error}</span><button onClick={() => setError(null)} aria-label="Dismiss"><X className="size-4" /></button></div>}
         {syncMessage && <div role="status" className="mt-5 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"><span>{syncMessage}</span><button onClick={() => setSyncMessage(null)} aria-label="Dismiss"><X className="size-4" /></button></div>}
+          <div className="flex gap-2"><button onClick={exportCsv} disabled={!leads.length} className="flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm disabled:opacity-40"><Download className="size-4" />Export</button><button onClick={() => setShowAdd(true)} className="flex items-center gap-2 rounded-xl bg-[#292929] px-4 py-2.5 text-sm text-white"><Plus className="size-4" />Add lead</button></div>
+        </header>
+
+        {error && <div role="alert" className="mt-5 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span>{error}</span><button onClick={() => setError(null)} aria-label="Dismiss"><X className="size-4" /></button></div>}
 
         <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Total leads" value={summary.total} note="All captured prospects" icon={<Users />} />
